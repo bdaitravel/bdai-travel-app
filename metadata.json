@@ -1,6 +1,8 @@
-"dependencies": {
-  "react": "^18.2.0",
-  "react-dom": "^18.2.0",
-  "leaflet": "^1.9.4",
-  "@google/genai": "latest"
-},
+{
+  "name": "bdai",
+  "description": "Better Destinations AI - Smart personalized travel guides with rewards.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}
