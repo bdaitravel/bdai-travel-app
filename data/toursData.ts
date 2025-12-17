@@ -16,8 +16,7 @@ export const STATIC_TOURS: Tour[] = [
     theme: 'History',
     isSponsored: false,
     isRichDescription: true,
-    safetyTip: "Ojo con los carteristas en la Puerta del Sol.",
-    wifiTip: "La Biblioteca de la calle Conde Duque tiene el mejor wifi gratis de la zona.",
+    // Fix: removed safetyTip and wifiTip as they are not in Tour interface
     stops: [
       { 
         id: 'm1', 
@@ -77,7 +76,7 @@ export const STATIC_TOURS: Tour[] = [
         photoShot: {
             angle: "Plano medio de la fuente con el palacio rojo de fondo.",
             bestTime: "Tarde",
-            instagramHook: "Rincones con alma en el centro de Madrid ⛲️🚩 #SantaCruz #TravelMadrid",
+            instagramHook: "Rincones con alma en el centro de Madrid  Fountain️🚩 #SantaCruz #TravelMadrid",
             milesReward: 70
         }
       },
@@ -106,8 +105,7 @@ export const STATIC_TOURS: Tour[] = [
     theme: 'History',
     isSponsored: false,
     isRichDescription: true,
-    safetyTip: "Stay on the main streets of South Beach after midnight.",
-    wifiTip: "Lincoln Road Mall has multiple public high-speed hotspots.",
+    // Fix: removed safetyTip and wifiTip as they are not in Tour interface
     stops: [
       { id: 'mia1', name: 'The Versace Mansion', description: '[HOOK] The steps where high fashion and dark fate met.\n[STORY] Gianni Versace was shot here in 1997. The mansion is a temple to excess, with gold-lined pools and secret symbols.\n[SECRET] Look closely at the gates: the Medusa head is designed to "ward off evil" (ironically).\n[SMART_TIP] Best photo angle is from across the street at the park entrance to get the whole facade.', latitude: 25.7830, longitude: -80.1300, type: 'historical', visited: false, isRichInfo: true, curiosity: "The pool tiles are 24k gold.",
         photoShot: {
