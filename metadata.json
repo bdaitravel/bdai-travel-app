@@ -1,0 +1,8 @@
+{
+  "name": "bdai",
+  "description": "Better Destinations AI - Smart personalized travel guides with rewards.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}
