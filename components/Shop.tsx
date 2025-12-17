@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserProfile, TravelerRank } from '../types';
 
@@ -16,8 +15,6 @@ interface Product {
   url: string;
 }
 
-const ETSY_STORE = "https://bdaishop.etsy.com";
-
 const PRODUCTS: Product[] = [
   // --- FASE 1: RIOJA EXCLUSIVES ---
   { id: 'r_rioja', title: 'Recetario Tradicional Riojano', category: 'Recipes', price: 8.99, platform: 'Hotmart', url: '#', image: 'https://images.unsplash.com/photo-1598155523122-38423bd4d6bc?auto=format&fit=crop&w=400&q=80' },
@@ -29,7 +26,7 @@ const PRODUCTS: Product[] = [
   { id: 'g3', title: 'New York Essentials', category: 'Guides', price: 12.99, platform: 'Hotmart', url: '#', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=400&q=80' },
   
   // --- ITINERARIOS Y PLANTILLAS ---
-  { id: 't1', title: 'Travel Journal Notion Template', category: 'Itineraries', price: 14.99, platform: 'Etsy', url: ETSY_STORE, image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=400&q=80' },
+  { id: 't1', title: 'Travel Journal Notion Template', category: 'Itineraries', price: 14.99, platform: 'Etsy', url: '#', image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=400&q=80' },
   { id: 't3', title: 'Solo Travel Safety Guide', category: 'Itineraries', price: 5.99, platform: 'Gumroad', url: '#', image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=400&q=80' },
   
   // --- RECETARIOS GLOBAL ---
@@ -37,7 +34,7 @@ const PRODUCTS: Product[] = [
   { id: 'r2', title: 'Taste of Italy', category: 'Recipes', price: 11.99, platform: 'Amazon', url: '#', image: 'https://images.unsplash.com/photo-1498579150354-977475b7ea0b?auto=format&fit=crop&w=400&q=80' },
   
   // --- MERCH ---
-  { id: 'm1', title: 'Tote: "Travel More"', category: 'Merch', price: 19.99, platform: 'Etsy', url: ETSY_STORE, image: 'https://images.unsplash.com/photo-1597484661643-2f5fef640dd1?auto=format&fit=crop&w=400&q=80' },
+  { id: 'm1', title: 'Tote: "Travel More"', category: 'Merch', price: 19.99, platform: 'Etsy', url: '#', image: 'https://images.unsplash.com/photo-1597484661643-2f5fef640dd1?auto=format&fit=crop&w=400&q=80' },
   { id: 'm2', title: 'T-Shirt: "Citizen of the World"', category: 'Merch', price: 24.99, platform: 'Miravia', url: '#', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80' },
   
   // --- PREMIUM ---
@@ -61,7 +58,6 @@ const SHOP_TEXTS: any = {
         buy: "Buy Now",
         challenge: "Monthly Challenge",
         challengeSub: "Buy 3 guides to unlock the 'Scholar' badge.",
-        visitStore: "Visit Etsy Store",
         cats: {
             'Guides': 'Guides',
             'Itineraries': 'Itineraries',
@@ -78,7 +74,6 @@ const SHOP_TEXTS: any = {
         buy: "Comprar",
         challenge: "Reto Mensual",
         challengeSub: "Compra 3 guías para la insignia 'Erudito'.",
-        visitStore: "Visitar Tienda Etsy",
         cats: {
             'Guides': 'Guías',
             'Itineraries': 'Itinerarios',
@@ -95,7 +90,6 @@ const SHOP_TEXTS: any = {
         buy: "Comprar",
         challenge: "Repte Mensual",
         challengeSub: "Compra 3 guies per la insígnia 'Erudit'.",
-        visitStore: "Visitar Botiga Etsy",
         cats: {
             'Guides': 'Guies',
             'Itineraries': 'Itineraris',
@@ -112,7 +106,6 @@ const SHOP_TEXTS: any = {
         buy: "Erosi",
         challenge: "Hilabeteko Erronka",
         challengeSub: "Erosi 3 gida domina lortzeko.",
-        visitStore: "Etsy Denda Bisitatu",
         cats: {
             'Guides': 'Gidak',
             'Itineraries': 'Ibilbideak',
@@ -152,7 +145,7 @@ export const Shop: React.FC<ShopProps> = ({ user }) => {
                   </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 flex items-center gap-4 mb-4">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
                       {discountPercent}%
                   </div>
@@ -161,16 +154,6 @@ export const Shop: React.FC<ShopProps> = ({ user }) => {
                       <p className="text-xs text-slate-300">{t.discountSub}</p>
                   </div>
               </div>
-
-              <a 
-                href={ETSY_STORE} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex items-center justify-center gap-2 w-full py-3 bg-white text-slate-900 rounded-xl font-bold text-sm hover:bg-slate-100 transition shadow-lg"
-              >
-                  <i className="fab fa-etsy text-orange-600"></i>
-                  {t.visitStore}
-              </a>
           </div>
       </div>
 

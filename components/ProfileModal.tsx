@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserProfile, LeaderboardEntry, LANGUAGES } from '../types';
 
@@ -183,7 +184,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                      />
                  ) : (
                     <p className="font-bold text-slate-800 text-lg leading-tight">
-                        {user.city || 'World Citizen'}
+                        {(user as any).city || 'World Citizen'}
                     </p>
                  )}
                </div>
@@ -205,7 +206,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                      />
                  ) : (
                     <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                        "{user.bio || 'Ready to explore.'}"
+                        "{(user as any).bio || 'Ready to explore.'}"
                     </p>
                  )}
                </div>

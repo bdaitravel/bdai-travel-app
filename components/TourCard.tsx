@@ -1,345 +1,142 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tour, Stop } from '../types';
-import { generateImage } from '../services/geminiService';
 
-const getThemeStyles = (themeStr: string) => {
-  const theme = themeStr.toLowerCase();
-  if (theme.includes('history')) return { badge: 'bg-amber-100 text-amber-900', icon: 'fa-landmark' };
-  if (theme.includes('food')) return { badge: 'bg-orange-100 text-orange-900', icon: 'fa-utensils' };
-  if (theme.includes('art')) return { badge: 'bg-pink-100 text-pink-900', icon: 'fa-palette' };
-  if (theme.includes('nature')) return { badge: 'bg-emerald-100 text-emerald-900', icon: 'fa-leaf' };
-  if (theme.includes('cinema') || theme.includes('film')) return { badge: 'bg-red-100 text-red-900', icon: 'fa-film' };
-  return { badge: 'bg-slate-100 text-slate-900', icon: 'fa-compass' };
-};
-
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371e3; 
-    const φ1 = lat1 * Math.PI/180; 
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-};
-
-const UI_TEXT: any = {
-    en: { next: "Next Stop", prev: "Previous Stop", listen: "Listen Guide", pause: "Pause", checkin: "I'm Here!", collected: "Verified!", tooFar: "Too far", stop: "Stop", photoShot: "Photo Shot", angle: "The Angle", bestTime: "Best Light", copyHook: "Copy IG Caption", shared: "Copied!", photoMiles: "Photo Miles", enriching: "Uncovering Deep Secrets...", quest: "Traveler Quest" },
-    es: { next: "Siguiente Parada", prev: "Atrás", listen: "Escuchar Guía", pause: "Pausar", checkin: "¡Ya estoy aquí!", collected: "¡Verificado!", tooFar: "Lejos", stop: "Parada", photoShot: "Foto del Recuerdo", angle: "El Ángulo", bestTime: "Mejor Luz", copyHook: "Copiar Caption IG", shared: "¡Copiado!", photoMiles: "Millas de Foto", enriching: "Descubriendo secretos profundos...", quest: "Reto del Viajero" },
-    de: { next: "Nächster Stopp", prev: "Zurück", listen: "Guide anhören", pause: "Pause", checkin: "Ich bin hier!", collected: "Verifiziert!", tooFar: "Zu weit", stop: "Stopp", photoShot: "Foto-Spot", angle: "Der Winkel", bestTime: "Bestes Licht", copyHook: "IG-Unterschrift kopieren", shared: "Kopiert!", photoMiles: "Foto-Meilen", enriching: "Geheimnisse aufdecken...", quest: "Reisende Quest" }
-};
-
-interface TourCardProps {
-  tour: Tour;
-  onSelect: (tour: Tour) => void;
-  onPlayAudio: (tour: Tour) => void;
-  isPlayingAudio: boolean;
-  isAudioLoading: boolean;
-  isFavorite: boolean;
-  onToggleFavorite: () => void;
+interface ActiveTourCardProps {
+    tour: Tour;
+    currentStopIndex: number;
+    onNext: () => void;
+    onPrev: () => void;
+    language: string;
+    onCheckIn: (id: string, miles: number, type: string) => void;
+    onEnrichStop: (id: string) => void;
+    userLocation: {lat: number, lng: number} | null;
+    audioPlayingId: string | null;
+    audioLoadingId: string | null;
+    onPlayAudio: (id: string, text: string) => Promise<void>;
+    t: (key: string) => string;
 }
 
-export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, isFavorite, onToggleFavorite }) => {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [aiImage, setAiImage] = useState<string | null>(null);
-  const styles = getThemeStyles(tour.theme);
-  
-  const displayImage = tour.imageUrl || aiImage || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80';
-
-  useEffect(() => {
-    let isMounted = true;
-    if (!tour.imageUrl && !aiImage) {
-        const fetchAiImage = async () => {
-            const prompt = `${tour.title} iconic landmark in ${tour.city}`;
-            const url = await generateImage(prompt);
-            if (isMounted && url) {
-                setAiImage(url);
-            }
-        };
-        fetchAiImage();
-    }
-    return () => { isMounted = false; };
-  }, [tour.id, tour.imageUrl, tour.city, tour.theme, tour.title]);
-
-  return (
-    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer h-full flex flex-col">
-      <div className="h-64 relative overflow-hidden bg-slate-200">
-        {!imgLoaded && <div className="absolute inset-0 bg-slate-200 animate-pulse"></div>}
-        <img 
-            src={displayImage} 
-            className={`w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-            onLoad={() => setImgLoaded(true)}
-            alt={tour.title}
-        />
-        <div className="absolute top-4 left-4">
-             <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg ${styles.badge} backdrop-blur-md bg-opacity-90`}>
-                 <i className={`fas ${styles.icon} mr-1`}></i> {tour.theme}
-             </span>
+export const TourCard: React.FC<any> = ({ tour, onSelect }) => (
+    <div onClick={onSelect} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer h-full flex flex-col">
+        <div className="h-60 relative overflow-hidden bg-slate-200">
+            <img src={tour.imageUrl || `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=600&q=80`} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" alt={tour.title} />
+            <div className="absolute top-4 left-4">
+                <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/90 backdrop-blur shadow-sm">
+                    {tour.theme}
+                </span>
+            </div>
+            {tour.isSponsored && (
+                <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">Featured</div>
+            )}
         </div>
-        <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur border border-white/30 text-white flex items-center justify-center hover:bg-white hover:text-red-500 transition-colors">
-            <i className={`fas fa-heart ${isFavorite ? 'text-red-500' : ''}`}></i>
-        </button>
-      </div>
-      
-      <div className="p-6 flex flex-col flex-1">
-          <div className="flex flex-wrap gap-2 mb-4">
-              <span className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                  <i className="fas fa-clock text-slate-400"></i> {tour.duration}
-              </span>
-              <span className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                  <i className="fas fa-walking text-slate-400"></i> {tour.distance}
-              </span>
-              <span className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                  <i className="fas fa-camera text-slate-400"></i> {tour.stops.length} Shots
-              </span>
-          </div>
-
-          <h3 className="text-2xl font-heading font-bold text-slate-900 mb-3 leading-tight group-hover:text-purple-700 transition-colors">{tour.title}</h3>
-          <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-3 font-medium">{tour.description}</p>
-          
-          <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-               <button onClick={(e) => {e.stopPropagation(); onPlayAudio(tour);}} className={`text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${isPlayingAudio ? 'text-red-500' : 'text-slate-400 hover:text-slate-800'}`}>
-                   {isAudioLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlayingAudio ? <i className="fas fa-stop"></i> : <i className="fas fa-play"></i>}
-                   {isPlayingAudio ? 'Stop Preview' : 'Listen Intro'}
-               </button>
-               <span className="text-slate-900 font-bold text-sm group-hover:translate-x-1 transition-transform">Start Free Tour <i className="fas fa-arrow-right ml-1"></i></span>
-          </div>
-      </div>
+        <div className="p-6 flex flex-col flex-1">
+            <div className="flex gap-2 mb-3">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{tour.duration}</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{tour.distance}</span>
+            </div>
+            <h3 className="text-xl font-heading font-bold text-slate-900 mb-2 leading-tight group-hover:text-purple-600 transition-colors">{tour.title}</h3>
+            <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 font-medium">{tour.description}</p>
+            <div className="mt-auto pt-6 flex justify-between items-center border-t border-slate-50">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{tour.stops.length} Paradas</span>
+                <span className="text-purple-600 font-black text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">Empezar <i className="fas fa-arrow-right ml-1"></i></span>
+            </div>
+        </div>
     </div>
-  );
-};
+);
 
-export const ActiveTourCard: React.FC<any> = (props) => {
-    const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, userLocation, onEnrichStop, language } = props;
-    const currentStop = tour.stops[currentStopIndex] as Stop;
+export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ 
+    tour, currentStopIndex, onNext, onPrev, onCheckIn, onEnrichStop, userLocation, audioPlayingId, audioLoadingId, onPlayAudio, t 
+}) => {
+    const stop = tour.stops[currentStopIndex];
     
-    const t = (key: string) => UI_TEXT[language]?.[key] || UI_TEXT['en']?.[key] || key;
-
-    const [isCheckedIn, setIsCheckedIn] = useState(currentStop.visited);
-    const [distance, setDistance] = useState<number | null>(null);
-    const [copiedHook, setCopiedHook] = useState(false);
-    const [isEnriching, setIsEnriching] = useState(false);
-
-    useEffect(() => { 
-        setIsCheckedIn(currentStop.visited);
-        setCopiedHook(false);
-        if (!currentStop.isRichInfo && onEnrichStop) {
-            setIsEnriching(true);
-            onEnrichStop(currentStop.id).finally(() => setIsEnriching(false));
-        }
-    }, [currentStopIndex, currentStop, onEnrichStop]);
-
     useEffect(() => {
-        if (userLocation && currentStop.latitude && currentStop.longitude) {
-            const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
-            setDistance(Math.round(dist));
-        }
-    }, [userLocation, currentStop]);
-
-    const handleCopyHook = () => {
-        if (currentStop.photoShot?.instagramHook) {
-            navigator.clipboard.writeText(currentStop.photoShot.instagramHook);
-            setCopiedHook(true);
-            setTimeout(() => setCopiedHook(false), 2000);
-            onCheckIn(currentStop.id, 10, 'photo'); 
-        }
-    };
+        if (!stop.isRichInfo) onEnrichStop(stop.id);
+    }, [currentStopIndex]);
 
     const formatDescription = (text: string) => {
-        if (!text) return "";
-        return text.split('\n').filter(l => l.trim()).map((line, i) => {
-            if (line.includes('[HOOK]')) return <p key={i} className="mb-6 text-xl font-heading font-black text-slate-900 leading-tight border-l-4 border-purple-500 pl-4 bg-purple-50 py-2 rounded-r-lg">{line.replace('[HOOK]', '').trim()}</p>;
-            if (line.includes('[STORY]')) {
-                const storyContent = line.replace('[STORY]', '').trim();
-                return <div key={i} className="mb-8 text-slate-700 leading-relaxed space-y-4 font-medium text-base">{storyContent.split('. ').map((p, idx) => <p key={idx}>{p}.</p>)}</div>;
-            }
-            if (line.includes('[SECRET]')) return (
-                <div key={i} className="mb-6 bg-slate-900 text-white p-6 rounded-2xl relative overflow-hidden group border-b-4 border-purple-500">
-                    <i className="fas fa-eye-slash absolute -right-2 -top-2 text-5xl text-white/10 rotate-12 transition-transform group-hover:scale-125"></i>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 mb-2">Insider Secret</p>
-                    <p className="text-sm font-medium leading-relaxed italic">{line.replace('[SECRET]', '').trim()}</p>
-                </div>
-            );
-            if (line.includes('[SMART_TIP]')) return (
-                <div key={i} className="mb-6 bg-amber-50 border border-amber-100 p-4 rounded-xl flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center flex-shrink-0 text-xs shadow-sm"><i className="fas fa-lightbulb"></i></div>
-                    <div>
-                        <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-0.5">Local Knowledge</p>
-                        <p className="text-xs text-amber-900 font-bold leading-tight">{line.replace('[SMART_TIP]', '').trim()}</p>
-                    </div>
-                </div>
-            );
-            if (line.includes('[QUEST]')) return (
-                <div key={i} className="mb-6 bg-indigo-600 text-white p-5 rounded-2xl shadow-xl transform rotate-1">
-                    <div className="flex items-center gap-3 mb-2">
-                        <i className="fas fa-map-signs text-yellow-300"></i>
-                        <p className="text-[10px] font-black uppercase tracking-widest">{t('quest')}</p>
-                    </div>
-                    <p className="text-sm font-bold leading-tight">{line.replace('[QUEST]', '').trim()}</p>
-                </div>
-            );
-            return <p key={i} className="mb-4 text-slate-600 leading-relaxed font-medium">{line}</p>;
+        return text.split('\n').map((line, i) => {
+            if (line.includes('[HOOK]')) return <p key={i} className="mb-4 text-lg font-black text-slate-900 leading-tight italic">{line.replace('[HOOK]', '').trim()}</p>;
+            if (line.includes('[STORY]')) return <p key={i} className="mb-4 text-slate-600 leading-relaxed font-medium">{line.replace('[STORY]', '').trim()}</p>;
+            return <p key={i} className="mb-4 text-slate-600 leading-relaxed">{line}</p>;
         });
     };
-    
-    const CHECKIN_RADIUS = 300; 
-    const isWithinRange = distance !== null && distance <= CHECKIN_RADIUS;
-    const canCheckIn = isWithinRange && !isCheckedIn;
 
     return (
         <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar">
-             <div className="relative h-64 w-full flex-shrink-0 bg-slate-200">
-                <img 
-                    src={currentStop.imageUrl || `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1080&q=80`} 
-                    className="w-full h-full object-cover" 
-                    alt={currentStop.name}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/40"></div>
-                <div className="absolute bottom-6 left-6 right-6">
-                    <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 bg-white/95 backdrop-blur shadow-sm border border-white text-slate-800`}>
-                         {t('stop')} {currentStopIndex + 1} of {tour.stops.length}
-                    </span>
-                    <h1 className="text-3xl font-heading font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{currentStop.name}</h1>
+            <div className="px-6 py-8 space-y-6">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest px-3 py-1 bg-purple-50 rounded-full border border-purple-100">
+                           {t('tourGuidePersona')} • {currentStopIndex + 1}/{tour.stops.length}
+                        </span>
+                        <h2 className="text-3xl font-heading font-black text-slate-900 tracking-tight leading-none">{stop.name}</h2>
+                    </div>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => onPlayAudio(stop.id, stop.description)}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm border ${audioPlayingId === stop.id ? 'bg-red-50 text-red-600 border-red-100' : 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100'}`}
+                        >
+                            {audioLoadingId === stop.id ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                                <i className={`fas ${audioPlayingId === stop.id ? 'fa-stop' : 'fa-volume-up'}`}></i>
+                            )}
+                        </button>
+                        <button className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shadow-sm border border-slate-100"><i className="fas fa-share-alt"></i></button>
+                    </div>
                 </div>
-             </div>
 
-             <div className="px-6 lg:px-12 pb-12 pt-6">
-                 {/* Progress Bar */}
-                 <div className="w-full h-1.5 bg-slate-100 rounded-full mb-8 overflow-hidden">
-                     <div 
-                        className="h-full bg-gradient-to-r from-purple-600 to-pink-500 transition-all duration-700" 
-                        style={{ width: `${((currentStopIndex + 1) / tour.stops.length) * 100}%` }}
-                     ></div>
-                 </div>
+                <div className="prose prose-slate max-w-none">
+                    {formatDescription(stop.description)}
+                </div>
 
-                 {isEnriching && (
-                     <div className="flex items-center gap-3 mb-6 bg-purple-50 p-3 rounded-xl border border-purple-100 text-purple-600 animate-pulse">
-                         <i className="fas fa-book-open"></i>
-                         <span className="text-xs font-bold uppercase tracking-widest">{t('enriching')}</span>
-                     </div>
-                 )}
+                {/* Sección Única: Chismes de Local */}
+                {stop.gossip && (
+                    <div className="bg-amber-50 p-6 rounded-[2rem] border-2 border-dashed border-amber-200 relative overflow-hidden group">
+                        <div className="absolute -right-4 -top-4 opacity-10 transform rotate-12 transition-transform group-hover:rotate-45">
+                            <i className="fas fa-comment-medical text-6xl text-amber-900"></i>
+                        </div>
+                        <div className="relative z-10">
+                            <h4 className="flex items-center gap-2 text-amber-900 font-black uppercase text-[10px] tracking-widest mb-3">
+                                <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                {t('insiderGossip')}
+                            </h4>
+                            <p className="text-amber-900/80 font-bold italic text-sm leading-relaxed">"{stop.gossip}"</p>
+                        </div>
+                    </div>
+                )}
 
-                 {distance !== null && !isEnriching && (
-                     <div className="flex items-center gap-2 mb-6">
-                         <div className={`px-3 py-1 rounded-full text-[10px] font-bold border flex items-center gap-2 ${isWithinRange ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
-                             <i className={`fas ${isWithinRange ? 'fa-check-circle' : 'fa-location-arrow'}`}></i>
-                             {distance < 1000 ? `${distance}m away` : `${(distance/1000).toFixed(1)}km away`}
-                         </div>
-                     </div>
-                 )}
+                {/* Sección Única: Secretos Guardados / Did You Know */}
+                {stop.curiosity && (
+                    <div className="bg-slate-900 p-6 rounded-[2rem] text-white relative overflow-hidden">
+                        <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '15px 15px'}}></div>
+                        <div className="relative z-10">
+                            <h4 className="text-yellow-400 font-black uppercase text-[10px] tracking-widest mb-2">{t('didYouKnow')}</h4>
+                            <p className="text-slate-300 text-sm font-medium leading-relaxed">{stop.curiosity}</p>
+                        </div>
+                    </div>
+                )}
 
-                 <div className="prose prose-slate max-w-none mb-10">
-                     {formatDescription(currentStop.description)}
-                 </div>
+                <div className="pt-6 space-y-4">
+                    <button 
+                        onClick={() => onCheckIn(stop.id, 50, stop.type)} 
+                        disabled={stop.visited}
+                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 ${stop.visited ? 'bg-green-100 text-green-600 cursor-default' : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:shadow-purple-200'}`}
+                    >
+                        {stop.visited ? <><i className="fas fa-check-circle"></i> {t('collected')}</> : <><i className="fas fa-map-marker-alt"></i> {t('checkin')} +50 {t('miles')}</>}
+                    </button>
 
-                 {/* Photo Shot Feature Section */}
-                 {currentStop.photoShot && !isEnriching && (
-                     <div className="mb-10 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
-                         <div className="absolute -top-4 -right-4 w-32 h-32 bg-purple-600 rounded-full blur-3xl opacity-20 group-hover:scale-150 transition-transform duration-1000"></div>
-                         <div className="relative z-10 text-white">
-                             <div className="flex items-center justify-between mb-6">
-                                 <div className="flex items-center gap-2">
-                                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 text-white flex items-center justify-center shadow-lg">
-                                         <i className="fas fa-camera"></i>
-                                     </div>
-                                     <div>
-                                         <h4 className="font-heading font-bold text-lg leading-none">{t('photoShot')}</h4>
-                                         <p className="text-[10px] text-purple-300 font-bold uppercase tracking-widest mt-1">Lens Mastery</p>
-                                     </div>
-                                 </div>
-                                 <div className="bg-white/10 backdrop-blur px-3 py-1 rounded-full border border-white/20 text-[10px] font-bold text-yellow-400">
-                                     +{currentStop.photoShot.milesReward} Miles
-                                 </div>
-                             </div>
-
-                             <div className="space-y-4 mb-6">
-                                 <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">{t('angle')}</p>
-                                     <p className="text-sm text-slate-100 font-medium leading-relaxed">{currentStop.photoShot.angle}</p>
-                                 </div>
-                                 <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">{t('bestTime')}</p>
-                                     <p className="text-sm text-slate-100 font-medium leading-relaxed">
-                                         <i className="far fa-clock mr-1.5 text-purple-400"></i>
-                                         {currentStop.photoShot.bestTime}
-                                     </p>
-                                 </div>
-                             </div>
-
-                             <div className="bg-white text-slate-900 p-4 rounded-2xl mb-6 italic text-sm font-medium text-center relative shadow-inner">
-                                 <i className="fas fa-quote-left absolute top-2 left-2 text-slate-200"></i>
-                                 "{currentStop.photoShot.instagramHook}"
-                             </div>
-
-                             <button 
-                                onClick={handleCopyHook}
-                                className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg
-                                    ${copiedHook ? 'bg-green-500 text-white' : 'bg-white text-slate-900 hover:bg-slate-100'}`}
-                             >
-                                 {copiedHook ? <i className="fas fa-check"></i> : <i className="fab fa-instagram"></i>}
-                                 {copiedHook ? t('shared') : t('copyHook')}
-                             </button>
-                         </div>
-                     </div>
-                 )}
-                 
-                 {currentStop.curiosity && !isEnriching && (
-                     <div className="bg-indigo-50 border-l-4 border-indigo-600 p-6 rounded-r-xl mb-10 shadow-sm">
-                         <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-2">Did You Know?</p>
-                         <p className="text-indigo-900 font-bold leading-relaxed">{currentStop.curiosity}</p>
-                     </div>
-                 )}
-
-                 <div className="space-y-4">
-                     <button 
-                        onClick={() => onCheckIn(currentStop.id, isWithinRange ? 50 : 0, currentStop.type)}
-                        disabled={!canCheckIn || isEnriching}
-                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm flex items-center justify-center gap-2 shadow-lg transition-all transform active:scale-95
-                            ${isCheckedIn 
-                                ? 'bg-green-100 text-green-700 shadow-none cursor-default' 
-                                : !isWithinRange && distance !== null
-                                    ? 'bg-slate-100 text-slate-300 cursor-not-allowed border-dashed border-2 border-slate-200 shadow-none'
-                                    : 'bg-slate-900 text-white hover:bg-black hover:shadow-xl'
-                            } ${isEnriching ? 'opacity-50' : ''}`}
-                     >
-                         {isCheckedIn ? (
-                             <><i className="fas fa-check-circle"></i> {t('collected')}</>
-                         ) : !isWithinRange && distance !== null ? (
-                             <><i className="fas fa-lock"></i> {t('tooFar')} ({distance}m)</>
-                         ) : (
-                             <><i className="fas fa-map-marker-alt"></i> {t('checkin')} (+50 Miles)</>
-                         )}
-                     </button>
-
-                     <button 
-                        onClick={() => onPlayAudio(currentStop.id, currentStop.description)} 
-                        disabled={isEnriching}
-                        className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm border border-slate-200 ${audioPlayingId === currentStop.id ? 'bg-red-50 text-red-500 border-red-200' : 'bg-white text-slate-700 hover:bg-slate-50'} ${isEnriching ? 'opacity-50' : ''}`}
-                     >
-                         {audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin"></i> : audioPlayingId === currentStop.id ? <i className="fas fa-pause"></i> : <i className="fas fa-headphones"></i>}
-                         {audioPlayingId === currentStop.id ? t('pause') : t('listen')}
-                     </button>
-
-                     <div className="grid grid-cols-2 gap-4">
-                         <button 
-                            onClick={onPrev} 
-                            disabled={currentStopIndex === 0 || isEnriching}
-                            className={`py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${currentStopIndex === 0 || isEnriching ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-200'}`}
-                         >
-                             <i className="fas fa-arrow-left"></i> {t('prev')}
-                         </button>
-                         <button 
-                            onClick={onNext} 
-                            disabled={isEnriching}
-                            className={`py-4 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-xl hover:shadow-purple-200 flex items-center justify-center gap-2 active:scale-95 ${isEnriching ? 'opacity-50' : ''}`}
-                         >
-                             {t('next')} <i className="fas fa-arrow-right"></i>
-                         </button>
-                     </div>
-                 </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button onClick={onPrev} disabled={currentStopIndex === 0} className={`py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] border-2 border-slate-100 text-slate-400 transition-all ${currentStopIndex === 0 ? 'opacity-30' : 'hover:bg-slate-50 text-slate-600'}`}>
+                           <i className="fas fa-arrow-left mr-2"></i> {t('prev')}
+                        </button>
+                        <button onClick={onNext} className="py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-slate-900 text-white shadow-lg active:scale-95 transition-all">
+                           {t('next')} <i className="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

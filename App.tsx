@@ -34,7 +34,7 @@ const pcmToAudioBuffer = (data: Uint8Array, ctx: AudioContext, sampleRate: numbe
   return buffer;
 };
 
-// --- TRANSLATIONS DICTIONARY (FULL RESTORATION) ---
+// --- TRANSLATIONS DICTIONARY (FULL) ---
 const TRANSLATIONS: any = {
   en: {
     login: "Login", register: "Register", signin: "Sign In", createAccount: "Start Adventure",
@@ -58,7 +58,7 @@ const TRANSLATIONS: any = {
     asiaDestinations: "Exotic Asia",
     americasDestinations: "The Americas",
     africaDestinations: "Magic Africa",
-    searchPlaceholder: "Search any city in the world...",
+    searchPlaceholder: "Search any city (e.g. Kyoto, Lima)...",
     downloadOffline: "Download Offline",
     tools: "Travel Tools",
     cityIntel: "City Intel",
@@ -69,7 +69,9 @@ const TRANSLATIONS: any = {
     costLabel: "Cost",
     heroTitle: "Discover the World",
     heroSubtitle: "Free Tours & Smart Travel",
-    lingoLabel: "Speak Like a Local"
+    lingoLabel: "Speak Like a Local",
+    aiPersonalizing: "Personalizing for you...",
+    aiMatching: "Matching interests..."
   },
   es: {
     login: "Entrar", register: "Registrarse", signin: "Entrar", createAccount: "Empezar Aventura",
@@ -93,7 +95,7 @@ const TRANSLATIONS: any = {
     asiaDestinations: "Asia Exótica",
     americasDestinations: "Las Américas",
     africaDestinations: "África Mágica",
-    searchPlaceholder: "Busca cualquier ciudad del mundo...",
+    searchPlaceholder: "Busca cualquier ciudad (ej. Kyoto, Lima)...",
     downloadOffline: "Descargar Offline",
     tools: "Herramientas",
     cityIntel: "Info Práctica",
@@ -104,7 +106,185 @@ const TRANSLATIONS: any = {
     costLabel: "Coste",
     heroTitle: "Descubre el Mundo",
     heroSubtitle: "Free Tours y Viajes Inteligentes",
-    lingoLabel: "Habla como un Local"
+    lingoLabel: "Habla como un Local",
+    aiPersonalizing: "Personalizando para ti...",
+    aiMatching: "Cruzando intereses..."
+  },
+  ca: {
+    login: "Entrar", register: "Registrar-se", signin: "Inicia sessió", createAccount: "Comença l'Aventura",
+    name: "Nom", surname: "Cognoms", email: "Correu", password: "Contrasenya", birthDate: "Data Naixement",
+    invalidEmail: "Correu invàlid", passShort: "Contrasenya curta", nameReq: "Camps requerits", dateReq: "Data requerida",
+    welcome: "Hola,", whereTo: "On anem avui?",
+    explore: "Explorar", passport: "Passaport", shop: "Botiga", connect: "Connectar",
+    myPassport: "El Meu Passaport", edit: "Editar", save: "Desa", signOut: "Tanca Sessió",
+    ranking: "Rànquing", shopComing: "Properament", baseCity: "Ciutat Base", bio: "Bio",
+    surnameLabel: "Cognoms", givenNameLabel: "Nom", dateIssue: "Data Expedició",
+    avatarUrl: "Canvia Foto", share: "Comparteix", visitedPlaces: "Llocs Visitats",
+    toursDone: "Tours Fets", miles: "Milles BDAI", shareText: "Mira les meves estadístiques a Bdai!",
+    nextLevel: "Següent Nivell", aiMemory: "Memòria IA", generate: "Generar",
+    culturePoints: "Cultura", foodPoints: "Gastronomia", photoPoints: "Fotografia",
+    username: "Usuari", usernameReq: "Usuari requerit", publicProfile: "Perfil Públic", rankingVisibility: "Visible al Rànquing",
+    privateProfile: "Perfil Privat",
+    featuredRegion: "La Rioja", spainDestinations: "Joies d'Espanya", topWorldDestinations: "Top Mundial",
+    worldDestinations: "Europa Clàssica", asiaDestinations: "Àsia Exòtica", americasDestinations: "Amèrica", africaDestinations: "Àfrica Màgica",
+    searchPlaceholder: "Cerca qualsevol ciutat...", downloadOffline: "Descarregar", tools: "Eines",
+    cityIntel: "Info Pràctica", loadingIntel: "IA Analitzant...", transportLabel: "Transport", bestTimeLabel: "Millor Època",
+    dishLabel: "Plat Típic", costLabel: "Cost", heroTitle: "Descobreix el Món", heroSubtitle: "Free Tours i Viatges Intel·ligents",
+    lingoLabel: "Parla com un local", aiPersonalizing: "Personalitzant...", aiMatching: "Creuant interessos..."
+  },
+  eu: {
+    login: "Sartu", register: "Erregistratu", signin: "Hasi saioa", createAccount: "Hasi Abentura",
+    name: "Izena", surname: "Abizenak", email: "Emaila", password: "Pasahitza", birthDate: "Jaiotze data",
+    invalidEmail: "Email okerra", passShort: "Pasahitz laburregia", nameReq: "Izena beharrezkoa", dateReq: "Data beharrezkoa",
+    welcome: "Kaixo,", whereTo: "Nora goaz gaur?",
+    explore: "Arakatu", passport: "Pasaportea", shop: "Denda", connect: "Konektatu",
+    myPassport: "Nire Pasaportea", edit: "Editatu", save: "Gorde", signOut: "Saioa itxi",
+    ranking: "Sailkapena", shopComing: "Laster", baseCity: "Oinarrizko Hiria", bio: "Bio",
+    surnameLabel: "Abizenak", givenNameLabel: "Izena", dateIssue: "Jaulkipen Data",
+    avatarUrl: "Aldatu Argazkia", share: "Partekatu", visitedPlaces: "Bisitatutako Lekuak",
+    toursDone: "Egindako Tours", miles: "BDAI Milak", shareText: "Ikusi nire bidaiak Bdai-n!",
+    nextLevel: "Hurrengo Maila", aiMemory: "IA Oroimena", generate: "Sortu",
+    culturePoints: "Kultura", foodPoints: "Gastronomia", photoPoints: "Argazkilaritza",
+    username: "Erabiltzailea", usernameReq: "Erabiltzailea beharrezkoa", publicProfile: "Profil Publikoa", rankingVisibility: "Ikusgai Sailkapenean",
+    privateProfile: "Profil Pribatua",
+    featuredRegion: "Errioxa", spainDestinations: "Espainiako Harribitxiak", topWorldDestinations: "Munduko Top",
+    worldDestinations: "Europa Klasikoa", asiaDestinations: "Asia Exotikoa", americasDestinations: "Amerikak", africaDestinations: "Afrika Magikoa",
+    searchPlaceholder: "Bilatu edozein hiri...", downloadOffline: "Deskargatu", tools: "Tresnak",
+    cityIntel: "Info Praktikoa", loadingIntel: "IA Aztertzen...", transportLabel: "Garraioa", bestTimeLabel: "Garai Onena",
+    dishLabel: "Plater Tipikoa", costLabel: "Kostua", heroTitle: "Mundua Ezagutu", heroSubtitle: "Doako Tours eta Bidaia Adimendunak",
+    lingoLabel: "Tokiko Hizkera", aiPersonalizing: "Pertsonalizatzen...", aiMatching: "Interesak lotzen..."
+  },
+  fr: {
+    login: "Connexion", register: "S'inscrire", signin: "Se connecter", createAccount: "Commencer",
+    name: "Prénom", surname: "Nom", email: "Email", password: "Mot de passe", birthDate: "Date de naissance",
+    invalidEmail: "Email invalide", passShort: "Mot de passe court", nameReq: "Nom requis", dateReq: "Date requise",
+    welcome: "Bonjour,", whereTo: "Où allons-nous ?",
+    explore: "Explorer", passport: "Passeport", shop: "Boutique", connect: "Connecter",
+    myPassport: "Mon Passeport", edit: "Modifier", save: "Enregistrer", signOut: "Déconnexion",
+    ranking: "Classement", shopComing: "Bientôt", baseCity: "Ville de base", bio: "Bio",
+    surnameLabel: "Nom", givenNameLabel: "Prénoms", dateIssue: "Date d'émission",
+    avatarUrl: "Changer photo", share: "Partager", visitedPlaces: "Lieux visités",
+    toursDone: "Tours finis", miles: "Miles BDAI", shareText: "Regardez mes stats sur Bdai !",
+    nextLevel: "Niveau suivant", aiMemory: "Mémoire IA", generate: "Générer",
+    culturePoints: "Culture", foodPoints: "Gastronomie", photoPoints: "Photo",
+    username: "Pseudo", usernameReq: "Pseudo requis", publicProfile: "Profil Public", rankingVisibility: "Visible au classement",
+    privateProfile: "Profil Privé",
+    featuredRegion: "La Rioja", spainDestinations: "Espagne", topWorldDestinations: "Top Monde",
+    worldDestinations: "Europe", asiaDestinations: "Asie", americasDestinations: "Amériques", africaDestinations: "Afrique",
+    searchPlaceholder: "Chercher une ville...", downloadOffline: "Télécharger", tools: "Outils",
+    cityIntel: "Infos Ville", loadingIntel: "Analyse IA...", transportLabel: "Transport", bestTimeLabel: "Meilleur moment",
+    dishLabel: "Plat local", costLabel: "Coût", heroTitle: "Découvrir le Monde", heroSubtitle: "Free Tours et Voyage Intelligent",
+    lingoLabel: "Parler local", aiPersonalizing: "Personnalisation...", aiMatching: "Analyse intérêts..."
+  },
+  de: {
+    login: "Anmelden", register: "Registrieren", signin: "Einloggen", createAccount: "Starten",
+    name: "Vorname", surname: "Nachname", email: "E-Mail", password: "Passwort", birthDate: "Geburtsdatum",
+    invalidEmail: "Ungültige E-Mail", passShort: "Passwort zu kurz", nameReq: "Name erforderlich", dateReq: "Datum erforderlich",
+    welcome: "Hallo,", whereTo: "Wohin geht's?",
+    explore: "Entdecken", passport: "Pass", shop: "Shop", connect: "Verbinden",
+    myPassport: "Mein Pass", edit: "Bearbeiten", save: "Speichern", signOut: "Abmelden",
+    ranking: "Rangliste", shopComing: "Bald verfügbar", baseCity: "Basisstadt", bio: "Bio",
+    surnameLabel: "Nachname", givenNameLabel: "Vorname", dateIssue: "Ausstellungsdatum",
+    avatarUrl: "Foto ändern", share: "Teilen", visitedPlaces: "Besuchte Orte",
+    toursDone: "Touren", miles: "Meilen", shareText: "Sieh dir meine Reisen auf Bdai an!",
+    nextLevel: "Nächstes Level", aiMemory: "KI-Speicher", generate: "Erstellen",
+    culturePoints: "Kultur", foodPoints: "Essen", photoPoints: "Foto",
+    username: "Benutzer", usernameReq: "Benutzer erforderlich", publicProfile: "Öffentlich", rankingVisibility: "Sichtbar",
+    privateProfile: "Privat",
+    featuredRegion: "La Rioja", spainDestinations: "Spanien", topWorldDestinations: "Welt Top",
+    worldDestinations: "Europa", asiaDestinations: "Asien", americasDestinations: "Amerika", africaDestinations: "Afrika",
+    searchPlaceholder: "Stadt suchen...", downloadOffline: "Download", tools: "Werkzeuge",
+    cityIntel: "Stadt-Info", loadingIntel: "KI analysiert...", transportLabel: "Verkehr", bestTimeLabel: "Beste Zeit",
+    dishLabel: "Gericht", costLabel: "Kosten", heroTitle: "Entdecke die Welt", heroSubtitle: "Kostenlose Touren & Intelligentes Reisen",
+    lingoLabel: "Lokale Sprache", aiPersonalizing: "Personalisierung...", aiMatching: "Interessen..."
+  },
+  pt: {
+    login: "Entrar", register: "Registar", signin: "Entrar", createAccount: "Começar",
+    name: "Nome", surname: "Apelido", email: "Email", password: "Senha", birthDate: "Nascimento",
+    invalidEmail: "Email inválido", passShort: "Senha curta", nameReq: "Nome necesario", dateReq: "Data necesaria",
+    welcome: "Olá,", whereTo: "Para onde vamos?",
+    explore: "Explorar", passport: "Passaporte", shop: "Loja", connect: "Conectar",
+    myPassport: "Meu Passaporte", edit: "Editar", save: "Salvar", signOut: "Sair",
+    ranking: "Ranking", shopComing: "Em breve", baseCity: "Cidade Base", bio: "Bio",
+    surnameLabel: "Apelido", givenNameLabel: "Nome", dateIssue: "Data Emissão",
+    avatarUrl: "Mudar Foto", share: "Partilhar", visitedPlaces: "Lugares Visitados",
+    toursDone: "Tours", miles: "Milhas", shareText: "Vê as minhas viagens no Bdai!",
+    nextLevel: "Próximo Nível", aiMemory: "Memória IA", generate: "Gerar",
+    culturePoints: "Cultura", foodPoints: "Gastronomia", photoPoints: "Foto",
+    username: "Utilizador", usernameReq: "Utilizador necesario", publicProfile: "Público", rankingVisibility: "Visível",
+    privateProfile: "Privado",
+    featuredRegion: "La Rioja", spainDestinations: "Espanha", topWorldDestinations: "Top Mundo",
+    worldDestinations: "Europa", asiaDestinations: "Ásia", americasDestinations: "Américas", africaDestinations: "África",
+    searchPlaceholder: "Procurar cidade...", downloadOffline: "Baixar", tools: "Ferramentas",
+    cityIntel: "Info Cidade", loadingIntel: "IA Analisando...", transportLabel: "Transporte", bestTimeLabel: "Melhor Época",
+    dishLabel: "Prato Local", costLabel: "Custo", heroTitle: "Descobre o Mundo", heroSubtitle: "Free Tours e Viagem Inteligente",
+    lingoLabel: "Falar Local", aiPersonalizing: "Personalizando...", aiMatching: "Interesses..."
+  },
+  zh: {
+    login: "登录", register: "注册", signin: "登录", createAccount: "开始冒险",
+    name: "名字", surname: "姓氏", email: "邮箱", password: "密码", birthDate: "出生日期",
+    invalidEmail: "无效邮箱", passShort: "密码太短", nameReq: "需要姓名", dateReq: "需要日期",
+    welcome: "你好,", whereTo: "今天去哪里？",
+    explore: "探索", passport: "护照", shop: "商店", connect: "连接",
+    myPassport: "我的护照", edit: "编辑", save: "保存", signOut: "退出",
+    ranking: "排名", shopComing: "即将推出", baseCity: "居住城市", bio: "简介",
+    surnameLabel: "姓", givenNameLabel: "名", dateIssue: "签发日期",
+    avatarUrl: "更改照片", share: "分享", visitedPlaces: "访问地点",
+    toursDone: "完成旅程", miles: "里程", shareText: "查看我的Bdai旅行数据！",
+    nextLevel: "下一级", aiMemory: "AI记忆", generate: "生成",
+    culturePoints: "文化", foodPoints: "美食", photoPoints: "摄影",
+    username: "用户名", usernameReq: "需要用户名", publicProfile: "公开", rankingVisibility: "可见",
+    privateProfile: "私密",
+    featuredRegion: "里奥哈", spainDestinations: "西班牙", topWorldDestinations: "世界精选",
+    worldDestinations: "欧洲", asiaDestinations: "亚洲", americasDestinations: "美洲", africaDestinations: "非洲",
+    searchPlaceholder: "搜索城市...", downloadOffline: "下载", tools: "工具",
+    cityIntel: "城市信息", loadingIntel: "AI分析中...", transportLabel: "交通", bestTimeLabel: "最佳时间",
+    dishLabel: "特色菜", costLabel: "费用", heroTitle: "探索世界", heroSubtitle: "免费游览 & 智能旅行",
+    lingoLabel: "像本地人一样说话", aiPersonalizing: "个性化中...", aiMatching: "匹配兴趣..."
+  },
+  ja: {
+    login: "ログイン", register: "登録", signin: "ログイン", createAccount: "冒険を始める",
+    name: "名前", surname: "名字", email: "メール", password: "パスワード", birthDate: "生年月日",
+    invalidEmail: "無効なメール", passShort: "パスワードが短すぎます", nameReq: "名前が必要です", dateReq: "日付が必要です",
+    welcome: "こんにちは、", whereTo: "今日はどこへ？",
+    explore: "探索", passport: "パスポート", shop: "ショップ", connect: "接続",
+    myPassport: "マイパスポート", edit: "編集", save: "保存", signOut: "ログアウト",
+    ranking: "ランキング", shopComing: "近日公開", baseCity: "拠点都市", bio: "自己紹介",
+    surnameLabel: "姓", givenNameLabel: "名", dateIssue: "発行日",
+    avatarUrl: "写真変更", share: "共有", visitedPlaces: "訪問地",
+    toursDone: "完了ツアー", miles: "マイル", shareText: "Bdaiでの旅行記録を見て！",
+    nextLevel: "次のレベル", aiMemory: "AIメモリー", generate: "生成",
+    culturePoints: "文化", foodPoints: "美食", photoPoints: "写真",
+    username: "ユーザー名", usernameReq: "必須", publicProfile: "公開", rankingVisibility: "表示",
+    privateProfile: "非公開",
+    featuredRegion: "ラ・リオハ", spainDestinations: "スペイン", topWorldDestinations: "世界トップ",
+    worldDestinations: "ヨーロッパ", asiaDestinations: "アジア", americasDestinations: "アメリカ", africaDestinations: "アフリカ",
+    searchPlaceholder: "都市を検索...", downloadOffline: "ダウンロード", tools: "ツール",
+    cityIntel: "都市情報", loadingIntel: "AI分析中...", transportLabel: "交通", bestTimeLabel: "ベストシーズン",
+    dishLabel: "名物料理", costLabel: "費用", heroTitle: "世界を発見", heroSubtitle: "無料ツアー ＆ スマートトラベル",
+    lingoLabel: "地元の言葉", aiPersonalizing: "パーソナライズ中...", aiMatching: "興味を分析中..."
+  },
+  ar: {
+    login: "دخول", register: "تسجيل", signin: "دخول", createAccount: "ابدأ المغامرة",
+    name: "الاسم", surname: "اللقب", email: "البريد", password: "كلمة السر", birthDate: "تاريخ الميلاد",
+    invalidEmail: "بريد غير صالح", passShort: "كلمة السر قصيرة", nameReq: "الاسم مطلوب", dateReq: "التاريخ مطلوب",
+    welcome: "مرحباً،", whereTo: "إلى أين اليوم؟",
+    explore: "استكشف", passport: "جواز السفر", shop: "المتجر", connect: "تواصل",
+    myPassport: "جوازي", edit: "تعديل", save: "حفظ", signOut: "خروج",
+    ranking: "الترتيب", shopComing: "قريباً", baseCity: "المدينة", bio: "نبذة",
+    surnameLabel: "اللقب", givenNameLabel: "الاسم", dateIssue: "تاريخ الإصدار",
+    avatarUrl: "تغيير الصورة", share: "مشاركة", visitedPlaces: "أماكن تمت زيارتها",
+    toursDone: "جولات مكتملة", miles: "أميال", shareText: "شاهد إحصائيات سفري!",
+    nextLevel: "المستوى التالي", aiMemory: "ذاكرة AI", generate: "توليد",
+    culturePoints: "ثقافة", foodPoints: "طعام", photoPoints: "صور",
+    username: "اسم المستخدم", usernameReq: "مطلوب", publicProfile: "عام", rankingVisibility: "مرئي",
+    privateProfile: "خاص",
+    featuredRegion: "لاريوخا", spainDestinations: "إسبانيا", topWorldDestinations: "الأفضل عالمياً",
+    worldDestinations: "أوروبا", asiaDestinations: "آسيا", americasDestinations: "الأمريكيتان", africaDestinations: "أفريقيا",
+    searchPlaceholder: "ابحث عن مدينة...", downloadOffline: "تحميل", tools: "أدوات",
+    cityIntel: "معلومات المدينة", loadingIntel: "تحليل AI...", transportLabel: "نقل", bestTimeLabel: "أفضل وقت",
+    dishLabel: "طبق محلي", costLabel: "تكلفة", heroTitle: "اكتشف العالم", heroSubtitle: "جولات مجانية وسفر ذكي",
+    lingoLabel: "تحدث كالمحليين", aiPersonalizing: "تخصيص...", aiMatching: "مطابقة الاهتمامات..."
   }
 };
 
@@ -169,10 +349,10 @@ const SPAIN_CITIES = [
   { name: 'Valencia', image: 'https://images.unsplash.com/photo-1571216686313-20293946ca35?auto=format&fit=crop&w=800&q=80', desc: 'Artes, Ciencias y Paella.' },
   { name: 'Bilbao', image: 'https://images.unsplash.com/photo-1598522338072-4d43177727e4?auto=format&fit=crop&w=800&q=80', desc: 'Guggenheim y Pinchos.' },
   { name: 'Málaga', image: 'https://images.unsplash.com/photo-1563728736634-192661334c9c?auto=format&fit=crop&w=800&q=80', desc: 'Costa del Sol y Picasso.' },
-  { name: 'San Sebastián', image: 'https://images.unsplash.com/photo-1544918877-460635b6d13e?auto=format&fit=crop&w=800&q=80', desc: 'La Concha y Gastronomía.' },
-  { name: 'Santiago', image: 'https://images.unsplash.com/photo-1593414212513-88697960177?auto=format&fit=crop&w=800&q=80', desc: 'Catedral y el Camino.' },
+  { name: 'San Sebastián', image: 'https://images.unsplash.com/photo-1573220464670-68e4c734e764?auto=format&fit=crop&w=800&q=80', desc: 'La Concha y Gastronomía.' },
+  { name: 'Santiago', image: 'https://images.unsplash.com/photo-1588697960177-33a7637841cc?auto=format&fit=crop&w=800&q=80', desc: 'Catedral y Peregrinos.' },
   { name: 'Cádiz', image: 'https://images.unsplash.com/photo-1596032274476-7472bd4337d1?auto=format&fit=crop&w=800&q=80', desc: 'La Tacita de Plata.' },
-  { name: 'Toledo', image: 'https://images.unsplash.com/photo-1599818818227-1428a2a472c3?auto=format&fit=crop&w=800&q=80', desc: 'La Ciudad de las Tres Culturas.' },
+  { name: 'Toledo', image: 'https://images.unsplash.com/photo-1563820464670-68e4c734e764?auto=format&fit=crop&w=800&q=80', desc: 'Ciudad Imperial.' },
 ];
 
 const WORLD_CITIES = [
@@ -223,7 +403,7 @@ const AFRICA_CITIES = [
   { name: 'Marrakech', image: 'https://images.unsplash.com/photo-1597211684694-8f2382996141?auto=format&fit=crop&w=800&q=80', desc: 'Jemaa el-Fnaa.' },
   { name: 'Cape Town', image: 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?auto=format&fit=crop&w=800&q=80', desc: 'Table Mountain View.' },
   { name: 'Zanzibar', image: 'https://images.unsplash.com/photo-1586861635167-e5223aeb4227?auto=format&fit=crop&w=800&q=80', desc: 'Stone Town & Blue.' },
-  { name: 'Casablanca', image: 'https://images.unsplash.com/photo-1545656184-7a9159d32d66?auto=format&fit=crop&w=800&q=80', desc: 'La joya blanca y su gran mezquita.' },
+  { name: 'Casablanca', image: 'https://images.unsplash.com/photo-1576675466969-38eeae4b41f6?auto=format&fit=crop&w=800&q=80', desc: 'Hassan II Mosque.' },
   { name: 'Nairobi', image: 'https://images.unsplash.com/photo-1523805009345-7448845a9e53?auto=format&fit=crop&w=800&q=80', desc: 'City & Savanna.' },
 ];
 
@@ -383,7 +563,8 @@ export default function App() {
     
     try {
         const [generatedTours, generatedInfo] = await Promise.all([
-            generateToursForCity(city, user.language),
+            // Pass user interests to personalization engine
+            generateToursForCity(city, user.language, user.interests),
             getCityInfo(city, user.language)
         ]);
         setTours(generatedTours);
@@ -562,7 +743,7 @@ export default function App() {
                            onChange={(e) => setUser({...user, language: e.target.value})}
                            className="bg-black/30 text-white text-xs font-bold py-1 px-3 rounded-full outline-none cursor-pointer hover:bg-black/50 transition border border-white/10"
                        >
-                           {LANGUAGES.map(l => <option key={l.code} value={l.code} className="bg-slate-900">{l.name}</option>)}
+                           {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
                        </select>
                    </div>
 
@@ -626,7 +807,7 @@ export default function App() {
           <div className="bg-[#1a365d] rounded-2xl shadow-2xl overflow-hidden text-white relative flex-shrink-0 flex flex-col border-l-[12px] border-[#0f2240] min-h-[580px]">
                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '12px 12px'}}></div>
                <div className="p-6 border-b border-white/10 flex justify-between items-center relative z-10">
-                   <div className="flex items-center gap-3"><div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20"><i className="fas fa-globe-americas"></i></div><span className="font-heading font-bold tracking-widest text-lg">bdai OFFICIAL</span></div>
+                   <div className="flex items-center gap-3"><div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20"><i className="fas fa-globe-americas"></i></div><span className="font-heading font-bold tracking-widest text-lg">BDAI APP</span></div>
                    <div className="text-right"><span className="block font-mono text-xs opacity-60 tracking-wider">RANK</span><span className="font-bold text-yellow-400 text-sm">{user.rank.toUpperCase()}</span></div>
                </div>
                <div className="p-6 flex flex-col gap-6 relative z-10">
@@ -687,7 +868,7 @@ export default function App() {
         <header className="flex justify-between items-center px-6 pt-6">
              <div className="flex items-center gap-2">
                  <div className="w-10 h-10"><BdaiLogo className="w-full h-full" /></div>
-                 <span className="font-heading font-bold text-xl tracking-tight text-slate-900 lowercase">bdai</span>
+                 <span className="font-heading font-bold text-xl tracking-tight text-slate-900 lowercase">bdai app</span>
              </div>
              <div className="flex items-center gap-3">
                  <div className="relative group">
@@ -705,8 +886,15 @@ export default function App() {
             <p className="text-slate-500 font-medium mb-6">{t('whereTo')}</p>
             <form onSubmit={handleSearchSubmit} className="relative group z-30">
                 <i className="fas fa-search absolute left-4 top-3.5 text-slate-400 group-focus-within:text-purple-600 transition-colors"></i>
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('searchPlaceholder') || "Search any city..."} className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3 pl-12 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500 shadow-sm focus:shadow-lg transition-all"/>
+                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('searchPlaceholder')} className="w-full bg-white border-2 border-slate-100 rounded-2xl py-3 pl-12 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500 shadow-sm focus:shadow-lg transition-all"/>
             </form>
+            <div className="mt-2 flex gap-2 overflow-x-auto no-scrollbar">
+                {user.interests.map(interest => (
+                    <span key={interest} className="px-2 py-1 bg-purple-50 text-purple-600 rounded-md text-[10px] font-bold uppercase tracking-wider border border-purple-100">
+                        {interest}
+                    </span>
+                ))}
+            </div>
         </div>
 
         {/* --- GLOBAL SECTIONS REORDERED --- */}
@@ -782,6 +970,7 @@ export default function App() {
                       onCheckIn={handleCheckIn}
                       userLocation={userLocation}
                       onEnrichStop={handleEnrichStop}
+                      t={t}
                   />
               </div>
           </div>
@@ -864,7 +1053,21 @@ export default function App() {
                             </div>
                         )}
                     </div>
-                    {isLoadingTours ? <div className="text-center py-20"><i className="fas fa-spinner fa-spin text-purple-600 text-3xl"></i></div> : tours.map(tour => (<div key={tour.id} className="h-[450px]"><TourCard tour={tour} onSelect={handleTourSelect} onPlayAudio={() => handlePlayAudio(tour.id, tour.description)} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} isFavorite={false} onToggleFavorite={() => {}} /></div>))}
+                    {isLoadingTours ? (
+                        <div className="text-center py-20 space-y-4 animate-fade-in">
+                            <div className="relative w-20 h-20 mx-auto">
+                                <div className="absolute inset-0 border-4 border-purple-200 rounded-full"></div>
+                                <div className="absolute inset-0 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <i className="fas fa-compass text-2xl text-purple-600 animate-pulse"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-heading font-bold text-slate-800">{t('aiPersonalizing')}</h3>
+                                <p className="text-sm text-slate-500">{t('aiMatching')} <span className="font-bold text-purple-600">{user.interests.join(', ')}</span></p>
+                            </div>
+                        </div>
+                    ) : tours.map(tour => (<div key={tour.id} className="h-[450px]"><TourCard tour={tour} onSelect={handleTourSelect} onPlayAudio={() => handlePlayAudio(tour.id, tour.description)} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} isFavorite={false} onToggleFavorite={() => {}} /></div>))}
                 </div>
             </div>
           )}
