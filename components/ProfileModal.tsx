@@ -183,8 +183,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                      />
                  ) : (
                     <p className="font-bold text-slate-800 text-lg leading-tight">
-                        {/* Fix: casting user to any as city is only in UserProfile */}
-                        {(user as any).city || 'World Citizen'}
+                        {user.city || 'World Citizen'}
                     </p>
                  )}
                </div>
@@ -206,8 +205,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                      />
                  ) : (
                     <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                        {/* Fix: casting user to any as bio is only in UserProfile */}
-                        "{(user as any).bio || 'Ready to explore.'}"
+                        "{user.bio || 'Ready to explore.'}"
                     </p>
                  )}
                </div>
