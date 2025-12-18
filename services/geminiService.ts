@@ -2,7 +2,7 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/ge
 import { Tour, Stop, CityInfo } from '../types';
 import { STATIC_TOURS } from '../data/toursData';
 
-const CACHE_PREFIX = 'bdai_cache_v50_'; // Cambié la versión para borrar tu caché vieja
+const CACHE_PREFIX = 'bdai_cache_v51_'; // Subimos versión para limpiar caché vieja
 const MAX_RETRIES = 2; 
 
 // --- 1. CONFIGURACIÓN DEL CLIENTE ---
@@ -15,8 +15,7 @@ const getClient = () => {
     return new GoogleGenerativeAI(key);
 };
 
-// --- 2. DATOS DE EMERGENCIA (FALLBACK) MEJORADOS ---
-// Esto evita la pantalla en blanco si la IA falla
+// --- 2. DATOS DE EMERGENCIA (FALLBACK) ---
 const getFallbackTour = (city: string, language: string): Tour[] => {
     const isEs = language.startsWith('es');
     return [{
@@ -24,8 +23,8 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
         city: city,
         title: isEs ? `Recorrido Clásico por ${city}` : `${city} Classic Walk`,
         description: isEs 
-            ? "El sistema de IA está ocupado. Este es un tour básico de ejemplo para que puedas probar la app." 
-            : "AI system is busy. This is a fallback tour so you can test the app.",
+            ? "El sistema de IA está ocupado. Este es un tour básico de ejemplo." 
+            : "AI system is busy. This is a fallback tour example.",
         duration: "1h",
         distance: "2 km",
         difficulty: "Easy",
@@ -34,22 +33,22 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
         stops: [
             {
                 id: "s1",
-                name: isEs ? "Punto de Inicio (Demo)" : "Start Point (Demo)",
-                description: isEs ? "Aquí comenzaría tu tour si la IA estuviera conectada." : "Your tour would start here.",
-                latitude: 40.4168, // Coordenadas genéricas (Madrid) - No importa, el mapa se centrará
+                name: isEs ? "Punto de Inicio" : "Start Point",
+                description: isEs ? "Aquí comenzaría tu tour." : "Your tour starts here.",
+                latitude: 40.4168, 
                 longitude: -3.7038,
-                type: "historical",
+                type: "historical", // Corregido
                 visited: false,
                 isRichInfo: false,
                 curiosity: "..."
             },
             {
                 id: "s2",
-                name: isEs ? "Plaza Mayor (Ejemplo)" : "Main Square (Example)",
+                name: isEs ? "Plaza Central" : "Main Square",
                 description: "Ejemplo de parada.",
                 latitude: 40.4154,
                 longitude: -3.7074,
-                type: "cultural",
+                type: "culture", // CORREGIDO: "culture" en lugar de "cultural"
                 visited: false,
                 isRichInfo: false,
                 curiosity: "..."
@@ -58,7 +57,7 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
     }];
 };
 
-// --- 3. LIMPIEZA DE RESPUESTAS ---
+// --- 3. UTILIDADES ---
 const cleanJson = (text: string) => {
     try {
         let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -78,7 +77,7 @@ const callAiWithRetry = async (apiCallFn: () => Promise<any>): Promise<any> => {
             return await apiCallFn();
         } catch (error: any) {
             attempt++;
-            console.error(`🔴 Error IA (Intento ${attempt}):`, error); // ¡MIRA LA CONSOLA!
+            console.error(`🔴 Error IA (Intento ${attempt}):`, error);
             if (attempt >= MAX_RETRIES) throw error;
             await new Promise(r => setTimeout(r, 1000));
         }
@@ -88,7 +87,6 @@ const callAiWithRetry = async (apiCallFn: () => Promise<any>): Promise<any> => {
 // --- 4. FUNCIONES PRINCIPALES ---
 
 export const getCityInfo = async (city: string, languageCode: string): Promise<CityInfo> => {
-    // Si la IA falla, devolvemos esto para que no se rompa la UI
     const fallback: CityInfo = { 
         transport: "Metro / Taxi", bestTime: "Anytime", localDish: "Local Food", 
         costLevel: "$$", securityLevel: "Normal", wifiSpots: ["Center"], lingo: ["Hola"], apps: ["Maps"] 
@@ -97,7 +95,7 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
     const genAI = getClient();
     if (!genAI) return fallback;
 
-    const cacheKey = `city_${city}_${languageCode}_v50`;
+    const cacheKey = `city_${city}_${languageCode}_v51`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -108,7 +106,6 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
         const result = await callAiWithRetry(() => model.generateContent(prompt));
         const text = result.response.text();
         
-        // Limpieza extra agresiva para JSON
         let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         if (jsonStr.startsWith('{') && jsonStr.endsWith('}')) {
              const data = JSON.parse(jsonStr);
@@ -117,17 +114,15 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
         }
         return fallback;
     } catch (e) {
-        console.error("Fallo GetCityInfo:", e);
         return fallback;
     }
 };
 
 export const generateToursForCity = async (cityInput: string, languageCode: string): Promise<Tour[]> => {
-    const cacheKey = `tours_${cityInput}_${languageCode}_v50`;
+    const cacheKey = `tours_${cityInput}_${languageCode}_v51`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
-    // Revisar estáticos
     const staticTours = STATIC_TOURS.filter(t => t.city.toLowerCase().includes(cityInput.toLowerCase()));
     if (staticTours.length > 0) return staticTours;
 
@@ -137,7 +132,6 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
     try {
         const model = genAI.getGenerativeModel({ 
             model: "gemini-1.5-flash",
-            // Configuración de seguridad para evitar bloqueos tontos
             safetySettings: [
                 { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
                 { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -165,26 +159,44 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
         const cleanText = cleanJson(result.response.text());
         const tours = JSON.parse(cleanText);
 
-        if (!Array.isArray(tours) || tours.length === 0) throw new Error("JSON inválido o vacío");
+        if (!Array.isArray(tours) || tours.length === 0) throw new Error("JSON inválido");
 
-        // Enriquecer datos
         const finalTours = tours.map((t: any, i: number) => ({
             ...t,
             id: `gen_${i}_${Date.now()}`,
             city: cityInput,
             imageUrl: '',
-            stops: t.stops?.map((s: any, si: number) => ({ ...s, id: `s_${i}_${si}`, visited: false })) || []
+            stops: t.stops?.map((s: any, si: number) => ({ 
+                ...s, 
+                id: `s_${i}_${si}`, 
+                visited: false,
+                // Aseguramos que el tipo sea válido o ponemos uno por defecto
+                type: ["historical", "food", "art", "nature", "photo", "culture"].includes(s.type) ? s.type : "culture"
+            })) || []
         }));
 
         localStorage.setItem(cacheKey, JSON.stringify(finalTours));
         return finalTours;
 
     } catch (e) {
-        console.error("🔴 FALLÓ LA GENERACIÓN DE TOURS:", e);
+        console.error("🔴 FALLO GENERACIÓN TOURS:", e);
         return getFallbackTour(cityInput, languageCode);
     }
 };
 
-export const generateStopDetails = async () => { return { description: "Info unavailable", curiosity: "..." }; };
-export const generateAudio = async () => { return ""; };
-export const generateImage = async () => { return undefined; };
+// --- CORRECCIÓN IMPORTANTE AQUÍ ABAJO ---
+// Ahora aceptamos los argumentos aunque no los usemos, para que App.tsx no se queje
+
+export const generateStopDetails = async (stopName: string, city: string, language: string) => {
+    // Aceptamos los argumentos (stopName, etc) pero devolvemos un genérico para no gastar tokens
+    return { description: "Info unavailable currently.", curiosity: "..." };
+};
+
+export const generateAudio = async (text: string) => {
+    // Aceptamos 'text' para que no dé error TS2554, pero devolvemos vacío
+    return ""; 
+};
+
+export const generateImage = async (prompt: string) => {
+    return undefined;
+};
