@@ -1,37 +1,31 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Tour, Stop, CityInfo } from '../types';
 
-const CACHE_PREFIX = 'bdai_DEBUG_v3_'; 
+const CACHE_PREFIX = 'bdai_FINAL_v1_'; 
 const MAX_RETRIES = 1; 
 
-// --- 1. CONFIGURACIÓN DEL CLIENTE ---
+// --- 1. CLIENTE ---
 const getClient = () => {
     const key = import.meta.env.VITE_API_KEY;
     if (!key) return null; 
     return new GoogleGenerativeAI(key);
 };
 
-// --- 2. TOUR DE EMERGENCIA (ERROR) ---
-const getDebugErrorTour = (city: string, errorMsg: string): Tour[] => {
+// --- 2. TOUR DE EMERGENCIA (Para que no se quede en blanco) ---
+const getFallbackTour = (city: string, title: string, desc: string): Tour[] => {
     return [{
-        id: `error-${Date.now()}`,
+        id: `fb-${Date.now()}`,
         city: city,
-        title: `ERROR: ${errorMsg.slice(0, 30)}...`, 
-        description: `DETALLE TÉCNICO: ${errorMsg}`,
-        duration: "0h",
-        distance: "0 km",
+        title: title, 
+        description: desc,
+        duration: "1h",
+        distance: "2 km",
         difficulty: "Easy",
-        theme: "Error",
+        theme: "General",
         isSponsored: false,
         stops: [{
-            id: "err1", 
-            name: "Error Técnico", 
-            description: errorMsg,
-            latitude: 40.416, 
-            longitude: -3.703, 
-            type: "historical", 
-            visited: false, 
-            isRichInfo: false
+            id: "s1", name: "Punto de Inicio", description: "Inicio del tour.",
+            latitude: 40.416, longitude: -3.703, type: "historical", visited: false, isRichInfo: false
         }]
     }];
 };
@@ -39,79 +33,71 @@ const getDebugErrorTour = (city: string, errorMsg: string): Tour[] => {
 // --- 3. FUNCIONES PRINCIPALES ---
 
 export const getCityInfo = async (city: string, languageCode: string): Promise<CityInfo> => {
-    return { transport: "...", bestTime: "...", localDish: "...", costLevel: "$", securityLevel: "...", wifiSpots: [], lingo: [], apps: [] };
+    // Retorno rápido para que no falle la UI
+    return { 
+        transport: "Metro / Walk", bestTime: "Spring", localDish: "Tapas", 
+        costLevel: "$$", securityLevel: "Safe", wifiSpots: ["Center"], lingo: ["Hola"], apps: ["Maps"] 
+    };
 };
 
 export const generateToursForCity = async (cityInput: string, languageCode: string): Promise<Tour[]> => {
-    // 1. Borramos caché para forzar conexión
+    // Limpiamos caché para probar de cero
     const cacheKey = `${CACHE_PREFIX}tours_${cityInput}`;
     localStorage.removeItem(cacheKey);
 
-    // 2. Verificaciones
     const key = import.meta.env.VITE_API_KEY;
-    if (!key) {
-        return getDebugErrorTour(cityInput, "FALTA CLAVE VITE_API_KEY");
-    }
+    if (!key) return getFallbackTour(cityInput, "ERROR: FALTA CLAVE", "Revisa Vercel env vars.");
 
     const genAI = getClient();
-    if (!genAI) return getDebugErrorTour(cityInput, "ERROR CLIENTE GOOGLE");
+    if (!genAI) return getFallbackTour(cityInput, "ERROR: CLIENTE", "No se pudo iniciar Google AI.");
 
     try {
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-pro", 
-        });
+        // CAMBIO CLAVE: Usamos 'gemini-1.5-flash' que es el modelo más universal
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const prompt = `Create a simple JSON list of 2 walking tours for ${cityInput}. Just the JSON.`;
+        const prompt = `
+            Create 2 walking tours for ${cityInput}.
+            Return strict JSON array.
+            Format: [{ "title": "...", "description": "...", "duration": "2h", "distance": "3km", "difficulty": "Moderate", "theme": "History", "stops": [{ "name": "...", "description": "...", "latitude": 0.0, "longitude": 0.0, "type": "historical", "visited": false }] }]
+        `;
 
         const result = await model.generateContent(prompt);
-        const text = result.response.text(); 
+        const text = result.response.text();
         
-        // --- AQUÍ ESTABA EL ERROR, YA CORREGIDO ---
-        return [{
-            id: `success-${Date.now()}`,
+        // Limpiamos el JSON que nos da la IA
+        let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        if (cleanText.includes('[')) {
+             cleanText = cleanText.substring(cleanText.indexOf('['));
+             cleanText = cleanText.substring(0, cleanText.lastIndexOf(']') + 1);
+        }
+
+        const tours = JSON.parse(cleanText);
+
+        // Si funciona, devolvemos los tours reales enriquecidos
+        return tours.map((t: any, i: number) => ({
+            ...t,
+            id: `ai_${i}_${Date.now()}`,
             city: cityInput,
-            title: `¡ÉXITO! CONEXIÓN LOGRADA`, 
-            description: `La IA ha respondido: ${text.slice(0, 50)}...`,
-            duration: "2h",
-            distance: "3km",
-            difficulty: "Moderate",
-            theme: "History",
-            isSponsored: false, // <--- ESTA ES LA LÍNEA QUE FALTABA
-            stops: [{ 
-                id: "s1", 
-                name: "Funciona", 
-                description: "Todo bien", 
-                latitude: 40.4, 
-                longitude: -3.7, 
-                type: "historical", 
-                visited: false,
-                isRichInfo: false 
-            }]
-        }];
+            isSponsored: false, // Importante para que no falle TypeScript
+            stops: t.stops.map((s: any, si: number) => ({
+                 ...s, id: `s_${i}_${si}`, visited: false, isRichInfo: false
+            }))
+        }));
 
     } catch (e: any) {
-        console.error("DEBUG ERROR:", e);
-        let msg = e.message || JSON.stringify(e);
+        console.error("ERROR FINAL:", e);
+        let msg = e.message || "Error desconocido";
         
-        if (msg.includes("403")) return getDebugErrorTour(cityInput, "403: API KEY NO VALIDA");
-        if (msg.includes("404")) return getDebugErrorTour(cityInput, "404: MODELO NO ENCONTRADO");
-        if (msg.includes("429")) return getDebugErrorTour(cityInput, "429: CUOTA EXCEDIDA");
-        if (msg.includes("503")) return getDebugErrorTour(cityInput, "503: SERVIDOR CAIDO");
-        
-        return getDebugErrorTour(cityInput, msg);
+        // Diagnóstico preciso en pantalla
+        if (msg.includes("404")) return getFallbackTour(cityInput, "ERROR 404: MODELO", "El modelo 'gemini-1.5-flash' no está activo en tu cuenta.");
+        if (msg.includes("429")) return getFallbackTour(cityInput, "ERROR 429: CUOTA", "Has superado el límite gratuito de hoy.");
+        if (msg.includes("403")) return getFallbackTour(cityInput, "ERROR 403: PERMISO", "Tu API Key tiene restricciones de IP/Dominio.");
+
+        return getFallbackTour(cityInput, "ERROR TÉCNICO", msg.slice(0, 100));
     }
 };
 
-// --- FUNCIONES AUXILIARES (CON ARGUMENTOS PARA QUE NO FALLE APP.TSX) ---
-
-export const generateStopDetails = async (stopName: string, city: string, language: string) => {
-    return { description: "Info unavailable currently.", curiosity: "..." };
-};
-
-export const generateAudio = async (text: string) => {
-    return ""; 
-};
-
-export const generateImage = async (prompt: string) => {
-    return undefined;
-};
+// --- AUXILIARES (Para evitar errores de compilación) ---
+export const generateStopDetails = async (stopName: string, city: string, language: string) => ({ description: "...", curiosity: "..." });
+export const generateAudio = async (text: string) => "";
+export const generateImage = async (prompt: string) => undefined;
