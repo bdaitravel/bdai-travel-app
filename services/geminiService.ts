@@ -1,22 +1,25 @@
+// 1. IMPORTAMOS LA LIBRERÍA QUE SÍ TIENES INSTALADA (@google/generative-ai)
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { Tour, Stop, CityInfo } from '../types';
 import { STATIC_TOURS } from '../data/toursData';
 
-const CACHE_PREFIX = 'bdai_v55_'; // Cambiamos prefijo para limpiar caché corrupta
-const MAX_RETRIES = 2;
+const CACHE_PREFIX = 'bdai_fix_v60_'; // Cambiamos nombre para forzar limpieza
+const MAX_RETRIES = 2; 
 
-// 1. CLIENTE GOOGLE (CORREGIDO PARA VITE)
+// --- 2. CONFIGURACIÓN DEL CLIENTE (CORREGIDA) ---
 const getClient = () => {
-    // ¡ESTO ES LO QUE FALLABA! Usamos import.meta.env
+    // IMPORTANTE: Usamos import.meta.env para Vite. 
+    // Si usas process.env aquí, la clave será undefined y fallará siempre.
     const key = import.meta.env.VITE_API_KEY;
+    
     if (!key) {
-        console.error("CRÍTICO: No se encuentra VITE_API_KEY.");
+        console.error("🔴 CRÍTICO: No se detecta la API KEY. Revisa Vercel.");
         return null;
     }
     return new GoogleGenerativeAI(key);
 };
 
-// 2. TOUR DE EMERGENCIA (Si falla la IA)
+// --- 3. TOUR DE EMERGENCIA (PLAN B) ---
 const getFallbackTour = (city: string, language: string): Tour[] => {
     const isEs = language.startsWith('es');
     return [{
@@ -24,8 +27,8 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
         city: city,
         title: isEs ? `Recorrido Clásico por ${city}` : `${city} Classic Walk`,
         description: isEs 
-            ? "Tour básico generado automáticamente." 
-            : "Basic tour automatically generated.",
+            ? "Tour básico de ejemplo (IA no conectada)." 
+            : "Basic fallback tour (AI not connected).",
         duration: "1h",
         distance: "2 km",
         difficulty: "Easy",
@@ -35,7 +38,7 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
             {
                 id: "s1",
                 name: "Punto de Inicio",
-                description: "Inicio del recorrido.",
+                description: "Inicio del tour.",
                 latitude: 40.4168, 
                 longitude: -3.7038,
                 type: "historical", 
@@ -46,25 +49,18 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
     }];
 };
 
-// 3. LIMPIEZA DE JSON (Para que no rompa la app)
+// --- 4. UTILIDADES ---
 const cleanJson = (text: string) => {
     try {
         let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const firstSquare = cleaned.indexOf('[');
-        const firstCurly = cleaned.indexOf('{');
+        const first = cleaned.indexOf('[');
+        const last = cleaned.lastIndexOf(']');
+        if (first !== -1 && last !== -1) return cleaned.substring(first, last + 1);
         
-        if (firstSquare === -1 && firstCurly === -1) return "[]";
+        const firstObj = cleaned.indexOf('{');
+        const lastObj = cleaned.lastIndexOf('}');
+        if (firstObj !== -1 && lastObj !== -1) return cleaned.substring(firstObj, lastObj + 1);
         
-        // Si empieza por corchete, es un array (Tours)
-        if (firstSquare !== -1 && (firstCurly === -1 || firstSquare < firstCurly)) {
-             const lastSquare = cleaned.lastIndexOf(']');
-             return cleaned.substring(firstSquare, lastSquare + 1);
-        }
-        // Si empieza por llave, es un objeto (City Info)
-        if (firstCurly !== -1) {
-             const lastCurly = cleaned.lastIndexOf('}');
-             return cleaned.substring(firstCurly, lastCurly + 1);
-        }
         return cleaned;
     } catch (e) { return "[]"; }
 };
@@ -78,16 +74,16 @@ const callAiWithRetry = async (apiCallFn: () => Promise<any>): Promise<any> => {
             attempt++;
             console.error(`🔴 Error IA (Intento ${attempt}):`, error);
             if (attempt >= MAX_RETRIES) throw error;
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, 1500));
         }
     }
 };
 
-// 4. FUNCIONES PRINCIPALES
+// --- 5. FUNCIONES PRINCIPALES ---
 
 export const getCityInfo = async (city: string, languageCode: string): Promise<CityInfo> => {
     const fallback: CityInfo = { 
-        transport: "Metro / Walk", bestTime: "Anytime", localDish: "Local Dish", 
+        transport: "Metro / Walk", bestTime: "Spring", localDish: "Local Dish", 
         costLevel: "$$", securityLevel: "Standard", wifiSpots: ["Center"], lingo: ["Hola"], apps: ["Maps"] 
     };
     
@@ -99,12 +95,13 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
     if (cached) return JSON.parse(cached);
 
     try {
-        // Usamos el modelo PRO que ya habilitaste en Google Cloud
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        // Usamos gemini-1.5-flash que es rápido y estable en la librería oficial
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const prompt = `Return JSON only. Info for tourist in ${city}. Language: ${languageCode}. Fields: transport, bestTime, localDish, costLevel, securityLevel, wifiSpots (array), lingo (array), apps (array).`;
         
         const result = await callAiWithRetry(() => model.generateContent(prompt));
-        const data = JSON.parse(cleanJson(result.response.text()));
+        const text = result.response.text();
+        const data = JSON.parse(cleanJson(text));
         
         localStorage.setItem(cacheKey, JSON.stringify(data));
         return data;
@@ -118,6 +115,7 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
+    // Revisar tours estáticos
     const staticTours = STATIC_TOURS.filter(t => t.city.toLowerCase().includes(cityInput.toLowerCase()));
     if (staticTours.length > 0) return staticTours;
 
@@ -126,7 +124,7 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
 
     try {
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-pro", // Modelo estable
+            model: "gemini-1.5-flash", // Modelo oficial
             safetySettings: [
                 { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
                 { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -164,6 +162,7 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
                 ...s, 
                 id: `s_${i}_${si}`, 
                 visited: false,
+                // Validamos el tipo para evitar errores de TypeScript
                 type: ["historical", "food", "art", "nature", "photo", "culture"].includes(s.type) ? s.type : "culture"
             })) || []
         }));
@@ -177,6 +176,7 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
     }
 };
 
+// 6. FUNCIONES VACÍAS (Para evitar errores de compilación)
 export const generateStopDetails = async (stopName: string, city: string, language: string) => {
     return { description: "Info unavailable currently.", curiosity: "..." };
 };
