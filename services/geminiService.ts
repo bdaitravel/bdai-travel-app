@@ -2,7 +2,7 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/ge
 import { Tour, CityInfo } from '../types';
 import { STATIC_TOURS } from '../data/toursData';
 
-const CACHE_PREFIX = 'bdai_FINAL_v2_'; 
+const CACHE_PREFIX = 'bdai_HUNTER_v1_'; 
 const MAX_RETRIES = 1; 
 
 // 1. CONFIGURACIÓN
@@ -12,7 +12,7 @@ const getClient = () => {
     return new GoogleGenerativeAI(key);
 };
 
-// 2. EMERGENCIA (Solo si todo falla)
+// 2. EMERGENCIA
 const getFallbackTour = (city: string, title: string, desc: string): Tour[] => {
     return [{
         id: `fb-${Date.now()}`,
@@ -25,13 +25,13 @@ const getFallbackTour = (city: string, title: string, desc: string): Tour[] => {
         theme: "General",
         isSponsored: false,
         stops: [{
-            id: "s1", name: "Punto de Inicio", description: "Inicio del recorrido.",
+            id: "s1", name: "Punto de Inicio", description: "Inicio.",
             latitude: 40.416, longitude: -3.703, type: "historical", visited: false, isRichInfo: false
         }]
     }];
 };
 
-// 3. LIMPIEZA INTELIGENTE DE JSON
+// 3. LIMPIEZA JSON
 const cleanJson = (text: string) => {
     try {
         let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -44,21 +44,28 @@ const cleanJson = (text: string) => {
     } catch (e) { return "[]"; }
 };
 
-// 4. GENERACIÓN DE TOURS (CON "AUTO-DOWNGRADE")
+// 4. GENERACIÓN DE TOURS (FUERZA BRUTA)
 export const generateToursForCity = async (cityInput: string, languageCode: string): Promise<Tour[]> => {
-    // Limpiamos caché para probar de verdad
     const cacheKey = `${CACHE_PREFIX}tours_${cityInput}`;
     localStorage.removeItem(cacheKey);
 
     const genAI = getClient();
     if (!genAI) return getFallbackTour(cityInput, "ERROR: KEY", "Falta API Key");
 
-    // LISTA DE MODELOS A PROBAR (Del más moderno al más seguro)
-    const modelsToTry = ["gemini-1.5-flash", "gemini-pro"];
+    // LISTA DE TODOS LOS MODELOS POSIBLES (El código probará uno por uno)
+    const modelsToTry = [
+        "gemini-1.5-flash",          // Opción A: El estándar rápido
+        "gemini-1.5-pro",            // Opción B: El estándar potente
+        "gemini-1.0-pro",            // Opción C: El clásico (muy compatible)
+        "gemini-pro",                // Opción D: El nombre genérico antiguo
+        "gemini-1.5-flash-8b"        // Opción E: La versión ligera nueva
+    ];
+
+    let lastError = "";
 
     for (const modelName of modelsToTry) {
         try {
-            console.log(`Intentando conectar con modelo: ${modelName}...`);
+            console.log(`🔫 Probando modelo: ${modelName}...`);
             const model = genAI.getGenerativeModel({ model: modelName });
 
             const prompt = `
@@ -70,33 +77,35 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
             const result = await model.generateContent(prompt);
             const text = result.response.text();
             
-            // Si llegamos aquí, este modelo ha funcionado. Procesamos y salimos.
+            // ¡SI LLEGAMOS AQUÍ, FUNCIONÓ!
             const tours = JSON.parse(cleanJson(text));
             
+            // Añadimos al título qué modelo funcionó para que lo sepas
             return tours.map((t: any, i: number) => ({
                 ...t,
                 id: `ai_${i}_${Date.now()}`,
                 city: cityInput,
+                // Truco: Ponemos el modelo en el título para confirmar
+                title: `${t.title} (${modelName})`, 
                 isSponsored: false,
                 stops: t.stops.map((s: any, si: number) => ({ ...s, id: `s_${i}_${si}`, visited: false, isRichInfo: false }))
             }));
 
         } catch (e: any) {
-            console.warn(`Fallo con ${modelName}:`, e.message);
-            // Si el error es 404 (Modelo no encontrado), el bucle 'for' continuará con el siguiente modelo ("gemini-pro")
-            // Si es el último modelo y sigue fallando, lanzamos error.
-            if (modelName === modelsToTry[modelsToTry.length - 1]) {
-                let msg = e.message || "Error desconocido";
-                if (msg.includes("404")) return getFallbackTour(cityInput, "ERROR 404: NINGÚN MODELO", "Tu cuenta de Google no tiene acceso a Gemini Flash ni Pro.");
-                if (msg.includes("429")) return getFallbackTour(cityInput, "ERROR 429: CUOTA", "Has superado el límite gratuito.");
-                return getFallbackTour(cityInput, "ERROR TÉCNICO", msg.slice(0,100));
-            }
+            console.warn(`❌ Falló ${modelName}:`, e.message);
+            lastError = e.message || "Error desconocido";
+            // Continuamos al siguiente modelo del bucle...
         }
     }
-    return getFallbackTour(cityInput, "ERROR DESCONOCIDO", "No se pudo generar.");
+
+    // Si llegamos aquí, fallaron los 5 modelos
+    if (lastError.includes("404")) return getFallbackTour(cityInput, "ERROR 404 FATAL", "Tu cuenta no tiene acceso a NINGÚN modelo Gemini.");
+    if (lastError.includes("429")) return getFallbackTour(cityInput, "ERROR 429", "Cuota excedida.");
+    
+    return getFallbackTour(cityInput, "ERROR TOTAL", lastError.slice(0, 100));
 };
 
-// --- RESTO DE FUNCIONES ---
+// --- RESTO ---
 export const getCityInfo = async (city: string, languageCode: string): Promise<CityInfo> => {
     return { transport: "Metro", bestTime: "Any", localDish: "Food", costLevel: "$$", securityLevel: "Safe", wifiSpots: [], lingo: [], apps: [] };
 };
