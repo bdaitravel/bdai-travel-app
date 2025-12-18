@@ -2,7 +2,7 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/ge
 import { Tour, Stop, CityInfo } from '../types';
 import { STATIC_TOURS } from '../data/toursData';
 
-const CACHE_PREFIX = 'bdai_cache_v51_'; // Subimos versión para limpiar caché vieja
+const CACHE_PREFIX = 'bdai_cache_v52_'; // Versión nueva para limpiar errores anteriores
 const MAX_RETRIES = 2; 
 
 // --- 1. CONFIGURACIÓN DEL CLIENTE ---
@@ -37,7 +37,7 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
                 description: isEs ? "Aquí comenzaría tu tour." : "Your tour starts here.",
                 latitude: 40.4168, 
                 longitude: -3.7038,
-                type: "historical", // Corregido
+                type: "historical", 
                 visited: false,
                 isRichInfo: false,
                 curiosity: "..."
@@ -48,7 +48,8 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
                 description: "Ejemplo de parada.",
                 latitude: 40.4154,
                 longitude: -3.7074,
-                type: "culture", // CORREGIDO: "culture" en lugar de "cultural"
+                // CORRECCIÓN IMPORTANTE: 'culture' es el valor correcto, no 'cultural'
+                type: "culture", 
                 visited: false,
                 isRichInfo: false,
                 curiosity: "..."
@@ -95,7 +96,7 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
     const genAI = getClient();
     if (!genAI) return fallback;
 
-    const cacheKey = `city_${city}_${languageCode}_v51`;
+    const cacheKey = `city_${city}_${languageCode}_v52`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -107,7 +108,8 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
         const text = result.response.text();
         
         let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        if (jsonStr.startsWith('{') && jsonStr.endsWith('}')) {
+        // Intentar parsear objeto suelto
+        if (jsonStr.startsWith('{')) {
              const data = JSON.parse(jsonStr);
              localStorage.setItem(cacheKey, JSON.stringify(data));
              return data;
@@ -119,7 +121,7 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
 };
 
 export const generateToursForCity = async (cityInput: string, languageCode: string): Promise<Tour[]> => {
-    const cacheKey = `tours_${cityInput}_${languageCode}_v51`;
+    const cacheKey = `tours_${cityInput}_${languageCode}_v52`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -170,7 +172,7 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
                 ...s, 
                 id: `s_${i}_${si}`, 
                 visited: false,
-                // Aseguramos que el tipo sea válido o ponemos uno por defecto
+                // Validación de seguridad para el tipo de parada
                 type: ["historical", "food", "art", "nature", "photo", "culture"].includes(s.type) ? s.type : "culture"
             })) || []
         }));
@@ -184,19 +186,19 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
     }
 };
 
-// --- CORRECCIÓN IMPORTANTE AQUÍ ABAJO ---
-// Ahora aceptamos los argumentos aunque no los usemos, para que App.tsx no se queje
+// --- CORRECCIÓN FINAL: Funciones con parámetros para que App.tsx no falle ---
 
 export const generateStopDetails = async (stopName: string, city: string, language: string) => {
-    // Aceptamos los argumentos (stopName, etc) pero devolvemos un genérico para no gastar tokens
+    // Aceptamos los argumentos aunque devolvamos un genérico
     return { description: "Info unavailable currently.", curiosity: "..." };
 };
 
 export const generateAudio = async (text: string) => {
-    // Aceptamos 'text' para que no dé error TS2554, pero devolvemos vacío
+    // Aceptamos el texto
     return ""; 
 };
 
 export const generateImage = async (prompt: string) => {
+    // Aceptamos el prompt
     return undefined;
 };
