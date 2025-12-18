@@ -2,20 +2,21 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/ge
 import { Tour, Stop, CityInfo } from '../types';
 import { STATIC_TOURS } from '../data/toursData';
 
-const CACHE_PREFIX = 'bdai_cache_v52_'; // Versión nueva para limpiar errores anteriores
+const CACHE_PREFIX = 'bdai_cache_v53_PRO_'; // Versión nueva PRO para limpiar caché
 const MAX_RETRIES = 2; 
 
 // --- 1. CONFIGURACIÓN DEL CLIENTE ---
 const getClient = () => {
+    // IMPORTANTE: Vite usa import.meta.env. Si usas process.env fallará en Vercel.
     const key = import.meta.env.VITE_API_KEY;
     if (!key) {
-        console.error("CRÍTICO: No se encuentra VITE_API_KEY. Revisa Vercel -> Settings -> Env Variables.");
+        console.error("CRÍTICO: Faltan las llaves (VITE_API_KEY).");
         return null;
     }
     return new GoogleGenerativeAI(key);
 };
 
-// --- 2. DATOS DE EMERGENCIA (FALLBACK) ---
+// --- 2. PLAN DE EMERGENCIA (FALLBACK) ---
 const getFallbackTour = (city: string, language: string): Tour[] => {
     const isEs = language.startsWith('es');
     return [{
@@ -23,8 +24,8 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
         city: city,
         title: isEs ? `Recorrido Clásico por ${city}` : `${city} Classic Walk`,
         description: isEs 
-            ? "El sistema de IA está ocupado. Este es un tour básico de ejemplo." 
-            : "AI system is busy. This is a fallback tour example.",
+            ? "Tour básico generado porque la IA está ocupada o restringida en tu zona." 
+            : "Basic tour generated because AI is busy or restricted in your region.",
         duration: "1h",
         distance: "2 km",
         difficulty: "Easy",
@@ -34,25 +35,22 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
             {
                 id: "s1",
                 name: isEs ? "Punto de Inicio" : "Start Point",
-                description: isEs ? "Aquí comenzaría tu tour." : "Your tour starts here.",
+                description: isEs ? "Inicio del recorrido." : "Start of the tour.",
                 latitude: 40.4168, 
                 longitude: -3.7038,
                 type: "historical", 
                 visited: false,
-                isRichInfo: false,
-                curiosity: "..."
+                isRichInfo: false
             },
             {
                 id: "s2",
-                name: isEs ? "Plaza Central" : "Main Square",
-                description: "Ejemplo de parada.",
+                name: isEs ? "Plaza Principal" : "Main Square",
+                description: "Centro neurálgico.",
                 latitude: 40.4154,
                 longitude: -3.7074,
-                // CORRECCIÓN IMPORTANTE: 'culture' es el valor correcto, no 'cultural'
                 type: "culture", 
                 visited: false,
-                isRichInfo: false,
-                curiosity: "..."
+                isRichInfo: false
             }
         ]
     }];
@@ -62,11 +60,11 @@ const getFallbackTour = (city: string, language: string): Tour[] => {
 const cleanJson = (text: string) => {
     try {
         let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const firstBracket = cleaned.indexOf('[');
-        const lastBracket = cleaned.lastIndexOf(']');
-        if (firstBracket !== -1 && lastBracket !== -1) {
-            return cleaned.substring(firstBracket, lastBracket + 1);
-        }
+        if (cleaned.startsWith('{') || cleaned.startsWith('[')) return cleaned;
+        // Buscar corchetes si hay texto antes
+        const first = cleaned.indexOf('[');
+        const last = cleaned.lastIndexOf(']');
+        if (first !== -1 && last !== -1) return cleaned.substring(first, last + 1);
         return "[]";
     } catch (e) { return "[]"; }
 };
@@ -80,7 +78,7 @@ const callAiWithRetry = async (apiCallFn: () => Promise<any>): Promise<any> => {
             attempt++;
             console.error(`🔴 Error IA (Intento ${attempt}):`, error);
             if (attempt >= MAX_RETRIES) throw error;
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 2000)); // Esperar 2 segundos entre intentos
         }
     }
 };
@@ -96,21 +94,23 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
     const genAI = getClient();
     if (!genAI) return fallback;
 
-    const cacheKey = `city_${city}_${languageCode}_v52`;
+    const cacheKey = `city_${city}_${languageCode}_v53`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // CAMBIO CLAVE: Usamos 'gemini-1.5-pro' porque 'flash' suele fallar en Europa Tier 1
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
         const prompt = `Return JSON only. Info for tourist in ${city}. Language: ${languageCode}. Fields: transport, bestTime, localDish, costLevel, securityLevel, wifiSpots (array), lingo (array), apps (array).`;
         
         const result = await callAiWithRetry(() => model.generateContent(prompt));
         const text = result.response.text();
         
         let jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        // Intentar parsear objeto suelto
-        if (jsonStr.startsWith('{')) {
-             const data = JSON.parse(jsonStr);
+        if (jsonStr.indexOf('{') !== -1) {
+             const start = jsonStr.indexOf('{');
+             const end = jsonStr.lastIndexOf('}') + 1;
+             const data = JSON.parse(jsonStr.substring(start, end));
              localStorage.setItem(cacheKey, JSON.stringify(data));
              return data;
         }
@@ -121,7 +121,7 @@ export const getCityInfo = async (city: string, languageCode: string): Promise<C
 };
 
 export const generateToursForCity = async (cityInput: string, languageCode: string): Promise<Tour[]> => {
-    const cacheKey = `tours_${cityInput}_${languageCode}_v52`;
+    const cacheKey = `tours_${cityInput}_${languageCode}_v53`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -132,8 +132,9 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
     if (!genAI) return getFallbackTour(cityInput, languageCode);
 
     try {
+        // CAMBIO CLAVE: Usamos 'gemini-1.5-pro' para máxima compatibilidad geográfica
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
+            model: "gemini-1.5-pro",
             safetySettings: [
                 { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
                 { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -172,7 +173,6 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
                 ...s, 
                 id: `s_${i}_${si}`, 
                 visited: false,
-                // Validación de seguridad para el tipo de parada
                 type: ["historical", "food", "art", "nature", "photo", "culture"].includes(s.type) ? s.type : "culture"
             })) || []
         }));
@@ -186,19 +186,15 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
     }
 };
 
-// --- CORRECCIÓN FINAL: Funciones con parámetros para que App.tsx no falle ---
-
+// Funciones auxiliares (necesarias para evitar errores en App.tsx)
 export const generateStopDetails = async (stopName: string, city: string, language: string) => {
-    // Aceptamos los argumentos aunque devolvamos un genérico
     return { description: "Info unavailable currently.", curiosity: "..." };
 };
 
 export const generateAudio = async (text: string) => {
-    // Aceptamos el texto
     return ""; 
 };
 
 export const generateImage = async (prompt: string) => {
-    // Aceptamos el prompt
     return undefined;
 };
