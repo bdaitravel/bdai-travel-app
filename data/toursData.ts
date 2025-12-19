@@ -6,55 +6,166 @@ export const STATIC_TOURS: Tour[] = [
     id: 'mad-1',
     city: 'Madrid',
     title: 'Madrid: El Corazón de los Austrias y sus Sombras Imperiales',
-    description: 'Sumérgete en un viaje épico a través del tiempo en el que recorrerás el Madrid de los siglos XVI y XVII. Desde las intrigas palaciegas en el Alcázar hasta los duelos de honor en el Barrio de las Letras, esta ruta de 5 horas te desvela por qué Madrid pasó de ser un pueblo manchego a la capital de un imperio donde nunca se ponía el sol.',
+    description: 'Sumérgete en un viaje épico a través del tiempo en el que recorrerás el Madrid de los siglos XVI y XVII. Desde las intrigas palaciegas en el Alcázar hasta los duelos de honor en el Barrio de las Letras, esta ruta te desvela por qué Madrid pasó de ser un pueblo manchego a la capital de un imperio global.',
     duration: '5h',
     distance: '6.8 km',
     difficulty: 'Moderate',
     theme: 'History & Legends',
     isSponsored: false,
-    safetyTip: "Aunque Madrid es segura, mantén tu mochila hacia adelante en Sol y Plaza Mayor para evitar descuideros.",
-    wifiTip: "Busca los puntos 'Madrid-WiFi' en el mobiliario urbano; son gratuitos y estables.",
+    safetyTip: "Mantén tu mochila hacia adelante en Sol y Plaza Mayor para evitar descuideros.",
+    wifiTip: "Busca los puntos 'Madrid-WiFi' en el mobiliario urbano.",
     stops: [
       { 
         id: 'm1', 
         name: 'Palacio Real y Plaza de la Armería', 
-        description: '[HOOK] El gigante de granito que nació de un incendio "oportuno".\n\n[STORY] El actual Palacio Real se levanta sobre las cenizas del Antiguo Alcázar, la fortaleza musulmana y posterior residencia real que ardió misteriosamente en la Nochebuena de 1734. Felipe V, el primer Borbón, vio en las llamas la oportunidad de borrar el pasado de los Austrias y construir un palacio al estilo de Versalles, pero totalmente de piedra para evitar nuevos incendios. Con más de 3.400 habitaciones, es el doble de grande que Buckingham o Versalles.\n\n[SECRET] Bajo la explanada de la Armería existe una red de pasadizos secretos que conectaban el Palacio con la Casa de Campo y el Convento de la Encarnación, permitiendo que la familia real se moviera sin ser vista por el pueblo.\n\n[SMART_TIP] El Cambio de Guardia Solemne (el primer miércoles de cada mes) es espectacular, pero si quieres evitar colas, visita los Jardines del Campo del Moro para la mejor foto gratuita de la fachada posterior.', 
-        latitude: 40.4180, longitude: -3.7100, type: 'historical', visited: false, isRichInfo: true, curiosity: "Es el palacio real en uso más grande de toda Europa Occidental.",
-        photoSpot: { angle: "Desde los Jardines de Sabatini", bestTime: "Atardecer", instagramHook: "Real Madrid Sunset", milesReward: 120 }
+        description: '[HOOK] El gigante de granito que nació de un incendio "oportuno" y una maldición de estatuas.\n\n[STORY] El actual Palacio Real se levanta sobre las cenizas del Antiguo Alcázar, que ardió misteriosamente en la Nochebuena de 1734. Felipe V, el primer Borbón, vio en las llamas la oportunidad de borrar el pasado de los Austrias y construir un "Versalles" madrileño de 3.418 habitaciones.\n\n[SECRET] Mira las estatuas de la Plaza de Oriente. Originalmente iban en la cornisa del Palacio, pero la Reina Isabel de Farnesio tuvo una pesadilla en la que un terremoto las hacía caer sobre su cabeza, ordenando bajarlas de inmediato.', 
+        latitude: 40.4180, longitude: -3.7100, type: 'historical', visited: false, isRichInfo: true, curiosity: "Es el palacio real en uso más grande de Europa Occidental.",
+        photoSpot: { angle: "Desde los Jardines de Sabatini", bestTime: "Atardecer", instagramHook: "Madrid's Royal Golden Hour", milesReward: 120 }
       },
       { 
         id: 'm2', 
         name: 'Plaza de la Villa y Torre de los Lujanes', 
-        description: '[HOOK] Un viaje al Madrid donde las calles aún olían a barro y los caballeros portaban espadas.\n\n[STORY] Esta plaza es el corazón del Madrid medieval. Aquí conviven tres siglos de historia: la Casa y Torre de los Lujanes (siglo XV), de estilo mudéjar, donde se dice que estuvo preso el rey Francisco I de Francia; la Casa de la Villa (siglo XVII), antigua sede del ayuntamiento; y la Casa de Cisneros (siglo XVI). Es el único lugar de Madrid donde puedes girar 360 grados y ver tres estilos arquitectónicos distintos del viejo mundo.\n\n[SECRET] Si te fijas en la fachada de la Torre de los Lujanes, verás restos de impactos que algunos atribuyen a la Guerra de la Independencia contra las tropas de Napoleón.\n\n[SMART_TIP] Cruza por el Callejón del Codo, un pasaje tan estrecho que te obliga a caminar en fila, y siente el silencio absoluto que solo existe en los rincones más antiguos de la Villa.', 
-        latitude: 40.4153, longitude: -3.7103, type: 'historical', visited: false, isRichInfo: true, curiosity: "La Torre de los Lujanes es el edificio civil más antiguo que queda en pie en Madrid.",
-        photoSpot: { angle: "Encuadre desde el Callejón del Codo", bestTime: "Mañana", instagramHook: "MedievalMadrid", milesReward: 80 } 
+        description: '[HOOK] El rincón donde un rey francés durmió bajo llave y el tiempo se detuvo en el siglo XV.\n\n[STORY] Esta plaza es el corazón del Madrid medieval. Aquí conviven tres edificios clave: la Casa de la Villa, la Casa de Cisneros y la Torre de los Lujanes, el edificio civil más antiguo de la ciudad.\n\n[SECRET] Tras la Batalla de Pavía en 1525, el Rey Francisco I de Francia fue traído prisionero a Madrid. La leyenda cuenta que estuvo recluido en la Torre de los Lujanes. Su orgullo herido fue tal que al regresar a Francia mandó construir el Castillo de Chambord para superar a Carlos V.', 
+        latitude: 40.4153, longitude: -3.7103, type: 'historical', visited: false, isRichInfo: true, curiosity: "La torre tiene una de las pocas portadas mudéjares originales de Madrid.",
+        photoSpot: { angle: "Encuadre desde el Callejón del Codo", bestTime: "Mañana", instagramHook: "Madrid Medieval Vibes", milesReward: 80 } 
       },
       { 
         id: 'm3', 
         name: 'Mercado de San Miguel', 
-        description: '[HOOK] Una catedral de hierro y cristal dedicada al placer de los sentidos.\n\n[STORY] Inaugurado en 1916 como mercado de abastos popular, su estructura de hierro es la última de su tipo en la ciudad. Tras años de abandono, renació en 2009 como el primer mercado gastronómico de España. Hoy, bajo sus elegantes cerchas metálicas, puedes degustar desde ostras gallegas hasta los quesos más selectos de la sierra madrileña. Es el ejemplo perfecto de cómo Madrid protege su patrimonio transformándolo en vanguardia.\n\n[SECRET] Los pilares de hierro que ves son los originales traídos de las fundiciones belgas hace más de un siglo.\n\n[SMART_TIP] Evita las horas centrales si no quieres agobios. Lo ideal es ir a las 12:00 para un vermut temprano o a las 18:00 para un picoteo relajado antes de que lleguen las multitudes.', 
-        latitude: 40.4155, longitude: -3.7090, type: 'food', visited: false, isRichInfo: true, curiosity: "Recibe a más de 10 millones de visitantes al año, siendo uno de los puntos más turísticos de España.",
-        photoSpot: { angle: "Desde una esquina interior mirando al techo", bestTime: "Noche", instagramHook: "GourmetLife", milesReward: 60 } 
+        description: '[HOOK] Una catedral de hierro y cristal erigida sobre la tumba de una iglesia milenaria.\n\n[STORY] Inaugurado en 1916 como mercado de abastos, hoy es el templo gastronómico por excelencia. Su estructura de hierro fundido es la única que sobrevive en Madrid tras el desmantelamiento de otros mercados similares.\n\n[SECRET] El mercado ocupa el solar de la iglesia de San Miguel de los Octoes, donde fue bautizado Lope de Vega. Si entras a las bodegas (privadas), aún se pueden ver restos de la antigua cripta medieval entre botellas de vermut.', 
+        latitude: 40.4155, longitude: -3.7090, type: 'food', visited: false, isRichInfo: true, curiosity: "Recibe a más de 10 millones de visitantes al año.",
+        photoSpot: { angle: "Cerca de los puestos centrales mirando el techo", bestTime: "Noche", instagramHook: "Gourmet Madrid Cathedral", milesReward: 60 } 
       },
       { 
         id: 'm4', 
-        name: 'Plaza Mayor y Arco de Cuchilleros', 
-        description: '[HOOK] El gran escenario de la Villa, donde la alegría y la tragedia se dieron la mano durante siglos.\n\n[STORY] Diseñada por Juan de Herrera bajo el mandato de Felipe II, esta plaza ha sido de todo: mercado, plaza de toros, lugar de beatificaciones y escenario de los sangrientos Autos de Fe de la Inquisición. Los frescos de la Casa de la Panadería, que verás en la fachada norte, narran la mitología de la ciudad y han sido restaurados recientemente para mostrar sus colores vibrantes. Sus 237 balcones tienen historias de espías, amantes reales y nobles caídos en desgracia.\n\n[SECRET] El Arco de Cuchilleros recibe ese nombre porque allí se instalaba el gremio de fabricantes de cuchillos que suministraban a los carniceros del mercado de la plaza.\n\n[SMART_TIP] No cometas el error de turista de comer en las territorios de la plaza. Entra por el Arco de Cuchilleros y busca las tabernas de la calle de la Cava Baja para vivir la experiencia real.', 
-        latitude: 40.4154, longitude: -3.7074, type: 'historical', visited: false, isRichInfo: true, curiosity: "Ha sufrido tres incendios devastadores que obligaron a reconstruirla casi por completo cada vez.",
-        photoSpot: { angle: "A través del Arco de Cuchilleros", bestTime: "Tarde", instagramHook: "PlazaMayorIcons", milesReward: 90 } 
+        name: 'Plaza Mayor y el Caballo de los Pajaritos', 
+        description: '[HOOK] El gran escenario de la Villa, desde ejecuciones de la Inquisición hasta el misterio de los huesos de pájaro.\n\n[STORY] Diseñada por Juan de Herrera y terminada en 1620, ha sido mercado, plaza de toros y lugar de autos de fe. La estatua ecuestre de Felipe III preside el centro.\n\n[SECRET] Durante siglos, la boca del caballo de la estatua estaba abierta. Cientos de gorriones se colaban dentro pero no podían salir por la estrechez del cuello. Al ser derribada en la República, se descubrieron miles de pequeños esqueletos de aves en su vientre. Hoy la boca está sellada.', 
+        latitude: 40.4154, longitude: -3.7074, type: 'historical', visited: false, isRichInfo: true, curiosity: "Bajo sus soportales se encuentra Sobrino de Botín, el restaurante más antiguo del mundo.",
+        photoSpot: { angle: "Bajo el Arco de Cuchilleros", bestTime: "Tarde", instagramHook: "Plaza Mayor Secrets", milesReward: 90 } 
       },
       { 
         id: 'm5', 
-        name: 'Puerta del Sol y el Kilómetro Cero', 
-        description: '[HOOK] El corazón palpitante de España, donde el tiempo se detiene cada Nochevieja.\n\n[STORY] Aquí nació la resistencia contra Napoleón el 2 de mayo de 1808 y aquí se proclamó la Segunda República. Es el epicentro de las manifestaciones y la alegría popular. El edificio de la Real Casa de Correos alberga el reloj más famoso del país, el mismo que da las doce campanadas que todo español sigue para comer las uvas de la suerte. Frente a su puerta principal encontrarás la placa del Kilómetro Cero, el punto desde el que se miden todas las carreteras radiales de la península.\n\n[SECRET] La estatua del Oso y el Madroño tiene un error botánico: en realidad, los madroños no son árboles tan altos como para que un oso se apoye en ellos, pero representan el escudo histórico de la Villa y Corte.\n\n[SMART_TIP] Si quieres la foto con el Km 0 sin gente, tendrás que venir antes de las 9:00 AM. A partir de esa hora, siempre hay una cola de viajeros esperando su turno.', 
-        latitude: 40.4169, longitude: -3.7035, type: 'historical', visited: false, isRichInfo: true, curiosity: "En los cimientos de la plaza aún se encuentran restos de la antigua iglesia del Buen Suceso.",
-        photoSpot: { angle: "Cerca de la placa del Km 0", bestTime: "Cualquiera", instagramHook: "Km0Spain", milesReward: 50 } 
+        name: 'Puerta del Sol y el Reloj de las Cuatro "I"', 
+        description: '[HOOK] El kilómetro cero de un imperio y el reloj que se "equivoca" por tradición.\n\n[STORY] Aquí se encuentra la placa del Kilómetro Cero y la famosa estatua del Oso y el Madroño. Pero el verdadero protagonista es el reloj de la Casa de Correos.\n\n[SECRET] Si miras el reloj, el número 4 romano está escrito como "IIII" en lugar de "IV". No es un error; era una convención estética de la relojería antigua para equilibrar el peso visual con el "VIII" del lado opuesto. El relojero encargado vive justo encima para no fallar jamás en Nochevieja.', 
+        latitude: 40.4169, longitude: -3.7035, type: 'historical', visited: false, isRichInfo: true, curiosity: "En los cimientos de la plaza hay restos de la antigua iglesia del Buen Suceso.",
+        photoSpot: { angle: "Frente a la estatua del Oso", bestTime: "Cualquiera", instagramHook: "Madrid's Kilometer Zero", milesReward: 50 } 
       },
-      { id: 'm6', name: 'Barrio de las Letras (Cervantes y Lope)', description: '[HOOK] Donde las palabras se grabaron con oro en el pavimento y con sangre en los duelos.\n\n[STORY] Este cuadrilátero de calles fue el hogar de los genios del Siglo de Oro. Cervantes, Lope de Vega, Quevedo y Góngora vivieron, escribieron y se odiaron profundamente en estas mismas manzanas. Hoy es una zona peatonal bohemia llena de galerías de arte y librerías antiguas. Si miras al suelo, verás fragmentos de sus obras más inmortales grabados en letras doradas sobre la piedra.\n\n[SECRET] Lope de Vega y Cervantes eran vecinos y mantuvieron una rivalidad tan feroz que se dedicaban insultos en sus prólogos literarios.\n[SMART_TIP] Visita la Casa-Museo de Lope de Vega (gratis con reserva) para ver cómo era la vida real de un escritor de éxito en el siglo XVII.', latitude: 40.4140, longitude: -3.6980, type: 'culture', visited: false, isRichInfo: true, curiosity: "Es la zona del mundo con más densidad de premios Nobel y genios literarios por metro cuadrado históricamente.", photoSpot: { angle: "Detalle de los versos en el suelo de la calle Huertas", bestTime: "Día", instagramHook: "LiteraryWalk", milesReward: 70 } },
-      { id: 'm7', name: 'Calle de la Cava Baja', description: '[HOOK] La calle que nunca duerme y donde el hambre es un pecado.\n\n[STORY] Siguiendo el foso de la antigua muralla cristiana, esta calle curva era el lugar donde llegaban los carruajes y diligencias a la Villa. Los sótanos que hoy son cavas de vino eran antiguos depósitos de hielo y grano. Es, sin duda, la milla de oro del tapeo madrileño.\n\n[SECRET] Muchas de las tabernas conservan túneles que se usaban para esconder vino (o personas) durante los asedios históricos.\n[SMART_TIP] Pide los "Huevos Rotos" en Casa Lucio, el plato más legendario de Madrid que han comido desde reyes hasta estrellas de Hollywood.', latitude: 40.4125, longitude: -3.7095, type: 'food', visited: false, isRichInfo: true, curiosity: "Hay más de 50 tabernas en apenas 300 metros.", photoSpot: { angle: "Perspectiva curva de la calle con los balcones de colores", bestTime: "Domingo", instagramHook: "TapasCrawl", milesReward: 80 } },
-      { id: 'm8', name: 'Templo de Debod', description: '[HOOK] Un pedazo del Antiguo Egipto que encontró su hogar definitivo frente a la sierra madrileña.\n\n[STORY] Con más de 2.200 años de antigüedad, este templo fue un regalo del gobierno egipcio a España en 1968, como agradecimiento por la ayuda prestada para salvar los templos de Nubia tras la construcción de la Gran Presa de Asuán. Fue traído piedra a piedra y reconstruido meticulosamente respetando su orientación original hacia el sol.\n\n[SECRET] En las paredes interiores aún se pueden ver relieves que muestran al rey Adikhalamani de Meroe haciendo ofrendas a los dioses.\n[SMART_TIP] Es el lugar de referencia para ver el atardecer en Madrid. Llega 30 minutos antes de la puesta de sol y busca el reflejo perfecto en el estanque.', latitude: 40.4242, longitude: -3.7178, type: 'historical', visited: false, isRichInfo: true, curiosity: "Es el único templo egipcio completo que se puede visitar en España.", photoSpot: { angle: "Reflejo simétrico en el agua frontal", bestTime: "Atardecer", instagramHook: "DebodMagic", milesReward: 140 } },
-      { id: 'm9', name: 'Gran Vía y Edificio Metrópolis', description: '[HOOK] El Broadway madrileño que nunca apaga sus luces.\n\n[STORY] Inaugurada a principios del siglo XX para conectar los nuevos barrios del norte con el centro, la Gran Vía supuso la demolición de más de 300 casas y 50 calles. Hoy es si el escaparate de la modernidad: cines, teatros musicales y edificios de una arquitectura ecléctica impresionante. El edificio Metrópolis, con su cúpula de pizarra y pan de oro, es el guardián de la entrada a esta avenida infinita.\n\n[SECRET] Durante la Guerra Civil, fue conocida como la "Avenida de los Obuses" por los constantes bombardeos que recibía.\n[SMART_TIP] Sube a la terraza del Círculo de Bellas Artes para tener una vista aérea de 360 grados que te dejará sin aliento.', latitude: 40.4200, longitude: -3.7058, type: 'art', visited: false, isRichInfo: true, curiosity: "Fue el primer gran proyecto de reforma urbana moderna de Madrid.", photoSpot: { angle: "Desde el cruce con Alcalá mirando al Metrópolis", bestTime: "Noche", instagramHook: "GranViaNights", milesReward: 100 } },
-      { id: 'm10', name: 'Fuente de Cibeles y Palacio de Comunicaciones', description: '[HOOK] La diosa que protege los sueños (y las victorias) de los madrileños.\n\n[STORY] La fuente de la diosa Cibeles, esculpida en mármol de Toledo, representa a la diosa de la fertilidad en un carro tirado por leones (Hipómenes y Atalanta). Detrás, el imponente Palacio de Cibeles (actual Ayuntamiento) fue en su día la sede de Correos, ganándose el apodo de "Nuestra Señora de las Comunicaciones" por su aspecto de catedral gótica moderna.\n\n[SECRET] Los leones del carro no se miran entre sí porque, según el mito, fueron castigados a estar juntos pero sin poder cruzarse la mirada jamás.\n[SMART_TIP] Entra en la Galería de Cristal del palacio para admirar la inmensa bóveda de vidrio que cubre el antiguo patio de carruajes.', latitude: 40.4189, longitude: -3.6944, type: 'historical', visited: false, isRichInfo: true, curiosity: "La fuente tiene un sistema de seguridad que inundaría la cámara acorazada del Banco de España cercano en caso de robo.", photoSpot: { angle: "De frente con el Palacio de fondo iluminado", bestTime: "Noche", instagramHook: "CibelesBeauty", milesReward: 110 } }
+      { 
+        id: 'm6', 
+        name: 'Barrio de las Letras y la Tumba de Cervantes', 
+        description: '[HOOK] Donde los poetas se retaban a duelo y las palabras se grabaron con oro en el suelo.\n\n[STORY] Aquí vivieron Lope de Vega, Quevedo y Góngora en una rivalidad feroz. Se dedicaban poemas insultantes y trataban de desahuciarse mutuamente de sus casas por puro odio intelectual.\n\n[SECRET] En la Iglesia de las Trinitarias Descalzas reposan los restos de Miguel de Cervantes. Fueron redescubiertos apenas en 2015 en una cripta olvidada, marcados con las iniciales "M.C." en un ataúd de madera podrida.', 
+        latitude: 40.4140, longitude: -3.6980, type: 'culture', visited: false, isRichInfo: true, curiosity: "Es el barrio con más citas literarias por metro cuadrado en el pavimento.",
+        photoSpot: { angle: "Detalle de los versos dorados en Calle Huertas", bestTime: "Día", instagramHook: "Literary Gold Madrid", milesReward: 70 } 
+      }
+    ]
+  },
+  {
+    id: 'par-1',
+    city: 'Paris',
+    title: 'Paris: Cinematic City (Film & TV Locations)',
+    description: 'Explore the iconic sets of Amélie, Inception, and Emily in Paris. Discover why the City of Light is the ultimate backdrop for legendary storytellers.',
+    duration: '4.5h',
+    distance: '7.2 km',
+    difficulty: 'Easy',
+    theme: 'Cinema & Arts',
+    isSponsored: false,
+    stops: [
+      { 
+        id: 'p1', 
+        name: 'Café des Deux Moulins', 
+        description: '[HOOK] The corner where Amélie Poulain\'s fate was simmered to perfection.\n\n[STORY] This real Montmartre café became a pilgrimage site after the 2001 film. It still retains the Art Deco interior and the tobacco counter where Georgette worked.\n\n[SECRET] Look for the "Amélie box" in the restroom—a tiny shrine left by fans. Also, the name "Deux Moulins" refers to the nearby Moulin Rouge and Moulin de la Galette, both survivors of the hill\'s once-numerous windmills.', 
+        latitude: 48.8833, longitude: 2.3340, type: 'culture', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "From the sidewalk catching the red awning", bestTime: "Morning", instagramHook: "Amélie's Real Cafe", milesReward: 80 } 
+      },
+      { 
+        id: 'p2', 
+        name: 'Pont de Bir-Hakeim', 
+        description: '[HOOK] The dreamlike steel bridge where "Inception" blurred the lines of reality.\n\n[STORY] Famous for its dual-level structure (metro above, cars/bikes below), this bridge offers the most dramatic symmetrical view of the Eiffel Tower. It has appeared in everything from "Last Tango in Paris" to "Mission Impossible".\n\n[SECRET] The central "belvedere" on the bridge features a statue called "France Renaissance" which marks the exact spot where the secret staircase leads down to the Île aux Cygnes, the island where a mini Statue of Liberty hides.', 
+        latitude: 48.8557, longitude: 2.2878, type: 'art', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "Symmetrical perspective through the steel columns", bestTime: "Sunrise", instagramHook: "Inception Bridge Paris", milesReward: 100 } 
+      },
+      { 
+        id: 'p3', 
+        name: 'Shakespeare and Company', 
+        description: '[HOOK] A sanctuary for literary wanderers and the star of "Before Sunset".\n\n[STORY] While the current shop opened in 1951, it inherited the spirit of Sylvia Beach\'s original bookstore. Hemingway and Joyce used to haunt these shelves. It remains a "Tumbleweed" hostel where writers sleep for free in exchange for work.\n\n[SECRET] Inside, there is a "hidden" library upstairs and a wishing well in the floorboards where travelers drop coins from all over the world. Also, watch out for "Aggie", the bookstore cat who often sleeps on rare first editions.', 
+        latitude: 48.8525, longitude: 2.3471, type: 'culture', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "Exterior with the iconic green facade", bestTime: "Afternoon", instagramHook: "Paris Book Heaven", milesReward: 70 } 
+      },
+      { 
+        id: 'p4', 
+        name: 'Place de l\'Estrapade', 
+        description: '[HOOK] The chic heart of "Emily in Paris" and a dark site of medieval justice.\n\n[STORY] Today, it\'s known as the location of Emily Cooper\'s apartment and Gabriel\'s restaurant (Terra Nera). It’s the epitome of Left Bank charm.\n\n[SECRET] The square\'s name "Estrapade" refers to a brutal form of torture used here in the Middle Ages to punish deserters. The contrast between its dark history and the "Pink City" aesthetic of the show is Paris\'s greatest irony.', 
+        latitude: 48.8450, longitude: 2.3451, type: 'culture', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "By the fountain looking at the bakery", bestTime: "Morning", instagramHook: "Living like Emily", milesReward: 90 } 
+      }
+    ]
+  },
+  {
+    id: 'tok-1',
+    city: 'Tokyo',
+    title: 'Tokyo: Avant-Garde Geometries (Architectural Gems)',
+    description: 'Explore Tokyo\'s neon and glass jungle. Discover the future of design through its most daring and "breathing" buildings.',
+    duration: '6h',
+    distance: '8.5 km',
+    difficulty: 'Moderate',
+    theme: 'Design & Futurism',
+    isSponsored: false,
+    stops: [
+      { 
+        id: 't1', 
+        name: 'Prada Aoyama', 
+        description: '[HOOK] A breathing crystal shell that deforms and interacts with your eyes.\n\n[STORY] Designed by Herzog & de Meuron, this 6-story building is encased in a grid of rhomboid glass panes. Some are flat, some concave, and some convex, creating a "moving" reflection of the city.\n\n[SECRET] The glass is designed to resemble a quilted fabric. If you stand close to the concave panes, they create a magnifying effect that allows you to see the textures of the items inside as if you were holding them, effectively removing the barrier of the shop window.', 
+        latitude: 35.6624, longitude: 139.7135, type: 'art', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "Corner shot capturing the diamond grid pattern", bestTime: "Night", instagramHook: "Prada Tokyo Geometry", milesReward: 110 } 
+      },
+      { 
+        id: 't2', 
+        name: 'Tokyo International Forum', 
+        description: '[HOOK] An immense glass boat hull dry-docked in the heart of Chiyoda.\n\n[STORY] This is Tokyo\'s premier exhibition center. The "Glass Hall" is an architectural marvel—a 210-meter long vessel-shaped atrium made of glass and steel.\n\n[SECRET] The roof structure is supported by only two columns, creating a completely open and airy interior. Look up: the steel trusses are designed to resemble the skeletal remains of a prehistoric whale, a nod to Japan\'s relationship with the sea.', 
+        latitude: 35.6769, longitude: 139.7638, type: 'art', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "From the upper glass walkways looking down", bestTime: "Midday", instagramHook: "Inside the Tokyo Whale", milesReward: 95 } 
+      },
+      { 
+        id: 't3', 
+        name: 'Nakagin Capsule Legacy (Ginza)', 
+        description: '[HOOK] The 1970s dream of a city that could grow and shed its rooms like a tree.\n\n[STORY] This was the masterpiece of Kisho Kurokawa and the Metabolism movement. Each capsule was meant to be replaced every 25 years. Although the tower was recently dismantled, its spirit lives on in Ginza.\n\n[SECRET] One of the original capsules has been preserved and is often on display in the nearby museum district. The "future" of the 70s was a 4x2.5 meter room with a built-in calculator, a Sony Trinitron TV, and a reel-to-reel tape deck.', 
+        latitude: 35.6682, longitude: 139.7618, type: 'historical', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "The preserved capsule at the Museum of Modern Art", bestTime: "Day", instagramHook: "Tokyo Metabolism Lives", milesReward: 130 } 
+      }
+    ]
+  },
+  {
+    id: 'rom-1',
+    city: 'Roma',
+    title: 'Rome: Cinematic Beauty & Secret Ruins',
+    description: 'Walk in the footsteps of Fellini and Audrey Hepburn. Experience the "Grande Bellezza" of the Eternal City through its hidden corners.',
+    duration: '5h',
+    distance: '6.5 km',
+    difficulty: 'Moderate',
+    theme: 'History & Cinema',
+    isSponsored: false,
+    stops: [
+      { 
+        id: 'r1', 
+        name: 'Trevi Fountain', 
+        description: '[HOOK] The stage for cinema\'s most famous midnight bath and a giant piggy bank for the poor.\n\n[STORY] Completed in 1762, it marks the end point of the "Aqua Virgo" aqueduct, which has been supplying water to Rome for over 2,000 years.\n\n[SECRET] Every night, about 3,000€ in coins are sucked up from the fountain floor. By law, this money goes to "Caritas", a charity that helps the city\'s homeless. Stealing coins from the fountain is a serious crime once practiced by a famous local thief named "d\'Artagnan".', 
+        latitude: 41.9009, longitude: 12.4833, type: 'historical', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "From the far left corner to capture the depth", bestTime: "Dawn", instagramHook: "Trevi without the Crowds", milesReward: 100 } 
+      },
+      { 
+        id: 'r2', 
+        name: 'Bocca della Verità', 
+        description: '[HOOK] The world\'s oldest lie detector that terrorized Audrey Hepburn.\n\n[STORY] This massive marble mask is likely an ancient Roman drain cover representing the sea god Oceanus. It became a global icon after the "hand-biting" scene in Roman Holiday.\n\n[SECRET] In the Middle Ages, the Mouth was used as a trial of ordeal. An executioner would hide behind the stone with a sharp blade; if the judge decided the person was lying, the "mouth" would indeed bite their hand off.', 
+        latitude: 41.8882, longitude: 12.4813, type: 'historical', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "Close-up with your hand inside (classic!)", bestTime: "Morning", instagramHook: "Roman Lie Detector", milesReward: 80 } 
+      },
+      { 
+        id: 'r3', 
+        name: 'Quartiere Coppedè', 
+        description: '[HOOK] A delirious fantasy where Art Nouveau embraces mythology in a hidden neighborhood.\n\n[STORY] Not a ruin, but a "fantasy city" built between 1913 and 1927 by Gino Coppedè. It combines Baroque, Medieval, and Mannerist styles into something otherworldly.\n\n[SECRET] Look for the "Palazzo del Ragno" (Spider Palace). Above its door is a huge golden spider mosaic symbolizing work and persistence. This neighborhood is so strange that the Beatles once jumped into its "Fountain of the Frogs" fully clothed after a concert.', 
+        latitude: 41.9189, longitude: 12.5011, type: 'art', visited: false, isRichInfo: true, 
+        photoSpot: { angle: "Under the giant chandelier hanging from the main arch", bestTime: "Golden Hour", instagramHook: "Rome's Secret Kingdom", milesReward: 140 } 
+      }
     ]
   }
 ];

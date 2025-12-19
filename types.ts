@@ -121,7 +121,6 @@ export const LANGUAGES = [
   { code: 'fr', name: 'Français' },
   { code: 'de', name: 'Deutsch' },
   { code: 'ar', name: 'العربية' },
-  { code: 'pt', name: 'Português' },
   { code: 'zh', name: '中文' },
   { code: 'ja', name: '日本語' },
 ];
