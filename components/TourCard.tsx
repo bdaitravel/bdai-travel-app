@@ -12,29 +12,17 @@ const getThemeStyles = (themeStr: string) => {
   return { badge: 'bg-slate-100 text-slate-900', icon: 'fa-compass' };
 };
 
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371e3; 
-    const φ1 = lat1 * Math.PI/180; 
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-};
-
 const UI_TEXT: any = {
-    en: { next: "Next", prev: "Back", listen: "Audio Guide", pause: "Pause", checkin: "Check In", collected: "Verified!", stop: "Stop", deepDive: "AI Deep Dive", enriching: "Investigating..." },
-    es: { next: "Siguiente", prev: "Atrás", listen: "Audio Guía", pause: "Pausar", checkin: "Check In", collected: "¡Verificado!", stop: "Parada", deepDive: "Inmersión IA", enriching: "Investigando..." },
-    ca: { next: "Següent", prev: "Enrere", listen: "Àudio Guia", pause: "Pausa", checkin: "Check In", collected: "Verificat!", stop: "Parada", deepDive: "Immersió IA", enriching: "Investigant..." },
-    fr: { next: "Suivant", prev: "Retour", listen: "Audioguide", pause: "Pause", checkin: "Check-in", collected: "Vérifié!", stop: "Arrêt", deepDive: "Analyse IA", enriching: "Recherche..." },
-    de: { next: "Weiter", prev: "Zurück", listen: "Audio-Guide", pause: "Pause", checkin: "Einchecken", collected: "Verifiziert!", stop: "Halt", deepDive: "KI-Analyse", enriching: "Untersuchung..." },
-    pt: { next: "Próximo", prev: "Voltar", listen: "Áudio Guia", pause: "Pausa", checkin: "Check-in", collected: "Verificado!", stop: "Parada", deepDive: "Imersão IA", enriching: "Investigando..." },
-    ar: { next: "التالي", prev: "السابق", listen: "دليل صوتي", pause: "إيقاف", checkin: "تسجيل الوصول", collected: "تم التحقق!", stop: "توقف", deepDive: "تحليل ذكي", enriching: "جاري البحث..." },
-    zh: { next: "下一步", prev: "上一步", listen: "语音导览", pause: "暂停", checkin: "签到", collected: "已验证!", stop: "站点", deepDive: "AI 深入解析", enriching: "正在调研..." },
-    ja: { next: "次へ", prev: "戻る", listen: "音声ガイド", pause: "一時停止", checkin: "チェックイン", collected: "認証済み!", stop: "停留所", deepDive: "AI 深掘り", enriching: "調査中..." }
+    en: { next: "Next", prev: "Back", listen: "Audio Guide", pause: "Pause", checkin: "Check In", collected: "Verified!", stop: "Stop", deepDive: "AI Deep Dive", enriching: "Investigating...", photoSpotTitle: "Perfect Shot", angle: "Suggested Angle", bestTime: "Best Time", instaHook: "Instagram Hook", copyBtn: "Copy & Share" },
+    es: { next: "Siguiente", prev: "Atrás", listen: "Audio Guía", pause: "Pausar", checkin: "Check In", collected: "¡Verificado!", stop: "Parada", deepDive: "Inmersión IA", enriching: "Investigando...", photoSpotTitle: "Foto Perfecta", angle: "Encuadre Sugerido", bestTime: "Mejor Momento", instaHook: "Hook Instagram", copyBtn: "Copiar y Compartir" },
+    eu: { next: "Hurrengoa", prev: "Atzera", listen: "Audio Gida", pause: "Gelditu", checkin: "Check In", collected: "Egiaztatuta!", stop: "Geldialdia", deepDive: "AI Sakontzea", enriching: "Ikertzen...", photoSpotTitle: "Argazki Perfektua", angle: "Iradokitako enkoadraketa", bestTime: "Une onena", instaHook: "Instagramerako Hook-a", copyBtn: "Kopiatu eta Partekatu" },
+    ca: { next: "Següent", prev: "Enrere", listen: "Audio Guia", pause: "Pausa", checkin: "Check In", collected: "Verificat!", stop: "Parada", deepDive: "Immersió IA", enriching: "Investigant...", photoSpotTitle: "Foto Perfecta", angle: "Enquadrament Suggerit", bestTime: "Millor Moment", instaHook: "Hook Instagram", copyBtn: "Copiar i Compartir" },
+    fr: { next: "Suivant", prev: "Retour", listen: "Guide Audio", pause: "Pause", checkin: "S'enregistrer", collected: "Vérifié!", stop: "Arrêt", deepDive: "Immersion IA", enriching: "Recherche...", photoSpotTitle: "Photo Parfaite", angle: "Angle Suggéré", bestTime: "Meilleur Moment", instaHook: "Hook Instagram", copyBtn: "Copier et Partager" },
+    de: { next: "Weiter", prev: "Zurück", listen: "Audioguide", pause: "Pause", checkin: "Einchecken", collected: "Verifiziert!", stop: "Halt", deepDive: "KI-Tiefgang", enriching: "Untersuchung...", photoSpotTitle: "Perfektes Foto", angle: "Empfohlener Winkel", bestTime: "Beste Zeit", instaHook: "Instagram-Hook", copyBtn: "Kopieren & Teilen" },
+    pt: { next: "Próximo", prev: "Voltar", listen: "Guia de Áudio", pause: "Pausa", checkin: "Check In", collected: "Verificado!", stop: "Parada", deepDive: "Imersão IA", enriching: "Investigando...", photoSpotTitle: "Foto Perfeita", angle: "Ângulo Sugerido", bestTime: "Melhor Momento", instaHook: "Hook do Instagram", copyBtn: "Copiar e Compartilhar" },
+    ar: { next: "التالي", prev: "السابق", listen: "دليل صوتي", pause: "إيقاف", checkin: "تسجيل الوصول", collected: "تم التحقق!", stop: "محطة", deepDive: "غوص عميق بالذكاء الاصطناعي", enriching: "جارٍ التحقيق...", photoSpotTitle: "لقطة مثالية", angle: "الزاوية المقترحة", bestTime: "أفضل وقت", instaHook: "جملة إنستغرام", copyBtn: "نسخ ومشاركة" },
+    zh: { next: "下一步", prev: "返回", listen: "语音导览", pause: "暂停", checkin: "签到", collected: "已验证！", stop: "站点", deepDive: "AI 深度解析", enriching: "正在调查...", photoSpotTitle: "完美快照", angle: "建议角度", bestTime: "最佳时间", instaHook: "Instagram 钩子", copyBtn: "复制并分享" },
+    ja: { next: "次へ", prev: "戻る", listen: "オーディオガイド", pause: "一時停止", checkin: "チェックイン", collected: "確認済み！", stop: "停留所", deepDive: "AIディープダイブ", enriching: "調査中...", photoSpotTitle: "パーフェクトショット", angle: "推奨アングル", bestTime: "ベストタイム", instaHook: "Instagramフック", copyBtn: "コピーして共有" }
 };
 
 interface TourCardProps {
@@ -120,6 +108,13 @@ export const ActiveTourCard: React.FC<any> = (props) => {
         });
     };
 
+    const handleCopyHook = () => {
+        if (currentStop.photoSpot?.instagramHook) {
+            navigator.clipboard.writeText(currentStop.photoSpot.instagramHook);
+            alert("Hook copiado! Abre Instagram y pégalo en tu publicación.");
+        }
+    };
+
     return (
         <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar">
              <div className="relative h-72 w-full flex-shrink-0">
@@ -132,12 +127,49 @@ export const ActiveTourCard: React.FC<any> = (props) => {
              </div>
              <div className="px-6 pb-12 pt-8">
                  <div className="w-full h-1 bg-slate-100 rounded-full mb-8 overflow-hidden"><div className="h-full bg-purple-600 transition-all duration-500" style={{ width: `${((currentStopIndex + 1) / tour.stops.length) * 100}%` }}></div></div>
+                 
+                 {/* Main Content */}
                  <div className="prose prose-slate max-w-none mb-10">{formatDescription(currentStop.description)}</div>
+
+                 {/* Photo Spot Section */}
+                 {currentStop.photoSpot && (
+                    <div className="mb-10 p-5 bg-gradient-to-br from-pink-50 to-rose-50 border border-rose-100 rounded-[2rem] shadow-sm animate-fade-in">
+                        <div className="flex items-center gap-2 mb-4 text-rose-600">
+                            <i className="fas fa-camera text-sm"></i>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t('photoSpotTitle')}</span>
+                            <span className="ml-auto bg-rose-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full">+{currentStop.photoSpot.milesReward} MILES</span>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-[7px] font-black text-rose-300 uppercase mb-1 tracking-widest">{t('angle')}</p>
+                                    <p className="text-[11px] font-bold text-slate-800 leading-tight">{currentStop.photoSpot.angle}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[7px] font-black text-rose-300 uppercase mb-1 tracking-widest">{t('bestTime')}</p>
+                                    <p className="text-[11px] font-bold text-slate-800 leading-tight">{currentStop.photoSpot.bestTime}</p>
+                                </div>
+                            </div>
+                            <div className="p-4 bg-white rounded-2xl border border-rose-100">
+                                <p className="text-[7px] font-black text-slate-400 uppercase mb-2 tracking-widest">{t('instaHook')}</p>
+                                <p className="text-xs font-medium text-slate-600 italic mb-3 leading-relaxed">"{currentStop.photoSpot.instagramHook}"</p>
+                                <button 
+                                    onClick={handleCopyHook}
+                                    className="w-full py-2 bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                                >
+                                    <i className="fab fa-instagram"></i> {t('copyBtn')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                 )}
+
                  {!currentStop.isRichInfo && (
                      <button onClick={async () => { setIsEnriching(true); await onEnrichStop(currentStop.id); setIsEnriching(false); }} disabled={isEnriching} className="w-full mb-10 py-5 bg-gradient-to-br from-purple-600 to-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50">
                         {isEnriching ? <><i className="fas fa-spinner fa-spin"></i> {t('enriching')}</> : <><i className="fas fa-brain"></i> {t('deepDive')}</>}
                      </button>
                  )}
+
                  <div className="space-y-4">
                      <button onClick={() => onCheckIn(currentStop.id, 50)} className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm flex items-center justify-center gap-2 shadow-lg transition-all transform active:scale-95 ${currentStop.visited ? 'bg-green-100 text-green-700' : 'bg-slate-900 text-white hover:bg-black'}`}>
                          {currentStop.visited ? <><i className="fas fa-check-circle"></i> {t('collected')}</> : <><i className="fas fa-map-marker-alt"></i> {t('checkin')} (+50 Miles)</>}

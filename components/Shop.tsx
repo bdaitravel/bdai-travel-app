@@ -15,39 +15,16 @@ const PRODUCTS: any[] = [
 ];
 
 const SHOP_TEXTS: any = {
-    en: {
-        title: "bdai shop",
-        subtitle: "Official Marketplace",
-        discount: "Loyalty Discount",
-        discountSub: "Applied automatically based on rank.",
-        buy: "Buy Now",
-        challenge: "Monthly Goal",
-        challengeSub: "Unlock new badges with every purchase.",
-        visitStore: "Visit Etsy Store",
-        cats: { 'Guides': 'Guides', 'Itineraries': 'Templates', 'Recipes': 'Gastronomy', 'Merch': 'Merch', 'Premium': 'Premium' }
-    },
-    es: {
-        title: "tienda bdai",
-        subtitle: "Mercado Oficial del Viajero",
-        discount: "Tu Descuento de Nivel",
-        discountSub: "Se aplica automáticamente según tu rango.",
-        buy: "Comprar",
-        challenge: "Objetivo Mensual",
-        challengeSub: "Gana insignias exclusivas con cada compra.",
-        visitStore: "Ver Tienda Etsy",
-        cats: { 'Guides': 'Guías', 'Itineraries': 'Plantillas', 'Recipes': 'Gastronomía', 'Merch': 'Merch', 'Premium': 'Premium' }
-    },
-    de: {
-        title: "bdai shop",
-        subtitle: "Offizieller Marktplatz",
-        discount: "Treuerabatt",
-        discountSub: "Wird automatisch basierend auf dem Rang angewendet.",
-        buy: "Kaufen",
-        challenge: "Monatsziel",
-        challengeSub: "Schalte neue Abzeichen mit jedem Kauf frei.",
-        visitStore: "Etsy Store besuchen",
-        cats: { 'Guides': 'Guides', 'Itineraries': 'Vorlagen', 'Recipes': 'Gastronomie', 'Merch': 'Merch', 'Premium': 'Premium' }
-    }
+    en: { title: "bdai shop", subtitle: "Official Marketplace", discount: "Loyalty Discount", discountSub: "Applied automatically based on rank.", buy: "Buy Now", visitStore: "Visit Etsy Store", cats: { 'Guides': 'Guides', 'Itineraries': 'Templates', 'Recipes': 'Gastronomy', 'Merch': 'Merch', 'Premium': 'Premium' } },
+    es: { title: "tienda bdai", subtitle: "Mercado Oficial", discount: "Tu Descuento", discountSub: "Se aplica según tu rango.", buy: "Comprar", visitStore: "Ver Tienda Etsy", cats: { 'Guides': 'Guías', 'Itineraries': 'Plantillas', 'Recipes': 'Gastronomía', 'Merch': 'Merch', 'Premium': 'Premium' } },
+    eu: { title: "bdai denda", subtitle: "Merkatua", discount: "Leialtasun deskontua", discountSub: "Zure mailaren arabera aplikatzen da.", buy: "Erosi", visitStore: "Etsy denda ikusi", cats: { 'Guides': 'Gidak', 'Itineraries': 'Plantillak', 'Recipes': 'Gastronomia', 'Merch': 'Merch', 'Premium': 'Premium' } },
+    ca: { title: "botiga bdai", subtitle: "Mercat Oficial", discount: "Descompte", discountSub: "S'aplica segons el teu rang.", buy: "Comprar", visitStore: "Etsy Botiga", cats: { 'Guides': 'Guies', 'Itineraries': 'Plantilles', 'Recipes': 'Gastronomia', 'Merch': 'Merch', 'Premium': 'Premium' } },
+    fr: { title: "boutique bdai", subtitle: "Marché Officiel", discount: "Remise Fidélité", discountSub: "Appliquée selon votre rang.", buy: "Acheter", visitStore: "Boutique Etsy", cats: { 'Guides': 'Guides', 'Itineraries': 'Modèles', 'Recipes': 'Gastronomie', 'Merch': 'Merch', 'Premium': 'Premium' } },
+    de: { title: "bdai shop", subtitle: "Offizieller Marktplatz", discount: "Treuerabatt", discountSub: "Wird basierend auf dem Rang angewendet.", buy: "Kaufen", visitStore: "Etsy Shop", cats: { 'Guides': 'Guides', 'Itineraries': 'Vorlagen', 'Recipes': 'Gastronomie', 'Merch': 'Merch', 'Premium': 'Premium' } },
+    pt: { title: "loja bdai", subtitle: "Mercado Oficial", discount: "Desconto", discountSub: "Aplicado com base no rank.", buy: "Comprar", visitStore: "Loja Etsy", cats: { 'Guides': 'Guias', 'Itineraries': 'Modelos', 'Recipes': 'Gastronomia', 'Merch': 'Merch', 'Premium': 'Premium' } },
+    ar: { title: "متجر bdai", subtitle: "السوق الرسمي", discount: "خصم الولاء", discountSub: "يتم تطبيقه تلقائيًا بناءً على الرتبة.", buy: "شراء", visitStore: "زيارة متجر Etsy", cats: { 'Guides': 'أدلة', 'Itineraries': 'قوالب', 'Recipes': 'طعام', 'Merch': 'منتجات', 'Premium': 'بريميوم' } },
+    zh: { title: "bdai 商店", subtitle: "官方市场", discount: "忠诚折扣", discountSub: "根据等级自动应用。", buy: "立即购买", visitStore: "访问 Etsy 商店", cats: { 'Guides': '指南', 'Itineraries': '模板', 'Recipes': '美食', 'Merch': '周边', 'Premium': '高级' } },
+    ja: { title: "bdai ショップ", subtitle: "公式マーケットプレイス", discount: "ロイヤリティ割引", discountSub: "ランクに基づいて自動適用されます。", buy: "今すぐ購入", visitStore: "Etsyストアへ", cats: { 'Guides': 'ガイド', 'Itineraries': 'テンプレート', 'Recipes': 'グルメ', 'Merch': 'グッズ', 'Premium': 'プレミアム' } }
 };
 
 export const Shop: React.FC<ShopProps> = ({ user }) => {

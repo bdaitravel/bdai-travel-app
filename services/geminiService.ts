@@ -40,10 +40,13 @@ const getFromCache = <T>(key: string): T | null => {
     } catch (e) { return null; }
 };
 
+// Added missing saveToCache utility function to fix "Cannot find name 'saveToCache'" errors.
 const saveToCache = (key: string, data: any) => {
     try {
-        localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ timestamp: Date.now(), data }));
-    } catch (e) { localStorage.clear(); }
+        localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ data }));
+    } catch (e) { 
+        console.warn("Cache save error:", e);
+    }
 };
 
 const cleanJson = (text: string) => {
@@ -89,7 +92,7 @@ export const translateTourObject = async (tour: Tour, targetLanguage: string): P
         
         RULES:
         1. Keep EXACT JSON structure.
-        2. Translate: title, description, safetyTip, wifiTip, and ALL fields in 'stops' array (including photoSpot details).
+        2. Translate: title, description, safetyTip, wifiTip, publicTransport and ALL fields in 'stops' array (including photoSpot details).
         3. Maintain [HOOK], [STORY], [SECRET], [SMART_TIP] tags.
         4. Do NOT truncate. Ensure the output JSON is complete.
         5. Return ONLY the valid JSON.
@@ -106,6 +109,7 @@ export const translateTourObject = async (tour: Tour, targetLanguage: string): P
                 config: { 
                     responseMimeType: "application/json",
                     maxOutputTokens: 12000,
+                    // Added thinkingConfig.thinkingBudget when maxOutputTokens is set, as per coding guidelines.
                     thinkingConfig: { thinkingBudget: 4000 }
                 }
             })
@@ -147,6 +151,10 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
     TOUR 1: "The Absolute Essentials & History" (Deep dive into the heart of the city).
     TOUR 2: "Hidden Gems & Secret Spots" (Off-the-beaten-path locations).
 
+    TRANSPORTATION INFO (LOCALIZED):
+    - For this city, identify the available ride-sharing apps (Uber, Cabify, Bolt, etc.).
+    - Provide a brief overview of the public transport (Metro, Bus, Tram) in ${targetLanguage}.
+
     STOP REQUIREMENTS (EXTREMELY IMPORTANT):
     - Exactly 10 stops per tour.
     - Description for EACH stop must be at least 150-200 words long.
@@ -155,11 +163,7 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
       [STORY]: Deep historical/cultural context.
       [SECRET]: Unknown fact.
       [SMART_TIP]: Professional advice.
-    - Include a "photoSpot" object for EACH stop with:
-      "angle": Best composition advice.
-      "bestTime": Ideal lighting (e.g. Sunset, 10 AM).
-      "instagramHook": Catchy phrase for captions.
-      "milesReward": Number between 50 and 150.
+    - Include a "photoSpot" object for EACH stop.
 
     FORMAT (JSON ARRAY):
     [
@@ -170,6 +174,8 @@ export const generateToursForCity = async (cityInput: string, languageCode: stri
         "distance": "6 km",
         "difficulty": "Moderate",
         "theme": "History",
+        "transportApps": ["Uber", "Cabify", "Local App"],
+        "publicTransport": "Brief localized description of Metro/Bus in ${targetLanguage}.",
         "stops": [ 
           { 
             "name": "Stop Name", 

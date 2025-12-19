@@ -23,6 +23,7 @@ const HOTEL_PROVIDERS = [
 const UI_TEXTS: any = {
     en: { title: "Traveler Toolkit", insurance: "Travel Insurance", esim: "Digital eSIM Plans", hotels: "Hotels & Stays", search: "Search Destination", findStay: "Find your next stay", searchBtn: "Search Stays" },
     es: { title: "Herramientas", insurance: "Seguro de Viaje", esim: "Planes eSIM Digital", hotels: "Hoteles y Alojamientos", search: "Buscar Destino", findStay: "Encuentra tu alojamiento", searchBtn: "Buscar" },
+    eu: { title: "Tresnak", insurance: "Bidaia-asegurua", esim: "eSIM digitalak", hotels: "Hotelak eta egoitzak", search: "Bilatu helburua", findStay: "Aurkitu zure ostatua", searchBtn: "Bilatu" },
     ca: { title: "Eines", insurance: "Assegurança de Viatge", esim: "Plans eSIM Digital", hotels: "Hotels i Allotjaments", search: "Cercar Destinació", findStay: "Troba el teu allotjament", searchBtn: "Cercar" },
     fr: { title: "Outils Voyage", insurance: "Assurance Voyage", esim: "Forfaits eSIM", hotels: "Hôtels et Séjours", search: "Rechercher", findStay: "Trouver un séjour", searchBtn: "Chercher" },
     de: { title: "Reise-Tools", insurance: "Reiseversicherung", esim: "eSIM-Pläne", hotels: "Hotels & Unterkünfte", search: "Ziel suchen", findStay: "Unterkunft finden", searchBtn: "Suchen" },

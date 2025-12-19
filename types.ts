@@ -17,7 +17,7 @@ export interface SocialLinks {
   website?: string;
 }
 
-export type TravelerRank = 'Turista' | 'Explorador' | 'Wanderer' | 'Globe-Trotter' | 'Leyenda del Viaje';
+export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend bdai';
 
 export interface UserProfile {
   id: string;

@@ -43,16 +43,16 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", guest: "Traveler", explore: "Explore", passport: "Passport", shop: "Shop", utilities: "Tools", ranking: "Ranking", searchPlaceholder: "Any city in the world...", login: "Create Passport", continueGuest: "Explore as Guest", tagline: "better destinations by ai", spain: "Spain Highlights", world: "Global Explorations", analyze: "Analyzing with AI...", resultsFor: "Tours in", topExplorers: "Top Explorers", viewRanking: "View Ranking", mobility: "Mobility Guide" },
-  es: { welcome: "Hola,", guest: "Viajero", explore: "Explorar", passport: "Pasaporte", shop: "Tienda", utilities: "Herramientas", ranking: "Ranking", searchPlaceholder: "Cualquier ciudad del mundo...", login: "Crear Pasaporte", continueGuest: "Explorar como Invitado", tagline: "better destinations by ai", spain: "Joyas de España", world: "Exploración Global", analyze: "Analizando con IA...", resultsFor: "Tours en", topExplorers: "Top Exploradores", viewRanking: "Ver Ranking", mobility: "Guía de Movilidad" },
-  ca: { welcome: "Hola,", guest: "Viatger", explore: "Explorar", passport: "Passaport", shop: "Botiga", utilities: "Eines", ranking: "Ranking", searchPlaceholder: "Qualsevol ciutat del món...", login: "Crear Passaport", continueGuest: "Explorar com a Convidat", tagline: "better destinations by ai", spain: "Joies d'Espanya", world: "Exploració Global", analyze: "Analitzant amb IA...", resultsFor: "Tours a", topExplorers: "Top Exploradors", viewRanking: "Veure Ranking", mobility: "Guia de Mobilitat" },
-  fr: { welcome: "Bonjour,", guest: "Voyageur", explore: "Explorer", passport: "Passeport", shop: "Boutique", utilities: "Outils", ranking: "Classement", searchPlaceholder: "N'importe quelle ville...", login: "Créer Passeport", continueGuest: "Explorer en Invité", tagline: "better destinations by ai", spain: "Joyaux d'Espagne", world: "Exploration Mondiale", analyze: "Analyse avec IA...", resultsFor: "Tours à", topExplorers: "Top Explorateurs", viewRanking: "Voir le Classement", mobility: "Guide Mobilité" },
-  de: { welcome: "Hallo,", guest: "Reisender", explore: "Entdecken", passport: "Reisepass", shop: "Shop", utilities: "Tools", ranking: "Ranking", searchPlaceholder: "Jede Stadt der Welt...", login: "Pass erstellen", continueGuest: "Als Gast erkunden", tagline: "better destinations by ai", spain: "Spanien Highlights", world: "Weltweite Erkundung", analyze: "KI-Analyse...", resultsFor: "Tours in", topExplorers: "Top Entdecker", viewRanking: "Ranking ansehen", mobility: "Mobilitätsleitfaden" },
-  pt: { welcome: "Olá,", guest: "Viajante", explore: "Explorar", passport: "Passaporte", shop: "Loja", utilities: "Ferramentas", ranking: "Ranking", searchPlaceholder: "Qualquer cidade do mundo...", login: "Criar Passaporte", continueGuest: "Explorar como Convidado", tagline: "better destinations by ai", spain: "Joias da Espanha", world: "Exploração Global", analyze: "Analisando com IA...", resultsFor: "Tours em", topExplorers: "Top Exploradores", viewRanking: "Ver Ranking", mobility: "Guia de Mobilidade" },
-  it: { welcome: "Ciao,", guest: "Viaggiatore", explore: "Esplora", passport: "Passaporto", shop: "Negozio", utilities: "Strumenti", ranking: "Classifica", searchPlaceholder: "Qualsiasi città...", login: "Crea Passaporto", continueGuest: "Esplora come Ospite", tagline: "better destinations by ai", spain: "Gioielli di Spagna", world: "Esplorazione Globale", analyze: "Analisi IA...", resultsFor: "Tour a", topExplorers: "Top Esploratori", viewRanking: "Vedi Classifica", mobility: "Guida Mobilità" },
-  ar: { welcome: "مرحباً،", guest: "مسافر", explore: "استكشف", passport: "جواز السفر", shop: "متجر", utilities: "أدوات", ranking: "الترتيب", searchPlaceholder: "أي مدينة في العالم...", login: "إنشاء جواز سفر", continueGuest: "استكشف كضيف", tagline: "better destinations by ai", spain: "أبرز معالم إسبانيا", world: "استكشاف عالمي", analyze: "تحليل الذكاء الاصطناعي...", resultsFor: "جولات في", topExplorers: "كبار المستكشفين", viewRanking: "عرض الترتيب", mobility: "دليل التنقل" },
-  ja: { welcome: "こんにちは、", guest: "旅行者", explore: "探索", passport: "パスポート", shop: "ショップ", utilities: "ツール", ranking: "ランキング", searchPlaceholder: "世界中の都市...", login: "パスポート作成", continueGuest: "ゲストとして探索", tagline: "better destinations by ai", spain: "スペインのハイライト", world: "グローバル探索", analyze: "AI分析中...", resultsFor: "ツアー場所：", topExplorers: "トップ冒険家", viewRanking: "ランキングを見る", mobility: "モビリティガイド" },
-  zh: { welcome: "你好，", guest: "旅行者", explore: "探索", passport: "护照", shop: "商店", utilities: "工具", ranking: "排名", searchPlaceholder: "世界上任何城市...", login: "创建护照", continueGuest: "以游客身份探索", tagline: "better destinations by ai", spain: "西班牙精华", world: "全球探索", analyze: "AI分析中...", resultsFor: "导览地点：", topExplorers: "顶尖探险家", viewRanking: "查看排名", mobility: "出行指南" }
+  en: { welcome: "Hello,", guest: "Traveler", explore: "Explore", passport: "Passport", shop: "Shop", utilities: "Tools", ranking: "Ranking", searchPlaceholder: "Any city in the world...", login: "Create Passport", continueGuest: "Explore as Guest", tagline: "better destinations by ai", spain: "Spain Highlights", world: "Global Explorations", analyze: "Analyzing with AI...", resultsFor: "Tours in", topExplorers: "Top Explorers", viewRanking: "View Ranking", mobility: "Mobility Guide", availableApps: "Available Apps", publicTransportLabel: "Public Transport", defaultTransport: "Local transport network operating normally." },
+  es: { welcome: "Hola,", guest: "Viajero", explore: "Explorar", passport: "Pasaporte", shop: "Tienda", utilities: "Herramientas", ranking: "Ranking", searchPlaceholder: "Cualquier ciudad del mundo...", login: "Crear Pasaporte", continueGuest: "Explorar como Invitado", tagline: "better destinations by ai", spain: "Joyas de España", world: "Exploración Global", analyze: "Analizando con IA...", resultsFor: "Tours en", topExplorers: "Top Exploradores", viewRanking: "Ver Ranking", mobility: "Guía de Movilidad", availableApps: "Apps Disponibles", publicTransportLabel: "Transporte Público", defaultTransport: "Red de transporte local operando con normalidad." },
+  eu: { welcome: "Kaixo,", guest: "Bidaiaria", explore: "Esploratu", passport: "Pasaportea", shop: "Denda", utilities: "Tresnak", ranking: "Sailkapena", searchPlaceholder: "Munduko edozein hiri...", login: "Pasaportea sortu", continueGuest: "Esploratu gonbidatu gisa", tagline: "better destinations by ai", spain: "Espainiako aipagarrienak", world: "Explorazio globala", analyze: "AIrekin aztertzen...", resultsFor: "Ibilbideak hemen:", topExplorers: "Esploratzaile onenak", viewRanking: "Ikusi sailkapena", mobility: "Mugikortasun gida", availableApps: "Eskuragarri dauden aplikazioak", publicTransportLabel: "Garraio Publikoa", defaultTransport: "Tokiko garraio sarea normaltasunez dabil." },
+  ca: { welcome: "Hola,", guest: "Viatger", explore: "Explorar", passport: "Passaport", shop: "Botiga", utilities: "Eines", ranking: "Ranking", searchPlaceholder: "Qualsevol ciutat del món...", login: "Crear Passaport", continueGuest: "Explorar com a Convidat", tagline: "better destinations by ai", spain: "Joies d'Espanya", world: "Exploració Global", analyze: "Analitzant con IA...", resultsFor: "Tours a", topExplorers: "Top Exploradors", viewRanking: "Veure Ranking", mobility: "Guia de Mobilitat", availableApps: "Apps Disponibles", publicTransportLabel: "Transport Públic", defaultTransport: "Xarxa de transport local operant amb normalitat." },
+  fr: { welcome: "Bonjour,", guest: "Voyageur", explore: "Explorer", passport: "Passeport", shop: "Boutique", utilities: "Outils", ranking: "Classement", searchPlaceholder: "N'importe quelle ville...", login: "Créer un Passeport", continueGuest: "Explorer en invité", tagline: "better destinations by ai", spain: "Points forts de l'Espagne", world: "Explorations mondiales", analyze: "Analyse avec l'IA...", resultsFor: "Tours à", topExplorers: "Top Explorateurs", viewRanking: "Voir le classement", mobility: "Guide de mobilité", availableApps: "Apps disponibles", publicTransportLabel: "Transports publics", defaultTransport: "Réseau de transport local fonctionnant normalement." },
+  de: { welcome: "Hallo,", guest: "Reisender", explore: "Erkunden", passport: "Reisepass", shop: "Shop", utilities: "Tools", ranking: "Ranking", searchPlaceholder: "Jede Stadt der Welt...", login: "Reisepass erstellen", continueGuest: "Als Gast erkunden", tagline: "better destinations by ai", spain: "Spanien Highlights", world: "Globale Erkundungen", analyze: "KI-Analyse...", resultsFor: "Touren in", topExplorers: "Top-Entdecker", viewRanking: "Ranking ansehen", mobility: "Mobilitätsleitfaden", availableApps: "Verfügbare Apps", publicTransportLabel: "Öffentlicher Verkehr", defaultTransport: "Lokales Verkehrsnetz normal in Betrieb." },
+  pt: { welcome: "Olá,", guest: "Viajante", explore: "Explorar", passport: "Passaporte", shop: "Loja", utilities: "Ferramentas", ranking: "Ranking", searchPlaceholder: "Qualquer cidade do mundo...", login: "Criar Passaporte", continueGuest: "Explorar como Convidado", tagline: "better destinations by ai", spain: "Destaques da Espanha", world: "Explorações Globais", analyze: "Analisando com IA...", resultsFor: "Tours em", topExplorers: "Top Exploradores", viewRanking: "Ver Ranking", mobility: "Guia de Mobilidade", availableApps: "Apps Disponíveis", publicTransportLabel: "Transporte Público", defaultTransport: "Rede de transporte local operando normalmente." },
+  ar: { welcome: "مرحباً،", guest: "مسافر", explore: "استكشف", passport: "جواز السفر", shop: "متجر", utilities: "أدوات", ranking: "ترتيب", searchPlaceholder: "أي مدينة في العالم...", login: "إنشاء جواز سفر", continueGuest: "استكشاف كضيف", tagline: "better destinations by ai", spain: "أبرز معالم إسبانيا", world: "استكشافات عالمية", analyze: "جارٍ التحليل بالذكاء الاصطناعي...", resultsFor: "جولات في", topExplorers: "أفضل المستكشفين", viewRanking: "عرض الترتيب", mobility: "دليل التنقل", availableApps: "التطبيقات المتاحة", publicTransportLabel: "النقل العام", defaultTransport: "شبكة النقل المحلي تعمل كالمعتاد." },
+  zh: { welcome: "您好，", guest: "旅行者", explore: "探索", passport: "护照", shop: "商店", utilities: "工具", ranking: "排行", searchPlaceholder: "世界任何城市...", login: "创建护照", continueGuest: "以访客身份探索", tagline: "better destinations by ai", spain: "西班牙精选", world: "全球探索", analyze: "AI 分析中...", resultsFor: "行程在", topExplorers: "顶级探险家", viewRanking: "查看排行", mobility: "出行指南", availableApps: "可用应用", publicTransportLabel: "公共交通", defaultTransport: "当地交通网络运行正常。" },
+  ja: { welcome: "こんにちは、", guest: "旅行者", explore: "探索", passport: "パスポート", shop: "ショップ", utilities: "ツール", ranking: "ランキング", searchPlaceholder: "世界のあらゆる都市...", login: "パスポート作成", continueGuest: "ゲストとして探索", tagline: "better destinations by ai", spain: "スペインのハイライト", world: "グローバル探索", analyze: "AIで分析中...", resultsFor: "のツアー：", topExplorers: "トップ冒険家", viewRanking: "ランキングを見る", mobility: "モビリティガイド", availableApps: "利用可能なアプリ", publicTransportLabel: "公共交通機関", defaultTransport: "地元の交通機関は正常に運行しています。" }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -91,7 +91,34 @@ const getCitiesByContinent = (t: any) => ({
 });
 
 const GUEST_USER: UserProfile = {
-  id: 'guest', isLoggedIn: false, firstName: 'Invitado', lastName: 'bdai', name: 'Invitado', username: 'guest', email: '', avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', language: 'es', miles: 0, rank: 'Turista', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: 'Explorando el mundo como invitado.', age: 25, visitedCities: [], completedTours: [], badges: [], passportNumber: 'TEMP-0000', joinDate: '01/01/2024'
+  id: 'guest', 
+  isLoggedIn: false, 
+  firstName: 'Invitado', 
+  lastName: 'bdai', 
+  name: 'Invitado', 
+  username: 'viajero_libre', 
+  email: '', 
+  avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', 
+  language: 'es', 
+  miles: 1250, 
+  rank: 'Explorer', 
+  culturePoints: 0, 
+  foodPoints: 0, 
+  photoPoints: 0, 
+  interests: [], 
+  accessibility: 'standard', 
+  isPublic: false, 
+  bio: 'Explorando el mundo como invitado.', 
+  age: 25, 
+  visitedCities: ['Madrid', 'Paris'], 
+  completedTours: [], 
+  badges: [
+      { id: 'b1', name: 'Primeros Pasos', icon: 'fa-shoe-prints', description: 'Completaste tu primer kilómetro' },
+      { id: 'b2', name: 'Caminante de Ciudades', icon: 'fa-city', description: 'Visitaste 3 ciudades en un mes' }
+  ], 
+  passportNumber: 'XP-8829-GUEST', 
+  joinDate: '2024-05-15',
+  socials: { instagram: '@bdai_travel', tiktok: '', x: '' }
 };
 
 const SectionRow = ({ title, children }: { title: string, children?: React.ReactNode }) => {
@@ -307,7 +334,8 @@ export default function App() {
                     </div>
                 ) : (
                     <>
-                        {tours.length > 0 && tours[0].transportApps && (
+                        {/* Mobility Section - Fully Localized */}
+                        {tours.length > 0 && (
                             <div className="mb-8 p-4 bg-white rounded-3xl border border-slate-100 shadow-sm animate-slide-up">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-600 mb-3 flex items-center gap-2">
                                     <i className="fas fa-taxi"></i> {t('mobility')}
@@ -315,7 +343,7 @@ export default function App() {
                                 <div className="space-y-4">
                                     {tours[0].transportApps && tours[0].transportApps.length > 0 && (
                                         <div>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Apps</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('availableApps')}</p>
                                             <div className="flex flex-wrap gap-2">
                                                 {tours[0].transportApps.map(app => (
                                                     <span key={app} className="px-3 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-700">{app}</span>
@@ -323,15 +351,16 @@ export default function App() {
                                             </div>
                                         </div>
                                     )}
-                                    {tours[0].publicTransport && (
-                                        <div>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Transporte Público</p>
-                                            <p className="text-xs text-slate-600 leading-relaxed font-medium">{tours[0].publicTransport}</p>
-                                        </div>
-                                    )}
+                                    <div className="pt-2">
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('publicTransportLabel')}</p>
+                                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                                            {tours[0].publicTransport || t('defaultTransport')}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         )}
+
                         <div className="space-y-6 pb-12">
                             {tours.map(tour => (
                                 <TourCard key={tour.id} tour={tour} onSelect={() => handleTourSelect(tour)} onPlayAudio={() => handlePlayAudio(tour.id, tour.description)} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} isFavorite={false} onToggleFavorite={() => {}} />
