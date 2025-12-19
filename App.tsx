@@ -43,38 +43,16 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: {
-    welcome: "Hello,", guest: "Traveler", whereTo: "Where are we going today?",
-    explore: "Explore", passport: "Passport", shop: "Shop", utilities: "Tools",
-    ranking: "Ranking", searchPlaceholder: "Any city in the world...",
-    login: "Create Passport", continueGuest: "Explore as Guest",
-    nudge: "You are a Guest. Register to save your miles!",
-    spain: "Spain Highlights", europe: "Europe Classics", world: "Global Explorations",
-    miles: "Miles", tagline: "better destinations by ai", smartTravel: "smart travel",
-    selectLang: "Language", analyze: "Analyzing city with AI...",
-    resultsFor: "Tours in", start: "Start", translating: "Translating content...",
-    madridDesc: "Center & Royalty", bcnDesc: "Gaudí & Sea", sevillaDesc: "Art & Blossom",
-    nyDesc: "The Big Apple", tokyoDesc: "Future & Tradition", romeDesc: "Eternal History",
-    guestBio: "Exploring the world as a guest traveler.",
-    mobility: "Local Mobility Guide", apps: "Best Apps", public: "Public Transport",
-    topExplorers: "Top Explorers", viewRanking: "View Ranking"
-  },
-  es: {
-    welcome: "Hola,", guest: "Viajero", whereTo: "¿A dónde vamos hoy?",
-    explore: "Explorar", passport: "Pasaporte", shop: "Tienda", utilities: "Herramientas",
-    ranking: "Ranking", searchPlaceholder: "Cualquier ciudad del mundo...",
-    login: "Crear Pasaporte", continueGuest: "Explorar como Invitado",
-    nudge: "Estás como invitado. ¡Regístrate para guardar tus millas!",
-    spain: "Joyas de España", europe: "Clásicos de Europa", world: "Exploración Global",
-    miles: "Millas", tagline: "better destinations by ai", smartTravel: "viajes inteligentes",
-    selectLang: "Idioma", analyze: "Analizando la ciudad con IA...",
-    resultsFor: "Tours en", start: "Empezar", translating: "Traduciendo contenido...",
-    madridDesc: "Centro y Realeza", bcnDesc: "Gaudí y Mar", sevillaDesc: "Arte y Azahar",
-    nyDesc: "La Gran Manzana", tokyoDesc: "Futuro y Tradición", romeDesc: "Historia Eterna",
-    guestBio: "Explorando el mundo como invitado.",
-    mobility: "Guía de Movilidad Local", apps: "Apps Sugeridas", public: "Transporte Público",
-    topExplorers: "Top Exploradores", viewRanking: "Ver Ranking"
-  }
+  en: { welcome: "Hello,", guest: "Traveler", explore: "Explore", passport: "Passport", shop: "Shop", utilities: "Tools", ranking: "Ranking", searchPlaceholder: "Any city in the world...", login: "Create Passport", continueGuest: "Explore as Guest", tagline: "better destinations by ai", spain: "Spain Highlights", world: "Global Explorations", analyze: "Analyzing with AI...", resultsFor: "Tours in", topExplorers: "Top Explorers", viewRanking: "View Ranking", mobility: "Mobility Guide" },
+  es: { welcome: "Hola,", guest: "Viajero", explore: "Explorar", passport: "Pasaporte", shop: "Tienda", utilities: "Herramientas", ranking: "Ranking", searchPlaceholder: "Cualquier ciudad del mundo...", login: "Crear Pasaporte", continueGuest: "Explorar como Invitado", tagline: "better destinations by ai", spain: "Joyas de España", world: "Exploración Global", analyze: "Analizando con IA...", resultsFor: "Tours en", topExplorers: "Top Exploradores", viewRanking: "Ver Ranking", mobility: "Guía de Movilidad" },
+  ca: { welcome: "Hola,", guest: "Viatger", explore: "Explorar", passport: "Passaport", shop: "Botiga", utilities: "Eines", ranking: "Ranking", searchPlaceholder: "Qualsevol ciutat del món...", login: "Crear Passaport", continueGuest: "Explorar com a Convidat", tagline: "better destinations by ai", spain: "Joies d'Espanya", world: "Exploració Global", analyze: "Analitzant amb IA...", resultsFor: "Tours a", topExplorers: "Top Exploradors", viewRanking: "Veure Ranking", mobility: "Guia de Mobilitat" },
+  fr: { welcome: "Bonjour,", guest: "Voyageur", explore: "Explorer", passport: "Passeport", shop: "Boutique", utilities: "Outils", ranking: "Classement", searchPlaceholder: "N'importe quelle ville...", login: "Créer Passeport", continueGuest: "Explorer en Invité", tagline: "better destinations by ai", spain: "Joyaux d'Espagne", world: "Exploration Mondiale", analyze: "Analyse avec IA...", resultsFor: "Tours à", topExplorers: "Top Explorateurs", viewRanking: "Voir le Classement", mobility: "Guide Mobilité" },
+  de: { welcome: "Hallo,", guest: "Reisender", explore: "Entdecken", passport: "Reisepass", shop: "Shop", utilities: "Tools", ranking: "Ranking", searchPlaceholder: "Jede Stadt der Welt...", login: "Pass erstellen", continueGuest: "Als Gast erkunden", tagline: "better destinations by ai", spain: "Spanien Highlights", world: "Weltweite Erkundung", analyze: "KI-Analyse...", resultsFor: "Tours in", topExplorers: "Top Entdecker", viewRanking: "Ranking ansehen", mobility: "Mobilitätsleitfaden" },
+  pt: { welcome: "Olá,", guest: "Viajante", explore: "Explorar", passport: "Passaporte", shop: "Loja", utilities: "Ferramentas", ranking: "Ranking", searchPlaceholder: "Qualquer cidade do mundo...", login: "Criar Passaporte", continueGuest: "Explorar como Convidado", tagline: "better destinations by ai", spain: "Joias da Espanha", world: "Exploração Global", analyze: "Analisando com IA...", resultsFor: "Tours em", topExplorers: "Top Exploradores", viewRanking: "Ver Ranking", mobility: "Guia de Mobilidade" },
+  it: { welcome: "Ciao,", guest: "Viaggiatore", explore: "Esplora", passport: "Passaporto", shop: "Negozio", utilities: "Strumenti", ranking: "Classifica", searchPlaceholder: "Qualsiasi città...", login: "Crea Passaporto", continueGuest: "Esplora come Ospite", tagline: "better destinations by ai", spain: "Gioielli di Spagna", world: "Esplorazione Globale", analyze: "Analisi IA...", resultsFor: "Tour a", topExplorers: "Top Esploratori", viewRanking: "Vedi Classifica", mobility: "Guida Mobilità" },
+  ar: { welcome: "مرحباً،", guest: "مسافر", explore: "استكشف", passport: "جواز السفر", shop: "متجر", utilities: "أدوات", ranking: "الترتيب", searchPlaceholder: "أي مدينة في العالم...", login: "إنشاء جواز سفر", continueGuest: "استكشف كضيف", tagline: "better destinations by ai", spain: "أبرز معالم إسبانيا", world: "استكشاف عالمي", analyze: "تحليل الذكاء الاصطناعي...", resultsFor: "جولات في", topExplorers: "كبار المستكشفين", viewRanking: "عرض الترتيب", mobility: "دليل التنقل" },
+  ja: { welcome: "こんにちは、", guest: "旅行者", explore: "探索", passport: "パスポート", shop: "ショップ", utilities: "ツール", ranking: "ランキング", searchPlaceholder: "世界中の都市...", login: "パスポート作成", continueGuest: "ゲストとして探索", tagline: "better destinations by ai", spain: "スペインのハイライト", world: "グローバル探索", analyze: "AI分析中...", resultsFor: "ツアー場所：", topExplorers: "トップ冒険家", viewRanking: "ランキングを見る", mobility: "モビリティガイド" },
+  zh: { welcome: "你好，", guest: "旅行者", explore: "探索", passport: "护照", shop: "商店", utilities: "工具", ranking: "排名", searchPlaceholder: "世界上任何城市...", login: "创建护照", continueGuest: "以游客身份探索", tagline: "better destinations by ai", spain: "西班牙精华", world: "全球探索", analyze: "AI分析中...", resultsFor: "导览地点：", topExplorers: "顶尖探险家", viewRanking: "查看排名", mobility: "出行指南" }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -101,14 +79,14 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
 
 const getCitiesByContinent = (t: any) => ({
   spain: [
-    { name: 'Madrid', image: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=600&q=80', desc: "Centro y Realeza" },
-    { name: 'Barcelona', image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&w=600&q=80', desc: "Gaudí y Mar" },
-    { name: 'Sevilla', image: 'https://images.unsplash.com/photo-1621590393529-6330364e9766?auto=format&fit=crop&w=600&q=80', desc: "Arte y Azahar" }
+    { name: 'Madrid', image: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=600&q=80', desc: t('madridDesc') || "Centro y Realeza" },
+    { name: 'Barcelona', image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?auto=format&fit=crop&w=600&q=80', desc: t('bcnDesc') || "Gaudí y Mar" },
+    { name: 'Sevilla', image: 'https://images.unsplash.com/photo-1621590393529-6330364e9766?auto=format&fit=crop&w=600&q=80', desc: t('sevillaDesc') || "Arte y Azahar" }
   ],
   world: [
-    { name: 'New York', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=600&q=80', desc: "The Big Apple" },
-    { name: 'Tokyo', image: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80', desc: "Futuro y Tradición" },
-    { name: 'Roma', image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80', desc: "Historia Eterna" }
+    { name: 'New York', image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=600&q=80', desc: t('nyDesc') || "The Big Apple" },
+    { name: 'Tokyo', image: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80', desc: t('tokyoDesc') || "Futuro y Tradición" },
+    { name: 'Roma', image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80', desc: t('romeDesc') || "Historia Eterna" }
   ]
 });
 
@@ -146,7 +124,7 @@ export default function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
-  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
+  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['en'])[key] || key;
   const citiesData = getCitiesByContinent(t);
 
   const handlePlayAudio = async (id: string, text: string) => {
@@ -162,6 +140,11 @@ export default function App() {
         if (!audioBase64) throw new Error("No audio");
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         const ctx = audioContextRef.current;
+        
+        if (ctx.state === 'suspended') {
+            await ctx.resume();
+        }
+
         const bytes = decodeBase64(audioBase64);
         const audioBuffer = await decodeAudioData(bytes, ctx, 24000, 1);
         const source = ctx.createBufferSource();
@@ -181,7 +164,10 @@ export default function App() {
     try {
         const generated = await generateToursForCity(city, user.language);
         setTours(generated || []);
-    } catch (e) { console.error(e); } finally { setIsLoading(false); }
+    } catch (e) { 
+        console.error(e); 
+        alert("Error: Verifica tu conexión y API_KEY.");
+    } finally { setIsLoading(false); }
   };
 
   const handleTourSelect = (tour: Tour) => {
@@ -361,7 +347,6 @@ export default function App() {
           {view === AppView.UTILITIES && <TravelServices language={user.language} />}
       </div>
       
-      {/* Redesigned Bottom Navigation Bar with Prominent Explore Button */}
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-4 pb-6 flex justify-center pointer-events-none">
           <nav className="bg-white/95 backdrop-blur-2xl border border-slate-200/50 px-3 py-3 flex justify-between items-center w-full rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] pointer-events-auto">
               <div className="flex-1 flex justify-around items-center">
@@ -369,13 +354,11 @@ export default function App() {
                   <NavButton icon="fa-tools" label={t('utilities')} isActive={view === AppView.UTILITIES} onClick={() => setView(AppView.UTILITIES)} />
               </div>
 
-              {/* Central Featured Explore Button */}
               <div className="relative -mt-12 px-4">
                   <button 
                     onClick={() => setView(AppView.HOME)}
                     className={`group relative flex flex-col items-center justify-center w-20 h-20 rounded-full transition-all duration-500 transform active:scale-90 ${isExploreActive ? 'scale-110' : ''}`}
                   >
-                      {/* Animated Rings */}
                       {isExploreActive && (
                           <div className="absolute inset-0 rounded-full bg-purple-600/20 animate-ping"></div>
                       )}
@@ -384,7 +367,6 @@ export default function App() {
                           <BdaiLogo className={`w-12 h-12 transition-all duration-500 ${isExploreActive ? 'scale-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'opacity-80'}`} />
                       </div>
                       
-                      {/* Label under the logo */}
                       <span className={`mt-2 text-[8px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isExploreActive ? 'text-purple-600 opacity-100' : 'text-slate-400 opacity-0'}`}>
                           {t('explore')}
                       </span>
