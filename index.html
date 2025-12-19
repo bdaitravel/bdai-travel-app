@@ -1,32 +1,35 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>BDAI - Smart Travel</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="bdai - Tu guía inteligente de viajes con IA. Descubre ciudades mediante tours personalizados y gana recompensas." />
+    
+    <title>bdai | Better Destinations AI</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
     
-    <!-- Minimalist Fonts: Outfit (Headings) & Inter (Body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- Leaflet Maps CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     
     <style>
       :root {
         --font-heading: 'Outfit', sans-serif;
         --font-body: 'Inter', sans-serif;
-        /* Define native safe areas variables */
         --sat: env(safe-area-inset-top);
         --sab: env(safe-area-inset-bottom);
       }
       body {
         font-family: var(--font-body);
-        background-color: #f8fafc;
-        /* Prevent elastic scrolling on iOS usually usually handled by native wrapper, but good practice */
+        background-color: #0f172a; /* Fondo oscuro por defecto para transiciones suaves */
         overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
       }
@@ -34,68 +37,23 @@
         font-family: var(--font-heading);
       }
       
-      /* Smooth Scrolling */
       html { scroll-behavior: smooth; }
 
-      /* Hide Scrollbar but allow scroll */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-      /* Custom scrollbar for other areas */
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 10px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
-
-      .animate-fade-in {
-        animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-      .animate-slide-up {
-        animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
+      .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+      .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes slideUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-      /* Leaflet overrides */
-      .leaflet-popup-content-wrapper {
-        border-radius: 16px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        padding: 0;
-        overflow: hidden;
-      }
-      .leaflet-popup-content {
-        margin: 12px;
-        font-family: var(--font-body);
-      }
+      .pt-safe { padding-top: calc(1rem + var(--sat)); }
+      .pb-safe { padding-bottom: calc(1rem + var(--sab)); }
       
-      /* Utility for Native Safe Areas */
-      .pt-safe {
-        padding-top: calc(1.5rem + var(--sat));
-      }
-      .pb-safe {
-        padding-bottom: calc(1rem + var(--sab));
-      }
+      /* Estilos para el mapa Leaflet */
+      #map { height: 100%; width: 100%; }
+      .leaflet-container { background: #f1f5f9; }
     </style>
   <script type="importmap">
 {
@@ -112,10 +70,7 @@
 </head>
   <body class="text-slate-900 antialiased selection:bg-purple-100 selection:text-purple-900">
     <div id="root"></div>
-    
-    <!-- Leaflet Maps JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

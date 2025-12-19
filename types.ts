@@ -11,6 +11,9 @@ export interface SocialLinks {
   instagram?: string;
   tiktok?: string;
   twitter?: string;
+  x?: string;
+  linkedin?: string;
+  facebook?: string;
   website?: string;
 }
 
@@ -25,17 +28,13 @@ export interface UserProfile {
   username: string;
   email: string;
   password?: string;
-  avatar: string; // Base64 or URL
+  avatar: string;
   language: string;
-  miles: number; // Total points
-  
-  // Specific Point Buckets
+  miles: number;
   culturePoints: number;
   foodPoints: number;
   photoPoints: number;
-  
-  rank: TravelerRank; // Calculated rank
-  
+  rank: TravelerRank;
   interests: string[];
   accessibility: 'standard' | 'wheelchair' | 'low_walking';
   isPublic: boolean;
@@ -48,19 +47,8 @@ export interface UserProfile {
   visitedCities: string[]; 
   completedTours: string[];
   socials?: SocialLinks;
-  passportNumber?: string; // Visual flair for passport
+  passportNumber?: string;
   joinDate?: string;
-}
-
-export interface CityInfo {
-  transport: string;
-  bestTime: string;
-  localDish: string;
-  costLevel: string; 
-  securityLevel: string; // Added field
-  wifiSpots: string[];   // Added field
-  lingo: string[]; // e.g. ["Hola - Hello", "Gracias - Thanks"]
-  apps: string[]; // e.g. ["Uber", "Cabify"]
 }
 
 export interface Stop {
@@ -71,19 +59,14 @@ export interface Stop {
   longitude: number;
   type: 'historical' | 'food' | 'art' | 'business_ad' | 'nature' | 'photo' | 'culture';
   visited: boolean;
-  promo?: string;
-  businessName?: string;
   imageUrl?: string; 
-  audioUrl?: string; 
   curiosity?: string;
-  photoTip?: string; // Short tip
-  photoShot?: { // Extended photo info
+  photoSpot?: {
     angle: string;
     bestTime: string;
     instagramHook: string;
     milesReward: number;
   };
-  photoTipImageUrl?: string;
   isRichInfo?: boolean; 
 }
 
@@ -100,38 +83,10 @@ export interface Tour {
   stops: Stop[];
   imageUrl?: string; 
   cityImageUrl?: string; 
-  audioIntroUrl?: string;
-  isRichDescription?: boolean;
-  // NEW FIELDS FOR PRACTICAL INFO
+  transportApps?: string[];
+  publicTransport?: string;
   safetyTip?: string;
   wifiTip?: string;
-}
-
-export interface Reward {
-  id: string;
-  title: string;
-  cost: number;
-  description: string;
-  icon: string;
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  imageUrl: string;
-  price: number;
-  type: 'digital_download' | 'physical';
-  downloadUrl?: string;
-  affiliateLink?: string;
-}
-
-export interface DataPlan {
-  id: string;
-  region: string;
-  dataAmount: string;
-  validity: string;
-  price: number;
-  provider: string;
 }
 
 export interface LeaderboardEntry {
@@ -142,28 +97,22 @@ export interface LeaderboardEntry {
   miles: number;
   rank: number;
   isPublic: boolean;
-  age?: number;
-  country?: string;
-  city?: string;
   badges?: Badge[];
-  bio?: string;
   socials?: SocialLinks;
 }
 
 export enum AppView {
-  LOGIN = 'LOGIN', // Added Login View
-  WELCOME = 'WELCOME', // Onboarding
+  LOGIN = 'LOGIN',
+  WELCOME = 'WELCOME',
   HOME = 'HOME',
   CITY_DETAIL = 'CITY_DETAIL',
   TOUR_ACTIVE = 'TOUR_ACTIVE',
   PROFILE = 'PROFILE',
   SHOP = 'SHOP',
-  PARTNER = 'PARTNER', 
-  LEADERBOARD = 'LEADERBOARD', 
-  CONNECT = 'CONNECT',
+  LEADERBOARD = 'LEADERBOARD',
+  UTILITIES = 'UTILITIES'
 }
 
-// Optimized list of major languages
 export const LANGUAGES = [
   { code: 'es', name: 'Español' },
   { code: 'en', name: 'English' },
@@ -176,13 +125,3 @@ export const LANGUAGES = [
   { code: 'zh', name: '中文' },
   { code: 'ja', name: '日本語' },
 ];
-
-export const INTERESTS_LIST = [
-  'History', 'Food & Drink', 'Art & Architecture', 'Nature', 'Shopping', 'Nightlife', 'Hidden Gems', 'Photography'
-];
-
-export type TranslationDictionary = {
-  [key: string]: {
-    [key: string]: string;
-  };
-};
