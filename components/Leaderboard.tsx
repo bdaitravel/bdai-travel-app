@@ -1,122 +1,70 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { LeaderboardEntry } from '../types';
 
-interface LeaderboardProps {
-  currentUser: LeaderboardEntry;
-  entries: LeaderboardEntry[];
-  onUserClick: (entry: LeaderboardEntry) => void;
-  language: string;
-}
+const MOCK_LEADERS: LeaderboardEntry[] = [
+    { id: '1', name: 'Alex Rivera', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex', miles: 12450, countryPoints: 14, travelerType: 'Backpacker', gender: 'M', country: 'ES' },
+    { id: '2', name: 'Marta García', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marta', miles: 11200, countryPoints: 8, travelerType: 'Cultural', gender: 'F', country: 'ES' },
+    { id: '3', name: 'Hiroshi T.', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hiro', miles: 9800, countryPoints: 22, travelerType: 'Digital Nomad', gender: 'M', country: 'JP' },
+    { id: '4', name: 'Elena G.', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Elena', miles: 8400, countryPoints: 5, travelerType: 'Luxury', gender: 'F', country: 'IT' },
+    { id: '5', name: 'Julio V.', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Julio', miles: 7200, countryPoints: 12, travelerType: 'Backpacker', gender: 'M', country: 'ES' },
+];
 
-const TEXTS: any = {
-    en: { title: "Weekly Top Travelers", you: "You" },
-    es: { title: "Ranking Semanal", you: "Tú" },
-    fr: { title: "Meilleurs Voyageurs", you: "Vous" },
-    de: { title: "Top Reisende", you: "Du" },
-    it: { title: "Viaggiatori Top", you: "Tu" },
-    pt: { title: "Melhores Viajantes", you: "Você" },
-    ca: { title: "Viatgers Top Setmanals", you: "Tu" },
-    eu: { title: "Asteko Bidaiari Onenak", you: "Zu" },
-};
+export const Leaderboard: React.FC<{ language: string, currentUser: LeaderboardEntry }> = ({ language, currentUser }) => {
+    const [filter, setFilter] = useState<'world' | 'backpacker' | 'country'>('world');
+    
+    const filtered = MOCK_LEADERS.filter(l => {
+        if (filter === 'backpacker') return l.travelerType === 'Backpacker';
+        if (filter === 'country') return l.country === 'ES'; 
+        return true;
+    }).sort((a, b) => b.miles - a.miles);
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, onUserClick, language }) => {
-  const t = TEXTS[language] || TEXTS['en'];
-
-  // Sort by miles
-  const sorted = [...entries].sort((a, b) => b.miles - a.miles);
-  const top3 = sorted.slice(0, 3);
-  const rest = sorted.slice(3);
-
-  // Helper to render the top badge
-  const renderBadge = (badges: any[] | undefined) => {
-    if (!badges || badges.length === 0) return null;
-    const topBadge = badges[0]; // Prioritize the first badge
     return (
-      <span 
-        className="inline-flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-600 rounded-full text-[10px] border border-yellow-200 ml-1" 
-        title={topBadge.name}
-      >
-        <i className={`fas ${topBadge.icon}`}></i>
-      </span>
-    );
-  };
+        <div className="p-8 animate-fade-in pb-32">
+            <header className="mb-14 text-center">
+                <h2 className="text-5xl font-black text-slate-900 tracking-tighter mb-4 lowercase leading-none">Hall of Fame</h2>
+                <p className="text-[10px] font-black text-purple-600 uppercase tracking-[0.6em]">Ranking Global de Viajeros</p>
+            </header>
 
-  return (
-    <div className="w-full max-w-2xl mx-auto pb-24 animate-fade-in p-6">
-        <h2 className="text-center text-2xl font-bold text-slate-800 mb-8">{t.title}</h2>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar mb-12 pb-2">
+                {['world', 'backpacker', 'country'].map(f => (
+                    <button key={f} onClick={() => setFilter(f as any)} className={`px-8 py-4 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${filter === f ? 'bg-slate-950 text-white border-slate-950 shadow-2xl scale-105' : 'bg-white text-slate-300 border-slate-50 hover:border-purple-200 hover:text-slate-600'}`}>
+                        {f === 'world' ? 'Mundial' : f === 'backpacker' ? 'Mochileros' : 'España'}
+                    </button>
+                ))}
+            </div>
 
-        {/* Podium */}
-        <div className="flex justify-center items-end gap-4 mb-10 px-4">
-            {/* 2nd Place */}
-            {top3[1] && <PodiumUser user={top3[1]} rank={2} height="h-32" color="bg-slate-200" onClick={() => onUserClick(top3[1])} />}
-            {/* 1st Place */}
-            {top3[0] && <PodiumUser user={top3[0]} rank={1} height="h-44" color="bg-yellow-300" onClick={() => onUserClick(top3[0])} isFirst />}
-            {/* 3rd Place */}
-            {top3[2] && <PodiumUser user={top3[2]} rank={3} height="h-24" color="bg-amber-600" onClick={() => onUserClick(top3[2])} />}
-        </div>
-
-        {/* List List */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 relative overflow-hidden">
-            {/* Scrollable Area for other users */}
-            <div className="overflow-y-auto max-h-[400px]">
-                {rest.map((user, idx) => (
-                    <div 
-                        key={user.id} 
-                        onClick={() => onUserClick(user)}
-                        className="flex items-center p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group"
-                    >
-                        <div className="w-8 font-bold text-slate-400 group-hover:text-purple-500">{idx + 4}</div>
-                        <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
-                        <div className="ml-4 flex-1">
-                            <div className="font-bold text-slate-800 flex items-center gap-1">
-                                {user.name} 
-                                {renderBadge(user.badges)}
-                                {user.isPublic && <span className="w-2 h-2 rounded-full bg-green-400 ml-2" title="Online"></span>}
-                            </div>
-                            <div className="text-xs text-slate-500">{user.miles.toLocaleString()} miles</div>
+            <div className="space-y-6">
+                {filtered.map((user, i) => (
+                    <div key={user.id} className={`flex items-center gap-6 p-7 rounded-[3rem] border transition-all ${i === 0 ? 'bg-amber-50 border-amber-200 shadow-2xl scale-[1.04]' : 'bg-white border-slate-50 shadow-sm hover:shadow-md'}`}>
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center font-black text-lg shadow-inner flex-shrink-0 ${i === 0 ? 'bg-amber-400 text-amber-950' : 'bg-slate-50 text-slate-400'}`}>
+                            {i + 1}
                         </div>
-                        <i className="fas fa-chevron-right text-slate-300 group-hover:text-purple-400"></i>
+                        <img src={user.avatar} className="w-16 h-16 rounded-full border-4 border-white shadow-xl flex-shrink-0" alt="" />
+                        <div className="flex-1 min-w-0">
+                            <p className="font-black text-slate-950 leading-tight uppercase text-base truncate tracking-tighter">{user.name}</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{user.travelerType}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                            <p className="font-black text-slate-950 text-2xl tracking-tighter leading-none">{user.miles.toLocaleString()}</p>
+                            <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest mt-1">Millas</p>
+                        </div>
                     </div>
                 ))}
             </div>
-            
-            {/* Current User Fixed at Bottom */}
-             <div 
-                onClick={() => onUserClick(currentUser)}
-                className="sticky bottom-0 z-10 bg-purple-50 p-4 flex items-center border-t border-purple-100 cursor-pointer hover:bg-purple-100 transition-colors shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
-             >
-                <div className="w-8 font-bold text-purple-800">-</div>
-                <img src={currentUser.avatar} alt="Me" className="w-10 h-10 rounded-full border-2 border-purple-200 object-cover" />
-                 <div className="ml-4 flex-1">
-                    <div className="font-bold text-purple-900 flex items-center gap-1">
-                        {t.you}
-                        {renderBadge(currentUser.badges)}
-                    </div>
-                    <div className="text-xs text-purple-600">{currentUser.miles.toLocaleString()} miles</div>
-                </div>
-             </div>
-        </div>
-    </div>
-  );
-};
 
-const PodiumUser = ({ user, rank, height, color, isFirst = false, onClick }: any) => (
-    <div onClick={onClick} className="flex flex-col items-center group relative cursor-pointer transition-transform hover:-translate-y-1">
-        <div className="relative mb-2">
-            <img 
-                src={user.avatar} 
-                className={`rounded-full border-4 border-white shadow-md object-cover bg-slate-200 ${isFirst ? 'w-20 h-20' : 'w-14 h-14'}`} 
-            />
-            {isFirst && <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-3xl animate-bounce">👑</div>}
+            <div className="mt-16 p-10 bg-slate-950 rounded-[4rem] flex items-center gap-8 border-4 border-white shadow-2xl relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 w-48 h-48 bg-purple-600/30 rounded-full blur-[80px] opacity-0 group-hover:opacity-100 transition-all duration-1000"></div>
+                 <img src={currentUser.avatar} className="w-20 h-20 rounded-full border-4 border-purple-500 relative z-10 shadow-2xl" alt="" />
+                 <div className="flex-1 relative z-10">
+                     <p className="text-white font-black leading-tight uppercase text-lg tracking-tight">Tu Posición</p>
+                     <p className="text-[11px] font-black text-purple-400 uppercase tracking-[0.3em]">#120 Global</p>
+                 </div>
+                 <div className="text-right text-white relative z-10 flex-shrink-0">
+                     <p className="font-black text-4xl tracking-tighter leading-none">Top 12%</p>
+                     <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mt-1">Leyenda</p>
+                 </div>
+            </div>
         </div>
-        <div className={`w-20 sm:w-24 ${height} ${color} rounded-t-lg shadow-inner flex flex-col justify-end pb-2 items-center group-hover:brightness-105 transition-all`}>
-            <span className={`font-bold text-2xl ${rank === 1 ? 'text-yellow-800' : rank === 2 ? 'text-slate-600' : 'text-amber-100'}`}>
-                {rank}
-            </span>
-        </div>
-        <div className="absolute -bottom-6 w-24 text-center">
-            <p className="text-xs font-bold text-slate-700 truncate">{user.name}</p>
-            <p className="text-[10px] text-slate-500 font-mono">{user.miles}m</p>
-        </div>
-    </div>
-);
+    );
+};

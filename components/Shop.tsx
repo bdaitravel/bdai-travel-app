@@ -2,78 +2,127 @@
 import React, { useState } from 'react';
 import { UserProfile, TravelerRank } from '../types';
 
-interface ShopProps {
-  user: UserProfile;
-}
+interface ShopProps { user: UserProfile; }
 
-const ETSY_STORE = "https://bdaishop.etsy.com";
-
-const PRODUCTS: any[] = [
-  { id: 't1', title: 'Plantilla de Notion: Diario de Viaje', category: 'Itineraries', price: 14.99, platform: 'Etsy', url: ETSY_STORE, image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=400&q=80' },
-  { id: 'm1', title: 'Bolsa Tote: "bdai Explorer"', category: 'Merch', price: 19.99, platform: 'Etsy', url: ETSY_STORE, image: 'https://images.unsplash.com/photo-1597484661643-2f5fef640dd1?auto=format&fit=crop&w=400&q=80' },
-  { id: 'r1', title: 'Recetario: Sabores del Mundo', category: 'Recipes', price: 11.99, platform: 'Amazon', url: '#', image: 'https://images.unsplash.com/photo-1598155523122-38423bd4d6bc?auto=format&fit=crop&w=400&q=80' },
-];
-
-const SHOP_TEXTS: any = {
-    en: { title: "bdai shop", subtitle: "Official Marketplace", discount: "Loyalty Discount", discountSub: "Applied automatically based on rank.", buy: "Buy Now", visitStore: "Visit Etsy Store", cats: { 'Guides': 'Guides', 'Itineraries': 'Templates', 'Recipes': 'Gastronomy', 'Merch': 'Merch', 'Premium': 'Premium' } },
-    es: { title: "tienda bdai", subtitle: "Mercado Oficial", discount: "Tu Descuento", discountSub: "Se aplica según tu rango.", buy: "Comprar", visitStore: "Ver Tienda Etsy", cats: { 'Guides': 'Guías', 'Itineraries': 'Plantillas', 'Recipes': 'Gastronomía', 'Merch': 'Merch', 'Premium': 'Premium' } },
-    eu: { title: "bdai denda", subtitle: "Merkatua", discount: "Leialtasun deskontua", discountSub: "Zure mailaren arabera aplikatzen da.", buy: "Erosi", visitStore: "Etsy denda ikusi", cats: { 'Guides': 'Gidak', 'Itineraries': 'Plantillak', 'Recipes': 'Gastronomia', 'Merch': 'Merch', 'Premium': 'Premium' } },
-    ca: { title: "botiga bdai", subtitle: "Mercat Oficial", discount: "Descompte", discountSub: "S'aplica segons el teu rang.", buy: "Comprar", visitStore: "Etsy Botiga", cats: { 'Guides': 'Guies', 'Itineraries': 'Plantilles', 'Recipes': 'Gastronomia', 'Merch': 'Merch', 'Premium': 'Premium' } },
-    fr: { title: "boutique bdai", subtitle: "Marché Officiel", discount: "Remise Fidélité", discountSub: "Appliquée selon votre rang.", buy: "Acheter", visitStore: "Boutique Etsy", cats: { 'Guides': 'Guides', 'Itineraries': 'Modèles', 'Recipes': 'Gastronomie', 'Merch': 'Merch', 'Premium': 'Premium' } },
-    de: { title: "bdai shop", subtitle: "Offizieller Marktplatz", discount: "Treuerabatt", discountSub: "Wird basierend auf dem Rang angewendet.", buy: "Kaufen", visitStore: "Etsy Shop", cats: { 'Guides': 'Guides', 'Itineraries': 'Vorlagen', 'Recipes': 'Gastronomie', 'Merch': 'Merch', 'Premium': 'Premium' } },
-    pt: { title: "loja bdai", subtitle: "Mercado Oficial", discount: "Desconto", discountSub: "Aplicado com base no rank.", buy: "Comprar", visitStore: "Loja Etsy", cats: { 'Guides': 'Guias', 'Itineraries': 'Modelos', 'Recipes': 'Gastronomia', 'Merch': 'Merch', 'Premium': 'Premium' } },
-    ar: { title: "متجر bdai", subtitle: "السوق الرسمي", discount: "خصم الولاء", discountSub: "يتم تطبيقه تلقائيًا بناءً على الرتبة.", buy: "شراء", visitStore: "زيارة متجر Etsy", cats: { 'Guides': 'أدلة', 'Itineraries': 'قوالب', 'Recipes': 'طعام', 'Merch': 'منتجات', 'Premium': 'بريميوم' } },
-    zh: { title: "bdai 商店", subtitle: "官方市场", discount: "忠诚折扣", discountSub: "根据等级自动应用。", buy: "立即购买", visitStore: "访问 Etsy 商店", cats: { 'Guides': '指南', 'Itineraries': '模板', 'Recipes': '美食', 'Merch': '周边', 'Premium': '高级' } },
-    ja: { title: "bdai ショップ", subtitle: "公式マーケットプレイス", discount: "ロイヤリティ割引", discountSub: "ランクに基づいて自動適用されます。", buy: "今すぐ購入", visitStore: "Etsyストアへ", cats: { 'Guides': 'ガイド', 'Itineraries': 'テンプレート', 'Recipes': 'グルメ', 'Merch': 'グッズ', 'Premium': 'プレミアム' } }
+const DISCOUNT_MAP: Record<TravelerRank, number> = {
+    'Turista': 0, 
+    'Explorador': 5, 
+    'Wanderer': 10, 
+    'Globe-Trotter': 15, 
+    'Leyenda': 20
 };
 
+const CATEGORIES = [
+    {
+        id: 'guias',
+        name: 'Guías Premium',
+        icon: 'fa-map-location-dot',
+        items: [
+            { id: 'g1', name: 'Barcelona en 1 día', price: 9.99, desc: 'Optimiza tu tiempo con lo mejor de Gaudí.' },
+            { id: 'g2', name: 'Tokyo Photo Tour', price: 12.50, desc: 'Los spots más estéticos de Shibuya y Akihabara.' },
+            { id: 'g3', name: 'Roma: 48h Gastronómicas', price: 10.99, desc: 'Huye de las trampas para turistas en el Trastevere.' },
+        ]
+    },
+    {
+        id: 'recetas',
+        name: 'Recetarios Culturales',
+        icon: 'fa-utensils',
+        items: [
+            { id: 'r1', name: 'Cocina Japonesa Casera', price: 7.50, desc: 'Aprende a cocinar Ramen y Gyoza como en casa.' },
+            { id: 'r2', name: 'Recetas Riojanas Tradicionales', price: 6.99, desc: 'Los secretos de la cocina de fuego lento.' },
+            { id: 'r3', name: 'Salsas del Sudeste Asiático', price: 5.50, desc: 'Domina el equilibrio entre picante, dulce y ácido.' },
+        ]
+    },
+    {
+        id: 'souvenirs',
+        name: 'Souvenirs Estéticos',
+        icon: 'fa-palette',
+        items: [
+            { id: 's1', name: 'Álbum de Viaje Digital', price: 24.99, desc: 'Generado por IA con tus mejores momentos.' },
+            { id: 's2', name: 'Libreta Monumentos', price: 14.50, desc: 'Diseño minimalista para tus bocetos y notas.' },
+            { id: 's3', name: 'Poster Minimalista París', price: 19.00, desc: 'Arte de pared de alta calidad (42x60cm).' },
+            { id: 's4', name: 'Tote Bag Minimalista', price: 12.00, desc: 'Algodón orgánico con el logo bdai.' },
+        ]
+    }
+];
+
 export const Shop: React.FC<ShopProps> = ({ user }) => {
-  const [activeCategory, setActiveCategory] = useState<string>('Itineraries');
-  const t = SHOP_TEXTS[user.language] || SHOP_TEXTS['en'];
-  const categories = ['Guides', 'Itineraries', 'Recipes', 'Merch', 'Premium'];
+    const [activeCat, setActiveCat] = useState('guias');
+    const discount = DISCOUNT_MAP[user.rank] || 0;
 
-  return (
-    <div className="pb-24 animate-fade-in bg-slate-50 min-h-full">
-      <div className="bg-slate-900 text-white p-6 rounded-b-[2rem] shadow-xl relative overflow-hidden">
-          <div className="relative z-10">
-              <div className="flex justify-between items-start mb-4">
-                  <div><h2 className="text-2xl font-heading font-bold lowercase">{t.title}</h2><p className="text-slate-400 text-xs uppercase tracking-widest">{t.subtitle}</p></div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-yellow-400 text-yellow-900 flex items-center justify-center font-bold shadow-lg">🎁</div>
-                  <div><p className="font-bold text-sm">{t.discount}</p><p className="text-xs text-slate-300">{t.discountSub}</p></div>
-              </div>
-              <a href={ETSY_STORE} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 bg-white text-slate-900 rounded-xl font-bold text-sm hover:bg-slate-100 transition shadow-lg"><i className="fab fa-etsy text-orange-600"></i> {t.visitStore}</a>
-          </div>
-      </div>
+    return (
+        <div className="p-8 animate-fade-in pb-32">
+            <header className="mb-10">
+                <div className="flex items-center gap-4 mb-3">
+                    <div className="bg-purple-600 text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-200">
+                        <i className="fas fa-shopping-bag text-sm"></i>
+                    </div>
+                    <h2 className="text-4xl font-black text-slate-900 tracking-tighter lowercase">Shop</h2>
+                </div>
+                <div className="flex justify-between items-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Premium Rewards</p>
+                    <div className="bg-purple-600 text-white px-4 py-1.5 rounded-full text-[9px] font-black uppercase flex items-center gap-2 shadow-xl shadow-purple-200">
+                        <i className="fas fa-crown text-[8px]"></i> {user.rank}: -{discount}%
+                    </div>
+                </div>
+            </header>
 
-      <div className="px-6 mt-6">
-          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-              {categories.map(cat => (
-                  <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${activeCategory === cat ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200'}`}>
-                      {t.cats[cat] || cat}
-                  </button>
-              ))}
-          </div>
-      </div>
+            <div className="flex gap-3 overflow-x-auto no-scrollbar mb-10 pb-2">
+                {CATEGORIES.map(cat => (
+                    <button 
+                        key={cat.id}
+                        onClick={() => setActiveCat(cat.id)}
+                        className={`flex items-center gap-3 px-6 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap border ${activeCat === cat.id ? 'bg-slate-900 border-slate-900 text-white shadow-2xl scale-105' : 'bg-white border-slate-100 text-slate-400 hover:border-purple-200'}`}
+                    >
+                        <i className={`fas ${cat.icon} text-xs`}></i>
+                        {cat.name}
+                    </button>
+                ))}
+            </div>
 
-      <div className="p-6 grid grid-cols-2 gap-4">
-          {PRODUCTS.filter(p => p.category === activeCategory).map(product => (
-              <div key={product.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 group flex flex-col">
-                  <div className="relative aspect-square overflow-hidden bg-slate-200">
-                      <img src={product.image} alt={product.title} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                      <div className="absolute top-2 left-2 bg-black/60 backdrop-blur text-white text-[8px] px-2 py-1 rounded uppercase font-bold">{product.platform}</div>
-                  </div>
-                  <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-bold text-slate-800 text-xs leading-tight mb-2 line-clamp-2">{product.title}</h3>
-                      <div className="mt-auto">
-                          <p className="text-lg font-bold text-purple-600 mb-2">${product.price}</p>
-                          <a href={product.url} target="_blank" rel="noopener noreferrer" className="block w-full py-2 bg-slate-900 text-white text-center text-[10px] font-bold rounded-lg hover:bg-purple-600 transition-colors uppercase tracking-wider">{t.buy}</a>
-                      </div>
-                  </div>
-              </div>
-          ))}
-      </div>
-    </div>
-  );
+            <div className="grid grid-cols-1 gap-5">
+                {CATEGORIES.find(c => c.id === activeCat)?.items.map(p => {
+                    const finalPrice = p.price * (1 - discount/100);
+                    return (
+                        <div key={p.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:border-purple-200 transition-all duration-500 relative overflow-hidden">
+                            <div className="flex items-center gap-5 relative z-10">
+                                <div className="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center text-2xl text-slate-300 group-hover:bg-purple-600 group-hover:text-white transition-all duration-700 shadow-inner">
+                                    <i className={`fas ${CATEGORIES.find(c => c.id === activeCat)?.icon} text-xl`}></i>
+                                </div>
+                                <div className="max-w-[160px]">
+                                    <p className="font-black text-slate-900 leading-tight mb-1 text-base tracking-tight">{p.name}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold line-clamp-2 leading-tight uppercase tracking-tight opacity-70">{p.desc}</p>
+                                </div>
+                            </div>
+
+                            <div className="text-right relative z-10 pl-4">
+                                <p className="text-[10px] font-black text-slate-300 line-through mb-1">${p.price.toFixed(2)}</p>
+                                <p className="text-2xl font-black text-slate-900 tracking-tighter mb-3">${finalPrice.toFixed(2)}</p>
+                                <button className="bg-slate-950 text-white px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] shadow-xl group-hover:bg-purple-600 active:scale-95 transition-all">
+                                    Comprar
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="mt-12 bg-slate-900 rounded-[3rem] p-8 text-white relative overflow-hidden shadow-2xl border border-white/5 group">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-purple-600/10 rounded-full blur-[80px] -mr-12 -mt-12 group-hover:bg-purple-600/20 transition-all duration-1000"></div>
+                <div className="flex justify-between items-start mb-8 relative z-10">
+                    <div>
+                        <h3 className="text-3xl font-black mb-2 tracking-tighter lowercase">cajero millas</h3>
+                        <p className="text-[10px] text-white/40 font-bold max-w-[200px] leading-relaxed uppercase tracking-wider">Canjea tus logros por productos y experiencias únicas.</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-3xl font-black text-purple-400 tracking-tighter">{user.miles.toLocaleString()}</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">Millas bdai</p>
+                    </div>
+                </div>
+                <button className="w-full py-5 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.4em] shadow-xl hover:bg-slate-50 transition-all relative z-10 active:scale-95">
+                    Canjear Millas
+                </button>
+            </div>
+        </div>
+    );
 };
