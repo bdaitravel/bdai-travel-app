@@ -1,106 +1,135 @@
 
-import React, { useState } from 'react';
-import { CurrencyConverter } from './CurrencyConverter';
+import React from 'react';
 
-const INSURANCE_PROVIDERS = [
-    { name: 'WorldNomads', color: 'bg-red-600', coverage: 'Full Adventure', price: '4.5€/day', icon: 'fa-shield-heart' },
-    { name: 'SafetyWing', color: 'bg-blue-400', coverage: 'Digital Nomad', price: '1.2€/day', icon: 'fa-laptop-code' },
-    { name: 'Heymondo', color: 'bg-green-600', coverage: 'Smart Choice', price: '2.8€/day', icon: 'fa-check-double' },
+const VILLAGES = [
+    { name: 'Albarracín', province: 'Teruel', secret: 'Sus murallas parecen sacadas de Juego de Tronos.', img: 'https://images.unsplash.com/photo-1518715303843-586e350765b2?auto=format&fit=crop&w=400&q=80' },
+    { name: 'Cudillero', province: 'Asturias', secret: 'El pueblo forma un anfiteatro natural hacia el mar.', img: 'https://images.unsplash.com/photo-1543783232-260a990a1c02?auto=format&fit=crop&w=400&q=80' },
+    { name: 'Ronda', province: 'Málaga', secret: 'Su puente Tajo divide la ciudad en dos abismos.', img: 'https://images.unsplash.com/photo-1536431311719-398b6704d4cc?auto=format&fit=crop&w=400&q=80' }
 ];
 
-const ESIM_PROVIDERS = [
-    { name: 'Airalo', region: 'Global', data: '10GB', validity: '30 days', price: '22€', icon: 'fa-sim-card' },
-    { name: 'Holafly', region: 'Unlimited Data', data: '∞ GB', validity: '15 days', price: '47€', icon: 'fa-bolt' },
-    { name: 'Nomad', region: 'Local Plans', data: '5GB', validity: '15 days', price: '12€', icon: 'fa-signal' },
+const WORLD_TOP = [
+    { rank: 1, city: 'Dubai', visitors: '16.7M', attraction: 'Luxury & Future', trend: '+12%' },
+    { rank: 2, city: 'Londres', visitors: '15.8M', attraction: 'History & Arts', trend: '+5%' },
+    { rank: 3, city: 'París', visitors: '14.2M', attraction: 'Romance & Food', trend: '+8%' },
+    { rank: 4, city: 'Bangkok', visitors: '12.1M', attraction: 'Street Life', trend: '-2%' }
 ];
 
-const HOTEL_PROVIDERS = [
-    { name: 'Booking.com', rating: '4.8', feature: 'Free Cancellation', deal: '-15% Genius', color: 'bg-blue-800', icon: 'fa-hotel' },
-    { name: 'Airbnb', rating: '4.7', feature: 'Unique Stays', deal: 'From 45€/night', color: 'bg-rose-500', icon: 'fa-house-chimney-user' },
-    { name: 'Expedia', rating: '4.5', feature: 'Flight + Hotel', deal: 'Reward Points', color: 'bg-indigo-600', icon: 'fa-suitcase-rolling' },
+const LOCAL_DIGEST = [
+    { title: 'Tapa de la Semana', desc: 'Prueba la alcachofa confitada en el Barrio de las Letras.', type: 'Gastro', icon: 'fa-utensils', color: 'bg-emerald-500/10 text-emerald-500', city: 'Madrid' },
+    { title: 'Mercado de Motores', desc: 'Este finde en la antigua estación de Delicias.', type: 'Evento', icon: 'fa-calendar-star', color: 'bg-purple-500/10 text-purple-500', city: 'Madrid' },
+    { title: 'Vistas Secretas', desc: 'La azotea oculta con las mejores vistas del Palacio Real.', type: 'Secreto', icon: 'fa-eye', color: 'bg-blue-500/10 text-blue-500', city: 'Madrid' }
 ];
 
 const UI_TEXTS: any = {
-    en: { title: "Traveler Toolkit", insurance: "Travel Insurance", esim: "Digital eSIM Plans", hotels: "Hotels & Stays", search: "Search Destination", findStay: "Find your next stay", searchBtn: "Search Stays" },
-    es: { title: "Herramientas", insurance: "Seguro de Viaje", esim: "Planes eSIM Digital", hotels: "Hoteles y Alojamientos", search: "Buscar Destino", findStay: "Encuentra tu alojamiento", searchBtn: "Buscar" },
-    eu: { title: "Tresnak", insurance: "Bidaia-asegurua", esim: "eSIM digitalak", hotels: "Hotelak eta egoitzak", search: "Bilatu helburua", findStay: "Aurkitu zure ostatua", searchBtn: "Bilatu" },
-    ca: { title: "Eines", insurance: "Assegurança de Viatge", esim: "Plans eSIM Digital", hotels: "Hotels i Allotjaments", search: "Cercar Destinació", findStay: "Troba el teu allotjament", searchBtn: "Cercar" },
-    fr: { title: "Outils Voyage", insurance: "Assurance Voyage", esim: "Forfaits eSIM", hotels: "Hôtels et Séjours", search: "Rechercher", findStay: "Trouver un séjour", searchBtn: "Chercher" },
-    de: { title: "Reise-Tools", insurance: "Reiseversicherung", esim: "eSIM-Pläne", hotels: "Hotels & Unterkünfte", search: "Ziel suchen", findStay: "Unterkunft finden", searchBtn: "Suchen" },
-    pt: { title: "Ferramentas", insurance: "Seguro de Viagem", esim: "Planos eSIM Digital", hotels: "Hotéis e Alojamento", search: "Buscar Destino", findStay: "Encontrar alojamento", searchBtn: "Buscar" },
-    ar: { title: "أدوات المسافر", insurance: "تأمين السفر", esim: "خطط eSIM الرقمية", hotels: "الفنادق والإقامة", search: "البحث عن وجهة", findStay: "ابحث عن إقامة", searchBtn: "بحث" },
-    zh: { title: "旅行工具箱", insurance: "旅游保险", esim: "数字 eSIM 方案", hotels: "酒店与住宿", search: "搜索目的地", findStay: "寻找您的住宿", searchBtn: "搜索" },
-    ja: { title: "旅行者ツール", insurance: "海外旅行保険", esim: "デジタルeSIMプラン", hotels: "ホテルと宿泊施設", search: "目的地を検索", findStay: "宿泊先を探す", searchBtn: "検索" }
+    en: { title: "bdai Hub", digest: "Local Digest", villages: "Charming Villages", villagesSub: "Spain's hidden gems", world: "Global Trends", worldSub: "Most visited cities in 2024", search: "Search any city..." },
+    es: { title: "bdai Hub", digest: "Sabores & Eventos", villages: "Pueblos con Encanto", villagesSub: "Joyas ocultas de España", world: "Tendencias Mundiales", worldSub: "Ciudades más visitadas 2024", search: "Buscar cualquier ciudad..." },
+    ca: { title: "bdai Hub", digest: "Sabors i Events", villages: "Pobles amb Encant", villagesSub: "Joies ocultes d'Espanya", world: "Tendències Mundials", worldSub: "Ciutats més visitades 2024", search: "Cerca qualsevol ciutat..." },
+    eu: { title: "bdai Hub", digest: "Tokiko Digest", villages: "Herri Xarmangarriak", villagesSub: "Espainiako harribitxi ezkutuak", world: "Joera Globalak", worldSub: "2024an gehien bisitatutako hiriak", search: "Bilatu edozein hiri..." },
+    fr: { title: "bdai Hub", digest: "Digest Local", villages: "Villages de Charme", villagesSub: "Joyaux cachés d'Espagne", world: "Tendances Mondiales", worldSub: "Villes les plus visitées 2024", search: "Rechercher une ville..." }
 };
 
-export const TravelServices: React.FC<{ language?: string }> = ({ language = 'es' }) => {
-    const t = UI_TEXTS[language] || UI_TEXTS['en'];
-    const [destination, setDestination] = useState('');
-    const [searching, setSearching] = useState(false);
+interface TravelServicesProps {
+    language?: string;
+    onCitySelect: (city: string) => void;
+}
+
+export const TravelServices: React.FC<TravelServicesProps> = ({ language = 'es', onCitySelect }) => {
+    const t = UI_TEXTS[language] || UI_TEXTS['es'];
+    const [searchValue, setSearchValue] = React.useState('');
+
+    const handleSearch = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && searchValue.trim()) {
+            onCitySelect(searchValue.trim());
+        }
+    };
 
     return (
-        <div className="pb-24 animate-fade-in space-y-8 p-6">
-            <header className="mb-8">
-                <h2 className="text-3xl font-black text-slate-900 lowercase tracking-tighter">{t.title}</h2>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Global Travel Utilities</p>
+        <div className="pb-32 animate-fade-in space-y-10 px-6 pt-10">
+            <header className="flex justify-between items-end">
+                <div>
+                    <h2 className="text-4xl font-black text-white lowercase tracking-tighter">{t.title}</h2>
+                    <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] opacity-60">Smart Travel Concierge</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl border border-white/10">
+                    <i className="fas fa-satellite-dish text-purple-500 animate-pulse"></i>
+                </div>
             </header>
 
-            <section className="space-y-4">
-                <h3 className="text-lg font-black text-slate-800 flex items-center gap-2"><i className="fas fa-bed text-purple-600"></i> {t.hotels}</h3>
-                <div className="bg-white p-5 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
-                    <div className="relative">
-                        <i className="fas fa-location-dot absolute left-4 top-3.5 text-purple-500"></i>
-                        <input type="text" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={t.findStay} className="w-full bg-slate-50 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-800 outline-none border border-slate-100" />
-                    </div>
-                    <button onClick={() => { setSearching(true); setTimeout(() => setSearching(false), 1500); }} className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 ${searching ? 'bg-slate-100 text-slate-400' : 'bg-purple-600 text-white shadow-lg active:scale-95'}`}>
-                        {searching ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-search"></i> {t.searchBtn}</>}
-                    </button>
-                    <div className="pt-4 border-t border-slate-100 space-y-2">
-                        {HOTEL_PROVIDERS.map(hotel => (
-                            <div key={hotel.name} className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-100">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl ${hotel.color} text-white flex items-center justify-center shadow-md`}><i className={`fas ${hotel.icon} text-sm`}></i></div>
-                                    <div><p className="text-sm font-black text-slate-900">{hotel.name}</p><p className="text-[9px] font-bold text-slate-400 uppercase">{hotel.feature}</p></div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="flex items-center justify-end gap-1 mb-0.5"><i className="fas fa-star text-yellow-400 text-[8px]"></i><span className="text-[10px] font-black text-slate-800">{hotel.rating}</span></div>
-                                    <p className="text-[9px] font-black text-green-600 uppercase">{hotel.deal}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            <div className="relative">
+                <i className="fas fa-search absolute left-5 top-5 text-slate-500"></i>
+                <input 
+                    type="text" 
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    onKeyDown={handleSearch}
+                    placeholder={t.search} 
+                    className="w-full bg-white/5 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white outline-none focus:border-purple-500 transition-all shadow-xl" 
+                />
+            </div>
 
             <section className="space-y-4">
-                <h3 className="text-lg font-black text-slate-800 flex items-center gap-2"><i className="fas fa-sim-card text-purple-600"></i> {t.esim}</h3>
-                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-6 px-6">
-                    {ESIM_PROVIDERS.map(plan => (
-                        <div key={plan.name} className="w-56 flex-shrink-0 bg-slate-900 rounded-[2.5rem] p-6 text-white relative overflow-hidden shadow-xl border border-white/5">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-purple-400 mb-2">{plan.name}</p>
-                            <h4 className="text-xl font-black mb-1">{plan.region}</h4>
-                            <div className="flex items-baseline gap-1 mb-6"><span className="text-3xl font-black">{plan.data}</span><span className="text-xs text-white/40 font-bold">/ {plan.validity}</span></div>
-                            <div className="flex justify-between items-center"><p className="text-2xl font-black text-yellow-400">{plan.price}</p><button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"><i className="fas fa-plus"></i></button></div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            <section className="space-y-4">
-                <h3 className="text-lg font-black text-slate-800 flex items-center gap-2"><i className="fas fa-user-shield text-purple-600"></i> {t.insurance}</h3>
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <i className="fas fa-fire-flame-curved text-orange-500"></i> {t.digest}
+                </h3>
                 <div className="space-y-3">
-                    {INSURANCE_PROVIDERS.map(item => (
-                        <div key={item.name} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-2xl ${item.color} text-white flex items-center justify-center shadow-lg`}><i className={`fas ${item.icon} text-lg`}></i></div>
-                                <div><p className="font-black text-slate-900 mb-1">{item.name}</p><p className="text-[10px] font-bold text-slate-400 uppercase">{item.coverage}</p></div>
+                    {LOCAL_DIGEST.map((item, idx) => (
+                        <div key={idx} onClick={() => onCitySelect(item.city)} className="bg-white/5 border border-white/10 p-5 rounded-[2rem] flex items-center gap-4 hover:bg-white/10 transition-all cursor-pointer active:scale-[0.98]">
+                            <div className={`w-12 h-12 rounded-2xl ${item.color} flex items-center justify-center text-xl`}>
+                                <i className={`fas ${item.icon}`}></i>
                             </div>
-                            <div className="text-right"><p className="font-black text-purple-600">{item.price}</p><button className="text-[9px] font-black uppercase text-slate-300">Select <i className="fas fa-chevron-right ml-1"></i></button></div>
+                            <div className="flex-1">
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{item.type}</p>
+                                <h4 className="text-sm font-black text-white">{item.title}</h4>
+                                <p className="text-[11px] text-slate-400 font-medium leading-tight">{item.desc}</p>
+                            </div>
                         </div>
                     ))}
                 </div>
             </section>
-            <CurrencyConverter language={language} />
+
+            <section className="space-y-4">
+                <div>
+                    <h3 className="text-lg font-black text-white">{t.villages}</h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t.villagesSub}</p>
+                </div>
+                <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-6 px-6">
+                    {VILLAGES.map(v => (
+                        <div key={v.name} onClick={() => onCitySelect(v.name)} className="w-64 flex-shrink-0 relative h-80 rounded-[2.5rem] overflow-hidden border border-white/10 group shadow-2xl cursor-pointer active:scale-95 transition-transform">
+                            <img src={v.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={v.name} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                            <div className="absolute bottom-6 left-6 right-6">
+                                <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">{v.province}</p>
+                                <h4 className="text-xl font-black text-white mb-2">{v.name}</h4>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <section className="space-y-4 pb-10">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <i className="fas fa-globe-americas text-blue-500"></i> {t.world}
+                </h3>
+                <div className="bg-white/5 rounded-[2.5rem] border border-white/10 overflow-hidden backdrop-blur-sm">
+                    {WORLD_TOP.map((city, idx) => (
+                        <div 
+                            key={city.city} 
+                            onClick={() => onCitySelect(city.city)}
+                            className={`flex items-center p-5 gap-4 cursor-pointer hover:bg-white/5 transition-colors ${idx !== WORLD_TOP.length - 1 ? 'border-b border-white/5' : ''}`}
+                        >
+                            <span className="text-2xl font-black text-slate-800 w-8">{city.rank}</span>
+                            <div className="flex-1">
+                                <p className="font-black text-white">{city.city}</p>
+                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{city.attraction}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-mono font-bold text-white text-sm">{city.visitors}</p>
+                                <span className="text-[8px] font-black text-green-400">{city.trend}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
         </div>
     );
 };

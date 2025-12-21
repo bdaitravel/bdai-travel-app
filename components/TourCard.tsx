@@ -1,71 +1,60 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tour, Stop } from '../types';
+import { generateImage } from '../services/geminiService';
 
-const THEME_MAP: Record<string, { color: string; bg: string; icon: string; label: any }> = {
-    history: { color: 'text-amber-600', bg: 'bg-amber-50', icon: 'fa-landmark', label: { es: 'Historia', en: 'History', ca: 'Història', fr: 'Histoire', eu: 'Historia' } },
-    food: { color: 'text-orange-600', bg: 'bg-orange-50', icon: 'fa-utensils', label: { es: 'Gastronomía', en: 'Food', ca: 'Gastronomia', fr: 'Gastronomie', eu: 'Gastronomia' } },
-    art: { color: 'text-pink-600', bg: 'bg-pink-50', icon: 'fa-palette', label: { es: 'Arte', en: 'Art', ca: 'Art', fr: 'Art', eu: 'Artea' } },
-    nature: { color: 'text-emerald-600', bg: 'bg-emerald-50', icon: 'fa-leaf', label: { es: 'Naturaleza', en: 'Nature', ca: 'Natura', fr: 'Nature', eu: 'Natura' } },
-    secrets: { color: 'text-purple-600', bg: 'bg-purple-50', icon: 'fa-user-secret', label: { es: 'Secretos', en: 'Secrets', ca: 'Secrets', fr: 'Secrets', eu: 'Sekretuak' } },
-    photo: { color: 'text-indigo-600', bg: 'bg-indigo-50', icon: 'fa-camera', label: { es: 'Fotografía', en: 'Photo', ca: 'Fotografia', fr: 'Photo', eu: 'Argazkia' } },
-    culture: { color: 'text-blue-600', bg: 'bg-blue-50', icon: 'fa-university', label: { es: 'Cultura', en: 'Culture', ca: 'Cultura', fr: 'Culture', eu: 'Kultura' } }
-};
-
-const getThemeData = (themeStr: string) => {
-    const key = Object.keys(THEME_MAP).find(k => themeStr.toLowerCase().includes(k)) || 'secrets';
-    return THEME_MAP[key];
+const getThemeStyles = (themeStr: string) => {
+  const theme = themeStr.toLowerCase();
+  if (theme.includes('history')) return { badge: 'bg-amber-100 text-amber-900', icon: 'fa-landmark' };
+  if (theme.includes('food')) return { badge: 'bg-orange-100 text-orange-900', icon: 'fa-utensils' };
+  if (theme.includes('art')) return { badge: 'bg-pink-100 text-pink-900', icon: 'fa-palette' };
+  if (theme.includes('nature')) return { badge: 'bg-emerald-100 text-emerald-900', icon: 'fa-leaf' };
+  return { badge: 'bg-slate-100 text-slate-900', icon: 'fa-compass' };
 };
 
 const UI_TEXT: any = {
-    en: { next: "Next", prev: "Back", listen: "Audio Guide", stop: "Stop", start: "Start", preview: "Quick Preview", safety: "Safety", wifi: "Wifi", photo: "Photo Tip", food: "Local Gem", miles: "Miles" },
-    es: { next: "Siguiente", prev: "Atrás", listen: "Audio Guía", stop: "Parada", start: "Empezar", preview: "Vista Previa", safety: "Seguridad", wifi: "Wifi", photo: "Tip de Foto", food: "Gema Local", miles: "Millas" },
-    ca: { next: "Següent", prev: "Enrere", listen: "Àudio Guia", stop: "Parada", start: "Començar", preview: "Vista Prèvia", safety: "Seguretat", wifi: "Wifi", photo: "Tip de Foto", food: "Gemma Local", miles: "Milles" },
-    eu: { next: "Hurrengoa", prev: "Atzera", listen: "Audio Gida", stop: "Geldialdia", start: "Hasi", preview: "Aurreikusi", safety: "Segurtasuna", wifi: "Wifi", photo: "Argazki Tip", food: "Tokiko Gema", miles: "Miliak" },
-    fr: { next: "Suivant", prev: "Retour", listen: "Audio Guide", stop: "Arrêt", start: "Commencer", preview: "Aperçu", safety: "Sécurité", wifi: "Wifi", photo: "Conseil Photo", food: "Pépite Locale", miles: "Miles" }
+    en: { next: "Next", prev: "Back", listen: "Audio Guide", pause: "Pause", checkin: "Check In", collected: "Verified!", stop: "Stop", share: "Share trip", shareReward: "+150m for #bdaitravel", photoTitle: "Snapshot Mode", angle: "Angle", time: "Best Time", caption: "Hook" },
+    es: { next: "Siguiente", prev: "Atrás", listen: "Audio Guía", pause: "Pausar", checkin: "Check In", collected: "¡Verificado!", stop: "Parada", share: "Compartir viaje", shareReward: "+150m por #bdaitravel", photoTitle: "Snapshot Mode", angle: "Ángulo", time: "Mejor Hora", caption: "Caption Hook" },
 };
 
 interface TourCardProps {
   tour: Tour;
   onSelect: (tour: Tour) => void;
   onPlayAudio: (id: string, text: string) => void;
-  language: string;
+  isPlayingAudio: boolean;
+  isAudioLoading: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
 }
 
-export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio, language }) => {
-  const theme = getThemeData(tour.theme);
-  const t = UI_TEXT[language] || UI_TEXT['en'];
+export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, isFavorite, onToggleFavorite }) => {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const styles = getThemeStyles(tour.theme);
+  const displayImage = tour.imageUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80';
 
   return (
-    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer flex flex-col mb-6">
-      <div className={`h-48 relative flex items-center justify-center ${theme.bg}`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent"></div>
-        <i className={`fas ${theme.icon} text-6xl ${theme.color} opacity-40 group-hover:scale-110 transition-transform duration-700`}></i>
-        
-        <div className="absolute top-5 left-5">
-             <span className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-white/90 shadow-sm border border-slate-50 ${theme.color}`}>
-                 {theme.label[language] || theme.label['en']}
+    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer h-full flex flex-col">
+      <div className="h-64 relative overflow-hidden bg-slate-200">
+        <img src={displayImage} className={`w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`} onLoad={() => setImgLoaded(true)} alt={tour.title} />
+        <div className="absolute top-4 left-4">
+             <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg ${styles.badge} backdrop-blur-md bg-opacity-90`}>
+                 <i className={`fas ${styles.icon} mr-1`}></i> {tour.theme}
              </span>
         </div>
       </div>
-      <div className="p-7 flex flex-col flex-1">
-          <h3 className="text-xl font-bold text-slate-900 mb-2 leading-tight tracking-tight group-hover:text-purple-600 transition-colors lowercase">{tour.title}</h3>
-          <p className="text-slate-400 text-xs leading-relaxed mb-6 line-clamp-2 font-medium">{tour.description}</p>
-          
-          <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                  <i className="fas fa-clock text-slate-200"></i> {tour.duration}
-              </div>
-              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                  <i className="fas fa-walking text-slate-200"></i> {tour.distance}
-              </div>
+      <div className="p-6 flex flex-col flex-1">
+          <div className="flex flex-wrap gap-2 mb-4">
+              <span className="px-3 py-1 rounded-lg bg-slate-50 text-xs font-bold text-slate-500 flex items-center gap-1.5"><i className="fas fa-clock text-slate-400"></i> {tour.duration}</span>
+              <span className="px-3 py-1 rounded-lg bg-slate-50 text-xs font-bold text-slate-500 flex items-center gap-1.5"><i className="fas fa-walking text-slate-400"></i> {tour.distance}</span>
           </div>
-
+          <h3 className="text-2xl font-heading font-bold text-slate-900 mb-3 leading-tight group-hover:text-purple-700 transition-colors">{tour.title}</h3>
+          <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-3 font-medium">{tour.description}</p>
           <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-               <button onClick={(e) => {e.stopPropagation(); onPlayAudio(tour.id, tour.description);}} className="text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 text-slate-300 hover:text-purple-600 transition-colors">
-                   <i className="fas fa-headphones"></i> {t.preview}
+               <button onClick={(e) => {e.stopPropagation(); onPlayAudio(tour.id, tour.description);}} className={`text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${isPlayingAudio ? 'text-red-500' : 'text-slate-400'}`}>
+                   {isAudioLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlayingAudio ? <i className="fas fa-stop"></i> : <i className="fas fa-play"></i>}
+                   {isPlayingAudio ? 'Stop' : 'Preview'}
                </button>
-               <span className="text-slate-900 font-bold text-[10px] uppercase tracking-widest">{t.start} <i className="fas fa-arrow-right ml-1"></i></span>
+               <span className="text-slate-900 font-bold text-sm">Start <i className="fas fa-arrow-right ml-1"></i></span>
           </div>
       </div>
     </div>
@@ -73,60 +62,95 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio,
 };
 
 export const ActiveTourCard: React.FC<any> = (props) => {
-    const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, language, onCheckIn } = props;
+    const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, language, onShare } = props;
     const currentStop = tour.stops[currentStopIndex] as Stop;
-    const t = UI_TEXT[language] || UI_TEXT['en'];
-    const theme = getThemeData(currentStop.type || 'secrets');
+    const t = (key: string) => UI_TEXT[language]?.[key] || UI_TEXT['en']?.[key] || key;
+
+    const formatDescription = (text: string) => {
+        if (!text) return null;
+        return text.split('\n').filter(l => l.trim()).map((line, i) => {
+            if (line.includes('[HOOK]')) return <p key={i} className="mb-6 text-xl font-heading font-black text-slate-900 leading-tight border-l-4 border-purple-500 pl-4">{line.replace('[HOOK]', '').trim()}</p>;
+            if (line.includes('[STORY]')) return <div key={i} className="mb-6 text-slate-700 leading-relaxed font-medium">{line.replace('[STORY]', '').trim()}</div>;
+            if (line.includes('[SECRET]')) return (
+                <div key={i} className="mb-6 bg-slate-900 text-white p-5 rounded-2xl relative overflow-hidden group border border-slate-800">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 mb-2">Secret</p>
+                    <p className="text-sm font-medium leading-relaxed italic">{line.replace('[SECRET]', '').trim()}</p>
+                </div>
+            );
+            if (line.includes('[SMART_TIP]')) return (
+                <div key={i} className="mb-6 bg-blue-50 border border-blue-100 p-4 rounded-xl flex gap-3 items-start">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 text-xs shadow-sm"><i className="fas fa-bolt"></i></div>
+                    <div><p className="text-[10px] font-bold text-blue-600 uppercase mb-0.5">Pro Tip</p><p className="text-xs text-blue-900 font-bold leading-tight">{line.replace('[SMART_TIP]', '').trim()}</p></div>
+                </div>
+            );
+            return <p key={i} className="mb-4 text-slate-600 leading-relaxed font-medium">{line}</p>;
+        });
+    };
 
     return (
         <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar">
-             <div className={`relative h-64 w-full flex-shrink-0 flex items-center justify-center ${theme.bg}`}>
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-white/10"></div>
-                <i className={`fas ${theme.icon} text-7xl ${theme.color} opacity-30`}></i>
-                <div className="absolute bottom-8 left-8 right-8 text-center">
-                    <span className="inline-block px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest bg-white border border-slate-100 text-slate-400 mb-3 shadow-sm">
-                        {t.stop} {currentStopIndex + 1} / {tour.stops.length}
-                    </span>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight lowercase">{currentStop.name}</h1>
+             <div className="relative h-72 w-full flex-shrink-0">
+                <img src={currentStop.imageUrl || `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80`} className="w-full h-full object-cover" alt={currentStop.name} />
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/30"></div>
+                <div className="absolute bottom-6 left-6 right-6">
+                    <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 bg-white/90 backdrop-blur shadow-sm border border-white text-slate-800">{t('stop')} {currentStopIndex + 1} / {tour.stops.length}</span>
+                    <h1 className="text-3xl font-heading font-black text-white drop-shadow-lg leading-tight">{currentStop.name}</h1>
                 </div>
              </div>
-             
-             <div className="px-8 pb-24 pt-4">
-                 <div className="w-full h-1 bg-slate-50 rounded-full mb-8 overflow-hidden">
-                    <div className="h-full bg-slate-900 transition-all duration-700 ease-out" style={{ width: `${((currentStopIndex + 1) / tour.stops.length) * 100}%` }}></div>
-                 </div>
+             <div className="px-6 pb-24 pt-8">
+                 <div className="w-full h-1 bg-slate-100 rounded-full mb-8 overflow-hidden"><div className="h-full bg-purple-600 transition-all duration-500" style={{ width: `${((currentStopIndex + 1) / tour.stops.length) * 100}%` }}></div></div>
                  
-                 <div className="text-slate-500 text-sm leading-relaxed font-medium mb-10">{currentStop.description}</div>
+                 <div className="prose prose-slate max-w-none mb-10">{formatDescription(currentStop.description)}</div>
 
-                 <div className="grid grid-cols-2 gap-3 mb-10">
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{t.safety}</p>
-                        <p className="text-[10px] font-bold text-slate-600 leading-tight">{currentStop.securityNote || '—'}</p>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{t.wifi}</p>
-                        <p className="text-[10px] font-bold text-slate-600 leading-tight">{currentStop.wifiInfo || '—'}</p>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{t.photo}</p>
-                        <p className="text-[10px] font-bold text-slate-600 leading-tight">{currentStop.photoTip || '—'}</p>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{t.food}</p>
-                        <p className="text-[10px] font-bold text-slate-600 leading-tight">{currentStop.authenticFoodTip || '—'}</p>
-                    </div>
-                 </div>
+                 {/* Instagram Photo Spot Section */}
+                 {currentStop.photoSpot && (
+                     <div className="mb-10 bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-100 rounded-[2.5rem] p-6 shadow-sm overflow-hidden relative">
+                         <div className="absolute -top-4 -right-4 w-20 h-20 bg-pink-500/10 rounded-full blur-2xl"></div>
+                         <div className="flex items-center gap-3 mb-4">
+                             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-pink-200">
+                                 <i className="fas fa-camera-retro"></i>
+                             </div>
+                             <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">{t('photoTitle')}</h4>
+                         </div>
+                         <div className="space-y-4">
+                             <div className="flex gap-4">
+                                 <div className="flex-1">
+                                     <p className="text-[9px] font-black text-pink-600 uppercase mb-1">{t('angle')}</p>
+                                     <p className="text-xs font-bold text-slate-700 leading-tight">{currentStop.photoSpot.angle}</p>
+                                 </div>
+                                 <div className="w-24">
+                                     <p className="text-[9px] font-black text-pink-600 uppercase mb-1">{t('time')}</p>
+                                     <p className="text-xs font-bold text-slate-700">{currentStop.photoSpot.bestTime}</p>
+                                 </div>
+                             </div>
+                             <div className="bg-white/60 p-3 rounded-2xl border border-white">
+                                 <p className="text-[9px] font-black text-slate-400 uppercase mb-1">{t('caption')}</p>
+                                 <p className="text-[10px] font-mono font-bold text-slate-800">"{currentStop.photoSpot.instagramHook}"</p>
+                             </div>
+                         </div>
+                     </div>
+                 )}
 
-                 <div className="space-y-3">
-                     <button onClick={() => onCheckIn(currentStop.id)} className={`w-full py-4.5 rounded-2xl font-bold uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 ${currentStop.visited ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-900 text-white shadow-xl shadow-slate-200'}`}>
-                         {currentStop.visited ? <><i className="fas fa-check"></i> Success</> : <><i className="fas fa-map-pin text-[8px]"></i> Check-In (+50 {t.miles})</>}
+                 {/* Botón de Compartir en el Tour */}
+                 <button onClick={onShare} className="w-full mb-10 p-5 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-3xl flex items-center gap-4 transition-all active:scale-95 group">
+                     <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-lg group-hover:rotate-12 transition-transform"><i className="fas fa-share-nodes"></i></div>
+                     <div className="text-left">
+                         <p className="text-xs font-black uppercase tracking-widest text-indigo-600 mb-1">{t('share')}</p>
+                         <p className="text-[10px] font-bold text-slate-500">{t('shareReward')}</p>
+                     </div>
+                 </button>
+
+                 <div className="space-y-4">
+                     <button onClick={() => onCheckIn(currentStop.id, 50)} className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm flex items-center justify-center gap-2 shadow-lg transition-all transform active:scale-95 ${currentStop.visited ? 'bg-green-100 text-green-700' : 'bg-slate-900 text-white hover:bg-black'}`}>
+                         {currentStop.visited ? <><i className="fas fa-check-circle"></i> {t('collected')}</> : <><i className="fas fa-map-marker-alt"></i> {t('checkin')} (+50 m)</>}
                      </button>
-                     <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 transition-all border border-slate-100 bg-white text-slate-400 hover:text-slate-600 active:bg-slate-50">
-                         <i className="fas fa-headphones"></i> {t.listen}
+                     <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm border border-slate-200 ${audioPlayingId === currentStop.id ? 'bg-red-50 text-red-500 border-red-200' : 'bg-white text-slate-700'}`}>
+                         {audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin"></i> : audioPlayingId === currentStop.id ? <i className="fas fa-stop"></i> : <i className="fas fa-headphones"></i>}
+                         {audioPlayingId === currentStop.id ? t('pause') : t('listen')}
                      </button>
-                     <div className="grid grid-cols-2 gap-3 pt-4">
-                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold uppercase tracking-widest text-[9px] disabled:opacity-20">{t.prev}</button>
-                         <button onClick={onNext} className="py-4 bg-purple-600 text-white rounded-2xl font-bold uppercase tracking-widest text-[9px] shadow-lg shadow-purple-100 active:scale-95 transition-all">{currentStopIndex === tour.stops.length - 1 ? 'End' : t.next}</button>
+                     <div className="grid grid-cols-2 gap-4">
+                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold opacity-50 disabled:opacity-30">{t('prev')}</button>
+                         <button onClick={onNext} className="py-4 bg-purple-600 text-white rounded-2xl font-bold shadow-xl">{t('next')}</button>
                      </div>
                  </div>
             </div>

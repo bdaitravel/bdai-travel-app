@@ -1,6 +1,6 @@
 {
   "name": "bdai",
-  "description": "bdai - better destination by ai. Smart personalized travel guides with rewards.",
+  "description": "Better Destinations AI - Verified smart travel guides for Spain.",
   "requestFramePermissions": [
     "geolocation",
     "microphone"

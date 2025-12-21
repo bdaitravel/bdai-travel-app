@@ -5,12 +5,26 @@ export interface Badge {
   icon: string;
   description: string;
   earnedAt?: string;
-  countryCode?: string;
 }
 
-export type TravelerRank = 'Turista' | 'Explorador' | 'Wanderer' | 'Globe-Trotter' | 'Leyenda';
-export type TravelerType = 'Backpacker' | 'Luxury' | 'Cultural' | 'Foodie' | 'Digital Nomad' | 'Party' | 'Business';
-export type WalkLevel = 'Lazy' | 'Standard' | 'Marathoner';
+export interface SocialLinks {
+  instagram?: string;
+  tiktok?: string;
+  twitter?: string;
+  x?: string;
+  linkedin?: string;
+  facebook?: string;
+  website?: string;
+}
+
+export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend';
+
+export interface UserStats {
+  photosTaken: number;
+  guidesBought: number;
+  sessionsStarted: number;
+  referralsCount: number;
+}
 
 export interface UserProfile {
   id: string;
@@ -19,34 +33,30 @@ export interface UserProfile {
   lastName: string;
   name: string;
   username: string;
+  email: string;
+  password?: string;
   avatar: string;
   language: string;
-  gender: 'M' | 'F' | 'Other';
-  travelerType: TravelerType;
-  walkLevel: WalkLevel;
-  age: number;
   miles: number;
   culturePoints: number;
   foodPoints: number;
   photoPoints: number;
-  countryPoints: number;
   rank: TravelerRank;
-  visitedCities: string[]; 
-  visitedCountries: string[];
-  badges: Badge[];
-  joinDate: string;
+  interests: string[];
+  accessibility: 'standard' | 'wheelchair' | 'low_walking';
   isPublic: boolean;
-}
-
-export interface LeaderboardEntry {
-  id: string;
-  name: string;
-  avatar: string;
-  miles: number;
-  countryPoints: number;
-  travelerType: TravelerType;
-  gender: 'M' | 'F' | 'Other';
-  country: string;
+  bio: string;
+  age: number;
+  country?: string;
+  city?: string;
+  badges: Badge[];
+  profileCuriosity?: string;
+  visitedCities: string[]; 
+  completedTours: string[];
+  stats: UserStats;
+  socials?: SocialLinks;
+  passportNumber?: string;
+  joinDate?: string;
 }
 
 export interface Stop {
@@ -55,44 +65,60 @@ export interface Stop {
   description: string;
   latitude: number;
   longitude: number;
-  type: 'historical' | 'food' | 'art' | 'nature' | 'photo' | 'culture';
+  type: 'historical' | 'food' | 'art' | 'business_ad' | 'nature' | 'photo' | 'culture';
   visited: boolean;
+  imageUrl?: string; 
   curiosity?: string;
-  wifiInfo?: string;
-  securityNote?: string;
-  photoTip?: string;
-  authenticFoodTip?: string;
-  openingHours?: string;
+  photoSpot?: {
+    angle: string;
+    bestTime: string;
+    instagramHook: string;
+    milesReward: number;
+  };
+  isRichInfo?: boolean; 
 }
 
 export interface Tour {
   id: string;
   city: string;
-  countryCode?: string;
   title: string;
   description: string;
   duration: string;
   distance: string;
   difficulty: 'Easy' | 'Moderate' | 'Hard';
-  theme: 'History' | 'Food' | 'Art' | 'Nature' | 'Secrets' | string;
+  theme: string;
+  isSponsored: boolean;
   stops: Stop[];
-  recommendedDays?: number;
-  transportTip?: string;
-  localVibe?: string;
-  imageUrl?: string;
-  weatherAdvice?: string;
-  intent?: string;
+  imageUrl?: string; 
+  cityImageUrl?: string; 
+  transportApps?: string[];
+  publicTransport?: string;
+  safetyTip?: string;
+  wifiTip?: string;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  username?: string;
+  avatar: string;
+  miles: number;
+  rank: number;
+  isPublic: boolean;
+  badges?: Badge[];
+  socials?: SocialLinks;
 }
 
 export enum AppView {
   LOGIN = 'LOGIN',
+  WELCOME = 'WELCOME',
   HOME = 'HOME',
   CITY_DETAIL = 'CITY_DETAIL',
   TOUR_ACTIVE = 'TOUR_ACTIVE',
   PROFILE = 'PROFILE',
   SHOP = 'SHOP',
   LEADERBOARD = 'LEADERBOARD',
-  UTILITIES = 'UTILITIES'
+  TOOLS = 'TOOLS'
 }
 
 export const LANGUAGES = [
@@ -100,5 +126,5 @@ export const LANGUAGES = [
   { code: 'en', name: 'English' },
   { code: 'ca', name: 'Català' },
   { code: 'eu', name: 'Euskera' },
-  { code: 'fr', name: 'Français' }
+  { code: 'fr', name: 'Français' },
 ];

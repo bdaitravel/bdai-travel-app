@@ -1,46 +1,44 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 interface CityCardProps {
   name: string;
-  image?: string;
+  type: 'history' | 'food' | 'art' | 'culture';
   description: string;
   onClick: () => void;
-  isLoading?: boolean;
 }
 
-export const CityCard: React.FC<CityCardProps> = ({ name, image, description, onClick }) => {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  
-  // Usamos Unsplash como fuente gratuita por defecto. No genera gasto de IA.
-  const displayImage = image || `https://source.unsplash.com/featured/?${encodeURIComponent(name)},city,architecture`;
+const TYPE_CONFIG: any = {
+    history: { icon: 'fa-landmark', color: 'from-amber-500/20 to-orange-600/20', text: 'Histórico' },
+    food: { icon: 'fa-utensils', color: 'from-emerald-500/20 to-teal-600/20', text: 'Gastronomía' },
+    art: { icon: 'fa-palette', color: 'from-purple-500/20 to-indigo-600/20', text: 'Vanguardia' },
+    culture: { icon: 'fa-users', color: 'from-blue-500/20 to-cyan-600/20', text: 'Cultura' }
+};
+
+export const CityCard: React.FC<CityCardProps> = ({ name, type, description, onClick }) => {
+  const config = TYPE_CONFIG[type] || TYPE_CONFIG.history;
 
   return (
     <div 
       onClick={onClick}
-      className="group relative h-[380px] w-full rounded-[2rem] overflow-hidden cursor-pointer transition-all duration-500 shadow-md hover:shadow-2xl hover:-translate-y-2 flex-shrink-0"
+      className="group relative h-48 rounded-[2rem] bg-white/5 border border-white/10 p-5 flex flex-col justify-between cursor-pointer transition-all hover:bg-white/10 hover:border-purple-500/50 hover:scale-[1.02] shadow-xl overflow-hidden"
     >
-      <div className={`absolute inset-0 bg-slate-200 ${!imgLoaded ? 'animate-pulse' : ''}`}></div>
+      <div className={`absolute inset-0 bg-gradient-to-br ${config.color} opacity-40 group-hover:opacity-60 transition-opacity`}></div>
       
-      <img 
-        src={displayImage} 
-        alt={name} 
-        onLoad={() => setImgLoaded(true)}
-        className={`w-full h-full object-cover object-center transition-transform duration-[1.5s] ease-in-out group-hover:scale-110 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-      />
+      <div className="relative z-10 flex justify-between items-start">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl text-white shadow-inner">
+              <i className={`fas ${config.icon}`}></i>
+          </div>
+          <span className="text-[7px] font-black uppercase tracking-[0.2em] text-white/40">{config.text}</span>
+      </div>
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
-      
-      <div className="absolute bottom-0 left-0 w-full p-6 flex flex-col justify-end pointer-events-none">
-         <h3 className="text-3xl font-heading font-bold text-white mb-1 tracking-tight drop-shadow-lg">{name}</h3>
-         {description && <p className="text-slate-200 text-sm font-medium line-clamp-2 mb-4 opacity-90">{description}</p>}
-         
-         <div className="flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-             <span className="w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg">
-                 <i className="fas fa-arrow-right text-xs transform group-hover:translate-x-0.5 transition-transform"></i>
-             </span>
-             <span className="text-white text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">Explorar</span>
-         </div>
+      <div className="relative z-10">
+          <h3 className="text-xl font-heading font-black text-white leading-tight mb-1">{name}</h3>
+          <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{description}</p>
+      </div>
+
+      <div className="absolute -bottom-4 -right-4 text-white/5 text-6xl transform -rotate-12 transition-transform group-hover:scale-125 group-hover:-rotate-6">
+          <i className={`fas ${config.icon}`}></i>
       </div>
     </div>
   );
