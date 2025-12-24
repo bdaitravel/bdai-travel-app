@@ -74,6 +74,7 @@ export interface Stop {
     bestTime: string;
     instagramHook: string;
     milesReward: number;
+    secretLocation?: string; // Nuevo: Descripción del punto exacto "oculto"
   };
   isRichInfo?: boolean; 
 }

@@ -12,11 +12,11 @@ const getThemeStyles = (themeStr: string) => {
 };
 
 const UI_TEXT: any = {
-    en: { start: "Start", preview: "Audio Preview", stop: "Stop", stopTag: "Stop", share: "Share to earn", checkin: "Check-in (+150m)", bestTime: "Best time", photoHook: "Instagram Hook", visited: "Place Visited", next: "Next", prev: "Back" },
-    es: { start: "Empezar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Compartir y ganar", checkin: "Hacer Check-in (+150m)", bestTime: "Mejor hora", photoHook: "Gancho Instagram", visited: "Lugar Visitado", next: "Siguiente", prev: "Atrás" },
-    ca: { start: "Començar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Comparteix i guanya", checkin: "Fer Check-in (+150m)", bestTime: "Millor hora", photoHook: "Ganxo Instagram", visited: "Lloc Visitat", next: "Següent", prev: "Enrere" },
-    eu: { start: "Hasi", preview: "Entzun", stop: "Gelditu", stopTag: "Geltokia", share: "Partekatu eta irabazi", checkin: "Check-in egin (+150m)", bestTime: "Ordu onena", photoHook: "Instagramerako kouka", visited: "Bisitatutako lekua", next: "Hurrengoa", prev: "Atzera" },
-    fr: { start: "Démarrer", preview: "Écouter", stop: "Arrêter", stopTag: "Étape", share: "Partager et gagner", checkin: "Enregistrer (+150m)", bestTime: "Meilleur moment", photoHook: "Accroche Insta", visited: "Lieu Visité", next: "Suivant", prev: "Retour" }
+    en: { start: "Start", preview: "Audio Preview", stop: "Stop", stopTag: "Stop", share: "Share to earn", checkin: "Check-in (+150m)", bestTime: "Best time", photoHook: "Instagram Hook", visited: "Place Visited", next: "Next", prev: "Back", secretTitle: "Secret Insider Spot", secretUnlock: "Tap to reveal hidden spot" },
+    es: { start: "Empezar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Compartir y ganar", checkin: "Hacer Check-in (+150m)", bestTime: "Mejor hora", photoHook: "Gancho Instagram", visited: "Lugar Visitado", next: "Siguiente", prev: "Atrás", secretTitle: "Spot Secreto Insider", secretUnlock: "Pulsa para revelar el sitio oculto" },
+    ca: { start: "Començar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Comparteix i guanya", checkin: "Fer Check-in (+150m)", bestTime: "Millor hora", photoHook: "Ganxo Instagram", visited: "Lloc Visitat", next: "Següent", prev: "Enrere", secretTitle: "Spot Secret Insider", secretUnlock: "Prem per revelar el lloc ocult" },
+    eu: { start: "Hasi", preview: "Entzun", stop: "Gelditu", stopTag: "Geltokia", share: "Partekatu eta irabazi", checkin: "Check-in egin (+150m)", bestTime: "Ordu onena", photoHook: "Instagramerako kouka", visited: "Bisitatutako lekua", next: "Hurrengoa", prev: "Atzera", secretTitle: "Ezkutuko Spot-a", secretUnlock: "Sakatu ezkutuko tokia ikusteko" },
+    fr: { start: "Démarrer", preview: "Écouter", stop: "Arrêter", stopTag: "Étape", share: "Partager et gagner", checkin: "Enregistrer (+150m)", bestTime: "Meilleur moment", photoHook: "Accroche Insta", visited: "Lieu Visité", next: "Suivant", prev: "Retour", secretTitle: "Spot Secret Insider", secretUnlock: "Appuyez para révéler le lieu caché" }
 };
 
 const ImageFallback = ({ city, icon, colorClass }: { city: string, icon: string, colorClass: string }) => (
@@ -70,6 +70,7 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, onPlayAudio, isPlaying
 export const ActiveTourCard: React.FC<any> = (props) => {
     const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, onShare, language } = props;
     const [imgError, setImgError] = useState(false);
+    const [showSecret, setShowSecret] = useState(false);
     const currentStop = tour.stops[currentStopIndex] as Stop;
     const styles = getThemeStyles(tour.theme);
     const t = UI_TEXT[language] || UI_TEXT['es'];
@@ -77,10 +78,12 @@ export const ActiveTourCard: React.FC<any> = (props) => {
     const isPlaying = audioPlayingId === currentStop.id;
     const isLoading = audioLoadingId === currentStop.id;
 
+    // Reiniciar secreto al cambiar de parada
+    React.useEffect(() => { setShowSecret(false); }, [currentStopIndex]);
+
     return (
         <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar">
              <div className="relative h-[40vh] w-full flex-shrink-0 bg-slate-100">
-                {/* FIX: Using the correct state variable 'imgError' instead of undefined 'error' */}
                 {!imgError && currentStop.imageUrl ? (
                     <img src={currentStop.imageUrl} onError={() => setImgError(true)} className="w-full h-full object-cover" alt={currentStop.name} />
                 ) : (
@@ -105,27 +108,50 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                     {currentStop.description}
                  </article>
 
+                 {/* SECRET SPOT SECTION */}
                  {currentStop.photoSpot && (
-                     <div className="mb-10 bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-100 rounded-[2.5rem] p-6 shadow-sm overflow-hidden relative">
-                         <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl"></div>
-                         <div className="flex items-center gap-3 mb-4">
-                             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-purple-600 shadow-sm"><i className="fas fa-camera"></i></div>
-                             <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Spot de Foto Ideal</h4>
-                         </div>
-                         <div className="grid grid-cols-2 gap-4 mb-6">
-                             <div>
-                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.bestTime}</p>
-                                 <p className="text-xs font-bold text-slate-800">{currentStop.photoSpot.bestTime}</p>
-                             </div>
-                             <div>
-                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.photoHook}</p>
-                                 <p className="text-xs font-bold text-slate-800 italic">#{currentStop.photoSpot.instagramHook}</p>
-                             </div>
-                         </div>
-                         <button onClick={() => onShare('instagram')} className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[9px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
-                             <i className="fab fa-instagram text-lg"></i>
-                             {t.share} (+150m)
-                         </button>
+                     <div className="mb-10 relative overflow-hidden">
+                        <div className="bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl border-4 border-yellow-500/20">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-slate-900 shadow-lg animate-pulse"><i className="fas fa-eye"></i></div>
+                                    <h4 className="text-sm font-black text-white uppercase tracking-widest">{t.secretTitle}</h4>
+                                </div>
+                                {!showSecret && <div className="text-[8px] font-black text-yellow-500 uppercase tracking-widest bg-yellow-500/10 px-2 py-1 rounded">Top Insider</div>}
+                            </div>
+                            
+                            {!showSecret ? (
+                                <button 
+                                    onClick={() => setShowSecret(true)}
+                                    className="w-full py-8 bg-white/5 border border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center gap-2 group hover:bg-white/10 transition-all"
+                                >
+                                    <i className="fas fa-lock text-white/20 text-2xl group-hover:scale-110 transition-transform"></i>
+                                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{t.secretUnlock}</span>
+                                </button>
+                            ) : (
+                                <div className="animate-fade-in">
+                                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-6">
+                                        <p className="text-yellow-400 text-sm font-black italic leading-relaxed">
+                                            "{currentStop.photoSpot.secretLocation || currentStop.photoSpot.angle}"
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.bestTime}</p>
+                                            <p className="text-xs font-bold text-white">{currentStop.photoSpot.bestTime}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.photoHook}</p>
+                                            <p className="text-xs font-bold text-purple-400 italic">#{currentStop.photoSpot.instagramHook}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => onShare('instagram')} className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[9px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                                        <i className="fab fa-instagram text-lg"></i>
+                                        {t.share} (+150m)
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                      </div>
                  )}
                  

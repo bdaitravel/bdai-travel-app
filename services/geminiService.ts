@@ -24,36 +24,32 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const targetLang = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
   const interestsStr = userProfile.interests.join(", ") || "culture and history";
   
-  // 1. Intentar cargar de la caché global (Supabase)
   const globalCached = await getCachedTours(cityLower, userProfile.language);
   if (globalCached && globalCached.length > 0) {
       return globalCached;
   }
   
-  // 2. Fallback ciudades estáticas (SOLO SI EL IDIOMA ES ESPAÑOL)
   if (userProfile.language === 'es') {
     const staticMatch = STATIC_TOURS.filter(t => t.city.toLowerCase() === cityLower);
     if (staticMatch.length > 0) return staticMatch;
   }
   
-  // 3. Generación con IA
   const prompt = `
-    ROLE: Professional local guide for ${cityInput} with 20 years of experience.
-    USER PROFILE: Traveler looking for an experience focused on ${interestsStr}.
+    ROLE: Local insider and photography expert for ${cityInput}.
+    USER PROFILE: Traveler interested in ${interestsStr}.
     LANGUAGE: All output MUST be in ${targetLang}.
-    TASK: Create 2 immersive walking tours for ${cityInput} with exactly 8 stops each.
+    TASK: Create 2 immersive walking tours for ${cityInput} with 8 stops each.
     
-    STOP DESCRIPTION GUIDELINES:
-    - You MUST write everything in ${targetLang}.
-    - LENGTH: Each stop description must be detailed (at least 6-8 complete sentences).
-    - NARRATIVE STRUCTURE:
-        1. BEGIN with a historical hook related to ${cityInput}.
-        2. DESCRIBE an architectural or sensory detail.
-        3. REVEAL a "Hidden Gem" or local secret.
-        4. CONNECT the spot to the user's interest in ${interestsStr}.
-    - TONE: Professional, poetic, and extremely immersive.
+    SPECIAL REQUIREMENT: Each stop MUST have a "Secret Foto Spot".
+    This is not a famous viewpoint, but a specific, hidden angle known only by locals. 
+    (Example: "Behind the flower shop, there is a small alley with a perfect reflection of the cathedral in a puddle").
     
-    JSON STRUCTURE: Return exactly 2 tours in an array.
+    STOP DESCRIPTION:
+    - Language: ${targetLang}.
+    - Length: Detailed narrative (6-8 sentences).
+    - Tone: Poetic, professional guide.
+    
+    JSON STRUCTURE: Return exactly 2 tours.
   `;
   
   const responseSchema = {
@@ -83,12 +79,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
                     angle: { type: Type.STRING }, 
                     bestTime: { type: Type.STRING }, 
                     instagramHook: { type: Type.STRING }, 
-                    milesReward: { type: Type.NUMBER } 
+                    milesReward: { type: Type.NUMBER },
+                    secretLocation: { type: Type.STRING, description: "Detailed physical directions to the hidden spot" }
                 },
-                required: ["angle", "bestTime", "instagramHook", "milesReward"]
+                required: ["angle", "bestTime", "instagramHook", "milesReward", "secretLocation"]
               }
             },
-            required: ["name", "description", "latitude", "longitude", "type"]
+            required: ["name", "description", "latitude", "longitude", "type", "photoSpot"]
           }
         }
       },
@@ -121,22 +118,36 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     await saveToursToCache(cityInput, userProfile.language, processed);
     return processed;
   } catch (error: any) {
-    console.error("Gemini Error:", error);
     return [];
   }
 };
 
+/**
+ * GENERACIÓN DE AUDIO CON ESTILO RADIO ESPAÑOL
+ */
 export const generateAudio = async (text: string): Promise<string> => {
   if (!text) return "";
+  
+  // Instrucción de estilo para conseguir esa voz de radio "bonita" y con acento de España
+  const radioStylePrefix = "Actúa como un locutor de radio profesional de España. Tu voz es profunda, cálida, elegante y muy enganchadora. Narra el siguiente texto con una entonación perfecta y acento de Madrid/Castellano: ";
+  
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: text.substring(0, 1000) }] }], 
+      contents: [{ parts: [{ text: radioStylePrefix + text.substring(0, 1000) }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
+        speechConfig: { 
+          voiceConfig: { 
+            // 'Zephyr' es ideal para este tono narrativo y profesional
+            prebuiltVoiceConfig: { voiceName: 'Zephyr' } 
+          } 
+        } 
       } 
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-  } catch (e) { return ""; }
+  } catch (e) { 
+    console.error("Audio generation failed:", e);
+    return ""; 
+  }
 };
