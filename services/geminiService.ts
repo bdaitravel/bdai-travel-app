@@ -4,11 +4,8 @@ import { Tour, Stop, UserProfile } from '../types';
 import { getCachedTours, saveToursToCache } from './supabaseClient';
 import { STATIC_TOURS } from '../data/toursData';
 
-const getClient = () => {
-    const key = process.env.API_KEY;
-    if (!key) return null;
-    return new GoogleGenAI({ apiKey: key });
-};
+// Guideline: Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const LANGUAGE_MAP: Record<string, string> = {
     es: "Spanish (Spain)",
@@ -36,9 +33,6 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   }
   
   // 3. Generación con IA (Obligatoria si no es español o no está en caché)
-  const ai = getClient();
-  if (!ai) return [];
-
   const prompt = `
     ROLE: Professional local guide for ${cityInput}.
     USER PROFILE: Passionate about ${interestsStr}.
@@ -102,6 +96,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         }
     });
     
+    // response.text is a property, not a method. Correctly used here.
     const generatedTours = JSON.parse(response.text || "[]");
     const processed = generatedTours.map((t: any, idx: number) => ({
         ...t, 
@@ -123,8 +118,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 };
 
 export const generateAudio = async (text: string): Promise<string> => {
-  const ai = getClient(); 
-  if (!ai || !text) return "";
+  if (!text) return "";
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
@@ -134,6 +128,7 @@ export const generateAudio = async (text: string): Promise<string> => {
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
       } 
     });
+    // Correct way to extract audio bytes from GenerateContentResponse
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
   } catch (e) { return ""; }
 };

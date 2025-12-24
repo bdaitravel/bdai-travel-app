@@ -24,7 +24,7 @@ const ImageFallback = ({ city, icon, colorClass }: { city: string, icon: string,
         <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-4xl mb-4 border border-white/30 shadow-2xl">
             <i className={`fas ${icon}`}></i>
         </div>
-        <span className="text-xs font-black uppercase tracking-[0.3em] opacity-60 mb-1">TechTravel Guide</span>
+        <span className="text-xs font-black uppercase tracking-[0.3em] opacity-60 mb-1">bdai Guide</span>
         <h4 className="text-2xl font-black text-center leading-tight tracking-tighter drop-shadow-md">{city}</h4>
     </div>
 );
@@ -80,6 +80,7 @@ export const ActiveTourCard: React.FC<any> = (props) => {
     return (
         <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar">
              <div className="relative h-[40vh] w-full flex-shrink-0 bg-slate-100">
+                {/* FIX: Using the correct state variable 'imgError' instead of undefined 'error' */}
                 {!imgError && currentStop.imageUrl ? (
                     <img src={currentStop.imageUrl} onError={() => setImgError(true)} className="w-full h-full object-cover" alt={currentStop.name} />
                 ) : (
