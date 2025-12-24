@@ -12,11 +12,11 @@ const getThemeStyles = (themeStr: string) => {
 };
 
 const UI_TEXT: any = {
-    en: { start: "Start", preview: "Audio Preview", stop: "Stop", stopTag: "Stop", share: "Share to earn", checkin: "Check-in (+150m)", bestTime: "Best time", photoHook: "Instagram Hook" },
-    es: { start: "Empezar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Compartir y ganar", checkin: "Hacer Check-in (+150m)", bestTime: "Mejor hora", photoHook: "Gancho Instagram" },
-    ca: { start: "Començar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Compartir", checkin: "Hacer Check-in", bestTime: "Millor hora", photoHook: "Idea Instagram" },
-    eu: { start: "Hasi", preview: "Entzun", stop: "Gelditu", stopTag: "Geltokia", share: "Partekatu", checkin: "Check-in egin", bestTime: "Ordu onena", photoHook: "Instagramerako" },
-    fr: { start: "Démarrer", preview: "Écouter", stop: "Arrêter", stopTag: "Étape", share: "Partager", checkin: "Enregistrer", bestTime: "Meilleur moment", photoHook: "Accroche Insta" }
+    en: { start: "Start", preview: "Audio Preview", stop: "Stop", stopTag: "Stop", share: "Share to earn", checkin: "Check-in (+150m)", bestTime: "Best time", photoHook: "Instagram Hook", visited: "Place Visited", next: "Next", prev: "Back" },
+    es: { start: "Empezar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Compartir y ganar", checkin: "Hacer Check-in (+150m)", bestTime: "Mejor hora", photoHook: "Gancho Instagram", visited: "Lugar Visitado", next: "Siguiente", prev: "Atrás" },
+    ca: { start: "Començar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Comparteix i guanya", checkin: "Fer Check-in (+150m)", bestTime: "Millor hora", photoHook: "Ganxo Instagram", visited: "Lloc Visitat", next: "Següent", prev: "Enrere" },
+    eu: { start: "Hasi", preview: "Entzun", stop: "Gelditu", stopTag: "Geltokia", share: "Partekatu eta irabazi", checkin: "Check-in egin (+150m)", bestTime: "Ordu onena", photoHook: "Instagramerako kouka", visited: "Bisitatutako lekua", next: "Hurrengoa", prev: "Atzera" },
+    fr: { start: "Démarrer", preview: "Écouter", stop: "Arrêter", stopTag: "Étape", share: "Partager et gagner", checkin: "Enregistrer (+150m)", bestTime: "Meilleur moment", photoHook: "Accroche Insta", visited: "Lieu Visité", next: "Suivant", prev: "Retour" }
 };
 
 const ImageFallback = ({ city, icon, colorClass }: { city: string, icon: string, colorClass: string }) => (
@@ -104,7 +104,6 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                     {currentStop.description}
                  </article>
 
-                 {/* PHOTO SPOT FEATURE */}
                  {currentStop.photoSpot && (
                      <div className="mb-10 bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-100 rounded-[2.5rem] p-6 shadow-sm overflow-hidden relative">
                          <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl"></div>
@@ -132,12 +131,12 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                  <div className="space-y-4">
                      <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-6 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
                          {currentStop.visited ? <i className="fas fa-check-circle text-lg"></i> : <i className="fas fa-map-marker-alt text-lg"></i>}
-                         {currentStop.visited ? 'Lugar Visitado' : t.checkin}
+                         {currentStop.visited ? t.visited : t.checkin}
                      </button>
                      
                      <div className="grid grid-cols-2 gap-4">
-                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-5 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30">Atrás</button>
-                         <button onClick={onNext} className="py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-xl">Siguiente</button>
+                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-5 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30">{t.prev}</button>
+                         <button onClick={onNext} className="py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-xl">{t.next}</button>
                      </div>
                  </div>
             </div>

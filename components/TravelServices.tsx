@@ -27,16 +27,17 @@ const INTERNATIONAL_DESTINATIONS = [
 
 const UI_TEXTS: any = {
     en: { title: "techtravel hub", charming: "Charming Villages", world: "Global Destinations", community: "Social Feed", search: "Where next?", aiBadge: "AI SMART GUIDE" },
-    es: { title: "hub techtravel", charming: "Pueblos con Encanto", world: "Destinos Mundiales", community: "Actividad Social", search: "¿A dónde vamos?", aiBadge: "GUÍA INTELIGENTE IA" }
+    es: { title: "hub techtravel", charming: "Pueblos con Encanto", world: "Destinos Mundiales", community: "Actividad Social", search: "¿A dónde vamos?", aiBadge: "GUÍA INTELIGENTE IA" },
+    ca: { title: "hub techtravel", charming: "Pobles amb Encant", world: "Destins Mundials", community: "Activitat Social", search: "Cap on anem?", aiBadge: "GUIA INTEL·LIGENT IA" },
+    eu: { title: "techtravel gunea", charming: "Herri Xarmangarriak", world: "Mundu mailako helmugak", community: "Jarduera Soziala", search: "Nora joango gara?", aiBadge: "IA GIDA ADIMENDUNA" },
+    fr: { title: "hub techtravel", charming: "Villages Charmants", world: "Destinations Mondiales", community: "Activité Sociale", search: "Où allons-nous?", aiBadge: "GUIDE INTELLIGENT IA" }
 };
 
-// Define props interface for VillageCard to satisfy TypeScript requirements in mapped lists
 interface VillageCardProps {
     village: any;
     onClick: () => void;
 }
 
-// Refactor VillageCard to use React.FC for better type safety and compatibility with React-specific props like key
 const VillageCard: React.FC<VillageCardProps> = ({ village, onClick }) => {
     const [error, setError] = useState(false);
     return (

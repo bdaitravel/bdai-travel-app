@@ -38,11 +38,26 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Name", verifyTitle: "Verify Identity", verifyDesc: "Code sent to", verifyBtn: "Confirm", resend: "Resend", routes: "Routes", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Exploring the world with #bdaitravel", emptyTitle: "Where to next?", emptySub: "The world is your guide.", noTours: "No routes found.", tryAgain: "Go back", loading: "AI Processing...", back: "Back", start: "Start", preview: "Preview", stop: "Stop", points: "miles", quotaExceeded: "AI is on a break", quotaDesc: "We've had too many explorers lately. Please try again in a few seconds." },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificar Identidad", verifyDesc: "Código enviado a", verifyBtn: "Confirmar", resend: "Reenviar", routes: "Rutas", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel", emptyTitle: "¿A dónde vamos?", emptySub: "Tu próxima aventura empieza aquí.", noTours: "No hay rutas disponibles.", tryAgain: "Volver", loading: "Procesando IA...", back: "Atrás", start: "Empezar", preview: "Escuchar", stop: "Parar", points: "millas", quotaExceeded: "La IA está descansando", quotaDesc: "Demasiados exploradores ahora mismo. Por favor, reinténtalo en unos segundos." },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nom", verifyTitle: "Verificar Identitat", verifyDesc: "Codi enviat a", verifyBtn: "Confirmar", resend: "Reenviar", routes: "Rutes", community: "Social", spots: "Spots Fotos", viral: "Viralitat", completion: "Completat", badges: "Millors Fites", share: "Comparteix i Guanya", shareMsg: "Explorant el món amb #bdaitravel", emptyTitle: "On anem?", emptySub: "La teva propera aventura comença aquí.", noTours: "No hi ha rutes disponibles.", tryAgain: "Tornar", loading: "Processant IA...", back: "Enrere", start: "Començar", preview: "Escuchar", stop: "Parar", points: "milles", quotaExceeded: "La IA està descansando", quotaDesc: "Massa exploradors ara mateix. Reintenta-ho en uns segons." },
-  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Hub", passport: "Visa", shop: "Denda", ranking: "Elite", searchPlaceholder: "Bilatu edozein hiri...", login: "Pasaportea jaulki", tagline: "better destinations by ai", emailLabel: "E-posta", nameLabel: "Izena", verifyTitle: "Identitatea egiaztatu", verifyDesc: "Kodea bidalita hona:", verifyBtn: "Baieztatu", resend: "Berriz bidali", routes: "Ibilbideak", community: "Soziala", spots: "Argazki Lekuak", viral: "Ospea", completion: "Osatua", badges: "Lorpen Nagusiak", share: "Partekatu eta Irabazi", shareMsg: "#bdaitravel-ekin mundua esploratzen", emptyTitle: "Nora joango gara?", emptySub: "Zure hurrengo abentura hemen hasten da.", noTours: "Ez da ibilbiderik aurkitu.", tryAgain: "Itzuli", loading: "IA prozesatzen...", back: "Atzera", start: "Hasi", preview: "Entzun", stop: "Gelditu", points: "milia", quotaExceeded: "IA atsedena hartzen ari da", quotaDesc: "Esploratzaile gehiegi une honetan. Saiatu berriro segundu batzuk barru." },
-  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Délivrer Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Nom", verifyTitle: "Vérifier Identité", verifyDesc: "Code envoyé à", verifyBtn: "Confirmer", resend: "Renvoyer", routes: "Itinéraires", community: "Social", spots: "Coins Photos", viral: "Popularité", completion: "Terminé", badges: "Top Badges", share: "Partager & Gagner", shareMsg: "J'explore le monde avec #bdaitravel", emptyTitle: "On va où?", emptySub: "Votre prochaine aventure commence ici.", noTours: "Aucun itinéraire trouvé.", tryAgain: "Retour", loading: "Traitement IA...", back: "Retour", start: "Démarrer", preview: "Écouter", stop: "Arrêter", points: "miles", quotaExceeded: "L'IA fait une pause", quotaDesc: "Trop d'explorateurs en ce moment. Veuillez réessayer dans quelques secondes." }
+  en: { 
+    welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Name", verifyTitle: "Verify Identity", verifyDesc: "Code sent to", verifyBtn: "Confirm", resend: "Resend", routes: "Routes", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Exploring the world with #bdaitravel", emptyTitle: "Top Destinations", emptySub: "The most visited cities in Spain.", noTours: "No routes found.", tryAgain: "Go back", loading: "AI Processing...", back: "Back", start: "Start", preview: "Preview", stop: "Stop", points: "miles", quotaExceeded: "AI is on a break", quotaDesc: "We've had too many explorers lately. Please try again in a few seconds.",
+    lblCapital: "Capital", lblGaudi: "Gaudi Art", lblFlamenco: "Flamenco", lblCoast: "The Coast", lblHistory: "Alhambra", lblModern: "Avant-garde"
+  },
+  es: { 
+    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificar Identidad", verifyDesc: "Código enviado a", verifyBtn: "Confirmar", resend: "Reenviar", routes: "Rutas", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel", emptyTitle: "Top Destinos", emptySub: "Las ciudades más visitadas de España.", noTours: "No hay rutas disponibles.", tryAgain: "Volver", loading: "Procesando IA...", back: "Atrás", start: "Empezar", preview: "Escuchar", stop: "Parar", points: "millas", quotaExceeded: "La IA está descansando", quotaDesc: "Demasiados exploradores ahora mismo. Por favor, reinténtalo en unos segundos.",
+    lblCapital: "La Capital", lblGaudi: "Arte Gaudí", lblFlamenco: "Puro Arte", lblCoast: "La Costa", lblHistory: "Historia", lblModern: "Vanguardia"
+  },
+  ca: { 
+    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nom", verifyTitle: "Verificar Identitat", verifyDesc: "Codi enviat a", verifyBtn: "Confirmar", resend: "Reenviar", routes: "Rutes", community: "Social", spots: "Spots Fotos", viral: "Viralitat", completion: "Completat", badges: "Millors Fites", share: "Comparteix i Guanya", shareMsg: "Explorant el món amb #bdaitravel", emptyTitle: "Top Destins", emptySub: "Les ciutats més visitades d'Espanya.", noTours: "No hi ha rutes disponibles.", tryAgain: "Tornar", loading: "Processant IA...", back: "Enrere", start: "Començar", preview: "Escuchar", stop: "Parar", points: "milles", quotaExceeded: "La IA està descansant", quotaDesc: "Massa exploradors ara mateix. Reintenta-ho en uns segons.",
+    lblCapital: "La Capital", lblGaudi: "Art Gaudí", lblFlamenco: "Pura Màgia", lblCoast: "La Costa", lblHistory: "Història", lblModern: "Avantguarda"
+  },
+  eu: { 
+    welcome: "Kaixo,", explore: "Esploratu", toolkit: "Hub", passport: "Visa", shop: "Denda", ranking: "Elite", searchPlaceholder: "Bilatu edozein hiri...", login: "Pasaportea jaulki", tagline: "better destinations by ai", emailLabel: "E-posta", nameLabel: "Izena", verifyTitle: "Identitatea egiaztatu", verifyDesc: "Kodea bidalita hona:", verifyBtn: "Baieztatu", resend: "Berriz bidali", routes: "Ibilbideak", community: "Soziala", spots: "Argazki Lekuak", viral: "Ospea", completion: "Osatua", badges: "Lorpen Nagusiak", share: "Partekatu eta Irabazi", shareMsg: "#bdaitravel-ekin mundua esploratzen", emptyTitle: "Top Helmugak", emptySub: "Espainiako hiri bisitatuenak.", noTours: "Ez da ibilbiderik aurkitu.", tryAgain: "Itzuli", loading: "IA prozesatzen...", back: "Atzera", start: "Hasi", preview: "Entzun", stop: "Gelditu", points: "milia", quotaExceeded: "IA atsedena hartzen ari da", quotaDesc: "Esploratzaile gehiegi une honetan. Saiatu berriro segundu batzuk barru.",
+    lblCapital: "Hiriburua", lblGaudi: "Gaudi Artea", lblFlamenco: "Arte Hutsa", lblCoast: "Kostaldea", lblHistory: "Historia", lblModern: "Avantguarda"
+  },
+  fr: { 
+    welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Délivrer Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Nom", verifyTitle: "Vérifier Identité", verifyDesc: "Code envoyé à", verifyBtn: "Confirmer", resend: "Renvoyer", routes: "Itinéraires", community: "Social", spots: "Coins Photos", viral: "Popularité", completion: "Terminé", badges: "Top Badges", share: "Partager & Gagner", shareMsg: "J'explore le monde avec #bdaitravel", emptyTitle: "Top Destinations", emptySub: "Les villes les plus visitées d'Espagne.", noTours: "Aucun itinéraire trouvé.", tryAgain: "Retour", loading: "Traitement IA...", back: "Retour", start: "Démarrer", preview: "Écouter", stop: "Arrêter", points: "miles", quotaExceeded: "L'IA fait une pause", quotaDesc: "Trop d'explorateurs en ce moment. Veuillez réessayer dans quelques secondes.",
+    lblCapital: "La Capitale", lblGaudi: "Art Gaudí", lblFlamenco: "Flamenco", lblCoast: "La Côte", lblHistory: "Histoire", lblModern: "Avant-garde"
+  }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -271,25 +286,23 @@ export default function App() {
                 </div>
 
                 {!searchVal && (
-                    <div className="mt-12 flex flex-col items-center justify-center text-center animate-slide-up py-10 relative z-10">
-                        <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-purple-600/20 to-blue-600/20 flex items-center justify-center mb-6 border border-white/10 group backdrop-blur-xl relative">
-                            <div className="absolute inset-0 rounded-full animate-pulse border border-purple-500/30"></div>
-                            <i className="fas fa-compass text-5xl text-purple-500 group-hover:rotate-[360deg] transition-transform duration-[2s]"></i>
+                    <div className="mt-12 flex flex-col items-center justify-center animate-slide-up pb-10 relative z-10">
+                        <div className="flex flex-col items-center justify-center text-center mb-8">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-600/20 to-blue-600/20 flex items-center justify-center mb-4 border border-white/10 group backdrop-blur-xl relative">
+                                <div className="absolute inset-0 rounded-full animate-pulse border border-purple-500/30"></div>
+                                <i className="fas fa-compass text-3xl text-purple-500 group-hover:rotate-[360deg] transition-transform duration-[2s]"></i>
+                            </div>
+                            <h3 className="text-2xl font-black text-white mb-1">{t('emptyTitle')}</h3>
+                            <p className="text-xs text-slate-500 font-medium max-w-[200px] leading-relaxed">{t('emptySub')}</p>
                         </div>
-                        <h3 className="text-2xl font-black text-white mb-2">{t('emptyTitle')}</h3>
-                        <p className="text-sm text-slate-500 font-medium max-w-[200px] leading-relaxed">{t('emptySub')}</p>
                         
-                        <div className="grid grid-cols-2 gap-4 w-full mt-12">
-                            <button onClick={() => handleCitySelect('Madrid')} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 text-left hover:bg-white/10 transition-all group overflow-hidden relative">
-                                <div className="absolute -right-4 -top-4 w-12 h-12 bg-purple-500/10 rounded-full group-hover:scale-150 transition-transform"></div>
-                                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1 block">Capital</span>
-                                <span className="text-lg font-black text-white">Madrid 🇪🇸</span>
-                            </button>
-                            <button onClick={() => handleCitySelect('Sevilla')} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 text-left hover:bg-white/10 transition-all group overflow-hidden relative">
-                                <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-500/10 rounded-full group-hover:scale-150 transition-transform"></div>
-                                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 block">Andalucía</span>
-                                <span className="text-lg font-black text-white">Sevilla 💃</span>
-                            </button>
+                        <div className="grid grid-cols-2 gap-4 w-full">
+                            <QuickCityBtn onClick={() => handleCitySelect('Madrid')} label={t('lblCapital')} city="Madrid 🇪🇸" color="purple" />
+                            <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} label={t('lblGaudi')} city="Barcelona 🎨" color="indigo" />
+                            <QuickCityBtn onClick={() => handleCitySelect('Sevilla')} label={t('lblFlamenco')} city="Sevilla 💃" color="blue" />
+                            <QuickCityBtn onClick={() => handleCitySelect('Valencia')} label={t('lblCoast')} city="Valencia 🏖️" color="orange" />
+                            <QuickCityBtn onClick={() => handleCitySelect('Granada')} label={t('lblHistory')} city="Granada 🏰" color="red" />
+                            <QuickCityBtn onClick={() => handleCitySelect('Bilbao')} label={t('lblModern')} city="Bilbao 🏛️" color="teal" />
                         </div>
                     </div>
                 )}
@@ -394,3 +407,22 @@ const NavButton = ({ icon, label, isActive, onClick }: any) => (
         <span className="text-[8px] font-black uppercase tracking-[0.2em]">{label}</span>
     </button>
 );
+
+const QuickCityBtn = ({ onClick, label, city, color }: { onClick: () => void, label: string, city: string, color: string }) => {
+    const colorMap: any = {
+        purple: "bg-purple-500/10 text-purple-400",
+        indigo: "bg-indigo-500/10 text-indigo-400",
+        blue: "bg-blue-500/10 text-blue-400",
+        orange: "bg-orange-500/10 text-orange-400",
+        red: "bg-red-500/10 text-red-400",
+        teal: "bg-teal-500/10 text-teal-400"
+    };
+    
+    return (
+        <button onClick={onClick} className="bg-white/5 p-5 rounded-[2rem] border border-white/10 text-left hover:bg-white/10 transition-all group overflow-hidden relative active:scale-95">
+            <div className={`absolute -right-4 -top-4 w-12 h-12 ${colorMap[color].split(' ')[0]} rounded-full group-hover:scale-150 transition-transform`}></div>
+            <span className={`text-[9px] font-black uppercase tracking-widest mb-1 block relative z-10 ${colorMap[color].split(' ')[1]}`}>{label}</span>
+            <span className="text-base font-black text-white relative z-10">{city}</span>
+        </button>
+    );
+};
