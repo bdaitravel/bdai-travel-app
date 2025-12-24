@@ -4,41 +4,40 @@ import { getRecentCommunityCities } from '../services/supabaseClient';
 import { FlagIcon } from '../App';
 
 const CHARMING_VILLAGES = [
-    { name: 'Albarracín', region: 'Teruel', desc: 'Murallas rojizas y calles medievales.', img: 'https://images.unsplash.com/photo-1599424423789-9e8c47f76632?auto=format&fit=crop&w=600&q=80', icon: 'fa-fort-awesome' },
-    { name: 'Cudillero', region: 'Asturias', desc: 'Anfiteatro de colores frente al mar.', img: 'https://images.unsplash.com/photo-1598449356475-b9f71ef73024?auto=format&fit=crop&w=600&q=80', icon: 'fa-anchor' },
-    { name: 'Ronda', region: 'Málaga', desc: 'La ciudad sobre un tajo de vértigo.', img: 'https://images.unsplash.com/photo-1549247796-5d8f09e9034b?auto=format&fit=crop&w=600&q=80', icon: 'fa-bridge' },
-    { name: 'Cadaqués', region: 'Girona', desc: 'El refugio blanco que inspiró a Dalí.', img: 'https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?auto=format&fit=crop&w=600&q=80', icon: 'fa-palette' },
-    { name: 'Frigiliana', region: 'Málaga', desc: 'Esencia andaluza en calles blancas.', img: 'https://images.unsplash.com/photo-1505315849038-f94d9309831b?auto=format&fit=crop&w=600&q=80', icon: 'fa-sun' },
-    { name: 'Morella', region: 'Castellón', desc: 'Una joya gótica coronada por su castillo.', img: 'https://images.unsplash.com/photo-1610488056250-9856f71665a3?auto=format&fit=crop&w=600&q=80', icon: 'fa-chess-rook' }
+    { name: 'Albarracín', region: 'Teruel', icon: 'fa-fort-awesome', img: 'https://images.unsplash.com/photo-1599424423789-9e8c47f76632?auto=format&fit=crop&w=600&q=80', 
+      desc: { es: 'Murallas rojizas medievales.', en: 'Medieval red walls.', ca: 'Muralles vermelles medievals.', eu: 'Erdi Aroko harresi gorrixkak.', fr: 'Murailles rouges médiévales.' } },
+    { name: 'Cudillero', region: 'Asturias', icon: 'fa-anchor', img: 'https://images.unsplash.com/photo-1598449356475-b9f71ef73024?auto=format&fit=crop&w=600&q=80', 
+      desc: { es: 'Anfiteatro de colores.', en: 'Colorful amphitheater.', ca: 'Amfiteatre de colors.', eu: 'Koloretako anfiteatroa.', fr: 'Amphithéâtre coloré.' } },
+    { name: 'Ronda', region: 'Málaga', icon: 'fa-bridge', img: 'https://images.unsplash.com/photo-1549247796-5d8f09e9034b?auto=format&fit=crop&w=600&q=80', 
+      desc: { es: 'Ciudad sobre el tajo.', en: 'City over the gorge.', ca: 'Ciutat sobre el tajo.', eu: 'Arrailaren gaineko hiria.', fr: 'Ville sur la gorge.' } },
+    { name: 'Cadaqués', region: 'Girona', icon: 'fa-palette', img: 'https://images.unsplash.com/photo-1583037189850-1921ae7c6c22?auto=format&fit=crop&w=600&q=80', 
+      desc: { es: 'Refugio blanco de Dalí.', en: 'Dali\'s white refuge.', ca: 'Refugi blanc de Dalí.', eu: 'Daliren aterpe zuria.', fr: 'Refuge blanc de Dalí.' } },
 ];
 
 const INTERNATIONAL_DESTINATIONS = [
-    { name: 'Tokyo', flag: 'jp', desc: 'Neon & Tradition', country: 'Japan' },
-    { name: 'New York', flag: 'en', desc: 'The Big Apple', country: 'USA' },
-    { name: 'Paris', flag: 'fr', desc: 'City of Lights', country: 'France' },
-    { name: 'London', flag: 'en', desc: 'British Heritage', country: 'UK' },
-    { name: 'Rome', flag: 'it', desc: 'Eternal City', country: 'Italy' },
-    { name: 'Dubai', flag: 'ae', desc: 'Future Skyline', country: 'UAE' },
-    { name: 'Berlin', flag: 'de', desc: 'Culture & History', country: 'Germany' },
-    { name: 'Mexico City', flag: 'mx', desc: 'Aztec Roots', country: 'Mexico' },
-    { name: 'Sydney', flag: 'au', desc: 'Harbour Vibes', country: 'Australia' },
-    { name: 'Bangkok', flag: 'th', desc: 'Temple Majesty', country: 'Thailand' }
+    { name: 'Tokyo', flag: 'jp', country: { es: 'Japón', en: 'Japan', ca: 'Japó', eu: 'Japonia', fr: 'Japon' }, desc: { es: 'Neón y Tradición', en: 'Neon & Tradition', ca: 'Neó i Tradició', eu: 'Neona eta Tradizioa', fr: 'Néon et Tradition' } },
+    { name: 'New York', flag: 'en', country: { es: 'EE.UU.', en: 'USA', ca: 'EUA', eu: 'AEB', fr: 'USA' }, desc: { es: 'La Gran Manzana', en: 'The Big Apple', ca: 'La Gran Poma', eu: 'Sagar Handia', fr: 'La Grosse Pomme' } },
+    { name: 'Paris', flag: 'fr', country: { es: 'Francia', en: 'France', ca: 'França', eu: 'Frantzia', fr: 'France' }, desc: { es: 'Ciudad de la Luz', en: 'City of Lights', ca: 'Ciutat de la Llum', eu: 'Argiaren Hiria', fr: 'Ville Lumière' } },
+    { name: 'London', flag: 'en', country: { es: 'Reino Unido', en: 'UK', ca: 'Regne Unit', eu: 'Erresuma Batua', fr: 'Royaume-Uni' }, desc: { es: 'Legado Imperial', en: 'Imperial Legacy', ca: 'Llegat Imperial', eu: 'Ondare Inperiala', fr: 'Héritage Impérial' } },
+    { name: 'Rome', flag: 'it', country: { es: 'Italia', en: 'Italy', ca: 'Itàlia', eu: 'Italia', fr: 'Italie' }, desc: { es: 'La Ciudad Eterna', en: 'The Eternal City', ca: 'La Ciutat Eterna', eu: 'Hiri Betierekoa', fr: 'La Ville Éternelle' } },
+    { name: 'Berlin', flag: 'de', country: { es: 'Alemania', en: 'Germany', ca: 'Alemanya', eu: 'Alemania', fr: 'Allemagne' }, desc: { es: 'Historia y Techno', en: 'History & Techno', ca: 'Història i Techno', eu: 'Historia eta Technoa', fr: 'Histoire et Techno' } },
 ];
 
 const UI_TEXTS: any = {
-    en: { title: "bdai hub", charming: "Charming Villages", world: "Global Destinations", community: "Social Feed", search: "Where next?", aiBadge: "AI SMART GUIDE" },
-    es: { title: "hub bdai", charming: "Pueblos con Encanto", world: "Destinos Mundiales", community: "Actividad Social", search: "¿A dónde vamos?", aiBadge: "GUÍA INTELIGENTE IA" },
-    ca: { title: "hub bdai", charming: "Pobles amb Encant", world: "Destins Mundials", community: "Activitat Social", search: "Cap on anem?", aiBadge: "GUIA INTEL·LIGENT IA" },
-    eu: { title: "bdai gunea", charming: "Herri Xarmangarriak", world: "Mundu mailako helmugak", community: "Jarduera Soziala", search: "Nora joango gara?", aiBadge: "IA GIDA ADIMENDUNA" },
-    fr: { title: "hub bdai", charming: "Villages Charmants", world: "Destinations Mondiales", community: "Activité Sociale", search: "Où allons-nous?", aiBadge: "GUIDE INTELLIGENT IA" }
+    en: { title: "bdai hub", charming: "Charming Villages", world: "Global Destinations", community: "Social Feed", search: "Where next?", aiBadge: "AI SMART GUIDE", selection: "Spain Selection" },
+    es: { title: "hub bdai", charming: "Pueblos con Encanto", world: "Destinos Mundiales", community: "Actividad Social", search: "¿A dónde vamos?", aiBadge: "GUÍA INTELIGENTE IA", selection: "Selección España" },
+    ca: { title: "hub bdai", charming: "Pobles amb Encant", world: "Destins Mundials", community: "Activitat Social", search: "Cap on anem?", aiBadge: "GUIA INTEL·LIGENT IA", selection: "Selecció Espanya" },
+    eu: { title: "bdai gunea", charming: "Herri Xarmangarriak", world: "Mundu mailako helmugak", community: "Jarduera Soziala", search: "Nora joango gara?", aiBadge: "IA GIDA ADIMENDUNA", selection: "Espainiako Aukeraketa" },
+    fr: { title: "hub bdai", charming: "Villages Charmants", world: "Destinations Mondiales", community: "Activité Sociale", search: "Où allons-nous?", aiBadge: "GUIDE INTELLIGENT IA", selection: "Sélection Espagne" }
 };
 
 interface VillageCardProps {
     village: any;
     onClick: () => void;
+    lang: string;
 }
 
-const VillageCard: React.FC<VillageCardProps> = ({ village, onClick }) => {
+const VillageCard: React.FC<VillageCardProps> = ({ village, onClick, lang }) => {
     const [error, setError] = useState(false);
     return (
         <div onClick={onClick} className="w-48 flex-shrink-0 relative h-64 rounded-[2rem] overflow-hidden border border-white/10 group cursor-pointer shadow-xl bg-slate-900">
@@ -47,13 +46,13 @@ const VillageCard: React.FC<VillageCardProps> = ({ village, onClick }) => {
             ) : (
                 <div className="w-full h-full bg-gradient-to-br from-purple-900 to-indigo-950 flex flex-col items-center justify-center p-4">
                     <i className={`fas ${village.icon} text-4xl text-purple-400 mb-3 opacity-40`}></i>
-                    <span className="text-[7px] text-white/30 uppercase tracking-[0.3em] font-black">Sello bdai</span>
+                    <span className="text-[7px] text-white/30 uppercase tracking-[0.3em] font-black">bdai Seal</span>
                 </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
             <div className="absolute bottom-6 left-5 right-5">
                 <h4 className="text-lg font-black text-white mb-1 leading-tight">{village.name}</h4>
-                <p className="text-[8px] text-white/50 font-medium uppercase tracking-widest">{village.region}</p>
+                <p className="text-[8px] text-white/50 font-medium uppercase tracking-widest">{(village.desc as any)[lang] || village.region}</p>
             </div>
         </div>
     );
@@ -96,20 +95,18 @@ export const TravelServices: React.FC<{ language?: string, onCitySelect: (city: 
                 />
             </div>
 
-            {/* SECCIÓN PUEBLOS CON ENCANTO */}
             <section className="space-y-6">
                 <div className="flex justify-between items-end">
                     <h3 className="text-sm font-black text-white uppercase tracking-widest">{t.charming}</h3>
-                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Spain Selection</span>
+                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">{t.selection}</span>
                 </div>
                 <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-6 px-6 pb-2">
                     {CHARMING_VILLAGES.map((v) => (
-                        <VillageCard key={v.name} village={v} onClick={() => onCitySelect(v.name)} />
+                        <VillageCard key={v.name} village={v} lang={language} onClick={() => onCitySelect(v.name)} />
                     ))}
                 </div>
             </section>
 
-            {/* SECCIÓN DESTINOS MUNDIALES (LISTA COMPACTA) */}
             <section className="space-y-6">
                 <div className="flex justify-between items-end">
                     <h3 className="text-sm font-black text-white uppercase tracking-widest">{t.world}</h3>
@@ -128,9 +125,9 @@ export const TravelServices: React.FC<{ language?: string, onCitySelect: (city: 
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                     <h4 className="text-white font-black text-sm">{v.name}</h4>
-                                    <span className="text-[7px] text-slate-500 font-black uppercase tracking-widest">{v.country}</span>
+                                    <span className="text-[7px] text-slate-500 font-black uppercase tracking-widest">{(v.country as any)[language] || 'World'}</span>
                                 </div>
-                                <p className="text-[9px] text-slate-400 font-medium">{v.desc}</p>
+                                <p className="text-[9px] text-slate-400 font-medium">{(v.desc as any)[language]}</p>
                             </div>
                             <i className="fas fa-arrow-right text-[10px] text-slate-700 group-hover:text-purple-500 transition-colors"></i>
                         </button>
@@ -138,7 +135,6 @@ export const TravelServices: React.FC<{ language?: string, onCitySelect: (city: 
                 </div>
             </section>
 
-            {/* RUTAS RECIENTES DE LA COMUNIDAD */}
             {communityCities.length > 0 && (
                 <section className="space-y-6">
                     <h3 className="text-sm font-black text-white uppercase tracking-widest">{t.community}</h3>
