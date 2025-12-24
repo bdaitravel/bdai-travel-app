@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { getRecentCommunityCities } from '../services/supabaseClient';
-import { FlagIcon } from '../App';
 
 const CHARMING_VILLAGES = [
     { name: 'Albarracín', region: 'Teruel', icon: 'fa-fort-awesome', img: 'https://images.unsplash.com/photo-1599424423789-9e8c47f76632?auto=format&fit=crop&w=600&q=80', 
@@ -15,20 +14,24 @@ const CHARMING_VILLAGES = [
 ];
 
 const INTERNATIONAL_DESTINATIONS = [
-    { name: 'Tokyo', flag: 'jp', country: { es: 'Japón', en: 'Japan', ca: 'Japó', eu: 'Japonia', fr: 'Japon' }, desc: { es: 'Neón y Tradición', en: 'Neon & Tradition', ca: 'Neó i Tradició', eu: 'Neona eta Tradizioa', fr: 'Néon et Tradition' } },
-    { name: 'New York', flag: 'en', country: { es: 'EE.UU.', en: 'USA', ca: 'EUA', eu: 'AEB', fr: 'USA' }, desc: { es: 'La Gran Manzana', en: 'The Big Apple', ca: 'La Gran Poma', eu: 'Sagar Handia', fr: 'La Grosse Pomme' } },
-    { name: 'Paris', flag: 'fr', country: { es: 'Francia', en: 'France', ca: 'França', eu: 'Frantzia', fr: 'France' }, desc: { es: 'Ciudad de la Luz', en: 'City of Lights', ca: 'Ciutat de la Llum', eu: 'Argiaren Hiria', fr: 'Ville Lumière' } },
-    { name: 'London', flag: 'en', country: { es: 'Reino Unido', en: 'UK', ca: 'Regne Unit', eu: 'Erresuma Batua', fr: 'Royaume-Uni' }, desc: { es: 'Legado Imperial', en: 'Imperial Legacy', ca: 'Llegat Imperial', eu: 'Ondare Inperiala', fr: 'Héritage Impérial' } },
-    { name: 'Rome', flag: 'it', country: { es: 'Italia', en: 'Italy', ca: 'Itàlia', eu: 'Italia', fr: 'Italie' }, desc: { es: 'La Ciudad Eterna', en: 'The Eternal City', ca: 'La Ciutat Eterna', eu: 'Hiri Betierekoa', fr: 'La Ville Éternelle' } },
-    { name: 'Berlin', flag: 'de', country: { es: 'Alemania', en: 'Germany', ca: 'Alemanya', eu: 'Alemania', fr: 'Allemagne' }, desc: { es: 'Historia y Techno', en: 'History & Techno', ca: 'Història i Techno', eu: 'Historia eta Technoa', fr: 'Histoire et Techno' } },
+    { name: 'Tokyo', icon: 'fa-torii-gate', country: { es: 'Japón', en: 'Japan', ca: 'Japó', eu: 'Japonia', fr: 'Japon' }, desc: { es: 'Neón y Tradición Milenaria', en: 'Neon & Ancient Tradition', ca: 'Neó i Tradició Mil·lenària', eu: 'Neona eta Milaka Urteko Tradizioa', fr: 'Néon et Tradition Millénaire' } },
+    { name: 'New York', icon: 'fa-city', country: { es: 'EE.UU.', en: 'USA', ca: 'EUA', eu: 'AEB', fr: 'USA' }, desc: { es: 'La Gran Manzana que Nunca Duerme', en: 'The Big Apple That Never Sleeps', ca: 'La Gran Poma que Mai Dorm', eu: 'Inoiz Lotan Ez Den Sagar Handia', fr: 'La Grosse Pomme qui ne dort jamais' } },
+    { name: 'Paris', icon: 'fa-tower-observation', country: { es: 'Francia', en: 'France', ca: 'França', eu: 'Frantzia', fr: 'France' }, desc: { es: 'Ciudad de la Luz y el Romance', en: 'City of Lights & Romance', ca: 'Ciutat de la Llum i el Romanç', eu: 'Argiaren Hiria eta Erromantizismoa', fr: 'Ville Lumière et Romance' } },
+    { name: 'London', icon: 'fa-clock', country: { es: 'Reino Unido', en: 'UK', ca: 'Regne Unit', eu: 'Erresuma Batua', fr: 'Royaume-Uni' }, desc: { es: 'Legado Imperial y Vanguardia', en: 'Imperial Legacy & Modernity', ca: 'Llegat Imperial i Avantguarda', eu: 'Ondare Inperiala eta Avantguarda', fr: 'Héritage Impérial et Avant-garde' } },
+    { name: 'Rome', icon: 'fa-landmark-dome', country: { es: 'Italia', en: 'Italy', ca: 'Itàlia', eu: 'Italia', fr: 'Italie' }, desc: { es: 'La Ciudad Eterna del Imperio', en: 'The Eternal City of the Empire', ca: 'La Ciutat Eterna de l\'Imperi', eu: 'Inperioaren Hiri Betierekoa', fr: 'La Ville Éternelle de l\'Empire' } },
+    { name: 'Berlin', icon: 'fa-monument', country: { es: 'Alemania', en: 'Germany', ca: 'Alemanya', eu: 'Alemania', fr: 'Allemagne' }, desc: { es: 'Historia Viva y Cultura Techno', en: 'Living History & Techno Culture', ca: 'Història Viva i Cultura Techno', eu: 'Bizi den Historia eta Techno Kultura', fr: 'Histoire Vivante et Culture Techno' } },
+    { name: 'Lisbon', icon: 'fa-ship', country: { es: 'Portugal', en: 'Portugal', ca: 'Portugal', eu: 'Portugal', fr: 'Portugal' }, desc: { es: 'Siete Colinas, Fado y Azulejos', en: 'Seven Hills, Fado & Tiles', ca: 'Set Turons, Fado i Rajoles', eu: 'Zazpi Kodolar, Fadoa eta Azulejuak', fr: 'Sept Collines, Fado et Azulejos' } },
+    { name: 'Amsterdam', icon: 'fa-bridge', country: { es: 'Países Bajos', en: 'Netherlands', ca: 'Països Baixos', eu: 'Herbehereak', fr: 'Pays-Bas' }, desc: { es: 'Canales, Libertad y Bicicletas', en: 'Canals, Freedom & Bicycles', ca: 'Canals, Llibertat i Bicicletes', eu: 'Kanalak, Askatasuna eta Bizikletak', fr: 'Canaux, Liberté et Vélos' } },
+    { name: 'Vienna', icon: 'fa-music', country: { es: 'Austria', en: 'Austria', ca: 'Àustria', eu: 'Austria', fr: 'Autriche' }, desc: { es: 'Ciudad de la Música y los Valses', en: 'City of Music & Waltzes', ca: 'Ciutat de la Música', eu: 'Musikaren Hiria', fr: 'Ville de la Musique' } },
+    { name: 'Prague', icon: 'fa-castle', country: { es: 'Rep. Checa', en: 'Czech Rep.', ca: 'Rep. Txeca', eu: 'Txekiar Rep.', fr: 'Rép. Tchèque' }, desc: { es: 'La Ciudad de las Cien Torres', en: 'City of a Hundred Spires', ca: 'Ciutat de les Cent Torres', eu: 'Ehun Dorreen Hiria', fr: 'La Ville aux Cent Clochers' } },
 ];
 
 const UI_TEXTS: any = {
-    en: { title: "bdai hub", charming: "Charming Villages", world: "Global Destinations", community: "Social Feed", search: "Where next?", aiBadge: "AI SMART GUIDE", selection: "Spain Selection" },
-    es: { title: "hub bdai", charming: "Pueblos con Encanto", world: "Destinos Mundiales", community: "Actividad Social", search: "¿A dónde vamos?", aiBadge: "GUÍA INTELIGENTE IA", selection: "Selección España" },
-    ca: { title: "hub bdai", charming: "Pobles amb Encant", world: "Destins Mundials", community: "Activitat Social", search: "Cap on anem?", aiBadge: "GUIA INTEL·LIGENT IA", selection: "Selecció Espanya" },
-    eu: { title: "bdai gunea", charming: "Herri Xarmangarriak", world: "Mundu mailako helmugak", community: "Jarduera Soziala", search: "Nora joango gara?", aiBadge: "IA GIDA ADIMENDUNA", selection: "Espainiako Aukeraketa" },
-    fr: { title: "hub bdai", charming: "Villages Charmants", world: "Destinations Mondiales", community: "Activité Sociale", search: "Où allons-nous?", aiBadge: "GUIDE INTELLIGENT IA", selection: "Sélection Espagne" }
+    en: { title: "bdai hub", charming: "Charming Villages", world: "Global Top Destinations", community: "Social Activity", search: "Where next?", aiBadge: "AI SMART GUIDE", selection: "Spain Selection" },
+    es: { title: "hub bdai", charming: "Pueblos con Encanto", world: "Top Destinos Globales", community: "Actividad Social", search: "¿A dónde vamos?", aiBadge: "GUÍA INTELIGENTE IA", selection: "Selección España" },
+    ca: { title: "hub bdai", charming: "Pobles amb Encant", world: "Top Destins Globals", community: "Activitat Social", search: "Cap on anem?", aiBadge: "GUIA INTEL·LIGENT IA", selection: "Selecció Espanya" },
+    eu: { title: "bdai gunea", charming: "Herri Xarmangarriak", world: "Mundu Mailako Helmugak", community: "Jarduera Soziala", search: "Nora joango gara?", aiBadge: "IA GIDA ADIMENDUNA", selection: "Espainiako Aukeraketa" },
+    fr: { title: "hub bdai", charming: "Villages Charmants", world: "Top Destinations Mondiales", community: "Activité Sociale", search: "Où allons-nous?", aiBadge: "GUIDE INTELLIGENT IA", selection: "Sélection Espagne" }
 };
 
 interface VillageCardProps {
@@ -119,8 +122,8 @@ export const TravelServices: React.FC<{ language?: string, onCitySelect: (city: 
                             onClick={() => onCitySelect(v.name)}
                             className="flex items-center gap-4 bg-white/5 border border-white/5 p-4 rounded-2xl hover:bg-white/10 transition-all active:scale-[0.98] text-left group"
                         >
-                            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-white/10">
-                                <FlagIcon code={v.flag} className="w-full h-full object-cover scale-125" />
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-500/10 border border-white/10">
+                                <i className={`fas ${v.icon} text-purple-400 text-lg`}></i>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">

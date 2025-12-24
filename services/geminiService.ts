@@ -15,6 +15,10 @@ const LANGUAGE_MAP: Record<string, string> = {
     ca: "Catalan"
 };
 
+/**
+ * GENERACIÓN DE TOURS PERSONALIZADOS
+ * Crea una experiencia única para cualquier ciudad del mundo.
+ */
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
   const cityLower = cityInput.toLowerCase().trim();
   const targetLang = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
@@ -32,25 +36,24 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     if (staticMatch.length > 0) return staticMatch;
   }
   
-  // 3. Generación con IA (Obligatoria si no es español o no está en caché)
+  // 3. Generación con IA
   const prompt = `
     ROLE: Professional local guide for ${cityInput} with 20 years of experience.
-    USER PROFILE: Passionate about ${interestsStr}.
+    USER PROFILE: Traveler looking for an experience focused on ${interestsStr}.
+    LANGUAGE: All output MUST be in ${targetLang}.
     TASK: Create 2 immersive walking tours for ${cityInput} with exactly 8 stops each.
     
-    CRITICAL INSTRUCTIONS:
+    STOP DESCRIPTION GUIDELINES:
     - You MUST write everything in ${targetLang}.
-    - STOP DESCRIPTIONS: Must be LONG and DETAILED (at least 4-6 full sentences per stop).
-    - CONTENT: For each stop, explain:
-        1. Its historical or cultural significance.
-        2. A specific architectural detail to look for.
-        3. A "Hidden Gem" or local secret integrated into the narrative.
-        4. Why it matches the user's interest in ${interestsStr}.
+    - LENGTH: Each stop description must be detailed (at least 6-8 complete sentences).
+    - NARRATIVE STRUCTURE:
+        1. BEGIN with a historical hook related to ${cityInput}.
+        2. DESCRIBE an architectural or sensory detail.
+        3. REVEAL a "Hidden Gem" or local secret.
+        4. CONNECT the spot to the user's interest in ${interestsStr}.
+    - TONE: Professional, poetic, and extremely immersive.
     
-    STYLE:
-    - Narrative storytelling only.
-    - No bullet points or lists.
-    - Tone: Enthusiastic, poetic, and highly informative.
+    JSON STRUCTURE: Return exactly 2 tours in an array.
   `;
   
   const responseSchema = {
