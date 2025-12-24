@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tour, Stop } from '../types';
-import { generateImage } from '../services/geminiService';
 
 const getThemeStyles = (themeStr: string) => {
   const theme = themeStr.toLowerCase();
@@ -13,8 +12,11 @@ const getThemeStyles = (themeStr: string) => {
 };
 
 const UI_TEXT: any = {
-    en: { next: "Next", prev: "Back", listen: "Audio Guide", pause: "Pause", checkin: "Check In", collected: "Verified!", stop: "Stop", share: "Share trip", shareReward: "+150m for #bdaitravel", photoTitle: "Snapshot Mode", angle: "Angle", time: "Best Time", caption: "Hook" },
-    es: { next: "Siguiente", prev: "Atrás", listen: "Audio Guía", pause: "Pausar", checkin: "Check In", collected: "¡Verificado!", stop: "Parada", share: "Compartir viaje", shareReward: "+150m por #bdaitravel", photoTitle: "Snapshot Mode", angle: "Ángulo", time: "Mejor Hora", caption: "Caption Hook" },
+    en: { next: "Next", prev: "Back", listen: "Audio Guide", pause: "Pause", checkin: "Check In", collected: "Verified!", stop: "Stop", share: "Share trip", shareIg: "Post to Instagram", photoTitle: "Snapshot Mode", angle: "Angle", time: "Best Time", start: "Start", preview: "Preview", stopPreview: "Stop" },
+    es: { next: "Siguiente", prev: "Atrás", listen: "Audio Guía", pause: "Pausar", checkin: "Check In", collected: "¡Verificado!", stop: "Parada", share: "Compartir enlace", shareIg: "Compartir en Instagram", photoTitle: "Modo Foto", angle: "Ángulo", time: "Mejor Hora", start: "Empezar", preview: "Escuchar", stopPreview: "Parar" },
+    ca: { next: "Següent", prev: "Enrere", listen: "Àudio Guia", pause: "Aturar", checkin: "Check In", collected: "Verificat!", stop: "Parada", share: "Compartir enllaç", shareIg: "Compartir a Instagram", photoTitle: "Mode Foto", angle: "Angle", time: "Millor Hora", start: "Començar", preview: "Escuchar", stopPreview: "Parar" },
+    eu: { next: "Hurrengoa", prev: "Atzera", listen: "Audio Gida", pause: "Gelditu", checkin: "Egiaztatu", collected: "Egiaztatuta!", stop: "Geltokia", share: "Lotura partekatu", shareIg: "Instagramen partekatu", photoTitle: "Argazki Modua", angle: "Angelua", time: "Ordu Onena", start: "Hasi", preview: "Entzun", stopPreview: "Gelditu" },
+    fr: { next: "Suivant", prev: "Précédent", listen: "Audio Guide", pause: "Pause", checkin: "Valider", collected: "Vérifié !", stop: "Étape", share: "Partager lien", shareIg: "Partager sur Instagram", photoTitle: "Mode Photo", angle: "Angle", time: "Meilleur Moment", start: "Démarrer", preview: "Écouter", stopPreview: "Arrêter" }
 };
 
 interface TourCardProps {
@@ -25,12 +27,14 @@ interface TourCardProps {
   isAudioLoading: boolean;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  language: string;
 }
 
-export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, isFavorite, onToggleFavorite }) => {
+export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, language }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const styles = getThemeStyles(tour.theme);
   const displayImage = tour.imageUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80';
+  const t = UI_TEXT[language] || UI_TEXT['es'];
 
   return (
     <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer h-full flex flex-col">
@@ -52,9 +56,9 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio,
           <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
                <button onClick={(e) => {e.stopPropagation(); onPlayAudio(tour.id, tour.description);}} className={`text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${isPlayingAudio ? 'text-red-500' : 'text-slate-400'}`}>
                    {isAudioLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlayingAudio ? <i className="fas fa-stop"></i> : <i className="fas fa-play"></i>}
-                   {isPlayingAudio ? 'Stop' : 'Preview'}
+                   {isPlayingAudio ? t.stopPreview : t.preview}
                </button>
-               <span className="text-slate-900 font-bold text-sm">Start <i className="fas fa-arrow-right ml-1"></i></span>
+               <span className="text-slate-900 font-bold text-sm">{t.start} <i className="fas fa-arrow-right ml-1"></i></span>
           </div>
       </div>
     </div>
@@ -64,93 +68,92 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio,
 export const ActiveTourCard: React.FC<any> = (props) => {
     const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, language, onShare } = props;
     const currentStop = tour.stops[currentStopIndex] as Stop;
-    const t = (key: string) => UI_TEXT[language]?.[key] || UI_TEXT['en']?.[key] || key;
+    const t = (key: string) => UI_TEXT[language]?.[key] || UI_TEXT['es']?.[key] || key;
 
     const formatDescription = (text: string) => {
         if (!text) return null;
-        return text.split('\n').filter(l => l.trim()).map((line, i) => {
-            if (line.includes('[HOOK]')) return <p key={i} className="mb-6 text-xl font-heading font-black text-slate-900 leading-tight border-l-4 border-purple-500 pl-4">{line.replace('[HOOK]', '').trim()}</p>;
-            if (line.includes('[STORY]')) return <div key={i} className="mb-6 text-slate-700 leading-relaxed font-medium">{line.replace('[STORY]', '').trim()}</div>;
-            if (line.includes('[SECRET]')) return (
-                <div key={i} className="mb-6 bg-slate-900 text-white p-5 rounded-2xl relative overflow-hidden group border border-slate-800">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 mb-2">Secret</p>
-                    <p className="text-sm font-medium leading-relaxed italic">{line.replace('[SECRET]', '').trim()}</p>
-                </div>
-            );
-            if (line.includes('[SMART_TIP]')) return (
-                <div key={i} className="mb-6 bg-blue-50 border border-blue-100 p-4 rounded-xl flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 text-xs shadow-sm"><i className="fas fa-bolt"></i></div>
-                    <div><p className="text-[10px] font-bold text-blue-600 uppercase mb-0.5">Pro Tip</p><p className="text-xs text-blue-900 font-bold leading-tight">{line.replace('[SMART_TIP]', '').trim()}</p></div>
-                </div>
-            );
-            return <p key={i} className="mb-4 text-slate-600 leading-relaxed font-medium">{line}</p>;
-        });
+        const cleanText = text.replace(/\[HISTORIA\]|\[CURIOSIDAD\]|\[CONSEJO\]|Historia:|Curiosidad:|Consejo:|Nota:|Tip:/gi, '').trim();
+        
+        return cleanText.split('\n\n').map((para, i) => (
+            <p key={i} className="mb-6 text-slate-800 leading-relaxed font-medium text-lg first-letter:text-5xl first-letter:font-black first-letter:text-purple-600 first-letter:float-left first-letter:mr-3 first-letter:mt-1">
+                {para}
+            </p>
+        ));
     };
 
     return (
         <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar">
-             <div className="relative h-72 w-full flex-shrink-0">
+             <div className="relative h-[40vh] w-full flex-shrink-0">
                 <img src={currentStop.imageUrl || `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80`} className="w-full h-full object-cover" alt={currentStop.name} />
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/30"></div>
-                <div className="absolute bottom-6 left-6 right-6">
-                    <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 bg-white/90 backdrop-blur shadow-sm border border-white text-slate-800">{t('stop')} {currentStopIndex + 1} / {tour.stops.length}</span>
-                    <h1 className="text-3xl font-heading font-black text-white drop-shadow-lg leading-tight">{currentStop.name}</h1>
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/40"></div>
+                <div className="absolute bottom-8 left-8 right-8">
+                    <div className="flex items-center gap-2 mb-3">
+                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-purple-600 text-white shadow-lg">{t('stop')} {currentStopIndex + 1} / {tour.stops.length}</span>
+                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/20 backdrop-blur-md text-white border border-white/30">150 points</span>
+                    </div>
+                    <h1 className="text-4xl font-heading font-black text-white drop-shadow-2xl leading-tight">{currentStop.name}</h1>
                 </div>
              </div>
-             <div className="px-6 pb-24 pt-8">
-                 <div className="w-full h-1 bg-slate-100 rounded-full mb-8 overflow-hidden"><div className="h-full bg-purple-600 transition-all duration-500" style={{ width: `${((currentStopIndex + 1) / tour.stops.length) * 100}%` }}></div></div>
+             
+             <div className="px-8 pb-32 pt-10">
+                 <div className="w-full h-1.5 bg-slate-100 rounded-full mb-10 overflow-hidden shadow-inner">
+                    <div className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-700 ease-out" style={{ width: `${((currentStopIndex + 1) / tour.stops.length) * 100}%` }}></div>
+                 </div>
                  
-                 <div className="prose prose-slate max-w-none mb-10">{formatDescription(currentStop.description)}</div>
+                 <article className="prose prose-slate max-w-none mb-12">
+                    {formatDescription(currentStop.description)}
+                 </article>
 
-                 {/* Instagram Photo Spot Section */}
                  {currentStop.photoSpot && (
-                     <div className="mb-10 bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-100 rounded-[2.5rem] p-6 shadow-sm overflow-hidden relative">
-                         <div className="absolute -top-4 -right-4 w-20 h-20 bg-pink-500/10 rounded-full blur-2xl"></div>
-                         <div className="flex items-center gap-3 mb-4">
-                             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-pink-200">
+                     <div className="mb-12 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 p-6 text-indigo-200/50 text-6xl transform rotate-12 transition-transform group-hover:scale-110">
+                             <i className="fas fa-camera"></i>
+                         </div>
+                         <div className="flex items-center gap-3 mb-6 relative z-10">
+                             <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-200">
                                  <i className="fas fa-camera-retro"></i>
                              </div>
-                             <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">{t('photoTitle')}</h4>
+                             <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">{t('photoTitle')}</h4>
                          </div>
-                         <div className="space-y-4">
-                             <div className="flex gap-4">
-                                 <div className="flex-1">
-                                     <p className="text-[9px] font-black text-pink-600 uppercase mb-1">{t('angle')}</p>
-                                     <p className="text-xs font-bold text-slate-700 leading-tight">{currentStop.photoSpot.angle}</p>
-                                 </div>
-                                 <div className="w-24">
-                                     <p className="text-[9px] font-black text-pink-600 uppercase mb-1">{t('time')}</p>
-                                     <p className="text-xs font-bold text-slate-700">{currentStop.photoSpot.bestTime}</p>
-                                 </div>
+                         <div className="grid grid-cols-2 gap-6 relative z-10">
+                             <div>
+                                 <p className="text-[10px] font-black text-indigo-600 uppercase mb-1 opacity-60">{t('angle')}</p>
+                                 <p className="text-sm font-bold text-slate-800 leading-snug">{currentStop.photoSpot.angle}</p>
                              </div>
-                             <div className="bg-white/60 p-3 rounded-2xl border border-white">
-                                 <p className="text-[9px] font-black text-slate-400 uppercase mb-1">{t('caption')}</p>
-                                 <p className="text-[10px] font-mono font-bold text-slate-800">"{currentStop.photoSpot.instagramHook}"</p>
+                             <div>
+                                 <p className="text-[10px] font-black text-indigo-600 uppercase mb-1 opacity-60">{t('time')}</p>
+                                 <p className="text-sm font-bold text-slate-800 leading-snug">{currentStop.photoSpot.bestTime}</p>
                              </div>
                          </div>
                      </div>
                  )}
 
-                 {/* Botón de Compartir en el Tour */}
-                 <button onClick={onShare} className="w-full mb-10 p-5 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-3xl flex items-center gap-4 transition-all active:scale-95 group">
-                     <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-lg group-hover:rotate-12 transition-transform"><i className="fas fa-share-nodes"></i></div>
-                     <div className="text-left">
-                         <p className="text-xs font-black uppercase tracking-widest text-indigo-600 mb-1">{t('share')}</p>
-                         <p className="text-[10px] font-bold text-slate-500">{t('shareReward')}</p>
-                     </div>
-                 </button>
+                 <div className="grid grid-cols-2 gap-4 mb-12">
+                    <button onClick={() => onShare('instagram')} className="flex items-center justify-center gap-3 py-5 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+                        <i className="fab fa-instagram text-xl"></i>
+                        {t('shareIg')}
+                    </button>
+                    <button onClick={() => onShare('generic')} className="flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+                        <i className="fas fa-link text-xl"></i>
+                        {t('share')}
+                    </button>
+                 </div>
 
                  <div className="space-y-4">
-                     <button onClick={() => onCheckIn(currentStop.id, 50)} className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.1em] text-sm flex items-center justify-center gap-2 shadow-lg transition-all transform active:scale-95 ${currentStop.visited ? 'bg-green-100 text-green-700' : 'bg-slate-900 text-white hover:bg-black'}`}>
-                         {currentStop.visited ? <><i className="fas fa-check-circle"></i> {t('collected')}</> : <><i className="fas fa-map-marker-alt"></i> {t('checkin')} (+50 m)</>}
+                     <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-6 rounded-[2.5rem] font-black uppercase tracking-[0.15em] text-xs flex items-center justify-center gap-3 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-600 text-white'}`}>
+                         {currentStop.visited ? <><i className="fas fa-check-circle text-lg"></i> {t('collected')}</> : <><i className="fas fa-map-marker-alt text-lg"></i> {t('checkin')} (+150 m)</>}
                      </button>
-                     <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm border border-slate-200 ${audioPlayingId === currentStop.id ? 'bg-red-50 text-red-500 border-red-200' : 'bg-white text-slate-700'}`}>
-                         {audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin"></i> : audioPlayingId === currentStop.id ? <i className="fas fa-stop"></i> : <i className="fas fa-headphones"></i>}
-                         {audioPlayingId === currentStop.id ? t('pause') : t('listen')}
-                     </button>
-                     <div className="grid grid-cols-2 gap-4">
-                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold opacity-50 disabled:opacity-30">{t('prev')}</button>
-                         <button onClick={onNext} className="py-4 bg-purple-600 text-white rounded-2xl font-bold shadow-xl">{t('next')}</button>
+                     
+                     <div className="flex gap-3">
+                         <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`flex-1 py-5 rounded-[2rem] font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all shadow-md border border-slate-200 ${audioPlayingId === currentStop.id ? 'bg-red-50 text-red-600 border-red-100' : 'bg-white text-slate-700'}`}>
+                             {audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin"></i> : audioPlayingId === currentStop.id ? <i className="fas fa-stop"></i> : <i className="fas fa-headphones"></i>}
+                             {audioPlayingId === currentStop.id ? t('pause') : t('listen')}
+                         </button>
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-4 pt-4">
+                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-5 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30 border border-slate-200">{t('prev')}</button>
+                         <button onClick={onNext} className="py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-xl">{t('next')}</button>
                      </div>
                  </div>
             </div>

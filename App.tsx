@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES, Badge, TravelerRank } from './types';
 import { generateToursForCity, generateAudio } from './services/geminiService';
-import { CityCard } from './components/CityCard';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { SchematicMap } from './components/SchematicMap';
 import { Leaderboard } from './components/Leaderboard';
@@ -11,6 +10,7 @@ import { Onboarding } from './components/Onboarding';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
+import { CommunityBoard } from './components/CommunityBoard';
 import { syncUserProfile } from './services/supabaseClient';
 
 // --- AUDIO UTILS ---
@@ -38,11 +38,11 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Name", verifyTitle: "Verify Identity", verifyDesc: "Code sent to", verifyBtn: "Confirm", resend: "Resend", routes: "Routes", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Sharing my trip with #bdaitravel" },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificar Identidad", verifyDesc: "Código enviado a", verifyBtn: "Confirmar", resend: "Reenviar", routes: "Rutas", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel" },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nom", verifyTitle: "Verificar Identitat", verifyDesc: "Codi enviat a", verifyBtn: "Confirmar", resend: "Reenviar", routes: "Rutes", community: "Social", spots: "Spots Fotos", viral: "Viralitat", completion: "Completat", badges: "Millors Logros", share: "Compartir i Guanyar", shareMsg: "Explorant el món amb #bdaitravel" },
-  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Hub", passport: "Visa", shop: "Denda", ranking: "Elite", searchPlaceholder: "Bilatu edozein hiri...", login: "Pasaportea jaulki", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Izena", verifyTitle: "Identitatea egiaztatu", verifyDesc: "Kodea bidalita hona:", verifyBtn: "Baieztatu", resend: "Berriz bidali", routes: "Ibilbideak", community: "Soziala", spots: "Argazki Lekuak", viral: "Ospea", completion: "Osatua", badges: "Lorpen Nagusiak", share: "Partekatu eta Irabazi", shareMsg: "#bdaitravel-ekin mundua esploratzen" },
-  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Délivrer Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Nom", verifyTitle: "Vérifier Identité", verifyDesc: "Code envoyé à", verifyBtn: "Confirmer", resend: "Renvoyer", routes: "Itinéraires", community: "Social", spots: "Coins Photos", viral: "Popularité", completion: "Terminé", badges: "Top Badges", share: "Partager & Gagner", shareMsg: "J'explore le monde avec #bdaitravel" },
+  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Name", verifyTitle: "Verify Identity", verifyDesc: "Code sent to", verifyBtn: "Confirm", resend: "Resend", routes: "Routes", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Exploring the world with #bdaitravel", emptyTitle: "Where to next?", emptySub: "The world is your guide.", noTours: "No routes found.", tryAgain: "Go back", loading: "AI Processing...", back: "Back", start: "Start", preview: "Preview", stop: "Stop", points: "miles", quotaExceeded: "AI is on a break", quotaDesc: "We've had too many explorers lately. Please try again in a few seconds." },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificar Identidad", verifyDesc: "Código enviado a", verifyBtn: "Confirmar", resend: "Reenviar", routes: "Rutas", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel", emptyTitle: "¿A dónde vamos?", emptySub: "Tu próxima aventura empieza aquí.", noTours: "No hay rutas disponibles.", tryAgain: "Volver", loading: "Procesando IA...", back: "Atrás", start: "Empezar", preview: "Escuchar", stop: "Parar", points: "millas", quotaExceeded: "La IA está descansando", quotaDesc: "Demasiados exploradores ahora mismo. Por favor, reinténtalo en unos segundos." },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nom", verifyTitle: "Verificar Identitat", verifyDesc: "Codi enviat a", verifyBtn: "Confirmar", resend: "Reenviar", routes: "Rutes", community: "Social", spots: "Spots Fotos", viral: "Viralitat", completion: "Completat", badges: "Millors Fites", share: "Comparteix i Guanya", shareMsg: "Explorant el món amb #bdaitravel", emptyTitle: "On anem?", emptySub: "La teva propera aventura comença aquí.", noTours: "No hi ha rutes disponibles.", tryAgain: "Tornar", loading: "Processant IA...", back: "Enrere", start: "Començar", preview: "Escuchar", stop: "Parar", points: "milles", quotaExceeded: "La IA està descansando", quotaDesc: "Massa exploradors ara mateix. Reintenta-ho en uns segons." },
+  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Hub", passport: "Visa", shop: "Denda", ranking: "Elite", searchPlaceholder: "Bilatu edozein hiri...", login: "Pasaportea jaulki", tagline: "better destinations by ai", emailLabel: "E-posta", nameLabel: "Izena", verifyTitle: "Identitatea egiaztatu", verifyDesc: "Kodea bidalita hona:", verifyBtn: "Baieztatu", resend: "Berriz bidali", routes: "Ibilbideak", community: "Soziala", spots: "Argazki Lekuak", viral: "Ospea", completion: "Osatua", badges: "Lorpen Nagusiak", share: "Partekatu eta Irabazi", shareMsg: "#bdaitravel-ekin mundua esploratzen", emptyTitle: "Nora joango gara?", emptySub: "Zure hurrengo abentura hemen hasten da.", noTours: "Ez da ibilbiderik aurkitu.", tryAgain: "Itzuli", loading: "IA prozesatzen...", back: "Atzera", start: "Hasi", preview: "Entzun", stop: "Gelditu", points: "milia", quotaExceeded: "IA atsedena hartzen ari da", quotaDesc: "Esploratzaile gehiegi une honetan. Saiatu berriro segundu batzuk barru." },
+  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Délivrer Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Nom", verifyTitle: "Vérifier Identité", verifyDesc: "Code envoyé à", verifyBtn: "Confirmer", resend: "Renvoyer", routes: "Itinéraires", community: "Social", spots: "Coins Photos", viral: "Popularité", completion: "Terminé", badges: "Top Badges", share: "Partager & Gagner", shareMsg: "J'explore le monde avec #bdaitravel", emptyTitle: "On va où?", emptySub: "Votre prochaine aventure commence ici.", noTours: "Aucun itinéraire trouvé.", tryAgain: "Retour", loading: "Traitement IA...", back: "Retour", start: "Démarrer", preview: "Écouter", stop: "Arrêter", points: "miles", quotaExceeded: "L'IA fait une pause", quotaDesc: "Trop d'explorateurs en ce moment. Veuillez réessayer dans quelques secondes." }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -60,8 +60,6 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
   { id: '1', name: 'Marco Polo', username: 'marco', avatar: 'https://i.pravatar.cc/150?u=1', miles: 45000, rank: 1, isPublic: true },
   { id: '2', name: 'Ibn Battuta', username: 'ibn', avatar: 'https://i.pravatar.cc/150?u=2', miles: 38000, rank: 2, isPublic: true },
   { id: '3', name: 'Amelia Earhart', username: 'amelia', avatar: 'https://i.pravatar.cc/150?u=3', miles: 32000, rank: 3, isPublic: true },
-  { id: '4', name: 'Nellie Bly', username: 'nellie', avatar: 'https://i.pravatar.cc/150?u=4', miles: 28000, rank: 4, isPublic: true },
-  { id: '5', name: 'Ernest Shackleton', username: 'ernest', avatar: 'https://i.pravatar.cc/150?u=5', miles: 25000, rank: 5, isPublic: true },
 ];
 
 export default function App() {
@@ -69,6 +67,7 @@ export default function App() {
   const [loginStep, setLoginStep] = useState<'FORM' | 'VERIFY'>('FORM');
   const [cityTab, setCityTab] = useState<'routes' | 'community'>('routes');
   const [searchVal, setSearchVal] = useState('');
+  const [errorType, setErrorType] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfile>({
     id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: '', email: '', avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, visitedCities: [], completedTours: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, badges: [], passportNumber: '', joinDate: new Date().toLocaleDateString()
   });
@@ -84,19 +83,19 @@ export default function App() {
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
   useEffect(() => {
-    if (user.isLoggedIn && user.id !== 'guest') {
-      syncUserProfile(user).catch(err => console.error("Sync failed:", err));
-    }
-  }, [user.miles, user.visitedCities, user.isLoggedIn]);
-
-  useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => console.warn("GPS Access Denied")
+        () => {}
       );
     }
   }, []);
+
+  useEffect(() => {
+    if (user.isLoggedIn && user.id !== 'guest') {
+        syncUserProfile(user);
+    }
+  }, [user.miles, user.visitedCities, user.isLoggedIn, user.interests]);
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
@@ -122,7 +121,6 @@ export default function App() {
       audioSourceRef.current = source;
       setAudioPlayingId(id);
     } catch (e) {
-      console.error(e);
     } finally {
       setAudioLoadingId(null);
     }
@@ -143,30 +141,39 @@ export default function App() {
     }
   };
 
-  const handleShareExperience = async () => {
+  const handleShareExperience = async (platform: 'instagram' | 'generic' = 'generic') => {
     const shareData = { title: 'bdai travel', text: t('shareMsg'), url: window.location.href };
     try {
+        if (platform === 'instagram') {
+             window.open('https://www.instagram.com/', '_blank');
+             setUser(prev => ({ ...prev, miles: prev.miles + 150 }));
+             return;
+        }
         if (navigator.share) {
             await navigator.share(shareData);
             setUser(prev => ({ ...prev, miles: prev.miles + 150 }));
         } else {
-            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}`, '_blank');
+            navigator.clipboard.writeText(shareData.url);
         }
-    } catch (e) { console.warn("Sharing cancelled"); }
+    } catch (e) {}
   };
 
   const handleCitySelect = async (city: string) => {
+    if (!city.trim()) return;
     setSelectedCity(city);
     setCityTab('routes');
     setIsLoading(true);
+    setErrorType(null);
     setView(AppView.CITY_DETAIL);
     try {
-        const gen = await generateToursForCity(city, user.language);
+        const gen = await generateToursForCity(city, user);
         setTours(gen || []);
-    } catch (e) { 
-        console.error(e);
-        alert("Error generating tours. Please try another city.");
-        setView(AppView.HOME);
+    } catch (e: any) { 
+        if (e.message === 'QUOTA_EXCEEDED') {
+            setErrorType('QUOTA');
+        } else {
+            setTours([]);
+        }
     } finally { setIsLoading(false); }
   };
 
@@ -220,36 +227,77 @@ export default function App() {
       </div>
   );
 
-  if (view === AppView.WELCOME) return <Onboarding onComplete={() => setView(AppView.HOME)} language={user.language} onLanguageSelect={(l) => setUser(p => ({...p, language: l}))} />;
+  if (view === AppView.WELCOME) return (
+    <Onboarding 
+        onComplete={(interests) => {
+            setUser(prev => ({ ...prev, interests }));
+            setView(AppView.HOME);
+        }} 
+        language={user.language} 
+        onLanguageSelect={(l) => setUser(p => ({...p, language: l}))} 
+    />
+  );
 
   return (
     <div className="max-w-md mx-auto h-screen bg-slate-950 flex flex-col shadow-2xl relative overflow-hidden font-sans text-white">
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-24 z-10 relative">
           {view === AppView.HOME && (
-            <div className="space-y-8 pt-safe animate-fade-in px-6">
+            <div className="space-y-8 pt-safe animate-fade-in px-6 pb-20">
                 <header className="flex justify-between items-center pt-6">
-                    <div className="flex items-center gap-2"><BdaiLogo className="w-10 h-10"/><span className="font-heading font-black text-3xl lowercase tracking-tighter">bdai</span></div>
-                    <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-full border-2 border-purple-500 overflow-hidden shadow-lg"><img src={user.avatar} className="w-full h-full object-cover" /></button>
+                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.location.reload()}>
+                        <BdaiLogo className="w-10 h-10 group-active:rotate-180 transition-transform duration-500"/>
+                        <span className="font-heading font-black text-3xl lowercase tracking-tighter">bdai</span>
+                    </div>
+                    <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-full border-2 border-purple-500 overflow-hidden shadow-xl active:scale-90 transition-transform"><img src={user.avatar} className="w-full h-full object-cover" /></button>
                 </header>
-                <div>
-                    <h1 className="text-5xl font-heading font-black mb-6 leading-none tracking-tighter">{t('welcome')} <br/><span className="text-purple-400">{user.firstName || 'Explorador'}.</span></h1>
-                    <div className="relative">
-                        <i className="fas fa-search absolute left-5 top-5 text-slate-500"></i>
+
+                <div className="relative z-10">
+                    <div className="mb-8">
+                        <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2">{t('tagline')}</p>
+                        <h1 className="text-5xl font-heading font-black leading-tight tracking-tighter">{t('welcome')} <br/><span className="text-white/30">{user.firstName || 'Explorador'}.</span></h1>
+                    </div>
+                    
+                    <div className="relative group">
+                        <i className="fas fa-search absolute left-5 top-5 text-slate-500 group-focus-within:text-purple-500 transition-colors"></i>
                         <input 
                             type="text" 
                             value={searchVal}
                             onChange={(e) => setSearchVal(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && searchVal.trim() && handleCitySelect(searchVal.trim())}
                             placeholder={t('searchPlaceholder')} 
-                            className="w-full bg-white/5 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white outline-none focus:border-purple-500 transition-all" 
+                            className="w-full bg-white/5 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white outline-none focus:border-purple-500 focus:bg-white/10 transition-all shadow-2xl" 
                         />
                     </div>
                 </div>
+
+                {!searchVal && (
+                    <div className="mt-12 flex flex-col items-center justify-center text-center animate-slide-up py-10 relative z-10">
+                        <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-purple-600/20 to-blue-600/20 flex items-center justify-center mb-6 border border-white/10 group backdrop-blur-xl relative">
+                            <div className="absolute inset-0 rounded-full animate-pulse border border-purple-500/30"></div>
+                            <i className="fas fa-compass text-5xl text-purple-500 group-hover:rotate-[360deg] transition-transform duration-[2s]"></i>
+                        </div>
+                        <h3 className="text-2xl font-black text-white mb-2">{t('emptyTitle')}</h3>
+                        <p className="text-sm text-slate-500 font-medium max-w-[200px] leading-relaxed">{t('emptySub')}</p>
+                        
+                        <div className="grid grid-cols-2 gap-4 w-full mt-12">
+                            <button onClick={() => handleCitySelect('Madrid')} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 text-left hover:bg-white/10 transition-all group overflow-hidden relative">
+                                <div className="absolute -right-4 -top-4 w-12 h-12 bg-purple-500/10 rounded-full group-hover:scale-150 transition-transform"></div>
+                                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1 block">Capital</span>
+                                <span className="text-lg font-black text-white">Madrid 🇪🇸</span>
+                            </button>
+                            <button onClick={() => handleCitySelect('Sevilla')} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 text-left hover:bg-white/10 transition-all group overflow-hidden relative">
+                                <div className="absolute -right-4 -top-4 w-12 h-12 bg-blue-500/10 rounded-full group-hover:scale-150 transition-transform"></div>
+                                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 block">Andalucía</span>
+                                <span className="text-lg font-black text-white">Sevilla 💃</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
           )}
 
           {view === AppView.CITY_DETAIL && (
-            <div className="pt-safe px-6 animate-fade-in flex flex-col min-h-full">
+            <div className="pt-safe px-6 animate-fade-in flex flex-col min-h-full pb-20">
                 <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-slate-950/90 backdrop-blur-md z-10">
                     <button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all active:scale-90"><i className="fas fa-arrow-left"></i></button>
                     <div><p className="text-[10px] font-black uppercase text-purple-400 tracking-widest mb-1">bdai explorer</p><h2 className="text-3xl font-black leading-none">{selectedCity}</h2></div>
@@ -261,9 +309,50 @@ export default function App() {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500"><i className="fas fa-compass fa-spin text-4xl mb-6 text-purple-500"></i><p className="font-black uppercase text-[11px] tracking-widest">IA Processing...</p></div>
+                    <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500">
+                      <i className="fas fa-compass fa-spin text-4xl mb-6 text-purple-500"></i>
+                      <p className="font-black uppercase text-[11px] tracking-widest">{t('loading')}</p>
+                    </div>
+                ) : errorType === 'QUOTA' ? (
+                    <div className="flex-1 flex flex-col items-center justify-center py-10 text-center animate-fade-in px-4">
+                        <div className="w-32 h-32 rounded-full bg-indigo-500/10 flex items-center justify-center mb-8 border border-indigo-500/20 relative">
+                             <div className="absolute inset-0 rounded-full border border-indigo-500/10 animate-ping"></div>
+                             <i className="fas fa-battery-half text-5xl text-indigo-400"></i>
+                        </div>
+                        <h3 className="text-3xl font-black text-white mb-4 leading-tight">{t('quotaExceeded')}</h3>
+                        <p className="text-slate-400 text-sm font-medium leading-relaxed mb-10 max-w-xs">{t('quotaDesc')}</p>
+                        <button onClick={() => selectedCity && handleCitySelect(selectedCity)} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-[11px] shadow-[0_15px_40px_rgba(79,70,229,0.3)] active:scale-95 transition-all">
+                             <i className="fas fa-sync-alt mr-2"></i> {t('tryAgain')}
+                        </button>
+                    </div>
+                ) : cityTab === 'community' ? (
+                    <CommunityBoard city={selectedCity || ''} language={user.language} user={user} />
+                ) : tours.length > 0 ? (
+                    <div className="space-y-6 pb-12">
+                      {tours.map(tour => (
+                        <TourCard 
+                          key={tour.id} 
+                          tour={tour} 
+                          onSelect={() => {setActiveTour(tour); setCurrentStopIndex(0); setView(AppView.TOUR_ACTIVE);}} 
+                          isPlayingAudio={audioPlayingId === tour.id} 
+                          isAudioLoading={audioLoadingId === tour.id} 
+                          onPlayAudio={handlePlayAudio} 
+                          isFavorite={false} 
+                          onToggleFavorite={() => {}}
+                          language={user.language}
+                        />
+                      ))}
+                    </div>
                 ) : (
-                    <div className="space-y-6 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setCurrentStopIndex(0); setView(AppView.TOUR_ACTIVE);}} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} onPlayAudio={handlePlayAudio} isFavorite={false} onToggleFavorite={() => {}} />)}</div>
+                    <div className="flex-1 flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+                            <i className="fas fa-exclamation-triangle text-3xl text-slate-600"></i>
+                        </div>
+                        <h3 className="text-xl font-black text-white mb-2">{t('noTours')}</h3>
+                        <button onClick={() => setView(AppView.HOME)} className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-xl">
+                            {t('tryAgain')}
+                        </button>
+                    </div>
                 )}
             </div>
           )}

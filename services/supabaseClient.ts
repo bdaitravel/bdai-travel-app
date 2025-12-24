@@ -1,18 +1,18 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile } from '../types';
 
-// En el entorno de la plataforma, estas variables se inyectan automáticamente
-const supabaseUrl = (process.env as any).SUPABASE_URL || '';
-const supabaseAnonKey = (process.env as any).SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
 
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey) 
   : null;
 
-/**
- * Recupera el perfil del usuario por ID
- */
+if (!supabase) {
+    console.error("⚠️ SUPABASE NO CONFIGURADO: No se guardarán las rutas.");
+}
+
 export const getUserProfile = async (id: string): Promise<UserProfile | null> => {
   if (!supabase || !id || id === 'guest') return null;
   try {
@@ -21,12 +21,8 @@ export const getUserProfile = async (id: string): Promise<UserProfile | null> =>
       .select('*')
       .eq('id', id)
       .maybeSingle();
-
-    if (error) {
-      console.error("Supabase GetProfile Error:", error.message);
-      return null;
-    }
-    if (!data) return null;
+    
+    if (error || !data) return null;
     
     return {
       ...data,
@@ -36,15 +32,9 @@ export const getUserProfile = async (id: string): Promise<UserProfile | null> =>
       completedTours: data.completed_tours || [],
       isLoggedIn: true
     } as UserProfile;
-  } catch (e) {
-    console.error("Supabase Profile Exception:", e);
-    return null;
-  }
+  } catch (e) { return null; }
 };
 
-/**
- * Busca un tour en el caché de Supabase.
- */
 export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
   if (!supabase) return null;
   try {
@@ -54,53 +44,47 @@ export const getCachedTours = async (city: string, language: string): Promise<To
       .eq('city', city.toLowerCase().trim())
       .eq('language', language)
       .maybeSingle();
-
-    if (error) {
-        if (error.code !== 'PGRST116') { // PGRST116 es "no rows found", que es normal
-          console.warn("Supabase Cache Select Error:", error.message);
-        }
-        return null;
-    }
+    
+    if (error) return null;
     return data ? (data.data as Tour[]) : null;
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 };
 
-/**
- * Guarda los tours generados en el caché global de Supabase
- */
-export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
-  if (!supabase) return;
+export const getRecentCommunityCities = async (language: string): Promise<{city: string, country?: string}[]> => {
+  if (!supabase) return [];
   try {
-    const { error } = await supabase.from('tours_cache').upsert({
+    const { data, error } = await supabase
+      .from('tours_cache')
+      .select('city')
+      .eq('language', language)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    
+    if (error || !data) return [];
+    const uniqueCities = Array.from(new Set(data.map((d: any) => d.city as string)));
+    return uniqueCities.map((c: string) => ({ city: c.charAt(0).toUpperCase() + c.slice(1) }));
+  } catch (e) { return []; }
+};
+
+export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
+  if (!supabase || tours.length === 0) return;
+  try {
+    await supabase.from('tours_cache').upsert({
       city: city.toLowerCase().trim(),
       language: language,
       data: tours,
       created_at: new Date().toISOString()
     }, { onConflict: 'city,language' });
-    
-    if (error) {
-      console.warn("Supabase Cache Save Error:", error.message);
-    } else {
-      console.log("Tour cached in Supabase successfully.");
-    }
+    console.log(`✅ Cacheada en Supabase: ${city}`);
   } catch (e) {
-    console.error("Error saving to Supabase cache:", e);
+    console.error("Error saving cache:", e);
   }
 };
 
-/**
- * Sincroniza el perfil del usuario con la base de datos
- */
 export const syncUserProfile = async (user: UserProfile) => {
-  if (!supabase || !user || !user.isLoggedIn || user.id === 'guest') {
-    console.log("Sync skipped: User not ready or Supabase not connected.");
-    return;
-  }
-
+  if (!supabase || !user || !user.isLoggedIn || user.id === 'guest') return;
   try {
-    const { error } = await supabase.from('profiles').upsert({
+    await supabase.from('profiles').upsert({
       id: user.id,
       first_name: user.firstName,
       last_name: user.lastName,
@@ -115,13 +99,5 @@ export const syncUserProfile = async (user: UserProfile) => {
       completed_tours: user.completedTours,
       updated_at: new Date().toISOString()
     }, { onConflict: 'id' });
-    
-    if (error) {
-      console.error("Supabase Sync Error:", error.message);
-    } else {
-      console.log("User synced to Supabase successfully.");
-    }
-  } catch (e) {
-    console.error("Error syncing profile to Supabase:", e);
-  }
+  } catch (e) {}
 };
