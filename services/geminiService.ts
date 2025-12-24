@@ -11,43 +11,45 @@ const getClient = () => {
 };
 
 const LANGUAGE_MAP: Record<string, string> = {
-    es: "Castellano (España)",
-    en: "English (UK)",
-    fr: "Français (Standard)",
-    eu: "Euskara (Batua)",
-    ca: "Català (Estàndard)"
+    es: "Spanish (Spain)",
+    en: "English (Global)",
+    fr: "French",
+    eu: "Basque (Euskara)",
+    ca: "Catalan"
 };
 
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
   const cityLower = cityInput.toLowerCase().trim();
   const targetLang = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
-  const interestsStr = userProfile.interests.join(", ") || "cultura general";
+  const interestsStr = userProfile.interests.join(", ") || "culture and history";
   
-  // 1. Intentar cargar de la caché global (Supabase) para ahorrar cuota
-  try {
-    const globalCached = await getCachedTours(cityInput, userProfile.language);
-    if (globalCached && globalCached.length > 0) return globalCached;
-  } catch (e) {
-    console.warn("Cache error, proceeding to AI...");
+  // 1. Intentar cargar de la caché global (Supabase)
+  const globalCached = await getCachedTours(cityLower, userProfile.language);
+  if (globalCached && globalCached.length > 0) {
+      return globalCached;
   }
   
-  // 2. Fallback inmediato si es una ciudad estática (para no gastar IA si no es necesario)
-  const staticMatch = STATIC_TOURS.filter(t => t.city.toLowerCase() === cityLower);
-  if (staticMatch.length > 0) return staticMatch;
+  // 2. Fallback ciudades estáticas (SOLO SI EL IDIOMA ES ESPAÑOL)
+  if (userProfile.language === 'es') {
+    const staticMatch = STATIC_TOURS.filter(t => t.city.toLowerCase() === cityLower);
+    if (staticMatch.length > 0) return staticMatch;
+  }
   
+  // 3. Generación con IA (Obligatoria si no es español o no está en caché)
   const ai = getClient();
   if (!ai) return [];
 
   const prompt = `
-    ROL: Eres un guía experto local en ${cityInput}.
-    PERFIL DEL USUARIO: Le apasiona: ${interestsStr}. Ajusta el tono y las paradas a estos intereses.
-    TAREA: Crea 2 rutas épicas de exactamente 8 PARADAS cada una.
-    IDIOMA: Redacta todo en ${targetLang}.
-
-    ESTILO NARRATIVO:
-    - Sin listas, sin "Tips", sin "Curiosidades" como etiquetas.
-    - Storytelling fluido y envolvente.
-    - Mezcla historia con consejos de local ("insider") en el mismo párrafo.
+    ROLE: Professional local guide for ${cityInput}.
+    USER PROFILE: Passionate about ${interestsStr}.
+    TASK: Create 2 immersive walking tours for ${cityInput} with exactly 8 stops each.
+    CRITICAL: You MUST write everything in ${targetLang}. This includes titles, descriptions, and names.
+    
+    STYLE:
+    - No bullet points.
+    - Narrative storytelling.
+    - Blend history with "insider tips" in the same paragraph.
+    - Tone: Enthusiastic and knowledgeable.
   `;
   
   const responseSchema = {
@@ -108,18 +110,14 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         stops: t.stops.map((s: any, sIdx: number) => ({ 
             ...s, 
             id: `s_${idx}_${sIdx}`, 
-            visited: false, 
-            imageUrl: `https://images.unsplash.com/photo-1543783232-260a990a1c0${(sIdx % 9) + 1}?auto=format&fit=crop&w=800&q=80` 
+            visited: false
         }))
     }));
 
-    // Guardar en caché para que otros no tengan que regenerar lo mismo
     await saveToursToCache(cityInput, userProfile.language, processed);
     return processed;
   } catch (error: any) {
-    if (error.message?.includes('429') || error.status === 429) {
-        throw new Error('QUOTA_EXCEEDED');
-    }
+    console.error("Gemini Error:", error);
     return [];
   }
 };

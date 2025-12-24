@@ -4,42 +4,44 @@ import { Tour, Stop } from '../types';
 
 const getThemeStyles = (themeStr: string) => {
   const theme = themeStr.toLowerCase();
-  if (theme.includes('history')) return { badge: 'bg-amber-100 text-amber-900', icon: 'fa-landmark' };
-  if (theme.includes('food')) return { badge: 'bg-orange-100 text-orange-900', icon: 'fa-utensils' };
-  if (theme.includes('art')) return { badge: 'bg-pink-100 text-pink-900', icon: 'fa-palette' };
-  if (theme.includes('nature')) return { badge: 'bg-emerald-100 text-emerald-900', icon: 'fa-leaf' };
-  return { badge: 'bg-slate-100 text-slate-900', icon: 'fa-compass' };
+  if (theme.includes('history')) return { badge: 'bg-amber-100 text-amber-900', icon: 'fa-landmark', color: 'from-amber-400 to-orange-600' };
+  if (theme.includes('food')) return { badge: 'bg-orange-100 text-orange-900', icon: 'fa-utensils', color: 'from-orange-400 to-red-600' };
+  if (theme.includes('art')) return { badge: 'bg-pink-100 text-pink-900', icon: 'fa-palette', color: 'from-pink-400 to-purple-600' };
+  if (theme.includes('nature')) return { badge: 'bg-emerald-100 text-emerald-900', icon: 'fa-leaf', color: 'from-emerald-400 to-teal-600' };
+  return { badge: 'bg-slate-100 text-slate-900', icon: 'fa-compass', color: 'from-blue-400 to-indigo-600' };
 };
 
 const UI_TEXT: any = {
-    en: { next: "Next", prev: "Back", listen: "Audio Guide", pause: "Pause", checkin: "Check In", collected: "Verified!", stop: "Stop", share: "Share trip", shareIg: "Post to Instagram", photoTitle: "Snapshot Mode", angle: "Angle", time: "Best Time", start: "Start", preview: "Preview", stopPreview: "Stop" },
-    es: { next: "Siguiente", prev: "Atrás", listen: "Audio Guía", pause: "Pausar", checkin: "Check In", collected: "¡Verificado!", stop: "Parada", share: "Compartir enlace", shareIg: "Compartir en Instagram", photoTitle: "Modo Foto", angle: "Ángulo", time: "Mejor Hora", start: "Empezar", preview: "Escuchar", stopPreview: "Parar" },
-    ca: { next: "Següent", prev: "Enrere", listen: "Àudio Guia", pause: "Aturar", checkin: "Check In", collected: "Verificat!", stop: "Parada", share: "Compartir enllaç", shareIg: "Compartir a Instagram", photoTitle: "Mode Foto", angle: "Angle", time: "Millor Hora", start: "Començar", preview: "Escuchar", stopPreview: "Parar" },
-    eu: { next: "Hurrengoa", prev: "Atzera", listen: "Audio Gida", pause: "Gelditu", checkin: "Egiaztatu", collected: "Egiaztatuta!", stop: "Geltokia", share: "Lotura partekatu", shareIg: "Instagramen partekatu", photoTitle: "Argazki Modua", angle: "Angelua", time: "Ordu Onena", start: "Hasi", preview: "Entzun", stopPreview: "Gelditu" },
-    fr: { next: "Suivant", prev: "Précédent", listen: "Audio Guide", pause: "Pause", checkin: "Valider", collected: "Vérifié !", stop: "Étape", share: "Partager lien", shareIg: "Partager sur Instagram", photoTitle: "Mode Photo", angle: "Angle", time: "Meilleur Moment", start: "Démarrer", preview: "Écouter", stopPreview: "Arrêter" }
+    en: { start: "Start", preview: "Audio Preview", stop: "Stop", stopTag: "Stop", share: "Share to earn", checkin: "Check-in (+150m)", bestTime: "Best time", photoHook: "Instagram Hook" },
+    es: { start: "Empezar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Compartir y ganar", checkin: "Hacer Check-in (+150m)", bestTime: "Mejor hora", photoHook: "Gancho Instagram" },
+    ca: { start: "Començar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Compartir", checkin: "Hacer Check-in", bestTime: "Millor hora", photoHook: "Idea Instagram" },
+    eu: { start: "Hasi", preview: "Entzun", stop: "Gelditu", stopTag: "Geltokia", share: "Partekatu", checkin: "Check-in egin", bestTime: "Ordu onena", photoHook: "Instagramerako" },
+    fr: { start: "Démarrer", preview: "Écouter", stop: "Arrêter", stopTag: "Étape", share: "Partager", checkin: "Enregistrer", bestTime: "Meilleur moment", photoHook: "Accroche Insta" }
 };
 
-interface TourCardProps {
-  tour: Tour;
-  onSelect: (tour: Tour) => void;
-  onPlayAudio: (id: string, text: string) => void;
-  isPlayingAudio: boolean;
-  isAudioLoading: boolean;
-  isFavorite: boolean;
-  onToggleFavorite: () => void;
-  language: string;
-}
+const ImageFallback = ({ city, icon, colorClass }: { city: string, icon: string, colorClass: string }) => (
+    <div className={`w-full h-full bg-gradient-to-br ${colorClass} flex flex-col items-center justify-center p-6 text-white/90`}>
+        <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-4xl mb-4 border border-white/30 shadow-2xl">
+            <i className={`fas ${icon}`}></i>
+        </div>
+        <span className="text-xs font-black uppercase tracking-[0.3em] opacity-60 mb-1">TechTravel Guide</span>
+        <h4 className="text-2xl font-black text-center leading-tight tracking-tighter drop-shadow-md">{city}</h4>
+    </div>
+);
 
-export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, language }) => {
-  const [imgLoaded, setImgLoaded] = useState(false);
+export const TourCard: React.FC<any> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, language }) => {
+  const [imgError, setImgError] = useState(false);
   const styles = getThemeStyles(tour.theme);
-  const displayImage = tour.imageUrl || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80';
   const t = UI_TEXT[language] || UI_TEXT['es'];
 
   return (
     <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer h-full flex flex-col">
-      <div className="h-64 relative overflow-hidden bg-slate-200">
-        <img src={displayImage} className={`w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`} onLoad={() => setImgLoaded(true)} alt={tour.title} />
+      <div className="h-56 relative overflow-hidden bg-slate-200">
+        {!imgError && tour.imageUrl ? (
+            <img src={tour.imageUrl} onError={() => setImgError(true)} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" alt={tour.title} />
+        ) : (
+            <ImageFallback city={tour.city} icon={styles.icon} colorClass={styles.color} />
+        )}
         <div className="absolute top-4 left-4">
              <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg ${styles.badge} backdrop-blur-md bg-opacity-90`}>
                  <i className={`fas ${styles.icon} mr-1`}></i> {tour.theme}
@@ -51,14 +53,14 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio,
               <span className="px-3 py-1 rounded-lg bg-slate-50 text-xs font-bold text-slate-500 flex items-center gap-1.5"><i className="fas fa-clock text-slate-400"></i> {tour.duration}</span>
               <span className="px-3 py-1 rounded-lg bg-slate-50 text-xs font-bold text-slate-500 flex items-center gap-1.5"><i className="fas fa-walking text-slate-400"></i> {tour.distance}</span>
           </div>
-          <h3 className="text-2xl font-heading font-bold text-slate-900 mb-3 leading-tight group-hover:text-purple-700 transition-colors">{tour.title}</h3>
-          <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-3 font-medium">{tour.description}</p>
+          <h3 className="text-xl font-heading font-black text-slate-900 mb-3 leading-tight group-hover:text-purple-700 transition-colors">{tour.title}</h3>
+          <p className="text-slate-500 text-[11px] leading-relaxed mb-6 line-clamp-3 font-medium">{tour.description}</p>
           <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-               <button onClick={(e) => {e.stopPropagation(); onPlayAudio(tour.id, tour.description);}} className={`text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${isPlayingAudio ? 'text-red-500' : 'text-slate-400'}`}>
+               <button onClick={(e) => {e.stopPropagation(); onPlayAudio(tour.id, tour.description);}} className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${isPlayingAudio ? 'text-red-500' : 'text-slate-400'}`}>
                    {isAudioLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlayingAudio ? <i className="fas fa-stop"></i> : <i className="fas fa-play"></i>}
-                   {isPlayingAudio ? t.stopPreview : t.preview}
+                   {isPlayingAudio ? t.stop : t.preview}
                </button>
-               <span className="text-slate-900 font-bold text-sm">{t.start} <i className="fas fa-arrow-right ml-1"></i></span>
+               <span className="text-slate-900 font-black text-[10px] uppercase tracking-widest">{t.start} <i className="fas fa-arrow-right ml-1"></i></span>
           </div>
       </div>
     </div>
@@ -66,94 +68,76 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio,
 };
 
 export const ActiveTourCard: React.FC<any> = (props) => {
-    const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, language, onShare } = props;
+    const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, onShare, language } = props;
+    const [imgError, setImgError] = useState(false);
     const currentStop = tour.stops[currentStopIndex] as Stop;
-    const t = (key: string) => UI_TEXT[language]?.[key] || UI_TEXT['es']?.[key] || key;
+    const styles = getThemeStyles(tour.theme);
+    const t = UI_TEXT[language] || UI_TEXT['es'];
 
-    const formatDescription = (text: string) => {
-        if (!text) return null;
-        const cleanText = text.replace(/\[HISTORIA\]|\[CURIOSIDAD\]|\[CONSEJO\]|Historia:|Curiosidad:|Consejo:|Nota:|Tip:/gi, '').trim();
-        
-        return cleanText.split('\n\n').map((para, i) => (
-            <p key={i} className="mb-6 text-slate-800 leading-relaxed font-medium text-lg first-letter:text-5xl first-letter:font-black first-letter:text-purple-600 first-letter:float-left first-letter:mr-3 first-letter:mt-1">
-                {para}
-            </p>
-        ));
-    };
+    const isPlaying = audioPlayingId === currentStop.id;
+    const isLoading = audioLoadingId === currentStop.id;
 
     return (
         <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar">
-             <div className="relative h-[40vh] w-full flex-shrink-0">
-                <img src={currentStop.imageUrl || `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80`} className="w-full h-full object-cover" alt={currentStop.name} />
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/40"></div>
+             <div className="relative h-[40vh] w-full flex-shrink-0 bg-slate-100">
+                {!imgError && currentStop.imageUrl ? (
+                    <img src={currentStop.imageUrl} onError={() => setImgError(true)} className="w-full h-full object-cover" alt={currentStop.name} />
+                ) : (
+                    <ImageFallback city={currentStop.name} icon={styles.icon} colorClass={styles.color} />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/30"></div>
+                <div className="absolute top-6 right-6">
+                    <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all transform active:scale-90 ${isPlaying ? 'bg-red-500 text-white' : 'bg-white text-slate-900'}`}>
+                        {isLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlaying ? <i className="fas fa-stop"></i> : <i className="fas fa-play text-xl pl-1"></i>}
+                    </button>
+                </div>
                 <div className="absolute bottom-8 left-8 right-8">
-                    <div className="flex items-center gap-2 mb-3">
-                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-purple-600 text-white shadow-lg">{t('stop')} {currentStopIndex + 1} / {tour.stops.length}</span>
-                        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/20 backdrop-blur-md text-white border border-white/30">150 points</span>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-0.5 rounded bg-white/20 backdrop-blur-md text-[8px] font-black text-white uppercase tracking-widest border border-white/20">{t.stopTag} {currentStopIndex + 1}/{tour.stops.length}</span>
                     </div>
-                    <h1 className="text-4xl font-heading font-black text-white drop-shadow-2xl leading-tight">{currentStop.name}</h1>
+                    <h1 className="text-3xl font-heading font-black text-white drop-shadow-xl leading-tight">{currentStop.name}</h1>
                 </div>
              </div>
              
-             <div className="px-8 pb-32 pt-10">
-                 <div className="w-full h-1.5 bg-slate-100 rounded-full mb-10 overflow-hidden shadow-inner">
-                    <div className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-700 ease-out" style={{ width: `${((currentStopIndex + 1) / tour.stops.length) * 100}%` }}></div>
-                 </div>
-                 
-                 <article className="prose prose-slate max-w-none mb-12">
-                    {formatDescription(currentStop.description)}
+             <div className="px-8 pb-32 pt-8">
+                 <article className="text-slate-800 leading-relaxed font-medium text-lg mb-10">
+                    {currentStop.description}
                  </article>
 
+                 {/* PHOTO SPOT FEATURE */}
                  {currentStop.photoSpot && (
-                     <div className="mb-12 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden group">
-                         <div className="absolute top-0 right-0 p-6 text-indigo-200/50 text-6xl transform rotate-12 transition-transform group-hover:scale-110">
-                             <i className="fas fa-camera"></i>
+                     <div className="mb-10 bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-100 rounded-[2.5rem] p-6 shadow-sm overflow-hidden relative">
+                         <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl"></div>
+                         <div className="flex items-center gap-3 mb-4">
+                             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-purple-600 shadow-sm"><i className="fas fa-camera"></i></div>
+                             <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Spot de Foto Ideal</h4>
                          </div>
-                         <div className="flex items-center gap-3 mb-6 relative z-10">
-                             <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-200">
-                                 <i className="fas fa-camera-retro"></i>
-                             </div>
-                             <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">{t('photoTitle')}</h4>
-                         </div>
-                         <div className="grid grid-cols-2 gap-6 relative z-10">
+                         <div className="grid grid-cols-2 gap-4 mb-6">
                              <div>
-                                 <p className="text-[10px] font-black text-indigo-600 uppercase mb-1 opacity-60">{t('angle')}</p>
-                                 <p className="text-sm font-bold text-slate-800 leading-snug">{currentStop.photoSpot.angle}</p>
+                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.bestTime}</p>
+                                 <p className="text-xs font-bold text-slate-800">{currentStop.photoSpot.bestTime}</p>
                              </div>
                              <div>
-                                 <p className="text-[10px] font-black text-indigo-600 uppercase mb-1 opacity-60">{t('time')}</p>
-                                 <p className="text-sm font-bold text-slate-800 leading-snug">{currentStop.photoSpot.bestTime}</p>
+                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.photoHook}</p>
+                                 <p className="text-xs font-bold text-slate-800 italic">#{currentStop.photoSpot.instagramHook}</p>
                              </div>
                          </div>
-                     </div>
-                 )}
-
-                 <div className="grid grid-cols-2 gap-4 mb-12">
-                    <button onClick={() => onShare('instagram')} className="flex items-center justify-center gap-3 py-5 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-                        <i className="fab fa-instagram text-xl"></i>
-                        {t('shareIg')}
-                    </button>
-                    <button onClick={() => onShare('generic')} className="flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-                        <i className="fas fa-link text-xl"></i>
-                        {t('share')}
-                    </button>
-                 </div>
-
-                 <div className="space-y-4">
-                     <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-6 rounded-[2.5rem] font-black uppercase tracking-[0.15em] text-xs flex items-center justify-center gap-3 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-600 text-white'}`}>
-                         {currentStop.visited ? <><i className="fas fa-check-circle text-lg"></i> {t('collected')}</> : <><i className="fas fa-map-marker-alt text-lg"></i> {t('checkin')} (+150 m)</>}
-                     </button>
-                     
-                     <div className="flex gap-3">
-                         <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`flex-1 py-5 rounded-[2rem] font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all shadow-md border border-slate-200 ${audioPlayingId === currentStop.id ? 'bg-red-50 text-red-600 border-red-100' : 'bg-white text-slate-700'}`}>
-                             {audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin"></i> : audioPlayingId === currentStop.id ? <i className="fas fa-stop"></i> : <i className="fas fa-headphones"></i>}
-                             {audioPlayingId === currentStop.id ? t('pause') : t('listen')}
+                         <button onClick={() => onShare('instagram')} className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[9px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                             <i className="fab fa-instagram text-lg"></i>
+                             {t.share} (+150m)
                          </button>
                      </div>
-
-                     <div className="grid grid-cols-2 gap-4 pt-4">
-                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-5 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30 border border-slate-200">{t('prev')}</button>
-                         <button onClick={onNext} className="py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-xl">{t('next')}</button>
+                 )}
+                 
+                 <div className="space-y-4">
+                     <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-6 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
+                         {currentStop.visited ? <i className="fas fa-check-circle text-lg"></i> : <i className="fas fa-map-marker-alt text-lg"></i>}
+                         {currentStop.visited ? 'Lugar Visitado' : t.checkin}
+                     </button>
+                     
+                     <div className="grid grid-cols-2 gap-4">
+                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-5 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30">Atrás</button>
+                         <button onClick={onNext} className="py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-xl">Siguiente</button>
                      </div>
                  </div>
             </div>
