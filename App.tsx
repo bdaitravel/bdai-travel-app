@@ -311,7 +311,7 @@ export default function App() {
                       </div>
                   </div>
                 )}
-                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} language={user.language} />}
+                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={() => {}} />}
                 {view === AppView.TOOLS && <TravelServices language={user.language} onCitySelect={handleCitySelect} />}
