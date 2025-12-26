@@ -61,6 +61,7 @@ function decodeBase64(base64: string) {
 }
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
+  // Aseguramos que el buffer esté bien alineado para Int16Array
   const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
   const dataInt16 = new Int16Array(arrayBuffer);
   const frameCount = dataInt16.length / numChannels;
@@ -138,10 +139,13 @@ export default function App() {
     try {
       if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       if (audioContextRef.current.state === 'suspended') { await audioContextRef.current.resume(); }
+      
       const base64 = await generateAudio(text, user.language);
       if (!base64) throw new Error("Audio generation failed");
+      
       const bytes = decodeBase64(base64);
       const buffer = await decodeAudioData(bytes, audioContextRef.current, 24000, 1);
+      
       if (audioSourceRef.current) { try { audioSourceRef.current.stop(); } catch(e) {} }
       const source = audioContextRef.current.createBufferSource();
       source.buffer = buffer;
@@ -150,7 +154,11 @@ export default function App() {
       source.start();
       audioSourceRef.current = source;
       setAudioPlayingId(id);
-    } catch (e) { console.error("Audio Error:", e); } finally { setAudioLoadingId(null); }
+    } catch (e) { 
+      console.error("Audio Playback Error:", e); 
+    } finally { 
+      setAudioLoadingId(null); 
+    }
   }, [audioPlayingId, user.language]);
 
   const handleCheckIn = (stopId: string, miles: number) => {
@@ -184,8 +192,13 @@ export default function App() {
     setView(AppView.CITY_DETAIL);
     try {
         const gen = await generateToursForCity(city, user);
-        setTours(gen);
-    } catch (e) { console.error(e); } finally { setIsLoading(false); }
+        setTours(gen || []);
+    } catch (e) { 
+        console.error(e); 
+        setTours([]);
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   return (
@@ -257,7 +270,7 @@ export default function App() {
                           <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500"><i className="fas fa-compass fa-spin text-4xl mb-6 text-purple-500"></i><p className="font-black uppercase text-[11px] tracking-widest">{t('loading')}</p></div>
                       ) : (
                           <div className="space-y-6 pb-12">
-                            {tours.map(tour => (
+                            {(tours || []).map(tour => (
                               <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE);}} onPlayAudio={handlePlayAudio} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} language={user.language} />
                             ))}
                           </div>

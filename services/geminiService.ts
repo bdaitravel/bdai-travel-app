@@ -26,9 +26,10 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     Diseña un tour estilo "Free Tour" de alta calidad.
     INSTRUCCIONES:
     - Escribe el contenido COMPLETAMENTE en ${targetLang}.
-    - Crea 8 paradas icónicas y curiosas.
-    - La descripción de cada parada debe ser extensa (400 palabras) y narrativa.
+    - Crea 5-8 paradas icónicas y curiosas.
+    - La descripción de cada parada debe ser extensa (mínimo 300 palabras) y narrativa, estilo podcast.
     - Adapta el tono a los intereses: ${interestsStr}.
+    - IMPORTANTE: Las coordenadas (lat, lng) deben ser reales de la ciudad.
     CIUDAD: ${cityInput}.`;
 
     const responseSchema = {
@@ -73,13 +74,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     };
 
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
+        model: 'gemini-3-flash-preview', 
         contents: prompt,
         config: { 
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            temperature: 0.8,
-            thinkingConfig: { thinkingBudget: 4000 }
+            temperature: 0.7,
+            thinkingConfig: { thinkingBudget: 0 } // Flash no necesita thinkingBudget alto para esta tarea
         }
     });
     
@@ -108,7 +109,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
-  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 1500);
+  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 1000);
   
   try {
     const cached = await getCachedAudio(cleanText, language);
@@ -117,9 +118,10 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const targetLangName = LANGUAGE_MAP[language] || LANGUAGE_MAP.es;
     
+    // Simplificamos el prompt para el TTS para evitar errores de procesamiento
     const audioResponse: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Voz de narrador apasionado en ${targetLangName}: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: `Narrador apasionado en ${targetLangName}: ${cleanText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { 
@@ -129,7 +131,9 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
     });
 
     const base64 = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (base64) await saveAudioToCache(cleanText, language, base64);
+    if (base64) {
+      await saveAudioToCache(cleanText, language, base64);
+    }
     return base64;
   } catch (e: any) { 
     console.error("TTS Generation Failed:", e);
