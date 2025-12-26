@@ -84,9 +84,9 @@ export interface Tour {
   theme: string;
   isSponsored: boolean;
   stops: Stop[];
-  imageUrl?: string;  // Corregido: Propiedad añadida
-  safetyTip?: string; // Corregido: Propiedad añadida
-  wifiTip?: string;   // Corregido: Propiedad añadida
+  imageUrl?: string;  // Añadido para corregir error TS2339
+  safetyTip?: string; // Añadido para corregir error TS2353
+  wifiTip?: string;   // Añadido para corregir error TS2353
 }
 
 export enum AppView {

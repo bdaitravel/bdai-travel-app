@@ -52,7 +52,6 @@ function decodeBase64(base64: string) {
 }
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext): Promise<AudioBuffer> {
-  // PCM 16bit mono decoding at 24kHz
   const dataInt16 = new Int16Array(data.buffer, data.byteOffset, Math.floor(data.byteLength / 2));
   const audioBuffer = ctx.createBuffer(1, dataInt16.length, 24000);
   const channelData = audioBuffer.getChannelData(0);
@@ -61,9 +60,9 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext): Promise<Aud
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome Traveler,", searchPlaceholder: "Explore any city...", login: "Issue Passport", verifyTitle: "Verification", verifySubtitle: "Use Beta Access Code: 123456" },
-  es: { welcome: "Bienvenido Viajero,", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", verifyTitle: "Verificación Digital", verifySubtitle: "Usa el Código de Acceso Beta: 123456" },
-  sw: { welcome: "Karibu Msafiri,", searchPlaceholder: "Tafuta mji...", login: "Toa Pasipoti", verifyTitle: "Uthibitisho", verifySubtitle: "Tumia msimbo: 123456" }
+  en: { welcome: "Welcome Traveler,", searchPlaceholder: "Explore any city...", login: "Issue Passport", verifyTitle: "Verification", verifySubtitle: "Use Beta Access Code: 123456", aiThinking: "AI is crafting your personal tour..." },
+  es: { welcome: "Bienvenido Viajero,", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", verifyTitle: "Verificación Digital", verifySubtitle: "Usa el Código de Acceso Beta: 123456", aiThinking: "La IA está diseñando tu tour personal..." },
+  sw: { welcome: "Karibu Msafiri,", searchPlaceholder: "Tafuta mji...", login: "Toa Pasipoti", verifyTitle: "Uthibitisho", verifySubtitle: "Tumia msimbo: 123456", aiThinking: "IA inakuandalia ziara yako..." }
 };
 
 export default function App() {
@@ -141,9 +140,14 @@ export default function App() {
     setIsLoading(true);
     setView(AppView.CITY_DETAIL);
     try {
+        // La IA genera el tour basándose en el perfil del usuario (idioma, intereses)
         const gen = await generateToursForCity(city, user);
         setTours(gen || []);
-    } catch (e) { console.error("Error loading city tours:", e); } finally { setIsLoading(false); }
+    } catch (e) { 
+        console.error("Error loading city tours:", e); 
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   const finalizeLogin = async () => {
@@ -182,7 +186,7 @@ export default function App() {
                       <div className="space-y-6 text-center animate-slide-up">
                           <h2 className="text-xl font-black">{t('verifyTitle')}</h2>
                           <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl">
-                             <p className="text-[10px] text-purple-300 font-black uppercase tracking-widest mb-1">Access Code Required</p>
+                             <p className="text-[10px] text-purple-300 font-black uppercase tracking-widest mb-1">Beta Access Only</p>
                              <p className="text-[11px] text-slate-400 leading-relaxed">{t('verifySubtitle')}</p>
                           </div>
                           <input type="text" maxLength={6} value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="w-full bg-white/5 border-2 border-purple-500/30 rounded-2xl py-5 text-center text-5xl font-black tracking-[0.3em] outline-none" placeholder="------" />
@@ -216,7 +220,13 @@ export default function App() {
                   <div className="pt-safe px-6 animate-fade-in">
                       <header className="flex items-center gap-4 mb-6 py-4"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black">{selectedCity}</h2></header>
                       {isLoading ? (
-                          <div className="py-24 text-center text-slate-500"><i className="fas fa-spinner fa-spin text-3xl mb-6 text-purple-500"></i><p className="text-[11px] uppercase font-black tracking-[0.3em] text-purple-400">Generando Guía Narrativa Profunda...</p></div>
+                          <div className="py-24 text-center text-slate-500">
+                             <div className="relative w-20 h-20 mx-auto mb-8">
+                                <i className="fas fa-brain text-4xl text-purple-500 animate-pulse"></i>
+                                <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full animate-spin border-t-purple-500"></div>
+                             </div>
+                             <p className="text-[11px] uppercase font-black tracking-[0.3em] text-purple-400 animate-bounce">{t('aiThinking')}</p>
+                          </div>
                       ) : (
                           <div className="space-y-6 pb-12">
                             {(tours || []).map(tour => (
@@ -228,7 +238,10 @@ export default function App() {
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
                   <div className="h-full flex flex-col bg-white overflow-hidden text-slate-900 animate-fade-in">
-                      <div className="h-[40vh] w-full relative"><SchematicMap stops={activeTour.stops} currentStopIndex={currentStopIndex} /><button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"><i className="fas fa-times"></i></button></div>
+                      <div className="h-[40vh] w-full relative">
+                         <SchematicMap stops={activeTour.stops} currentStopIndex={currentStopIndex} />
+                         <button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"><i className="fas fa-times"></i></button>
+                      </div>
                       <div className="flex-1 relative z-10 -mt-6 bg-white rounded-t-[3rem] shadow-2xl overflow-hidden">
                           <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} language={user.language} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} onNext={() => setCurrentStopIndex(p => Math.min(p + 1, activeTour.stops.length - 1))} onPrev={() => setCurrentStopIndex(p => Math.max(p - 1, 0))} />
                       </div>

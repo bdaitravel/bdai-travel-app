@@ -14,27 +14,31 @@ const LANGUAGE_MAP: Record<string, string> = {
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
   const cityLower = cityInput.toLowerCase().trim();
   const targetLang = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
+  const userInterestsStr = userProfile.interests.join(", ");
   
   try {
-    // 1. Prioridad: Caché de comunidad para ahorrar tokens y mejorar latencia
+    // Intentamos cargar de caché para máxima velocidad y ahorro de costes
     const globalCached = await getCachedTours(cityLower, userProfile.language);
     if (globalCached && globalCached.length > 0) return globalCached;
     
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // 2. Prompt optimizado para narrativas largas y estilo "Free Tour" profesional
-    const prompt = `Actúa como un Guía Turístico de Élite, especializado en la historia y secretos de ${cityInput}. 
-    Crea 1 tour temático excepcional en idioma ${targetLang}.
+    // Prompt optimizado: Ahora es consciente de los intereses del usuario
+    const prompt = `Actúa como un Guía Turístico local experto y apasionado por la historia secreta de ${cityInput}. 
+    Crea 1 tour de ALTA CALIDAD en idioma ${targetLang}.
     
-    CRITERIOS DE CALIDAD:
-    - Exactamente 5 paradas geográficamente lógicas.
-    - LA DESCRIPCIÓN DE CADA PARADA DEBE TENER AL MENOS 300 PALABRAS. 
-    - No resumas. Cuenta leyendas, anécdotas curiosas, arquitectura y secretos que solo un local sabría.
-    - El estilo debe ser narrativo, como un guion de podcast inmersivo.
-    - Incluye consejos de seguridad y wifi.
-    - Genera un 'photoSpot' con un 'secretLocation' muy específico (ej: "un callejón detrás de la iglesia").
+    CONTEXTO DEL USUARIO:
+    - Intereses: ${userInterestsStr || 'Cultura general, Historia, Curiosidades'}
+    - Tono: Narrativo, estilo podcast, inmersivo.
     
-    JSON FORMAT ONLY.`;
+    ESTRUCTURA OBLIGATORIA (JSON):
+    - Exactamente 5 paradas.
+    - Descripción de cada parada: MÍNIMO 300 PALABRAS. No resumas, cuenta leyendas y detalles históricos profundos.
+    - Incluye 'safetyTip' y 'wifiTip' generales para la ciudad.
+    - Genera un 'photoSpot' creativo para cada parada.
+    - Campo 'imageUrl' con una descripción de lo que debería verse (ej: "Fachada barroca del siglo XVIII").
+    
+    IMPORTANTE: Sé extremadamente descriptivo en las paradas.`;
 
     const responseSchema = {
       type: Type.ARRAY,
@@ -92,7 +96,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     });
     
     const textOutput = response.text;
-    if (!textOutput) throw new Error("IA no respondió adecuadamente");
+    if (!textOutput) throw new Error("AI Error");
     
     const parsed = JSON.parse(textOutput);
     const processed = (parsed || []).map((t: any, idx: number) => ({
@@ -106,17 +110,18 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         }))
     }));
 
-    // Guardamos en caché global para que otros usuarios se beneficien
+    // Guardar en caché para que los siguientes usuarios carguen instantáneamente
     await saveToursToCache(cityInput, userProfile.language, processed);
     return processed;
   } catch (error) { 
-    console.error("Error en GeminiService:", error);
+    console.error("Gemini Error:", error);
     return []; 
   }
 };
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
+  // Limpieza de texto para evitar errores en el TTS
   const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 1500);
   
   try {
@@ -128,7 +133,7 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
     
     const audioResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Actúa como un guía local narrando con pasión en ${targetLangName}: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: `Voz de guía profesional y cálido en ${targetLangName}: ${cleanText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { 
