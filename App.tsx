@@ -10,7 +10,7 @@ import { Onboarding } from './components/Onboarding';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
-import { syncUserProfile, getUserProfileByEmail, getGlobalRanking, supabase } from './services/supabaseClient';
+import { syncUserProfile, getUserProfileByEmail, getGlobalRanking } from './services/supabaseClient';
 
 // --- UI COMPONENTS ---
 const QuickCityBtn = ({ onClick, label, city, color }: any) => {
@@ -50,7 +50,6 @@ export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, classN
     }
 };
 
-// --- AUDIO UTILS ---
 function decodeBase64(base64: string) {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -81,7 +80,7 @@ const TRANSLATIONS: any = {
     lblMadrid: "Royal", lblBarcelona: "Art", lblSevilla: "Magic", lblValencia: "Future", lblGranada: "Alhambra", lblBilbao: "Urban", lblMalaga: "Coast", lblSanSebastian: "Gastro"
   },
   es: { 
-    welcome: "Hola,", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación de Identidad", verifyDesc: "Usa el código 123456", verifyWarning: "Revisa tu email o usa el código 123456.", verifyBtn: "Confirmar Identidad", loading: "Procesando IA...", back: "Atrás", start: "Empezar", ranking: "Elite", toolkit: "Hub", passport: "Visa", shop: "Store",
+    welcome: "Hola,", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación de Identidad", verifyWarning: "Revisa tu email o usa el código 123456.", verifyBtn: "Confirmar Identidad", loading: "Procesando IA...", back: "Atrás", start: "Empezar", ranking: "Elite", toolkit: "Hub", passport: "Visa", shop: "Store",
     lblMadrid: "Real", lblBarcelona: "Arte", lblSevilla: "Magia", lblValencia: "Futuro", lblGranada: "Alhambra", lblBilbao: "Urbano", lblMalaga: "Costa", lblSanSebastian: "Gastro"
   }
 };
@@ -131,25 +130,19 @@ export default function App() {
 
   const handlePlayAudio = async (id: string, text: string) => {
     if (audioPlayingId === id) {
-      if (audioSourceRef.current) {
-        try { audioSourceRef.current.stop(); } catch(e) {}
-      }
+      if (audioSourceRef.current) { try { audioSourceRef.current.stop(); } catch(e) {} }
       setAudioPlayingId(null);
       return;
     }
     setAudioLoadingId(id);
     try {
       if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
-      }
+      if (audioContextRef.current.state === 'suspended') { await audioContextRef.current.resume(); }
       const base64 = await generateAudio(text, user.language);
       if (!base64) throw new Error("Audio generation failed");
       const bytes = decodeBase64(base64);
       const buffer = await decodeAudioData(bytes, audioContextRef.current, 24000, 1);
-      if (audioSourceRef.current) {
-        try { audioSourceRef.current.stop(); } catch(e) {}
-      }
+      if (audioSourceRef.current) { try { audioSourceRef.current.stop(); } catch(e) {} }
       const source = audioContextRef.current.createBufferSource();
       source.buffer = buffer;
       source.connect(audioContextRef.current.destination);
@@ -157,11 +150,14 @@ export default function App() {
       source.start();
       audioSourceRef.current = source;
       setAudioPlayingId(id);
-    } catch (e) { 
-        console.error("Audio Playback Error:", e); 
-    } finally { 
-        setAudioLoadingId(null); 
-    }
+    } catch (e) { console.error("Audio Error:", e); } finally { setAudioLoadingId(null); }
+  };
+
+  const handleCheckIn = (stopId: string, miles: number) => {
+    if (!activeTour) return;
+    const updatedStops = activeTour.stops.map(s => s.id === stopId ? { ...s, visited: true } : s);
+    setActiveTour({ ...activeTour, stops: updatedStops });
+    setUser(prev => ({ ...prev, miles: prev.miles + miles }));
   };
 
   const finalizeLogin = async () => {
@@ -173,18 +169,10 @@ export default function App() {
             setUser({ ...existingProfile, isLoggedIn: true, language: user.language });
             setView(AppView.HOME);
           } else {
-            const newUser: UserProfile = {
-              ...user,
-              id: `u_${Date.now()}`,
-              isLoggedIn: true,
-              name: `${user.firstName} ${user.lastName}`.trim() || 'Explorer',
-              username: user.email.split('@')[0],
-              rank: 'Turist',
-            };
+            const newUser: UserProfile = { ...user, id: `u_${Date.now()}`, isLoggedIn: true, name: `${user.firstName} ${user.lastName}`.trim() || 'Explorer', username: user.email.split('@')[0], rank: 'Turist' };
             setUser(newUser);
             setView(AppView.WELCOME);
           }
-          return;
       }
     } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
@@ -206,16 +194,11 @@ export default function App() {
           <div className="h-full w-full flex flex-col items-center justify-center p-8 relative">
               <div className="absolute top-12 flex justify-center gap-4 z-50">
                   {LANGUAGES.map(l => (
-                      <button 
-                        key={l.code} 
-                        onClick={() => setUser(p => ({...p, language: l.code}))} 
-                        className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${user.language === l.code ? 'border-purple-500 scale-110 shadow-lg' : 'border-white/10 opacity-30'}`}
-                      >
+                      <button key={l.code} onClick={() => setUser(p => ({...p, language: l.code}))} className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${user.language === l.code ? 'border-purple-500 scale-110 shadow-lg' : 'border-white/10 opacity-30'}`}>
                         <FlagIcon code={l.code} className="w-full h-full object-cover" />
                       </button>
                   ))}
               </div>
-
               <div className="text-center mb-12 animate-fade-in mt-10">
                   <BdaiLogo className="w-32 h-32 mx-auto mb-2 opacity-90" />
                   <h1 className="text-6xl font-black text-white lowercase tracking-tighter">bdai</h1>
@@ -226,9 +209,7 @@ export default function App() {
                       <form onSubmit={(e) => {e.preventDefault(); setLoginStep('VERIFY');}} className="space-y-4 animate-slide-up">
                           <input type="text" required value={user.firstName} onChange={e => setUser({...user, firstName: e.target.value})} placeholder={t('nameLabel')} className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-4 px-6 text-white outline-none focus:border-purple-500/50 transition-colors text-sm" />
                           <input type="email" required value={user.email} onChange={e => setUser({...user, email: e.target.value})} placeholder={t('emailLabel')} className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-4 px-6 text-white outline-none focus:border-purple-500/50 transition-colors text-sm" />
-                          <button type="submit" className="w-full py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all mt-6 text-[10px]">
-                            {t('login')}
-                          </button>
+                          <button type="submit" className="w-full py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all mt-6 text-[10px]">{t('login')}</button>
                       </form>
                   ) : (
                       <div className="space-y-6 animate-slide-up text-center">
@@ -236,9 +217,7 @@ export default function App() {
                           <p className="text-[10px] text-slate-500">{t('verifyWarning')}</p>
                           <form onSubmit={(e) => {e.preventDefault(); finalizeLogin();}} className="space-y-6">
                             <input type="text" maxLength={6} inputMode="numeric" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} autoFocus className="w-full bg-white/5 border-2 border-purple-500/20 rounded-[2rem] py-5 text-center font-black tracking-[0.2em] text-white outline-none focus:border-purple-500/50 shadow-inner text-5xl" placeholder="000000" />
-                            <button type="submit" className="w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all text-[10px]">
-                                {t('verifyBtn')}
-                            </button>
+                            <button type="submit" className="w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all text-[10px]">{t('verifyBtn')}</button>
                           </form>
                       </div>
                   )}
@@ -259,7 +238,6 @@ export default function App() {
                           <div className="mb-8"><p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2">{t('tagline')}</p><h1 className="text-5xl font-heading font-black leading-tight tracking-tighter">{t('welcome')} <br/><span className="text-white/30">{user.firstName || 'Explorador'}.</span></h1></div>
                           <div className="relative group"><i className="fas fa-search absolute left-5 top-5 text-slate-500 group-focus-within:text-purple-500 transition-colors"></i><input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && searchVal.trim() && handleCitySelect(searchVal.trim())} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white outline-none focus:border-purple-500 focus:bg-white/10 transition-all shadow-2xl" /></div>
                       </div>
-                      
                       <div className="grid grid-cols-2 gap-3 w-full animate-slide-up pb-10">
                           <QuickCityBtn onClick={() => handleCitySelect('Madrid')} label={t('lblMadrid')} city="Madrid 🏰" color="purple" />
                           <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} label={t('lblBarcelona')} city="Barcelona 🎨" color="indigo" />
@@ -280,15 +258,7 @@ export default function App() {
                       ) : (
                           <div className="space-y-6 pb-12">
                             {tours.map(tour => (
-                              <TourCard 
-                                key={tour.id} 
-                                tour={tour} 
-                                onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE);}} 
-                                onPlayAudio={handlePlayAudio}
-                                isPlayingAudio={audioPlayingId === tour.id}
-                                isAudioLoading={audioLoadingId === tour.id}
-                                language={user.language} 
-                              />
+                              <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE);}} onPlayAudio={handlePlayAudio} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} language={user.language} />
                             ))}
                           </div>
                       )}
@@ -298,16 +268,7 @@ export default function App() {
                   <div className="h-full flex flex-col bg-white overflow-hidden text-slate-900">
                       <div className="h-[45vh] w-full relative"><SchematicMap stops={activeTour.stops} currentStopIndex={currentStopIndex} userLocation={userLocation} /><button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-90"><i className="fas fa-times"></i></button></div>
                       <div className="flex-1 relative z-10 -mt-8 bg-white rounded-t-[3.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.1)] overflow-hidden">
-                          <ActiveTourCard 
-                            tour={activeTour} 
-                            currentStopIndex={currentStopIndex} 
-                            language={user.language} 
-                            onPlayAudio={handlePlayAudio}
-                            audioPlayingId={audioPlayingId}
-                            audioLoadingId={audioLoadingId}
-                            onNext={() => { if (currentStopIndex < activeTour.stops.length - 1) setCurrentStopIndex(prev => prev + 1); else setView(AppView.HOME); }} 
-                            onPrev={() => { if (currentStopIndex > 0) setCurrentStopIndex(prev => prev - 1); }} 
-                          />
+                          <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} language={user.language} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} onCheckIn={handleCheckIn} onShare={() => {}} onNext={() => { if (currentStopIndex < activeTour.stops.length - 1) setCurrentStopIndex(prev => prev + 1); else setView(AppView.HOME); }} onPrev={() => { if (currentStopIndex > 0) setCurrentStopIndex(prev => prev - 1); }} />
                       </div>
                   </div>
                 )}
@@ -316,7 +277,6 @@ export default function App() {
                 {view === AppView.SHOP && <Shop user={user} onPurchase={() => {}} />}
                 {view === AppView.TOOLS && <TravelServices language={user.language} onCitySelect={handleCitySelect} />}
             </div>
-            
             <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-6 pb-8 flex justify-center pointer-events-none">
                 <nav className="bg-slate-900/90 backdrop-blur-3xl border border-white/10 px-4 py-4 flex justify-between items-center w-full rounded-[3rem] shadow-2xl pointer-events-auto">
                     <NavButton icon="fa-trophy" label={t('ranking')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
