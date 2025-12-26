@@ -78,11 +78,14 @@ export const ActiveTourCard: React.FC<any> = (props) => {
     const isPlaying = audioPlayingId === currentStop.id;
     const isLoading = audioLoadingId === currentStop.id;
 
-    // Reiniciar secreto al cambiar de parada
-    React.useEffect(() => { setShowSecret(false); }, [currentStopIndex]);
+    React.useEffect(() => { 
+        setShowSecret(false); 
+        const container = document.getElementById('tour-content-scroll');
+        if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentStopIndex]);
 
     return (
-        <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar">
+        <div id="tour-content-scroll" className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar scroll-smooth">
              <div className="relative h-[40vh] w-full flex-shrink-0 bg-slate-100">
                 {!imgError && currentStop.imageUrl ? (
                     <img src={currentStop.imageUrl} onError={() => setImgError(true)} className="w-full h-full object-cover" alt={currentStop.name} />
@@ -103,50 +106,57 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                 </div>
              </div>
              
-             <div className="px-8 pb-32 pt-8">
-                 <article className="text-slate-800 leading-relaxed font-medium text-lg mb-10">
-                    {currentStop.description}
-                 </article>
+             <div className="px-8 pb-40 pt-10">
+                 <div className="relative">
+                    <article className="prose prose-slate max-w-none">
+                        <div className="text-slate-800 leading-[2.1] font-serif text-xl mb-12 whitespace-pre-wrap selection:bg-amber-100 tracking-tight">
+                            {currentStop.description.split('\n\n').map((para, i) => (
+                                <p key={i} className="mb-8 drop-shadow-sm first-letter:text-4xl first-letter:font-black first-letter:mr-1 first-letter:text-purple-600">
+                                    {para}
+                                </p>
+                            ))}
+                        </div>
+                    </article>
+                    <div className="h-20 -mt-20 pointer-events-none bg-gradient-to-t from-white to-transparent opacity-40"></div>
+                 </div>
 
-                 {/* SECRET SPOT SECTION */}
                  {currentStop.photoSpot && (
-                     <div className="mb-10 relative overflow-hidden">
-                        <div className="bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl border-4 border-yellow-500/20">
-                            <div className="flex items-center justify-between mb-4">
+                     <div className="mb-12 relative overflow-hidden">
+                        <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl border-2 border-white/5">
+                            <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-slate-900 shadow-lg animate-pulse"><i className="fas fa-eye"></i></div>
-                                    <h4 className="text-sm font-black text-white uppercase tracking-widest">{t.secretTitle}</h4>
+                                    <div className="w-12 h-12 rounded-2xl bg-yellow-500 flex items-center justify-center text-slate-900 shadow-lg animate-pulse text-xl"><i className="fas fa-camera-retro"></i></div>
+                                    <h4 className="text-xs font-black text-white uppercase tracking-widest">{t.secretTitle}</h4>
                                 </div>
-                                {!showSecret && <div className="text-[8px] font-black text-yellow-500 uppercase tracking-widest bg-yellow-500/10 px-2 py-1 rounded">Top Insider</div>}
                             </div>
                             
                             {!showSecret ? (
                                 <button 
                                     onClick={() => setShowSecret(true)}
-                                    className="w-full py-8 bg-white/5 border border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center gap-2 group hover:bg-white/10 transition-all"
+                                    className="w-full py-10 bg-white/5 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center gap-3 group hover:bg-white/10 transition-all active:scale-[0.98]"
                                 >
-                                    <i className="fas fa-lock text-white/20 text-2xl group-hover:scale-110 transition-transform"></i>
-                                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{t.secretUnlock}</span>
+                                    <i className="fas fa-eye text-white/10 text-3xl group-hover:scale-110 transition-transform"></i>
+                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{t.secretUnlock}</span>
                                 </button>
                             ) : (
-                                <div className="animate-fade-in">
-                                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-6">
+                                <div className="animate-fade-in space-y-6">
+                                    <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
                                         <p className="text-yellow-400 text-sm font-black italic leading-relaxed">
-                                            "{currentStop.photoSpot.secretLocation || currentStop.photoSpot.angle}"
+                                            "{currentStop.photoSpot.secretLocation}"
                                         </p>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="grid grid-cols-2 gap-6">
                                         <div>
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.bestTime}</p>
-                                            <p className="text-xs font-bold text-white">{currentStop.photoSpot.bestTime}</p>
+                                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">{t.bestTime}</p>
+                                            <p className="text-xs font-bold text-white flex items-center gap-2"><i className="far fa-clock text-yellow-500"></i> {currentStop.photoSpot.bestTime}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.photoHook}</p>
+                                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">{t.photoHook}</p>
                                             <p className="text-xs font-bold text-purple-400 italic">#{currentStop.photoSpot.instagramHook}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => onShare('instagram')} className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[9px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
-                                        <i className="fab fa-instagram text-lg"></i>
+                                    <button onClick={() => onShare('instagram')} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                                        <i className="fab fa-instagram text-xl"></i>
                                         {t.share} (+150m)
                                     </button>
                                 </div>
@@ -156,14 +166,14 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                  )}
                  
                  <div className="space-y-4">
-                     <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-6 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
-                         {currentStop.visited ? <i className="fas fa-check-circle text-lg"></i> : <i className="fas fa-map-marker-alt text-lg"></i>}
+                     <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-7 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-4 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
+                         {currentStop.visited ? <i className="fas fa-check-circle text-xl"></i> : <i className="fas fa-map-marker-alt text-xl"></i>}
                          {currentStop.visited ? t.visited : t.checkin}
                      </button>
                      
                      <div className="grid grid-cols-2 gap-4">
-                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-5 bg-slate-100 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30">{t.prev}</button>
-                         <button onClick={onNext} className="py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-xl">{t.next}</button>
+                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-6 bg-slate-100 text-slate-400 rounded-[2.2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30 transition-all active:bg-slate-200">{t.prev}</button>
+                         <button onClick={onNext} className="py-6 bg-purple-600 text-white rounded-[2.2rem] font-black uppercase tracking-widest text-[10px] shadow-xl transition-all active:scale-95 active:bg-purple-700">{t.next}</button>
                      </div>
                  </div>
             </div>
