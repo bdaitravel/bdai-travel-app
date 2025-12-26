@@ -11,14 +11,15 @@ const LANGUAGE_MAP: Record<string, string> = {
     ca: "Catalan"
 };
 
-// Always use named parameter for apiKey and obtain from process.env.API_KEY directly
-const getAIClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+const getApiKey = () => {
+    return process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY || "";
 };
 
-/**
- * GENERACIÓN DE TOURS CON NARRATIVA FLUIDA Y RUTAS EXTENSAS
- */
+const getAIClient = () => {
+  const key = getApiKey();
+  return new GoogleGenAI({ apiKey: key });
+};
+
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
   const cityLower = cityInput.toLowerCase().trim();
   const targetLang = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
@@ -28,12 +29,12 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   if (globalCached && globalCached.length > 0) return globalCached;
   
   const prompt = `Actúa como un experto Guía de bdai para la ciudad de ${cityInput}. 
-  Tu misión es diseñar un tour estilo "Free Tour" de alta calidad.
+  Tu misión es diseñar un tour estilo "Free Tour" de alta calidad, dinámico y lleno de historias fascinantes.
   
-  REQUISITOS:
-  1. LONGITUD: Relatos extensos y detallados de 800-1000 palabras por parada.
-  2. ESTILO: Narrativa literaria, envolvente, sin encabezados técnicos.
-  3. CANTIDAD: Genera 8 paradas icónicas.
+  REQUISITOS DEL FREE TOUR:
+  1. NARRATIVA: Relatos extensos (800-1000 palabras por parada) que mezclen historia oficial con leyendas, anécdotas curiosas y "secretos" que solo un guía local contaría.
+  2. TONO: Cercano, apasionado y literario. Sin secciones técnicas ni encabezados. Una historia fluida.
+  3. CANTIDAD: Genera exactamente 8 paradas icónicas y coherentes geográficamente.
   4. IDIOMA: Escribe íntegramente en ${targetLang}.
   
   CIUDAD: ${cityInput}. Basado en intereses: ${interestsStr}.`;
@@ -92,7 +93,8 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         }
     });
     
-    const parsed = JSON.parse(response.text || "[]");
+    const textOutput = response.text;
+    const parsed = JSON.parse(textOutput || "[]");
     const processed = (parsed || []).map((t: any, idx: number) => ({
         ...t, 
         id: `gen_${idx}_${Date.now()}`, 
@@ -114,7 +116,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
-  const cleanText = text.replace(/[*_#\[\]]/g, '').trim().substring(0, 4500);
+  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 4000);
   
   const cached = await getCachedAudio(cleanText, language);
   if (cached) return cached;
@@ -124,17 +126,20 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
     const ai = getAIClient();
     const audioResponse: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Narrador envolvente en ${targetLangName}: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: `Narrador de Free Tour apasionado y profesional en ${targetLangName}: ${cleanText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } } 
+        speechConfig: { 
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } 
+        } 
       }
     });
+
     const base64 = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (base64) await saveAudioToCache(cleanText, language, base64);
     return base64;
-  } catch (e) { 
-    console.error("TTS generation error:", e);
+  } catch (e: any) { 
+    console.error("Gemini TTS Error:", e.message || e);
     return ""; 
   }
 };

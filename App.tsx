@@ -73,14 +73,14 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 
 const TRANSLATIONS: any = {
   en: { 
-    welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Identity Verification", verifyDesc: "Enter the code sent to", verifyWarning: "Check your email. We've sent a code (6 or 8 digits) to verify your account.", verifyBtn: "Confirm Identity", resend: "Resend", routes: "Routes", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Exploring the world with #bdaitravel", emptyTitle: "Discover the World", emptySub: "Verified local routes for the best destinations.", noTours: "No routes found.", tryAgain: "Go back", loading: "AI Processing...", back: "Back", start: "Start", preview: "Listen", stop: "Stop", points: "miles",
+    welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Identity Verification", verifyDesc: "Enter the code sent to", verifyWarning: "Check your email. We've sent a code (6 or 8 digits) to verify your account.", verifyBtn: "Confirm Identity", resend: "Resend", routes: "Free Tours", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Exploring the world with #bdaitravel", emptyTitle: "Discover the World", emptySub: "Verified local routes for global destinations.", noTours: "No routes found.", tryAgain: "Go back", loading: "AI Processing...", back: "Back", start: "Start Tour", preview: "Listen", stop: "Stop", points: "miles",
     invalidCode: "The code is incorrect.", codeResent: "New code sent!",
-    lblMadrid: "Selection", lblBarcelona: "Vanguard", lblSevilla: "Passion", lblValencia: "Future", lblGranada: "History", lblBilbao: "Modern"
+    lblMadrid: "Royal", lblBarcelona: "Art", lblSevilla: "Magic", lblValencia: "Future", lblGranada: "History", lblBilbao: "Urban"
   },
   es: { 
-    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación de Identidad", verifyDesc: "Escribe el código enviado a", verifyWarning: "Revisa tu email. Hemos enviado un código para verificar tu cuenta.", verifyBtn: "Confirmar Identidad", resend: "Reenviar", routes: "Rutas", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel", emptyTitle: "Descubre el Mundo", emptySub: "Rutas locales verificadas para los mejores destinos.", noTours: "No hay rutas disponibles.", tryAgain: "Volver", loading: "Procesando IA...", back: "Atrás", start: "Empezar", preview: "Escuchar", stop: "Parar", points: "millas",
+    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación de Identidad", verifyDesc: "Escribe el código enviado a", verifyWarning: "Revisa tu email. Hemos enviado un código para verificar tu cuenta.", verifyBtn: "Confirmar Identidad", resend: "Reenviar", routes: "Free Tours", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel", emptyTitle: "Descubre el Mundo", emptySub: "Rutas locales verificadas para destinos globales.", noTours: "No hay rutas disponibles.", tryAgain: "Volver", loading: "Procesando IA...", back: "Atrás", start: "Iniciar Tour", preview: "Escuchar", stop: "Parar", points: "millas",
     invalidCode: "El código es incorrecto.", codeResent: "¡Código reenviado!",
-    lblMadrid: "Selección", lblBarcelona: "Vanguardia", lblSevilla: "Pasión", lblValencia: "Futuro", lblGranada: "Historia", lblBilbao: "Moderno"
+    lblMadrid: "Real", lblBarcelona: "Arte", lblSevilla: "Magia", lblValencia: "Futuro", lblGranada: "Historia", lblBilbao: "Urbano"
   }
 };
 
@@ -94,7 +94,6 @@ export default function App() {
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [user, setUser] = useState<UserProfile>(() => {
-    // Restored original storage key
     const saved = localStorage.getItem('bdai_profile');
     if (saved) return JSON.parse(saved);
     return {
@@ -186,7 +185,9 @@ export default function App() {
 
   const handlePlayAudio = async (id: string, text: string) => {
     if (audioPlayingId === id) {
-      if (audioSourceRef.current) audioSourceRef.current.stop();
+      if (audioSourceRef.current) {
+        try { audioSourceRef.current.stop(); } catch(e) {}
+      }
       setAudioPlayingId(null);
       return;
     }
@@ -203,7 +204,9 @@ export default function App() {
       const bytes = decodeBase64(base64);
       const buffer = await decodeAudioData(bytes, audioContextRef.current, 24000, 1);
       
-      if (audioSourceRef.current) audioSourceRef.current.stop();
+      if (audioSourceRef.current) {
+        try { audioSourceRef.current.stop(); } catch(e) {}
+      }
       const source = audioContextRef.current.createBufferSource();
       source.buffer = buffer;
       source.connect(audioContextRef.current.destination);
