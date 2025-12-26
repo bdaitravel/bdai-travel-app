@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, generateAudio } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
@@ -128,7 +128,7 @@ export default function App() {
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
-  const handlePlayAudio = async (id: string, text: string) => {
+  const handlePlayAudio = useCallback(async (id: string, text: string) => {
     if (audioPlayingId === id) {
       if (audioSourceRef.current) { try { audioSourceRef.current.stop(); } catch(e) {} }
       setAudioPlayingId(null);
@@ -151,7 +151,7 @@ export default function App() {
       audioSourceRef.current = source;
       setAudioPlayingId(id);
     } catch (e) { console.error("Audio Error:", e); } finally { setAudioLoadingId(null); }
-  };
+  }, [audioPlayingId, user.language]);
 
   const handleCheckIn = (stopId: string, miles: number) => {
     if (!activeTour) return;

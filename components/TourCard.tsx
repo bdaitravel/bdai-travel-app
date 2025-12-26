@@ -2,6 +2,28 @@
 import React, { useState } from 'react';
 import { Tour, Stop } from '../types';
 
+interface TourCardProps {
+    tour: Tour;
+    onSelect: (tour: Tour) => void;
+    onPlayAudio: (id: string, text: string) => void;
+    isPlayingAudio: boolean;
+    isAudioLoading: boolean;
+    language: string;
+}
+
+interface ActiveTourCardProps {
+    tour: Tour;
+    currentStopIndex: number;
+    onNext: () => void;
+    onPrev: () => void;
+    onPlayAudio: (id: string, text: string) => void;
+    audioPlayingId: string | null;
+    audioLoadingId: string | null;
+    onCheckIn?: (stopId: string, miles: number) => void;
+    onShare?: (platform: string) => void;
+    language: string;
+}
+
 const getThemeStyles = (themeStr: string) => {
   const theme = themeStr.toLowerCase();
   if (theme.includes('history')) return { badge: 'bg-amber-100 text-amber-900', icon: 'fa-landmark', color: 'from-amber-400 to-orange-600' };
@@ -29,7 +51,7 @@ const ImageFallback = ({ city, icon, colorClass }: { city: string, icon: string,
     </div>
 );
 
-export const TourCard: React.FC<any> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, language }) => {
+export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, language }) => {
   const [imgError, setImgError] = useState(false);
   const styles = getThemeStyles(tour.theme);
   const t = UI_TEXT[language] || UI_TEXT['es'];
@@ -56,7 +78,7 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, onPlayAudio, isPlaying
           <h3 className="text-xl font-heading font-black text-slate-900 mb-3 leading-tight group-hover:text-purple-700 transition-colors">{tour.title}</h3>
           <p className="text-slate-500 text-[11px] leading-relaxed mb-6 line-clamp-3 font-medium">{tour.description}</p>
           <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-               <button onClick={(e) => {e.stopPropagation(); if (onPlayAudio) onPlayAudio(tour.id, tour.description);}} className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${isPlayingAudio ? 'text-red-500' : 'text-slate-400'}`}>
+               <button onClick={(e) => {e.stopPropagation(); onPlayAudio(tour.id, tour.description);}} className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${isPlayingAudio ? 'text-red-500' : 'text-slate-400'}`}>
                    {isAudioLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlayingAudio ? <i className="fas fa-stop"></i> : <i className="fas fa-play"></i>}
                    {isPlayingAudio ? t.stop : t.preview}
                </button>
@@ -67,7 +89,7 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, onPlayAudio, isPlaying
   );
 };
 
-export const ActiveTourCard: React.FC<any> = (props) => {
+export const ActiveTourCard: React.FC<ActiveTourCardProps> = (props) => {
     const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, onShare, language } = props;
     const [imgError, setImgError] = useState(false);
     const [showSecret, setShowSecret] = useState(false);
@@ -94,7 +116,7 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/30"></div>
                 <div className="absolute top-6 right-6">
-                    <button onClick={() => onPlayAudio && onPlayAudio(currentStop.id, currentStop.description)} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all transform active:scale-90 ${isPlaying ? 'bg-red-500 text-white' : 'bg-white text-slate-900'}`}>
+                    <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all transform active:scale-90 ${isPlaying ? 'bg-red-500 text-white' : 'bg-white text-slate-900'}`}>
                         {isLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlaying ? <i className="fas fa-stop"></i> : <i className="fas fa-play text-xl pl-1"></i>}
                     </button>
                 </div>
@@ -155,7 +177,7 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                                             <p className="text-xs font-bold text-purple-400 italic">#{currentStop.photoSpot.instagramHook}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => onShare && onShare('instagram')} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                                    <button onClick={() => onShare?.('instagram')} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
                                         <i className="fab fa-instagram text-xl"></i>
                                         {t.share} (+150m)
                                     </button>
@@ -166,7 +188,7 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                  )}
                  
                  <div className="space-y-4">
-                     <button onClick={() => onCheckIn && onCheckIn(currentStop.id, 150)} className={`w-full py-7 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-4 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
+                     <button onClick={() => onCheckIn?.(currentStop.id, 150)} className={`w-full py-7 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-4 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
                          {currentStop.visited ? <i className="fas fa-check-circle text-xl"></i> : <i className="fas fa-map-marker-alt text-xl"></i>}
                          {currentStop.visited ? t.visited : t.checkin}
                      </button>
