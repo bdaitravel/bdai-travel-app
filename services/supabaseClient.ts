@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
@@ -96,13 +95,14 @@ export const saveAudioToCache = async (text: string, language: string, base64: s
   } catch (e) { }
 };
 
-// Fix: added explicit return type and String conversion to solve 'unknown' type inference error in TravelServices
+// Fix: added String conversion and explicit string[] type to solve 'unknown' type inference error
 export const getRecentCommunityCities = async (language: string): Promise<{ city: string }[]> => {
   try {
     const { data } = await supabase.from('tours_cache').select('city').eq('language', language).order('created_at', { ascending: false }).limit(10);
     if (!data) return [];
     // Ensuring city is a string to satisfy the type requirement in the UI
-    return Array.from(new Set(data.map((d: any) => String(d.city)))).map(city => ({ city }));
+    const uniqueCities: string[] = Array.from(new Set(data.map((d: any) => String(d.city))));
+    return uniqueCities.map(city => ({ city }));
   } catch (e) { return []; }
 };
 

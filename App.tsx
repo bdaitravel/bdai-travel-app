@@ -59,7 +59,7 @@ function decodeBase64(base64: string) {
 }
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
+  const dataInt16 = new Int16Array(data.buffer, data.byteOffset, data.byteLength / 2);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
   for (let channel = 0; channel < numChannels; channel++) {
@@ -73,19 +73,14 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 
 const TRANSLATIONS: any = {
   en: { 
-    welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Identity Verification", verifyDesc: "Enter the code sent to", verifyWarning: "Check your email. We've sent a code (6 or 8 digits) to verify your account.", verifyBtn: "Confirm Identity", resend: "Resend", routes: "Routes", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Exploring the world with #bdaitravel", emptyTitle: "Discover Spain", emptySub: "Verified local routes for the best destinations.", noTours: "No routes found.", tryAgain: "Go back", loading: "AI Processing...", back: "Back", start: "Start", preview: "Listen", stop: "Stop", points: "miles",
-    invalidCode: "The code is incorrect or has expired.", codeResent: "New code sent!",
-    lblMadrid: "Selection", lblBarcelona: "Vanguard", lblSevilla: "Passion", lblValencia: "Future", lblGranada: "History", lblBilbao: "Modern", lblSantiago: "Faith", lblMalaga: "Sun", lblZaragoza: "Imperial"
+    welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Identity Verification", verifyDesc: "Enter the code sent to", verifyWarning: "Check your email. We've sent a code (6 or 8 digits) to verify your account.", verifyBtn: "Confirm Identity", resend: "Resend", routes: "Routes", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Exploring the world with #bdaitravel", emptyTitle: "Discover the World", emptySub: "Verified local routes for the best destinations.", noTours: "No routes found.", tryAgain: "Go back", loading: "AI Processing...", back: "Back", start: "Start", preview: "Listen", stop: "Stop", points: "miles",
+    invalidCode: "The code is incorrect.", codeResent: "New code sent!",
+    lblMadrid: "Selection", lblBarcelona: "Vanguard", lblSevilla: "Passion", lblValencia: "Future", lblGranada: "History", lblBilbao: "Modern"
   },
   es: { 
-    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación de Identidad", verifyDesc: "Escribe el código enviado a", verifyWarning: "Revisa tu email. Hemos enviado un código para verificar tu cuenta.", verifyBtn: "Confirmar Identidad", resend: "Reenviar", routes: "Rutas", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel", emptyTitle: "Descubre España", emptySub: "Rutas locales verificadas para los mejores destinos.", noTours: "No hay rutas disponibles.", tryAgain: "Volver", loading: "Procesando IA...", back: "Atrás", start: "Empezar", preview: "Escuchar", stop: "Parar", points: "millas",
-    invalidCode: "El código es incorrecto o ha caducado.", codeResent: "¡Código reenviado!",
-    lblMadrid: "Selección", lblBarcelona: "Vanguardia", lblSevilla: "Pasión", lblValencia: "Futuro", lblGranada: "Historia", lblBilbao: "Moderno", lblSantiago: "Fe", lblMalaga: "Sol", lblZaragoza: "Imperial"
-  },
-  ca: { 
-    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació d'Identitat", verifyDesc: "Escriu el codi enviat a", verifyWarning: "Revisa el teu correu. Hem enviat un codi per verificar el teu compte.", verifyBtn: "Confirmar Identitat", resend: "Reenviar", routes: "Rutes", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completat", badges: "Millors Fites", share: "Compartir i Guanyar", shareMsg: "Explorant el món amb #bdaitravel", emptyTitle: "Descobreix Espanya", emptySub: "Rutes locals verificades per als millors destins.", noTours: "No hi ha rutes disponibles.", tryAgain: "Tornar", loading: "Processant IA...", back: "Enrere", start: "Començar", preview: "Escuchar", stop: "Aturar", points: "milles",
-    invalidCode: "El codi és incorrecte.", codeResent: "Nou codi enviat!",
-    lblMadrid: "Selecció", lblBarcelona: "Avantguarda", lblSevilla: "Passió", lblValencia: "Futur", lblGranada: "Història", lblBilbao: "Modern", lblSantiago: "Fe", lblMalaga: "Sol", lblZaragoza: "Imperial"
+    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación de Identidad", verifyDesc: "Escribe el código enviado a", verifyWarning: "Revisa tu email. Hemos enviado un código para verificar tu cuenta.", verifyBtn: "Confirmar Identidad", resend: "Reenviar", routes: "Rutas", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel", emptyTitle: "Descubre el Mundo", emptySub: "Rutas locales verificadas para los mejores destinos.", noTours: "No hay rutas disponibles.", tryAgain: "Volver", loading: "Procesando IA...", back: "Atrás", start: "Empezar", preview: "Escuchar", stop: "Parar", points: "millas",
+    invalidCode: "El código es incorrecto.", codeResent: "¡Código reenviado!",
+    lblMadrid: "Selección", lblBarcelona: "Vanguardia", lblSevilla: "Pasión", lblValencia: "Futuro", lblGranada: "Historia", lblBilbao: "Moderno"
   }
 };
 
@@ -99,6 +94,7 @@ export default function App() {
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [user, setUser] = useState<UserProfile>(() => {
+    // Restored original storage key
     const saved = localStorage.getItem('bdai_profile');
     if (saved) return JSON.parse(saved);
     return {
@@ -116,7 +112,7 @@ export default function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
-  // --- PERSISTENCIA HÍBRIDA ---
+  // --- PERSISTENCE ---
   useEffect(() => {
     if (user.id !== 'guest') {
       localStorage.setItem('bdai_profile', JSON.stringify(user));
@@ -136,15 +132,15 @@ export default function App() {
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
-  // Fix: handleShareExperience function added to fix 'Cannot find name' error
   const handleShareExperience = (platform: string) => {
     const text = t('shareMsg');
     const url = window.location.href;
     if (navigator.share) {
       navigator.share({ title: 'bdai travel', text, url }).catch(() => {});
     } else {
-      console.log(`Sharing on ${platform}: ${text} ${url}`);
+      console.log(`Sharing: ${text} ${url}`);
     }
+    setUser(prev => ({ ...prev, miles: prev.miles + 150 }));
   };
 
   const handleRequestOtp = async (e?: React.FormEvent) => {
@@ -196,11 +192,17 @@ export default function App() {
     }
     setAudioLoadingId(id);
     try {
+      if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      
       const base64 = await generateAudio(text, user.language);
       if (!base64) throw new Error("Audio empty");
-      if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
       const bytes = decodeBase64(base64);
       const buffer = await decodeAudioData(bytes, audioContextRef.current, 24000, 1);
+      
       if (audioSourceRef.current) audioSourceRef.current.stop();
       const source = audioContextRef.current.createBufferSource();
       source.buffer = buffer;
@@ -209,13 +211,13 @@ export default function App() {
       source.start();
       audioSourceRef.current = source;
       setAudioPlayingId(id);
-    } catch (e) { console.error("Audio error", e); } finally { setAudioLoadingId(null); }
+    } catch (e) { console.error("Audio playback error:", e); } finally { setAudioLoadingId(null); }
   };
 
   const handleCheckIn = (stopId: string, reward: number) => {
     if (!activeTour) return;
     const updatedTour = { ...activeTour };
-    const stop = updatedTour.stops.find(s => s.id === stopId);
+    const stop = (updatedTour.stops || []).find(s => s.id === stopId);
     if (stop && !stop.visited) {
       stop.visited = true;
       setActiveTour(updatedTour);
@@ -227,14 +229,14 @@ export default function App() {
   };
 
   const handleCitySelect = async (city: string) => {
-    if (!city.trim()) return;
+    if (!city || !city.trim()) return;
     setSelectedCity(city);
     setCityTab('routes');
     setIsLoading(true);
     setView(AppView.CITY_DETAIL);
     try {
         const gen = await generateToursForCity(city, user);
-        setTours(gen || []);
+        setTours(Array.isArray(gen) ? gen : []);
     } catch (e: any) { setTours([]); } finally { setIsLoading(false); }
   };
 
@@ -311,7 +313,7 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe px-6 animate-fade-in flex flex-col min-h-full pb-20">
-                      <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-slate-950/90 backdrop-blur-md z-10"><button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all active:scale-90"><i className="fas fa-arrow-left"></i></button><div><p className="text-[10px] font-black uppercase text-purple-400 tracking-widest mb-1">bdai explorer</p><h2 className="text-3xl font-black leading-none">{selectedCity}</h2></div></header>
+                      <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-slate-950/90 backdrop-blur-md z-10"><button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all active:scale-90"><i className="fas fa-arrow-left"></i></button><div><p className="text-[10px] font-black uppercase text-purple-400 tracking-widest mb-1">bdai guide</p><h2 className="text-3xl font-black leading-none">{selectedCity}</h2></div></header>
                       <div className="flex bg-white/5 p-2 rounded-3xl mb-8 border border-white/10">
                           <button onClick={() => setCityTab('routes')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${cityTab === 'routes' ? 'bg-purple-600 text-white shadow-xl' : 'text-slate-500'}`}>{t('routes')}</button>
                           <button onClick={() => setCityTab('community')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${cityTab === 'community' ? 'bg-purple-600 text-white shadow-xl' : 'text-slate-500'}`}>{t('community')}</button>
@@ -322,20 +324,20 @@ export default function App() {
                           <CommunityBoard city={selectedCity || ''} language={user.language} user={user} />
                       ) : (
                           <div className="space-y-6 pb-12">
-                            {tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setCurrentStopIndex(0); setView(AppView.TOUR_ACTIVE);}} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} onPlayAudio={handlePlayAudio} language={user.language} />)}
+                            {(tours || []).map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setCurrentStopIndex(0); setView(AppView.TOUR_ACTIVE);}} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} onPlayAudio={handlePlayAudio} language={user.language} />)}
                           </div>
                       )}
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
                   <div className="h-full flex flex-col bg-white overflow-hidden text-slate-900">
-                      <div className="h-[45vh] w-full relative"><SchematicMap stops={activeTour.stops} currentStopIndex={currentStopIndex} userLocation={userLocation} /><button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-90"><i className="fas fa-times"></i></button></div>
+                      <div className="h-[45vh] w-full relative"><SchematicMap stops={activeTour.stops || []} currentStopIndex={currentStopIndex} userLocation={userLocation} /><button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-90"><i className="fas fa-times"></i></button></div>
                       <div className="flex-1 relative z-10 -mt-8 bg-white rounded-t-[3.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.1)] overflow-hidden">
-                          <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} language={user.language} onNext={() => { if (currentStopIndex < activeTour.stops.length - 1) setCurrentStopIndex(prev => prev + 1); else setView(AppView.HOME); }} onPrev={() => { if (currentStopIndex > 0) setCurrentStopIndex(prev => prev - 1); }} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} onCheckIn={handleCheckIn} onShare={handleShareExperience} />
+                          <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} language={user.language} onNext={() => { if (currentStopIndex < (activeTour.stops || []).length - 1) setCurrentStopIndex(prev => prev + 1); else setView(AppView.HOME); }} onPrev={() => { if (currentStopIndex > 0) setCurrentStopIndex(prev => prev - 1); }} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} onCheckIn={handleCheckIn} onShare={handleShareExperience} />
                       </div>
                   </div>
                 )}
-                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
+                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard || []} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={() => {}} />}
                 {view === AppView.TOOLS && <TravelServices language={user.language} onCitySelect={handleCitySelect} />}
