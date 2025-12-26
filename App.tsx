@@ -59,7 +59,9 @@ function decodeBase64(base64: string) {
 }
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer, data.byteOffset, data.byteLength / 2);
+  // Aseguramos alineación correcta del buffer
+  const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+  const dataInt16 = new Int16Array(arrayBuffer);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
   for (let channel = 0; channel < numChannels; channel++) {
@@ -89,7 +91,6 @@ export default function App() {
   const [loginStep, setLoginStep] = useState<'FORM' | 'VERIFY'>('FORM');
   const [otpCode, setOtpCode] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
   const [cityTab, setCityTab] = useState<'routes' | 'community'>('routes');
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -111,7 +112,6 @@ export default function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
-  // --- PERSISTENCE ---
   useEffect(() => {
     if (user.id !== 'guest') {
       localStorage.setItem('bdai_profile', JSON.stringify(user));
@@ -136,8 +136,6 @@ export default function App() {
     const url = window.location.href;
     if (navigator.share) {
       navigator.share({ title: 'bdai travel', text, url }).catch(() => {});
-    } else {
-      console.log(`Sharing: ${text} ${url}`);
     }
     setUser(prev => ({ ...prev, miles: prev.miles + 150 }));
   };
@@ -151,7 +149,6 @@ export default function App() {
         const { error } = await supabase.auth.signInWithOtp({ email: user.email.toLowerCase().trim() });
         if (error) throw error;
         setLoginStep('VERIFY');
-        if (!e) setLoginSuccess(t('codeResent'));
     } catch (err: any) { setLoginError(err.message); } finally { setIsLoading(false); }
   };
 
@@ -266,7 +263,6 @@ export default function App() {
                   {loginStep === 'FORM' ? (
                       <form onSubmit={handleRequestOtp} className="space-y-4 animate-slide-up">
                           <input type="text" required value={user.firstName} onChange={e => setUser({...user, firstName: e.target.value})} placeholder={t('nameLabel')} className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-4 px-6 text-white outline-none focus:border-purple-500/50 transition-colors text-sm" />
-                          {/* FIX: removed () after user.email */}
                           <input type="email" required value={user.email} onChange={e => setUser({...user, email: e.target.value})} placeholder={t('emailLabel')} className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-4 px-6 text-white outline-none focus:border-purple-500/50 transition-colors text-sm" />
                           <button type="submit" disabled={isLoading} className="w-full py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all mt-6 text-[10px]">
                             {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('login')}
