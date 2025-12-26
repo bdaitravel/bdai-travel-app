@@ -11,13 +11,9 @@ const LANGUAGE_MAP: Record<string, string> = {
     ca: "Catalan"
 };
 
-const getApiKey = () => {
-    return process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY || "";
-};
-
 const getAIClient = () => {
-  const key = getApiKey();
-  return new GoogleGenAI({ apiKey: key });
+  // Directly using process.env.API_KEY as per coding guidelines
+  return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
 };
 
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
@@ -32,9 +28,9 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   Tu misión es diseñar un tour estilo "Free Tour" de alta calidad, dinámico y lleno de historias fascinantes.
   
   REQUISITOS DEL FREE TOUR:
-  1. NARRATIVA: Relatos extensos (800-1000 palabras por parada) que mezclen historia oficial con leyendas, anécdotas curiosas y "secretos" que solo un guía local contaría.
-  2. TONO: Cercano, apasionado y literario. Sin secciones técnicas ni encabezados. Una historia fluida.
-  3. CANTIDAD: Genera exactamente 8 paradas icónicas y coherentes geográficamente.
+  1. NARRATIVA: Relatos detallados (aprox 400-600 palabras por parada) que mezclen historia con leyendas y secretos locales.
+  2. TONO: Cercano, apasionado y literario. 
+  3. CANTIDAD: Genera 8 paradas icónicas.
   4. IDIOMA: Escribe íntegramente en ${targetLang}.
   
   CIUDAD: ${cityInput}. Basado en intereses: ${interestsStr}.`;
@@ -82,13 +78,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
   try {
     const ai = getAIClient();
+    // Using gemini-3-flash-preview for more stable JSON responses
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
+        model: 'gemini-3-flash-preview', 
         contents: prompt,
         config: { 
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            thinkingConfig: { thinkingBudget: 32768 },
             temperature: 0.7
         }
     });
@@ -116,7 +112,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
-  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 4000);
+  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 3000);
   
   const cached = await getCachedAudio(cleanText, language);
   if (cached) return cached;
@@ -126,7 +122,7 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
     const ai = getAIClient();
     const audioResponse: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Narrador de Free Tour apasionado y profesional en ${targetLangName}: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: `Narrador apasionado de bdai en ${targetLangName}: ${cleanText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { 

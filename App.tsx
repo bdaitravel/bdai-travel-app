@@ -240,7 +240,10 @@ export default function App() {
     try {
         const gen = await generateToursForCity(city, user);
         setTours(Array.isArray(gen) ? gen : []);
-    } catch (e: any) { setTours([]); } finally { setIsLoading(false); }
+    } catch (e: any) { 
+        console.error("Error generating city tours:", e);
+        setTours([]); 
+    } finally { setIsLoading(false); }
   };
 
   return (
@@ -263,6 +266,7 @@ export default function App() {
                   {loginStep === 'FORM' ? (
                       <form onSubmit={handleRequestOtp} className="space-y-4 animate-slide-up">
                           <input type="text" required value={user.firstName} onChange={e => setUser({...user, firstName: e.target.value})} placeholder={t('nameLabel')} className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-4 px-6 text-white outline-none focus:border-purple-500/50 transition-colors text-sm" />
+                          {/* FIX: removed () after user.email */}
                           <input type="email" required value={user.email} onChange={e => setUser({...user, email: e.target.value})} placeholder={t('emailLabel')} className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-4 px-6 text-white outline-none focus:border-purple-500/50 transition-colors text-sm" />
                           <button type="submit" disabled={isLoading} className="w-full py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all mt-6 text-[10px]">
                             {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('login')}

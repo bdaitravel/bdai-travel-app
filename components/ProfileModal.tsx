@@ -37,13 +37,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
   const currentRank = profile.rank || 'Turist';
 
   const [formData, setFormData] = useState({
-      firstName: profile.firstName,
-      lastName: profile.lastName,
+      firstName: profile.firstName || '',
+      lastName: profile.lastName || '',
       username: profile.username || '',
       email: profile.email || '',
-      bio: profile.bio,
-      avatar: profile.avatar,
-      language: profile.language,
+      bio: profile.bio || '',
+      avatar: profile.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+      language: profile.language || 'es',
       socials: profile.socials || { instagram: '', tiktok: '', x: '' }
   });
 
@@ -54,10 +54,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       setIsEditing(false);
   };
 
-  const nextRank = Object.entries(RANK_CONFIG).find(([_, cfg]) => cfg.min > profile.miles)?.[0] as TravelerRank | undefined;
-  const nextRankMin = nextRank ? RANK_CONFIG[nextRank].min : RANK_CONFIG[currentRank].min;
-  const prevRankMin = RANK_CONFIG[currentRank].min;
-  const progress = nextRank ? ((profile.miles - prevRankMin) / (nextRankMin - prevRankMin)) * 100 : 100;
+  const nextRank = Object.entries(RANK_CONFIG).find(([_, cfg]) => cfg.min > (profile.miles || 0))?.[0] as TravelerRank | undefined;
+  const nextRankMin = nextRank ? RANK_CONFIG[nextRank].min : (RANK_CONFIG[currentRank]?.min || 0);
+  const prevRankMin = RANK_CONFIG[currentRank]?.min || 0;
+  const progress = nextRank ? (((profile.miles || 0) - prevRankMin) / (nextRankMin - prevRankMin)) * 100 : 100;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -111,8 +111,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                                     <DataBlock label={t.email} value={profile.email} color="text-slate-600" isSmall />
                                     <DataBlock label={t.username} value={`@${profile.username}`} color="text-blue-700" />
                                     <div className="flex items-center gap-2">
-                                        <DataBlock label={t.langLabel} value={LANGUAGES.find(l => l.code === profile.language)?.name || profile.language} />
-                                        <div className="mt-3"><FlagIcon code={profile.language} className="w-4 h-auto shadow-sm" /></div>
+                                        <DataBlock label={t.langLabel} value={LANGUAGES.find(l => l.code === (profile.language || 'es'))?.name || profile.language} />
+                                        <div className="mt-3"><FlagIcon code={profile.language || 'es'} className="w-4 h-auto shadow-sm" /></div>
                                     </div>
                                     <div className="pt-2">
                                         <span className={`px-2 py-1 rounded bg-gradient-to-r ${RANK_CONFIG[currentRank]?.color || 'from-slate-400 to-slate-600'} text-white text-[8px] font-black uppercase tracking-widest shadow-md flex items-center gap-1 w-fit`}>
@@ -128,7 +128,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                     {/* Level Progress */}
                     <div className="mb-8 p-4 bg-white/40 rounded-2xl border border-slate-900/5 shadow-sm">
                         <div className="flex justify-between items-end mb-2">
-                            <div><p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">{t.miles}</p><p className="text-xl font-black font-mono">{profile.miles.toLocaleString()}</p></div>
+                            <div><p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">{t.miles}</p><p className="text-xl font-black font-mono">{(profile.miles || 0).toLocaleString()}</p></div>
                             <div className="text-right"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{t.nextBadge}</p><p className="text-[9px] font-black text-blue-600 uppercase tracking-tighter">{nextRank || 'MAX LEVEL'}</p></div>
                         </div>
                         <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden mb-3">
@@ -136,13 +136,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                         </div>
                         <div className="flex justify-between">
                             <Benefit icon="fa-tag" label={`${RANK_CONFIG[currentRank]?.discount || '0%'} ${t.off}`} active={true} />
-                            <Benefit icon="fa-book" label={t.guides} active={profile.miles >= 5000} />
-                            <Benefit icon="fa-image" label={t.wallpapers} active={profile.miles >= 15000} />
+                            <Benefit icon="fa-book" label={t.guides} active={(profile.miles || 0) >= 5000} />
+                            <Benefit icon="fa-image" label={t.wallpapers} active={(profile.miles || 0) >= 15000} />
                         </div>
                     </div>
 
                     {/* Badges */}
-                    {profile.badges.length > 0 && (
+                    {profile.badges && profile.badges.length > 0 && (
                         <div className="mb-8">
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">{t.badges}</p>
                             <div className="grid grid-cols-2 gap-2">
@@ -157,7 +157,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                     )}
 
                     {/* Stamps */}
-                    {profile.visitedCities.length > 0 && (
+                    {profile.visitedCities && profile.visitedCities.length > 0 && (
                         <div>
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">{t.stamps}</p>
                             <div className="flex flex-wrap gap-4">
@@ -180,7 +180,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                         <p className="text-xs text-slate-500 font-medium italic">{t.albumSub}</p>
                     </header>
                     <div className="space-y-6">
-                        {profile.stats.photosTaken > 0 ? (
+                        {profile.stats?.photosTaken > 0 ? (
                             <div className="bg-white p-4 rounded-3xl shadow-lg border border-slate-200 transform -rotate-1">
                                 <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=400&q=80" className="w-full h-40 object-cover rounded-2xl mb-4 grayscale-[0.3]" />
                                 <p className="text-center font-serif text-sm italic text-slate-600 leading-relaxed">"Las calles de París hablan un idioma que solo el corazón explorador entiende."</p>
@@ -195,7 +195,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                                 <p className="text-xs font-bold uppercase tracking-widest">Sin fotos registradas</p>
                             </div>
                         )}
-                        <button disabled={profile.stats.photosTaken === 0} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl flex items-center justify-center gap-2 disabled:opacity-20">
+                        <button disabled={!profile.stats?.photosTaken} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl flex items-center justify-center gap-2 disabled:opacity-20">
                             <i className="fas fa-file-export"></i> {t.export}
                         </button>
                     </div>
@@ -280,10 +280,4 @@ const Benefit = ({ icon, label, active }: any) => (
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] ${active ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-200 text-slate-400'}`}><i className={`fas ${icon}`}></i></div>
         <span className="text-[6px] font-black uppercase text-center leading-none">{label}</span>
     </div>
-);
-
-const SocialIcon = ({ icon, href, active }: any) => (
-    <a href={href || "#"} target="_blank" rel="noopener noreferrer" className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${active ? 'bg-white text-blue-900 shadow-sm' : 'bg-black/5 text-slate-300 cursor-default'}`}>
-        <i className={icon}></i>
-    </a>
 );
