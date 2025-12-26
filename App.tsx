@@ -38,7 +38,7 @@ const NavButton = ({ icon, label, isActive, onClick }: any) => (
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
     switch(code) {
         case 'es': return ( <svg viewBox="0 0 750 500" className={className}><rect width="750" height="500" fill="#c60b1e"/><rect width="750" height="250" y="125" fill="#ffc400"/></svg> );
-        case 'en': return ( <svg viewBox="0 0 741 390" className={className}><rect width="741" height="390" fill="#fff"/><path d="M0 0h741v30H0zm0 60h741v30H0z" fill="#b22234"/><rect width="296" height="210" fill="#3c3b6e"/></svg> );
+        case 'en': return ( <svg viewBox="0 0 741 390" className={className}><rect width="741" height="390" fill="#fff"/><path d="M0 0h741v30H0zm0 60h741v30H0zm0 60h741v30H0z" fill="#b22234"/><rect width="296" height="210" fill="#3c3b6e"/></svg> );
         case 'sw': return ( <div className={`${className} bg-red-600 flex flex-col`}><div className="flex-1 bg-black"></div><div className="flex-1 bg-green-600"></div></div> );
         default: return <div className={`${className} bg-slate-200 rounded-sm`}></div>;
     }
@@ -52,7 +52,8 @@ function decodeBase64(base64: string) {
 }
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer, data.byteOffset, data.byteLength / 2);
+  // PCM 16bit mono decoding at 24kHz
+  const dataInt16 = new Int16Array(data.buffer, data.byteOffset, Math.floor(data.byteLength / 2));
   const audioBuffer = ctx.createBuffer(1, dataInt16.length, 24000);
   const channelData = audioBuffer.getChannelData(0);
   for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
@@ -60,9 +61,9 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext): Promise<Aud
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome Traveler,", searchPlaceholder: "Search any city...", login: "Issue Passport", verifyTitle: "Verification", verifySubtitle: "Use access code 123456 to verify." },
-  es: { welcome: "Bienvenido Viajero,", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", verifyTitle: "Verificación", verifySubtitle: "Usa el código 123456 para verificar." },
-  sw: { welcome: "Karibu Msafiri,", searchPlaceholder: "Tafuta mji...", login: "Toa Pasipoti", verifyTitle: "Uthibitisho", verifySubtitle: "Tumia msimbo 123456." }
+  en: { welcome: "Welcome Traveler,", searchPlaceholder: "Explore any city...", login: "Issue Passport", verifyTitle: "Verification", verifySubtitle: "Use Beta Access Code: 123456" },
+  es: { welcome: "Bienvenido Viajero,", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", verifyTitle: "Verificación Digital", verifySubtitle: "Usa el Código de Acceso Beta: 123456" },
+  sw: { welcome: "Karibu Msafiri,", searchPlaceholder: "Tafuta mji...", login: "Toa Pasipoti", verifyTitle: "Uthibitisho", verifySubtitle: "Tumia msimbo: 123456" }
 };
 
 export default function App() {
@@ -128,7 +129,7 @@ export default function App() {
       audioSourceRef.current = source;
       setAudioPlayingId(id);
     } catch (e) { 
-        console.error("Audio error");
+        console.error("Audio generation failed");
     } finally { 
         setAudioLoadingId(null); 
     }
@@ -142,14 +143,14 @@ export default function App() {
     try {
         const gen = await generateToursForCity(city, user);
         setTours(gen || []);
-    } catch (e) { console.error(e); } finally { setIsLoading(false); }
+    } catch (e) { console.error("Error loading city tours:", e); } finally { setIsLoading(false); }
   };
 
   const finalizeLogin = async () => {
     if (otpCode === '123456') {
         const existing = await getUserProfileByEmail(user.email);
         if (existing) setUser({ ...existing, isLoggedIn: true });
-        else setUser({ ...user, id: `u_${Date.now()}`, isLoggedIn: true, name: user.firstName || 'Explorer', personalPhotos: [] });
+        else setUser({ ...user, id: `u_${Date.now()}`, isLoggedIn: true, name: user.firstName || 'Traveler', personalPhotos: [] });
         setView(AppView.HOME);
     }
   };
@@ -157,32 +158,35 @@ export default function App() {
   return (
     <div className="max-w-md mx-auto h-screen bg-slate-950 flex flex-col shadow-2xl relative overflow-hidden text-white">
       {view === AppView.LOGIN ? (
-          <div className="h-full w-full flex flex-col items-center justify-center p-8">
+          <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-gradient-to-b from-slate-900 to-slate-950">
               <div className="absolute top-12 flex gap-4">
                   {LANGUAGES.map(l => (
-                      <button key={l.code} onClick={() => setUser(p => ({...p, language: l.code}))} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${user.language === l.code ? 'border-purple-500 shadow-lg' : 'border-white/10 opacity-30'}`}>
+                      <button key={l.code} onClick={() => setUser(p => ({...p, language: l.code}))} className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${user.language === l.code ? 'border-purple-500 scale-110 shadow-lg' : 'border-white/10 opacity-40 hover:opacity-100'}`}>
                         <FlagIcon code={l.code} className="w-full h-full object-cover" />
                       </button>
                   ))}
               </div>
               <div className="text-center mb-12 animate-fade-in">
                   <BdaiLogo className="w-24 h-24 mx-auto mb-4" />
-                  <h1 className="text-5xl font-black lowercase tracking-tighter">bdai</h1>
-                  <p className="text-purple-400 text-[8px] font-black uppercase tracking-[0.5em] mt-1 opacity-50">better destinations by ai</p>
+                  <h1 className="text-6xl font-black lowercase tracking-tighter">bdai</h1>
+                  <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.6em] mt-1 opacity-60">travel without borders</p>
               </div>
               <div className="w-full max-w-xs space-y-4">
                   {loginStep === 'FORM' ? (
                       <form onSubmit={(e) => {e.preventDefault(); setLoginStep('VERIFY');}} className="space-y-4 animate-slide-up">
-                          <input type="text" required value={user.firstName} onChange={e => setUser({...user, firstName: e.target.value})} placeholder="Nombre" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm" />
-                          <input type="email" required value={user.email} onChange={e => setUser({...user, email: e.target.value})} placeholder="Email" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm" />
-                          <button type="submit" className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl">{t('login')}</button>
+                          <input type="text" required value={user.firstName} onChange={e => setUser({...user, firstName: e.target.value})} placeholder="Nombre / Name" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm outline-none focus:border-purple-500 transition-colors" />
+                          <input type="email" required value={user.email} onChange={e => setUser({...user, email: e.target.value})} placeholder="Email Address" className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-sm outline-none focus:border-purple-500 transition-colors" />
+                          <button type="submit" className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl active:scale-95 transition-transform">{t('login')}</button>
                       </form>
                   ) : (
                       <div className="space-y-6 text-center animate-slide-up">
                           <h2 className="text-xl font-black">{t('verifyTitle')}</h2>
-                          <p className="text-[10px] text-slate-500">{t('verifySubtitle')}</p>
-                          <input type="text" maxLength={6} value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="w-full bg-white/5 border-2 border-purple-500/20 rounded-2xl py-5 text-center text-4xl font-black" placeholder="000000" />
-                          <button onClick={finalizeLogin} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl">Confirmar</button>
+                          <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl">
+                             <p className="text-[10px] text-purple-300 font-black uppercase tracking-widest mb-1">Access Code Required</p>
+                             <p className="text-[11px] text-slate-400 leading-relaxed">{t('verifySubtitle')}</p>
+                          </div>
+                          <input type="text" maxLength={6} value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="w-full bg-white/5 border-2 border-purple-500/30 rounded-2xl py-5 text-center text-5xl font-black tracking-[0.3em] outline-none" placeholder="------" />
+                          <button onClick={finalizeLogin} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-transform">Confirmar Identidad</button>
                       </div>
                   )}
               </div>
@@ -194,11 +198,11 @@ export default function App() {
                   <div className="space-y-8 pt-safe animate-fade-in px-6">
                       <header className="flex justify-between items-center pt-6">
                           <div className="flex items-center gap-2"><BdaiLogo className="w-8 h-8"/><span className="font-black text-2xl lowercase tracking-tighter">bdai</span></div>
-                          <button onClick={() => setView(AppView.PROFILE)} className="w-10 h-10 rounded-full border-2 border-purple-500 overflow-hidden"><img src={user.avatar} className="w-full h-full object-cover" /></button>
+                          <button onClick={() => setView(AppView.PROFILE)} className="w-10 h-10 rounded-full border-2 border-purple-500 overflow-hidden shadow-lg active:scale-90 transition-transform"><img src={user.avatar} className="w-full h-full object-cover" /></button>
                       </header>
                       <div>
-                          <h1 className="text-4xl font-black leading-tight mb-6">{t('welcome')} <br/><span className="text-white/30">{user.firstName || 'Explorer'}.</span></h1>
-                          <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none focus:border-purple-500 shadow-2xl" />
+                          <h1 className="text-4xl font-black leading-tight mb-6">{t('welcome')} <br/><span className="text-white/30">{user.firstName || 'Traveler'}.</span></h1>
+                          <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none focus:border-purple-500 shadow-2xl transition-all" />
                       </div>
                       <div className="grid grid-cols-2 gap-3 pb-8">
                           <QuickCityBtn onClick={() => handleCitySelect('Madrid')} label="Royal" city="Madrid 🏰" color="purple" />
@@ -210,9 +214,9 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe px-6 animate-fade-in">
-                      <header className="flex items-center gap-4 mb-6 py-4"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black">{selectedCity}</h2></header>
+                      <header className="flex items-center gap-4 mb-6 py-4"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black">{selectedCity}</h2></header>
                       {isLoading ? (
-                          <div className="py-20 text-center text-slate-500"><i className="fas fa-spinner fa-spin text-2xl mb-4 text-purple-500"></i><p className="text-[10px] uppercase font-black tracking-widest">Generando Narrativa Local...</p></div>
+                          <div className="py-24 text-center text-slate-500"><i className="fas fa-spinner fa-spin text-3xl mb-6 text-purple-500"></i><p className="text-[11px] uppercase font-black tracking-[0.3em] text-purple-400">Generando Guía Narrativa Profunda...</p></div>
                       ) : (
                           <div className="space-y-6 pb-12">
                             {(tours || []).map(tour => (
@@ -224,23 +228,25 @@ export default function App() {
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
                   <div className="h-full flex flex-col bg-white overflow-hidden text-slate-900 animate-fade-in">
-                      <div className="h-[40vh] w-full relative"><SchematicMap stops={activeTour.stops} currentStopIndex={currentStopIndex} /><button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg"><i className="fas fa-times"></i></button></div>
+                      <div className="h-[40vh] w-full relative"><SchematicMap stops={activeTour.stops} currentStopIndex={currentStopIndex} /><button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform"><i className="fas fa-times"></i></button></div>
                       <div className="flex-1 relative z-10 -mt-6 bg-white rounded-t-[3rem] shadow-2xl overflow-hidden">
                           <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} language={user.language} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} onNext={() => setCurrentStopIndex(p => Math.min(p + 1, activeTour.stops.length - 1))} onPrev={() => setCurrentStopIndex(p => Math.max(p - 1, 0))} />
                       </div>
                   </div>
                 )}
-                {view === AppView.COMMUNITY && <div className="px-6 pt-10"><CommunityBoard city={selectedCity || 'Madrid'} language={user.language} user={user} /></div>}
+                {view === AppView.COMMUNITY && <div className="px-6 pt-10 h-full"><CommunityBoard city={selectedCity || 'Madrid'} language={user.language} user={user} /></div>}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} language={user.language} />}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} language={user.language} onUpdateUser={setUser} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={() => {}} />}
                 {view === AppView.TOOLS && <TravelServices language={user.language} onCitySelect={handleCitySelect} />}
             </div>
+            
+            {/* Bottom Navigation */}
             <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-6 pb-8 pointer-events-none">
-                <nav className="bg-slate-900/95 backdrop-blur-xl border border-white/10 px-4 py-4 flex justify-between items-center w-full rounded-[2.5rem] pointer-events-auto shadow-2xl">
+                <nav className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 px-4 py-4 flex justify-between items-center w-full rounded-[2.5rem] pointer-events-auto shadow-2xl">
                     <NavButton icon="fa-trophy" label="Elite" isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
                     <NavButton icon="fa-users" label="Muro" isActive={view === AppView.COMMUNITY} onClick={() => setView(AppView.COMMUNITY)} />
-                    <button onClick={() => setView(AppView.HOME)} className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-8 border-4 border-slate-950 shadow-purple-500/50' : 'bg-white/5'}`}><BdaiLogo className="w-8 h-8" /></button>
+                    <button onClick={() => setView(AppView.HOME)} className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 border-4 border-slate-950 shadow-2xl scale-110' : 'bg-white/5'}`}><BdaiLogo className="w-8 h-8" /></button>
                     <NavButton icon="fa-passport" label="Visa" isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
                     <NavButton icon="fa-shopping-bag" label="Shop" isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
                 </nav>

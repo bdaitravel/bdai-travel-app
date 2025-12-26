@@ -44,7 +44,6 @@ export interface UserProfile {
 
 export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend';
 
-// Added LeaderboardEntry interface to fix module export errors in App.tsx, Leaderboard.tsx and supabaseClient.ts
 export interface LeaderboardEntry {
   id: string;
   name: string;
@@ -64,7 +63,6 @@ export interface Stop {
   type: 'historical' | 'food' | 'art' | 'business_ad' | 'nature' | 'photo' | 'culture';
   visited: boolean;
   imageUrl?: string; 
-  // Added isRichInfo to fix "Object literal may only specify known properties" error in toursData.ts
   isRichInfo?: boolean;
   photoSpot?: {
     angle: string;
@@ -86,6 +84,9 @@ export interface Tour {
   theme: string;
   isSponsored: boolean;
   stops: Stop[];
+  imageUrl?: string;  // Corregido: Propiedad añadida
+  safetyTip?: string; // Corregido: Propiedad añadida
+  wifiTip?: string;   // Corregido: Propiedad añadida
 }
 
 export enum AppView {

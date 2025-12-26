@@ -16,18 +16,25 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const targetLang = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
   
   try {
+    // 1. Prioridad: Caché de comunidad para ahorrar tokens y mejorar latencia
     const globalCached = await getCachedTours(cityLower, userProfile.language);
     if (globalCached && globalCached.length > 0) return globalCached;
     
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    const prompt = `Actúa como un guía historiador y experto local para ${cityInput}. 
-    Crea 1 tour de ALTA CALIDAD en ${targetLang}.
+    // 2. Prompt optimizado para narrativas largas y estilo "Free Tour" profesional
+    const prompt = `Actúa como un Guía Turístico de Élite, especializado en la historia y secretos de ${cityInput}. 
+    Crea 1 tour temático excepcional en idioma ${targetLang}.
     
-    ESTRUCTURA OBLIGATORIA:
-    - 5 paradas significativas.
-    - Descripción de cada parada: MÍNIMO 300 PALABRAS. Estilo podcast, inmersivo, narrando leyendas y secretos.
-    - JSON Output.`;
+    CRITERIOS DE CALIDAD:
+    - Exactamente 5 paradas geográficamente lógicas.
+    - LA DESCRIPCIÓN DE CADA PARADA DEBE TENER AL MENOS 300 PALABRAS. 
+    - No resumas. Cuenta leyendas, anécdotas curiosas, arquitectura y secretos que solo un local sabría.
+    - El estilo debe ser narrativo, como un guion de podcast inmersivo.
+    - Incluye consejos de seguridad y wifi.
+    - Genera un 'photoSpot' con un 'secretLocation' muy específico (ej: "un callejón detrás de la iglesia").
+    
+    JSON FORMAT ONLY.`;
 
     const responseSchema = {
       type: Type.ARRAY,
@@ -40,6 +47,9 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
           distance: { type: Type.STRING },
           difficulty: { type: Type.STRING },
           theme: { type: Type.STRING },
+          safetyTip: { type: Type.STRING },
+          wifiTip: { type: Type.STRING },
+          imageUrl: { type: Type.STRING },
           stops: {
             type: Type.ARRAY,
             items: {
@@ -50,6 +60,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
                 latitude: { type: Type.NUMBER },
                 longitude: { type: Type.NUMBER },
                 type: { type: Type.STRING },
+                imageUrl: { type: Type.STRING },
                 photoSpot: {
                   type: Type.OBJECT,
                   properties: { 
@@ -81,7 +92,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     });
     
     const textOutput = response.text;
-    if (!textOutput) throw new Error("AI Error");
+    if (!textOutput) throw new Error("IA no respondió adecuadamente");
     
     const parsed = JSON.parse(textOutput);
     const processed = (parsed || []).map((t: any, idx: number) => ({
@@ -95,17 +106,18 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         }))
     }));
 
+    // Guardamos en caché global para que otros usuarios se beneficien
     await saveToursToCache(cityInput, userProfile.language, processed);
     return processed;
   } catch (error) { 
-    console.error("Gemini Error:", error);
+    console.error("Error en GeminiService:", error);
     return []; 
   }
 };
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
-  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 1000);
+  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 1500);
   
   try {
     const cached = await getCachedAudio(cleanText, language);
@@ -116,10 +128,12 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
     
     const audioResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Voz de guía apasionado en ${targetLangName}: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: `Actúa como un guía local narrando con pasión en ${targetLangName}: ${cleanText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } } 
+        speechConfig: { 
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } 
+        } 
       }
     });
 
