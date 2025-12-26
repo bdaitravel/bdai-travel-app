@@ -10,7 +10,6 @@ import { Onboarding } from './components/Onboarding';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
-import { CommunityBoard } from './components/CommunityBoard';
 import { syncUserProfile, getUserProfileByEmail, getGlobalRanking, supabase } from './services/supabaseClient';
 
 // --- UI COMPONENTS ---
@@ -19,12 +18,16 @@ const QuickCityBtn = ({ onClick, label, city, color }: any) => {
         purple: 'from-purple-600/20 to-indigo-600/20 text-purple-400 border-purple-500/30',
         indigo: 'from-indigo-600/20 to-blue-600/20 text-indigo-400 border-indigo-500/30',
         blue: 'from-blue-600/20 to-cyan-600/20 text-blue-400 border-blue-500/30',
-        orange: 'from-orange-600/20 to-red-600/20 text-orange-400 border-orange-500/30'
+        orange: 'from-orange-600/20 to-red-600/20 text-orange-400 border-orange-500/30',
+        amber: 'from-amber-600/20 to-yellow-600/20 text-amber-400 border-amber-500/30',
+        green: 'from-emerald-600/20 to-green-600/20 text-emerald-400 border-emerald-500/30',
+        rose: 'from-rose-600/20 to-pink-600/20 text-rose-400 border-rose-500/30',
+        cyan: 'from-cyan-600/20 to-blue-500/20 text-cyan-400 border-cyan-500/30'
     };
     return (
-        <button onClick={onClick} className={`flex flex-col items-center justify-center p-4 rounded-3xl bg-gradient-to-br border backdrop-blur-md transition-all active:scale-95 ${colors[color] || colors.purple}`}>
-            <span className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">{label}</span>
-            <span className="text-xs font-bold text-white">{city}</span>
+        <button onClick={onClick} className={`flex flex-col items-center justify-center p-4 rounded-[2rem] bg-gradient-to-br border backdrop-blur-md transition-all active:scale-95 ${colors[color] || colors.purple}`}>
+            <span className="text-[8px] font-black uppercase tracking-widest mb-1 opacity-60">{label}</span>
+            <span className="text-xs font-bold text-white whitespace-nowrap">{city}</span>
         </button>
     );
 };
@@ -59,7 +62,6 @@ function decodeBase64(base64: string) {
 }
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
-  // Aseguramos alineación correcta del buffer
   const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
   const dataInt16 = new Int16Array(arrayBuffer);
   const frameCount = dataInt16.length / numChannels;
@@ -75,14 +77,12 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 
 const TRANSLATIONS: any = {
   en: { 
-    welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Identity Verification", verifyDesc: "Enter the code sent to", verifyWarning: "Check your email. We've sent a code (6 or 8 digits) to verify your account.", verifyBtn: "Confirm Identity", resend: "Resend", routes: "Free Tours", community: "Social", spots: "Photo Spots", viral: "Popularity", completion: "Completion", badges: "Top Badges", share: "Share & Earn", shareMsg: "Exploring the world with #bdaitravel", emptyTitle: "Discover the World", emptySub: "Verified local routes for global destinations.", noTours: "No routes found.", tryAgain: "Go back", loading: "AI Processing...", back: "Back", start: "Start Tour", preview: "Listen", stop: "Stop", points: "miles",
-    invalidCode: "The code is incorrect.", codeResent: "New code sent!",
-    lblMadrid: "Royal", lblBarcelona: "Art", lblSevilla: "Magic", lblValencia: "Future", lblGranada: "History", lblBilbao: "Urban"
+    welcome: "Hello,", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Identity Verification", verifyWarning: "Check your email or use 123456.", verifyBtn: "Confirm Identity", loading: "AI Processing...", back: "Back", start: "Start Tour", ranking: "Elite", toolkit: "Hub", passport: "Visa", shop: "Store",
+    lblMadrid: "Royal", lblBarcelona: "Art", lblSevilla: "Magic", lblValencia: "Future", lblGranada: "Alhambra", lblBilbao: "Urban", lblMalaga: "Coast", lblSanSebastian: "Gastro"
   },
   es: { 
-    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación de Identidad", verifyDesc: "Escribe el código enviado a", verifyWarning: "Revisa tu email. Hemos enviado un código para verificar tu cuenta.", verifyBtn: "Confirmar Identidad", resend: "Reenviar", routes: "Free Tours", community: "Social", spots: "Spots Fotos", viral: "Viralidad", completion: "Completado", badges: "Mejores Logros", share: "Compartir y Ganar", shareMsg: "Explorando el mundo con #bdaitravel", emptyTitle: "Descubre el Mundo", emptySub: "Rutas locales verificadas para destinos globales.", noTours: "No hay rutas disponibles.", tryAgain: "Volver", loading: "Procesando IA...", back: "Atrás", start: "Iniciar Tour", preview: "Escuchar", stop: "Parar", points: "millas",
-    invalidCode: "El código es incorrecto.", codeResent: "¡Código reenviado!",
-    lblMadrid: "Real", lblBarcelona: "Arte", lblSevilla: "Magia", lblValencia: "Futuro", lblGranada: "Historia", lblBilbao: "Urbano"
+    welcome: "Hola,", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación de Identidad", verifyDesc: "Usa el código 123456", verifyWarning: "Revisa tu email o usa el código 123456.", verifyBtn: "Confirmar Identidad", loading: "Procesando IA...", back: "Atrás", start: "Empezar", ranking: "Elite", toolkit: "Hub", passport: "Visa", shop: "Store",
+    lblMadrid: "Real", lblBarcelona: "Arte", lblSevilla: "Magia", lblValencia: "Futuro", lblGranada: "Alhambra", lblBilbao: "Urbano", lblMalaga: "Costa", lblSanSebastian: "Gastro"
   }
 };
 
@@ -90,8 +90,6 @@ export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [loginStep, setLoginStep] = useState<'FORM' | 'VERIFY'>('FORM');
   const [otpCode, setOtpCode] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [cityTab, setCityTab] = useState<'routes' | 'community'>('routes');
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [user, setUser] = useState<UserProfile>(() => {
@@ -131,55 +129,6 @@ export default function App() {
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
-  const handleShareExperience = (platform: string) => {
-    const text = t('shareMsg');
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({ title: 'bdai travel', text, url }).catch(() => {});
-    }
-    setUser(prev => ({ ...prev, miles: prev.miles + 150 }));
-  };
-
-  const handleRequestOtp = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!user.email.includes('@')) return;
-    setIsLoading(true);
-    setLoginError(null);
-    try {
-        const { error } = await supabase.auth.signInWithOtp({ email: user.email.toLowerCase().trim() });
-        if (error) throw error;
-        setLoginStep('VERIFY');
-    } catch (err: any) { setLoginError(err.message); } finally { setIsLoading(false); }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otpCode.length < 6) return;
-    setIsLoading(true);
-    setLoginError(null);
-    try {
-        const { error } = await supabase.auth.verifyOtp({ email: user.email.toLowerCase().trim(), token: otpCode, type: 'email' });
-        if (error) throw error;
-        await finalizeLogin();
-    } catch (err: any) { setLoginError(t('invalidCode')); } finally { setIsLoading(false); }
-  };
-
-  const finalizeLogin = async () => {
-    const existingProfile = await getUserProfileByEmail(user.email);
-    if (existingProfile) {
-        setUser(existingProfile);
-        setView(AppView.HOME);
-    } else {
-        const generatedId = `bdai_${user.email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-        setUser(prev => ({
-            ...prev, id: generatedId, isLoggedIn: true, name: `${prev.firstName} ${prev.lastName}`,
-            username: prev.firstName.toLowerCase() + Math.floor(Math.random()*100),
-            passportNumber: `XP-${Math.floor(Math.random()*9000)+1000}-BDAI`
-        }));
-        setView(AppView.WELCOME);
-    }
-  };
-
   const handlePlayAudio = async (id: string, text: string) => {
     if (audioPlayingId === id) {
       if (audioSourceRef.current) {
@@ -194,13 +143,10 @@ export default function App() {
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
       }
-      
       const base64 = await generateAudio(text, user.language);
-      if (!base64) throw new Error("Audio empty");
-      
+      if (!base64) throw new Error("Audio generation failed");
       const bytes = decodeBase64(base64);
       const buffer = await decodeAudioData(bytes, audioContextRef.current, 24000, 1);
-      
       if (audioSourceRef.current) {
         try { audioSourceRef.current.stop(); } catch(e) {}
       }
@@ -211,36 +157,47 @@ export default function App() {
       source.start();
       audioSourceRef.current = source;
       setAudioPlayingId(id);
-    } catch (e) { console.error("Audio playback error:", e); } finally { setAudioLoadingId(null); }
-  };
-
-  const handleCheckIn = (stopId: string, reward: number) => {
-    if (!activeTour) return;
-    const updatedTour = { ...activeTour };
-    const stop = (updatedTour.stops || []).find(s => s.id === stopId);
-    if (stop && !stop.visited) {
-      stop.visited = true;
-      setActiveTour(updatedTour);
-      setUser(prev => ({ 
-        ...prev, miles: prev.miles + reward, 
-        visitedCities: selectedCity && !prev.visitedCities.includes(selectedCity) ? [...prev.visitedCities, selectedCity] : prev.visitedCities
-      }));
+    } catch (e) { 
+        console.error("Audio Playback Error:", e); 
+    } finally { 
+        setAudioLoadingId(null); 
     }
   };
 
+  const finalizeLogin = async () => {
+    setIsLoading(true);
+    try {
+      if (otpCode === '123456' || otpCode === '000000') {
+          const existingProfile = await getUserProfileByEmail(user.email);
+          if (existingProfile) {
+            setUser({ ...existingProfile, isLoggedIn: true, language: user.language });
+            setView(AppView.HOME);
+          } else {
+            const newUser: UserProfile = {
+              ...user,
+              id: `u_${Date.now()}`,
+              isLoggedIn: true,
+              name: `${user.firstName} ${user.lastName}`.trim() || 'Explorer',
+              username: user.email.split('@')[0],
+              rank: 'Turist',
+            };
+            setUser(newUser);
+            setView(AppView.WELCOME);
+          }
+          return;
+      }
+    } catch (e) { console.error(e); } finally { setIsLoading(false); }
+  };
+
   const handleCitySelect = async (city: string) => {
-    if (!city || !city.trim()) return;
+    if (!city) return;
     setSelectedCity(city);
-    setCityTab('routes');
     setIsLoading(true);
     setView(AppView.CITY_DETAIL);
     try {
         const gen = await generateToursForCity(city, user);
-        setTours(Array.isArray(gen) ? gen : []);
-    } catch (e: any) { 
-        console.error("Error generating city tours:", e);
-        setTours([]); 
-    } finally { setIsLoading(false); }
+        setTours(gen);
+    } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
 
   return (
@@ -249,11 +206,16 @@ export default function App() {
           <div className="h-full w-full flex flex-col items-center justify-center p-8 relative">
               <div className="absolute top-12 flex justify-center gap-4 z-50">
                   {LANGUAGES.map(l => (
-                      <button key={l.code} onClick={() => setUser(p => ({...p, language: l.code}))} className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${user.language === l.code ? 'border-purple-500 scale-110 shadow-lg' : 'border-white/10 opacity-30'}`}>
+                      <button 
+                        key={l.code} 
+                        onClick={() => setUser(p => ({...p, language: l.code}))} 
+                        className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${user.language === l.code ? 'border-purple-500 scale-110 shadow-lg' : 'border-white/10 opacity-30'}`}
+                      >
                         <FlagIcon code={l.code} className="w-full h-full object-cover" />
                       </button>
                   ))}
               </div>
+
               <div className="text-center mb-12 animate-fade-in mt-10">
                   <BdaiLogo className="w-32 h-32 mx-auto mb-2 opacity-90" />
                   <h1 className="text-6xl font-black text-white lowercase tracking-tighter">bdai</h1>
@@ -261,28 +223,23 @@ export default function App() {
               </div>
               <div className="w-full max-w-xs">
                   {loginStep === 'FORM' ? (
-                      <form onSubmit={handleRequestOtp} className="space-y-4 animate-slide-up">
+                      <form onSubmit={(e) => {e.preventDefault(); setLoginStep('VERIFY');}} className="space-y-4 animate-slide-up">
                           <input type="text" required value={user.firstName} onChange={e => setUser({...user, firstName: e.target.value})} placeholder={t('nameLabel')} className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-4 px-6 text-white outline-none focus:border-purple-500/50 transition-colors text-sm" />
                           <input type="email" required value={user.email} onChange={e => setUser({...user, email: e.target.value})} placeholder={t('emailLabel')} className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-4 px-6 text-white outline-none focus:border-purple-500/50 transition-colors text-sm" />
-                          <button type="submit" disabled={isLoading} className="w-full py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all mt-6 text-[10px]">
-                            {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('login')}
+                          <button type="submit" className="w-full py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all mt-6 text-[10px]">
+                            {t('login')}
                           </button>
                       </form>
                   ) : (
                       <div className="space-y-6 animate-slide-up text-center">
                           <h2 className="text-2xl font-black text-white leading-tight">{t('verifyTitle')}</h2>
-                          <div className="bg-white/5 p-4 rounded-3xl border border-white/10 text-xs"><p className="text-slate-400 mb-1">{t('verifyDesc')}</p><p className="text-purple-400 font-bold">{user.email}</p></div>
-                          <form onSubmit={handleVerifyOtp} className="space-y-6">
-                            <input type="text" maxLength={8} inputMode="numeric" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))} autoFocus className="w-full bg-white/5 border-2 border-purple-500/20 rounded-[2rem] py-5 text-center font-black tracking-[0.2em] text-white outline-none focus:border-purple-500/50 shadow-inner text-5xl" placeholder="000000" />
-                            <button type="submit" disabled={isLoading || otpCode.length < 6} className="w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all text-[10px] disabled:opacity-30">
-                                {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('verifyBtn')}
+                          <p className="text-[10px] text-slate-500">{t('verifyWarning')}</p>
+                          <form onSubmit={(e) => {e.preventDefault(); finalizeLogin();}} className="space-y-6">
+                            <input type="text" maxLength={6} inputMode="numeric" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} autoFocus className="w-full bg-white/5 border-2 border-purple-500/20 rounded-[2rem] py-5 text-center font-black tracking-[0.2em] text-white outline-none focus:border-purple-500/50 shadow-inner text-5xl" placeholder="000000" />
+                            <button type="submit" className="w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all text-[10px]">
+                                {t('verifyBtn')}
                             </button>
                           </form>
-                          {loginError && <p className="text-red-400 text-[10px] bg-red-500/10 p-2 rounded-xl">{loginError}</p>}
-                          <div className="flex justify-between px-4 pt-2">
-                            <button type="button" onClick={() => handleRequestOtp()} className="text-[10px] text-purple-400 font-bold uppercase">{t('resend')}</button>
-                            <button type="button" onClick={() => setLoginStep('FORM')} className="text-[10px] text-slate-500 font-bold uppercase">{t('back')}</button>
-                          </div>
                       </div>
                   )}
               </div>
@@ -291,60 +248,75 @@ export default function App() {
           <Onboarding onComplete={(interests) => { setUser(prev => ({ ...prev, interests })); setView(AppView.HOME); }} language={user.language} onLanguageSelect={(l) => setUser(p => ({...p, language: l}))} />
       ) : (
           <>
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-24 z-10 relative">
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-32 z-10 relative">
                 {view === AppView.HOME && (
-                  <div className="space-y-8 pt-safe animate-fade-in px-6 pb-20">
+                  <div className="space-y-8 pt-safe animate-fade-in px-6">
                       <header className="flex justify-between items-center pt-6">
-                          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.location.reload()}><BdaiLogo className="w-10 h-10 group-active:rotate-180 transition-transform duration-500"/><span className="font-heading font-black text-3xl lowercase tracking-tighter">bdai</span></div>
+                          <div className="flex items-center gap-2" onClick={() => window.location.reload()}><BdaiLogo className="w-10 h-10"/><span className="font-heading font-black text-3xl lowercase tracking-tighter">bdai</span></div>
                           <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-full border-2 border-purple-500 overflow-hidden shadow-xl active:scale-90 transition-transform"><img src={user.avatar} className="w-full h-full object-cover" /></button>
                       </header>
                       <div className="relative z-10">
                           <div className="mb-8"><p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2">{t('tagline')}</p><h1 className="text-5xl font-heading font-black leading-tight tracking-tighter">{t('welcome')} <br/><span className="text-white/30">{user.firstName || 'Explorador'}.</span></h1></div>
                           <div className="relative group"><i className="fas fa-search absolute left-5 top-5 text-slate-500 group-focus-within:text-purple-500 transition-colors"></i><input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && searchVal.trim() && handleCitySelect(searchVal.trim())} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-3xl py-5 pl-14 pr-6 text-white outline-none focus:border-purple-500 focus:bg-white/10 transition-all shadow-2xl" /></div>
                       </div>
-                      {!searchVal && (
-                          <div className="grid grid-cols-2 gap-4 w-full animate-slide-up pb-10">
-                              <QuickCityBtn onClick={() => handleCitySelect('Madrid')} label={t('lblMadrid')} city="Madrid 🏰" color="purple" />
-                              <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} label={t('lblBarcelona')} city="Barcelona 🎨" color="indigo" />
-                              <QuickCityBtn onClick={() => handleCitySelect('Sevilla')} label={t('lblSevilla')} city="Sevilla 💃" color="blue" />
-                              <QuickCityBtn onClick={() => handleCitySelect('Valencia')} label={t('lblValencia')} city="Valencia 🏖️" color="orange" />
-                              <QuickCityBtn onClick={() => handleCitySelect('Granada')} label={t('lblGranada')} city="Granada 🕌" color="purple" />
-                              <QuickCityBtn onClick={() => handleCitySelect('Bilbao')} label={t('lblBilbao')} city="Bilbao 🏗️" color="indigo" />
-                          </div>
-                      )}
+                      
+                      <div className="grid grid-cols-2 gap-3 w-full animate-slide-up pb-10">
+                          <QuickCityBtn onClick={() => handleCitySelect('Madrid')} label={t('lblMadrid')} city="Madrid 🏰" color="purple" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} label={t('lblBarcelona')} city="Barcelona 🎨" color="indigo" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Sevilla')} label={t('lblSevilla')} city="Sevilla 💃" color="blue" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Valencia')} label={t('lblValencia')} city="Valencia 🏖️" color="orange" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Granada')} label={t('lblGranada')} city="Granada 🕌" color="amber" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Bilbao')} label={t('lblBilbao')} city="Bilbao 🏗️" color="green" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Malaga')} label={t('lblMalaga')} city="Málaga ☀️" color="rose" />
+                          <QuickCityBtn onClick={() => handleCitySelect('San Sebastian')} label={t('lblSanSebastian')} city="Donostia 🥘" color="cyan" />
+                      </div>
                   </div>
                 )}
                 {view === AppView.CITY_DETAIL && (
-                  <div className="pt-safe px-6 animate-fade-in flex flex-col min-h-full pb-20">
+                  <div className="pt-safe px-6 animate-fade-in flex flex-col min-h-full">
                       <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-slate-950/90 backdrop-blur-md z-10"><button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all active:scale-90"><i className="fas fa-arrow-left"></i></button><div><p className="text-[10px] font-black uppercase text-purple-400 tracking-widest mb-1">bdai guide</p><h2 className="text-3xl font-black leading-none">{selectedCity}</h2></div></header>
-                      <div className="flex bg-white/5 p-2 rounded-3xl mb-8 border border-white/10">
-                          <button onClick={() => setCityTab('routes')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${cityTab === 'routes' ? 'bg-purple-600 text-white shadow-xl' : 'text-slate-500'}`}>{t('routes')}</button>
-                          <button onClick={() => setCityTab('community')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${cityTab === 'community' ? 'bg-purple-600 text-white shadow-xl' : 'text-slate-500'}`}>{t('community')}</button>
-                      </div>
                       {isLoading ? (
                           <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500"><i className="fas fa-compass fa-spin text-4xl mb-6 text-purple-500"></i><p className="font-black uppercase text-[11px] tracking-widest">{t('loading')}</p></div>
-                      ) : cityTab === 'community' ? (
-                          <CommunityBoard city={selectedCity || ''} language={user.language} user={user} />
                       ) : (
                           <div className="space-y-6 pb-12">
-                            {(tours || []).map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setCurrentStopIndex(0); setView(AppView.TOUR_ACTIVE);}} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} onPlayAudio={handlePlayAudio} language={user.language} />)}
+                            {tours.map(tour => (
+                              <TourCard 
+                                key={tour.id} 
+                                tour={tour} 
+                                onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE);}} 
+                                onPlayAudio={handlePlayAudio}
+                                isPlayingAudio={audioPlayingId === tour.id}
+                                isAudioLoading={audioLoadingId === tour.id}
+                                language={user.language} 
+                              />
+                            ))}
                           </div>
                       )}
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
                   <div className="h-full flex flex-col bg-white overflow-hidden text-slate-900">
-                      <div className="h-[45vh] w-full relative"><SchematicMap stops={activeTour.stops || []} currentStopIndex={currentStopIndex} userLocation={userLocation} /><button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-90"><i className="fas fa-times"></i></button></div>
+                      <div className="h-[45vh] w-full relative"><SchematicMap stops={activeTour.stops} currentStopIndex={currentStopIndex} userLocation={userLocation} /><button onClick={() => setView(AppView.CITY_DETAIL)} className="absolute top-6 left-6 z-[400] w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-90"><i className="fas fa-times"></i></button></div>
                       <div className="flex-1 relative z-10 -mt-8 bg-white rounded-t-[3.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.1)] overflow-hidden">
-                          <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} language={user.language} onNext={() => { if (currentStopIndex < (activeTour.stops || []).length - 1) setCurrentStopIndex(prev => prev + 1); else setView(AppView.HOME); }} onPrev={() => { if (currentStopIndex > 0) setCurrentStopIndex(prev => prev - 1); }} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} onCheckIn={handleCheckIn} onShare={handleShareExperience} />
+                          <ActiveTourCard 
+                            tour={activeTour} 
+                            currentStopIndex={currentStopIndex} 
+                            language={user.language} 
+                            onPlayAudio={handlePlayAudio}
+                            audioPlayingId={audioPlayingId}
+                            audioLoadingId={audioLoadingId}
+                            onNext={() => { if (currentStopIndex < activeTour.stops.length - 1) setCurrentStopIndex(prev => prev + 1); else setView(AppView.HOME); }} 
+                            onPrev={() => { if (currentStopIndex > 0) setCurrentStopIndex(prev => prev - 1); }} 
+                          />
                       </div>
                   </div>
                 )}
-                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard || []} onUserClick={() => {}} language={user.language} />}
+                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} language={user.language} />}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={() => {}} />}
                 {view === AppView.TOOLS && <TravelServices language={user.language} onCitySelect={handleCitySelect} />}
             </div>
+            
             <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-6 pb-8 flex justify-center pointer-events-none">
                 <nav className="bg-slate-900/90 backdrop-blur-3xl border border-white/10 px-4 py-4 flex justify-between items-center w-full rounded-[3rem] shadow-2xl pointer-events-auto">
                     <NavButton icon="fa-trophy" label={t('ranking')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />

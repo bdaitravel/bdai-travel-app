@@ -11,12 +11,6 @@ const LANGUAGE_MAP: Record<string, string> = {
     ca: "Catalan"
 };
 
-const getAIClient = () => {
-  // Aseguramos la obtención de la clave en cualquier entorno (Vite/Vercel)
-  const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY || "";
-  return new GoogleGenAI({ apiKey });
-};
-
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
   const cityLower = cityInput.toLowerCase().trim();
   const targetLang = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
@@ -26,16 +20,16 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     const globalCached = await getCachedTours(cityLower, userProfile.language);
     if (globalCached && globalCached.length > 0) return globalCached;
     
-    const prompt = `Actúa como un experto Guía de bdai para la ciudad de ${cityInput}. 
-    Tu misión es diseñar un tour estilo "Free Tour" de alta calidad, dinámico y lleno de historias fascinantes.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    REQUISITOS DEL FREE TOUR:
-    1. NARRATIVA: Relatos detallados (aprox 400 palabras por parada) que mezclen historia con leyendas.
-    2. TONO: Cercano y apasionado. 
-    3. CANTIDAD: Genera 8 paradas icónicas.
-    4. IDIOMA: Escribe íntegramente en ${targetLang}.
-    
-    CIUDAD: ${cityInput}. Basado en intereses: ${interestsStr}.`;
+    const prompt = `Actúa como un experto Guía Local de bdai para la ciudad de ${cityInput}. 
+    Diseña un tour estilo "Free Tour" de alta calidad.
+    INSTRUCCIONES:
+    - Escribe el contenido COMPLETAMENTE en ${targetLang}.
+    - Crea 8 paradas icónicas y curiosas.
+    - La descripción de cada parada debe ser extensa (400 palabras) y narrativa.
+    - Adapta el tono a los intereses: ${interestsStr}.
+    CIUDAD: ${cityInput}.`;
 
     const responseSchema = {
       type: Type.ARRAY,
@@ -46,7 +40,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
           description: { type: Type.STRING },
           duration: { type: Type.STRING },
           distance: { type: Type.STRING },
-          difficulty: { type: Type.STRING, enum: ["Easy", "Moderate", "Hard"] },
+          difficulty: { type: Type.STRING },
           theme: { type: Type.STRING },
           stops: {
             type: Type.ARRAY,
@@ -78,19 +72,19 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
       }
     };
 
-    const ai = getAIClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview', 
+        model: 'gemini-3-pro-preview', 
         contents: prompt,
         config: { 
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            temperature: 0.7
+            temperature: 0.8,
+            thinkingConfig: { thinkingBudget: 4000 }
         }
     });
     
     const textOutput = response.text;
-    if (!textOutput) throw new Error("AI returned empty content");
+    if (!textOutput) throw new Error("AI Empty Response");
     
     const parsed = JSON.parse(textOutput);
     const processed = (parsed || []).map((t: any, idx: number) => ({
@@ -107,24 +101,25 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     await saveToursToCache(cityInput, userProfile.language, processed);
     return processed;
   } catch (error) { 
-    console.error("Critical AI Generation Error:", error);
+    console.error("AI Generation Failed:", error);
     return []; 
   }
 };
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
-  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 3000);
+  const cleanText = text.replace(/[*_#\[\]()<>]/g, '').trim().substring(0, 1500);
   
   try {
     const cached = await getCachedAudio(cleanText, language);
     if (cached) return cached;
     
-    const ai = getAIClient();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const targetLangName = LANGUAGE_MAP[language] || LANGUAGE_MAP.es;
+    
     const audioResponse: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Narrador apasionado de bdai en ${targetLangName}: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: `Voz de narrador apasionado en ${targetLangName}: ${cleanText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { 
@@ -137,7 +132,7 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
     if (base64) await saveAudioToCache(cleanText, language, base64);
     return base64;
   } catch (e: any) { 
-    console.error("Gemini TTS Critical Error:", e.message || e);
+    console.error("TTS Generation Failed:", e);
     return ""; 
   }
 };
