@@ -1,20 +1,19 @@
 
-import { GoogleGenAI, Modality, GenerateContentResponse, Type } from "@google/genai";
-import { Tour, Stop, UserProfile } from '../types';
+import { GoogleGenAI, Modality, Type } from "@google/genai";
+import { Tour, UserProfile } from '../types';
 import { getCachedTours, saveToursToCache, getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const LANGUAGE_MAP: Record<string, string> = {
-    es: "Spanish (Spain)",
-    en: "English (Global)",
-    fr: "French (France)",
-    eu: "Basque (Euskara)",
-    ca: "Catalan"
+    es: "Español (España)",
+    en: "English (US)",
+    sw: "Swahili (East Africa)",
+    fr: "Français",
+    ca: "Català"
 };
 
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
   const cityLower = cityInput.toLowerCase().trim();
   const targetLang = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
-  const interestsStr = (userProfile.interests || []).join(", ") || "history, culture and local secrets";
   
   try {
     const globalCached = await getCachedTours(cityLower, userProfile.language);
@@ -22,15 +21,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    const prompt = `Actúa como un experto Guía Local de bdai para la ciudad de ${cityInput}. 
-    Diseña un tour estilo "Free Tour" de alta calidad.
-    INSTRUCCIONES:
-    - Escribe el contenido COMPLETAMENTE en ${targetLang}.
-    - Crea 5-8 paradas icónicas y curiosas.
-    - La descripción de cada parada debe ser extensa (mínimo 300 palabras) y narrativa, estilo podcast.
-    - Adapta el tono a los intereses: ${interestsStr}.
-    - IMPORTANTE: Las coordenadas (lat, lng) deben ser reales de la ciudad.
-    CIUDAD: ${cityInput}.`;
+    const prompt = `Actúa como un guía historiador y experto local para ${cityInput}. 
+    Crea 1 tour de ALTA CALIDAD en ${targetLang}.
+    
+    ESTRUCTURA OBLIGATORIA:
+    - 5 paradas significativas.
+    - Descripción de cada parada: MÍNIMO 300 PALABRAS. Estilo podcast, inmersivo, narrando leyendas y secretos.
+    - JSON Output.`;
 
     const responseSchema = {
       type: Type.ARRAY,
@@ -79,13 +76,12 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         config: { 
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            temperature: 0.7,
-            thinkingConfig: { thinkingBudget: 0 } // Flash no necesita thinkingBudget alto para esta tarea
+            temperature: 0.8
         }
     });
     
     const textOutput = response.text;
-    if (!textOutput) throw new Error("AI Empty Response");
+    if (!textOutput) throw new Error("AI Error");
     
     const parsed = JSON.parse(textOutput);
     const processed = (parsed || []).map((t: any, idx: number) => ({
@@ -94,7 +90,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         city: cityInput,
         stops: (t.stops || []).map((s: any, sIdx: number) => ({ 
             ...s, 
-            id: `s_${idx}_${sIdx}`, 
+            id: `s_${idx}_${sIdx}_${Date.now()}`, 
             visited: false
         }))
     }));
@@ -102,7 +98,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     await saveToursToCache(cityInput, userProfile.language, processed);
     return processed;
   } catch (error) { 
-    console.error("AI Generation Failed:", error);
+    console.error("Gemini Error:", error);
     return []; 
   }
 };
@@ -118,25 +114,22 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const targetLangName = LANGUAGE_MAP[language] || LANGUAGE_MAP.es;
     
-    // Simplificamos el prompt para el TTS para evitar errores de procesamiento
-    const audioResponse: GenerateContentResponse = await ai.models.generateContent({ 
+    const audioResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Narrador apasionado en ${targetLangName}: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: `Voz de guía apasionado en ${targetLangName}: ${cleanText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
-        speechConfig: { 
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } 
-        } 
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } } 
       }
     });
 
-    const base64 = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
+    const base64 = audioResponse.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data || "";
     if (base64) {
       await saveAudioToCache(cleanText, language, base64);
     }
     return base64;
-  } catch (e: any) { 
-    console.error("TTS Generation Failed:", e);
+  } catch (e) { 
+    console.error("Audio Error:", e);
     return ""; 
   }
 };

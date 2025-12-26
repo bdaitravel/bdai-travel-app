@@ -7,18 +7,6 @@ export interface Badge {
   earnedAt?: string;
 }
 
-export interface SocialLinks {
-  instagram?: string;
-  tiktok?: string;
-  twitter?: string;
-  x?: string;
-  linkedin?: string;
-  facebook?: string;
-  website?: string;
-}
-
-export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend';
-
 export interface UserStats {
   photosTaken: number;
   guidesBought: number;
@@ -34,29 +22,37 @@ export interface UserProfile {
   name: string;
   username: string;
   email: string;
-  password?: string;
   avatar: string;
   language: string;
   miles: number;
-  culturePoints: number;
-  foodPoints: number;
-  photoPoints: number;
   rank: TravelerRank;
   interests: string[];
   accessibility: 'standard' | 'wheelchair' | 'low_walking';
   isPublic: boolean;
   bio: string;
   age: number;
-  country?: string;
-  city?: string;
   badges: Badge[];
-  profileCuriosity?: string;
   visitedCities: string[]; 
   completedTours: string[];
   stats: UserStats;
-  socials?: SocialLinks;
+  personalPhotos: string[]; // Álbum de fotos del viajero
   passportNumber?: string;
   joinDate?: string;
+  city?: string;
+  country?: string;
+}
+
+export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend';
+
+// Added LeaderboardEntry interface to fix module export errors in App.tsx, Leaderboard.tsx and supabaseClient.ts
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  username: string;
+  avatar: string;
+  miles: number;
+  rank: number | string;
+  isPublic: boolean;
 }
 
 export interface Stop {
@@ -68,15 +64,15 @@ export interface Stop {
   type: 'historical' | 'food' | 'art' | 'business_ad' | 'nature' | 'photo' | 'culture';
   visited: boolean;
   imageUrl?: string; 
-  curiosity?: string;
+  // Added isRichInfo to fix "Object literal may only specify known properties" error in toursData.ts
+  isRichInfo?: boolean;
   photoSpot?: {
     angle: string;
     bestTime: string;
     instagramHook: string;
     milesReward: number;
-    secretLocation?: string; // Nuevo: Descripción del punto exacto "oculto"
+    secretLocation?: string;
   };
-  isRichInfo?: boolean; 
 }
 
 export interface Tour {
@@ -90,24 +86,6 @@ export interface Tour {
   theme: string;
   isSponsored: boolean;
   stops: Stop[];
-  imageUrl?: string; 
-  cityImageUrl?: string; 
-  transportApps?: string[];
-  publicTransport?: string;
-  safetyTip?: string;
-  wifiTip?: string;
-}
-
-export interface LeaderboardEntry {
-  id: string;
-  name: string;
-  username?: string;
-  avatar: string;
-  miles: number;
-  rank: number;
-  isPublic: boolean;
-  badges?: Badge[];
-  socials?: SocialLinks;
 }
 
 export enum AppView {
@@ -119,13 +97,14 @@ export enum AppView {
   PROFILE = 'PROFILE',
   SHOP = 'SHOP',
   LEADERBOARD = 'LEADERBOARD',
-  TOOLS = 'TOOLS'
+  TOOLS = 'TOOLS',
+  COMMUNITY = 'COMMUNITY'
 }
 
 export const LANGUAGES = [
   { code: 'es', name: 'Español' },
   { code: 'en', name: 'English' },
+  { code: 'sw', name: 'Kiswahili' },
   { code: 'ca', name: 'Català' },
-  { code: 'eu', name: 'Euskera' },
   { code: 'fr', name: 'Français' },
 ];
