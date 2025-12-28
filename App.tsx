@@ -46,7 +46,8 @@ const TRANSLATIONS: any = {
     emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Email Verification", routes: "Routes", community: "Social", 
     loading: "IA is creating world-class tours...", back: "Back", wine: "Gastronomy", architecture: "Urban Design", night: "City Pulse", tradition: "Heritage",
     catWine: "Flavors & Spirits", catArch: "Modern Marvels", catNight: "Global Nightlife", catTrad: "Ancient Roots", errorLogin: "Invalid code or email.", confirmCode: "Confirm Code",
-    logout: "Log Out", trending: "Global Trends", hiddenGems: "Secret Escapes", festivals: "2026 Agenda", results: "AI Curated Tours"
+    logout: "Log Out", trending: "Global Trends", hiddenGems: "Secret Escapes", festivals: "2026 Agenda", results: "AI Curated Tours",
+    spainTitle: "Spain Collection", spainSub: "The soul of the peninsula"
   },
   es: { 
     welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", 
@@ -54,15 +55,17 @@ const TRANSLATIONS: any = {
     emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación por Email", routes: "Rutas", community: "Social", 
     loading: "La IA está creando rutas mundiales...", back: "Atrás", wine: "Gastronomía", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimonio",
     catWine: "Sabores del Mundo", catArch: "Iconos Urbanos", catNight: "Ritmo Global", catTrad: "Raíces Ancestrales", errorLogin: "Código o email incorrecto.", confirmCode: "Confirmar Código",
-    logout: "Cerrar Sesión", trending: "Tendencias Globales", hiddenGems: "Joyas Ocultas", festivals: "Agenda 2026", results: "Tours de la IA"
+    logout: "Cerrar Sesión", trending: "Tendencias Globales", hiddenGems: "Joyas Ocultas", festivals: "Agenda 2026", results: "Tours de la IA",
+    spainTitle: "Colección España", spainSub: "El alma de la península"
   },
   ca: { 
     welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", 
     searchPlaceholder: "Cerca qualsevol ciutat del món...", login: "Emetre Passaport", tagline: "better destinations by ai", 
     emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació per Correu", routes: "Rutes", community: "Social", 
     loading: "La IA està creant rutes mundials...", back: "Enrere", wine: "Gastronomia", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Tradició",
-    catWine: "Sabors del Món", catArch: "Icones Urbanes", catNight: "Ritme Global", catTrad: "Arrels d'Espanya", errorLogin: "Codi o correu incorrecte.", confirmCode: "Confirmar Codi",
-    logout: "Tancar Sessió", trending: "Tendències Avui", hiddenGems: "Joies Ocultes", festivals: "Agenda 2026", results: "Tours Seleccionats"
+    catWine: "Sabors del Món", catArch: "Icones Urbanos", catNight: "Ritme Global", catTrad: "Arrels d'Espanya", errorLogin: "Codi o correu incorrecte.", confirmCode: "Confirmar Codi",
+    logout: "Tancar Sessió", trending: "Tendències Avui", hiddenGems: "Joies Ocultes", festivals: "Agenda 2026", results: "Tours Seleccionats",
+    spainTitle: "Col·lecció Espanya", spainSub: "L'ànima de la península"
   },
   eu: { 
     welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", 
@@ -70,7 +73,8 @@ const TRANSLATIONS: any = {
     emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Posta bidezko egiaztapena", routes: "Ibilbideak", community: "Soziala", 
     loading: "IA munduko ibilbideak sortzen ari da...", back: "Atzera", wine: "Gastronomia", architecture: "Arkitektura", night: "Gau Giroa", tradition: "Tradizioa",
     catWine: "Munduko Zaporeak", catArch: "Gaudi eta Avantguarda", catNight: "Madril eta Ibiza Erritmoak", catTrad: "Espainiako Sustraiak", errorLogin: "Kodea edo posta okerra.", confirmCode: "Kodea Berretsi",
-    logout: "Saioa Itxi", trending: "Joera Globalak", hiddenGems: "Ezkutuko Bitxiak", festivals: "2026 Agenda", results: "Hautatutako Tourrak"
+    logout: "Saioa Itxi", trending: "Joera Globalak", hiddenGems: "Ezkutuko Bitxiak", festivals: "2026 Agenda", results: "Hautatutako Tourrak",
+    spainTitle: "Espainia Bilduma", spainSub: "Iberiar penintsulako arima"
   },
   fr: { 
     welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", 
@@ -78,7 +82,8 @@ const TRANSLATIONS: any = {
     emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification par E-mail", routes: "Routes", community: "Social", 
     loading: "L'IA prépare des circuits mondiaux...", back: "Retour", wine: "Gastronomie", architecture: "Architecture", night: "Vie Nocturne", tradition: "Tradition",
     catWine: "Saveurs du Monde", catArch: "Gaudí et Avant-garde", catNight: "Rythmes de Madrid et Ibiza", catTrad: "Racines d'Espagne", errorLogin: "Code ou e-mail incorrect.", confirmCode: "Confirmer Code",
-    logout: "Déconnexion", trending: "Tendances du Jour", hiddenGems: "Joyaux Cachés", festivals: "Agenda 2026", results: "Circuits Sélectionnés"
+    logout: "Déconnexion", trending: "Tendances du Jour", hiddenGems: "Joyaux Cachés", festivals: "Agenda 2026", results: "Circuits Sélectionnés",
+    spainTitle: "Collection Espagne", spainSub: "L'âme de la péninsule"
   }
 };
 
@@ -111,7 +116,8 @@ const QuickCityBtn = ({ onClick, city, color, icon, label }: any) => {
         orange: 'from-orange-600/20 to-red-600/20 text-orange-400 border-orange-500/30',
         emerald: 'from-emerald-600/20 to-teal-600/20 text-emerald-400 border-emerald-500/30',
         rose: 'from-rose-600/20 to-pink-600/20 text-rose-400 border-rose-500/30',
-        cyan: 'from-cyan-600/20 to-blue-600/20 text-cyan-400 border-cyan-500/30'
+        cyan: 'from-cyan-600/20 to-blue-600/20 text-cyan-400 border-cyan-500/30',
+        gold: 'from-yellow-600/20 to-amber-600/20 text-yellow-500 border-yellow-500/30'
     };
     return (
         <button onClick={onClick} className={`flex items-center gap-4 p-5 rounded-[2.2rem] bg-gradient-to-br border backdrop-blur-md transition-all active:scale-95 ${colors[color] || colors.purple}`}>
@@ -312,6 +318,26 @@ export default function App() {
                           <div className="relative group">
                             <i className="fas fa-search absolute left-5 top-5 text-slate-500 group-focus-within:text-purple-500 transition-colors"></i>
                             <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:border-purple-500 shadow-2xl transition-all" />
+                          </div>
+                      </div>
+
+                      {/* SECCIÓN ESPECIAL ESPAÑA */}
+                      <CategoryHeader title={t('spainTitle')} subtitle={t('spainSub')} />
+                      <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-6 px-6 pb-2">
+                          <div className="min-w-[200px]">
+                            <QuickCityBtn onClick={() => handleCitySelect('Madrid')} city="Madrid" label="Capital del Arte 🖼️" icon="fa-landmark" color="gold" />
+                          </div>
+                          <div className="min-w-[200px]">
+                            <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} city="Barcelona" label="Gaudí & Mar 🌊" icon="fa-archway" color="gold" />
+                          </div>
+                          <div className="min-w-[200px]">
+                            <QuickCityBtn onClick={() => handleCitySelect('Sevilla')} city="Sevilla" label="Duende & Historia 💃" icon="fa-fan" color="gold" />
+                          </div>
+                          <div className="min-w-[200px]">
+                            <QuickCityBtn onClick={() => handleCitySelect('Bilbao')} city="Bilbao" label="Guggenheim & Pintxos 🍴" icon="fa-shapes" color="gold" />
+                          </div>
+                          <div className="min-w-[200px]">
+                            <QuickCityBtn onClick={() => handleCitySelect('Granada')} city="Granada" label="Alhambra Mágica 🕌" icon="fa-moon" color="gold" />
                           </div>
                       </div>
 
