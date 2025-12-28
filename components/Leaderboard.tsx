@@ -5,7 +5,7 @@ import { LeaderboardEntry } from '../types';
 interface LeaderboardProps {
   currentUser: LeaderboardEntry;
   entries: LeaderboardEntry[];
-  onUserClick?: (entry: LeaderboardEntry) => void;
+  onUserClick: (entry: LeaderboardEntry) => void;
   language: string;
 }
 
@@ -37,7 +37,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
             {/* 2nd Place */}
             {top3[1] && (
                 <div className="flex flex-col items-center w-28 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                    <div className="relative mb-4 group cursor-pointer" onClick={() => onUserClick?.(top3[1])}>
+                    <div className="relative mb-4 group cursor-pointer" onClick={() => onUserClick(top3[1])}>
                         <div className="absolute inset-0 bg-slate-400 blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
                         <img src={top3[1].avatar} className="w-18 h-18 rounded-[2rem] border-2 border-slate-400/50 object-cover shadow-2xl relative z-10" />
                         <div className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-slate-400 text-slate-950 flex items-center justify-center text-[11px] font-black border-4 border-slate-950 z-20 shadow-lg">2</div>
@@ -52,7 +52,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
             {/* 1st Place */}
             {top3[0] && (
                 <div className="flex flex-col items-center w-32 z-10 animate-slide-up">
-                    <div className="relative mb-6 group cursor-pointer" onClick={() => onUserClick?.(top3[0])}>
+                    <div className="relative mb-6 group cursor-pointer" onClick={() => onUserClick(top3[0])}>
                         <div className="absolute inset-0 bg-yellow-500 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
                         <img src={top3[0].avatar} className="w-24 h-24 rounded-[2.5rem] border-4 border-yellow-500 object-cover shadow-[0_0_40px_rgba(234,179,8,0.4)] relative z-10" />
                         <div className="absolute -top-8 -right-2 text-4xl animate-bounce">👑</div>
@@ -68,7 +68,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
             {/* 3rd Place */}
             {top3[2] && (
                 <div className="flex flex-col items-center w-28 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-                    <div className="relative mb-4 group cursor-pointer" onClick={() => onUserClick?.(top3[2])}>
+                    <div className="relative mb-4 group cursor-pointer" onClick={() => onUserClick(top3[2])}>
                         <div className="absolute inset-0 bg-amber-700 blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
                         <img src={top3[2].avatar} className="w-18 h-18 rounded-[2rem] border-2 border-amber-700/50 object-cover shadow-2xl relative z-10" />
                         <div className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-amber-700 text-amber-100 flex items-center justify-center text-[11px] font-black border-4 border-slate-950 z-20 shadow-lg">3</div>
@@ -85,7 +85,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
         <div className="flex-1 px-6 space-y-3 pb-10">
             {rest.length > 0 ? (
                 rest.map((user, idx) => (
-                    <div key={user.id} onClick={() => onUserClick?.(user)} className="flex items-center p-5 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-all cursor-pointer group hover:border-purple-500/30">
+                    <div key={user.id} onClick={() => onUserClick(user)} className="flex items-center p-5 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-all cursor-pointer group hover:border-purple-500/30">
                         <span className="w-10 text-sm font-black text-slate-600 group-hover:text-purple-400 transition-colors">{idx + 4}</span>
                         <div className="relative">
                             <img src={user.avatar} className="w-12 h-12 rounded-2xl border border-white/10 object-cover shadow-md" />

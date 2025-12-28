@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
@@ -6,17 +7,32 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const generateTextHash = (text: string): string => {
-    let hash = 0;
-    // Normalización extrema para evitar duplicados por minúsculas o espacios
-    const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-    if (clean.length === 0) return "empty_v5";
-    for (let i = 0; i < clean.length; i++) {
-        const char = clean.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
+// Auth Methods
+export const sendOtpEmail = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+        email: email.toLowerCase().trim(),
+        options: {
+            shouldCreateUser: true,
+        }
+    });
+    return { error };
+};
+
+export const verifyOtpCode = async (email: string, token: string) => {
+    const { data, error } = await supabase.auth.verifyOtp({
+        email: email.toLowerCase().trim(),
+        token,
+        type: 'signup', // Probar con 'signup' o 'magiclink' dependiendo de la config de Supabase
+    });
+    // Si falla como signup, reintentamos como magiclink (comportamiento estándar de Supabase OTP)
+    if (error) {
+        return await supabase.auth.verifyOtp({
+            email: email.toLowerCase().trim(),
+            token,
+            type: 'magiclink',
+        });
     }
-    return `v5_${Math.abs(hash).toString(36)}_${clean.length}`;
+    return { data, error };
 };
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -26,9 +42,14 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
     const { data, error } = await supabase.from('profiles').select('*').eq('email', cleanEmail).maybeSingle();
     if (error || !data) return null;
     return {
-      ...data, firstName: data.first_name, lastName: data.last_name,
-      visitedCities: data.visited_cities || [], completedTours: data.completed_tours || [],
-      interests: data.interests || [], isLoggedIn: true
+      ...data, 
+      firstName: data.first_name, 
+      lastName: data.last_name,
+      visitedCities: data.visited_cities || [], 
+      completedTours: data.completed_tours || [],
+      interests: data.interests || [], 
+      isLoggedIn: true,
+      joinDate: data.created_at ? new Date(data.created_at).toLocaleDateString() : new Date().toLocaleDateString()
     } as UserProfile;
   } catch (e) { return null; }
 };
@@ -45,7 +66,6 @@ export const syncUserProfile = async (user: UserProfile) => {
       updated_at: new Date().toISOString()
     }, { onConflict: 'email' });
     if (error) console.error("Supabase Sync Error:", error.message);
-    else console.log("Profile Synced with Cloud");
   } catch (e) { console.error("Cloud Sync Failure:", e); }
 };
 
@@ -76,37 +96,25 @@ export const saveToursToCache = async (city: string, language: string, tours: To
 };
 
 export const getCachedAudio = async (text: string, language: string): Promise<string | null> => {
-  const hash = generateTextHash(text);
   try {
+    const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+    const hash = `v5_${clean.length}_${clean.substring(0, 10)}`;
     const { data, error } = await supabase.from('audio_cache').select('base64').eq('text_hash', hash).eq('language', language).maybeSingle();
-    if (data) console.log("Audio cache HIT for hash:", hash);
     return (error || !data) ? null : data.base64;
   } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (text: string, language: string, base64: string) => {
   if (!base64 || base64.length < 100) return;
-  const hash = generateTextHash(text);
   try {
-    const { data, error } = await supabase.from('audio_cache').upsert({
+    const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+    const hash = `v5_${clean.length}_${clean.substring(0, 10)}`;
+    await supabase.from('audio_cache').upsert({
       text_hash: hash, language, base64, created_at: new Date().toISOString()
     }, { onConflict: 'text_hash,language' });
-    console.log("Audio cache SAVED for hash:", hash);
   } catch (e) { }
-};
+}
 
-// Fix: added String conversion and explicit string[] type to solve 'unknown' type inference error
-export const getRecentCommunityCities = async (language: string): Promise<{ city: string }[]> => {
-  try {
-    const { data } = await supabase.from('tours_cache').select('city').eq('language', language).order('created_at', { ascending: false }).limit(10);
-    if (!data) return [];
-    // Ensuring city is a string to satisfy the type requirement in the UI
-    const uniqueCities: string[] = Array.from(new Set(data.map((d: any) => String(d.city))));
-    return uniqueCities.map(city => ({ city }));
-  } catch (e) { return []; }
-};
-
-// Fix: added optional userId parameter to match the function signature used in CommunityBoard.tsx
 export const getCommunityPosts = async (city: string, _userId?: string) => {
   try {
     const { data, error } = await supabase.from('community_posts').select('*').eq('city', city).order('created_at', { ascending: false });

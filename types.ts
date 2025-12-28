@@ -7,6 +7,18 @@ export interface Badge {
   earnedAt?: string;
 }
 
+export interface SocialLinks {
+  instagram?: string;
+  tiktok?: string;
+  twitter?: string;
+  x?: string;
+  linkedin?: string;
+  facebook?: string;
+  website?: string;
+}
+
+export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend';
+
 export interface UserStats {
   photosTaken: number;
   guidesBought: number;
@@ -22,36 +34,29 @@ export interface UserProfile {
   name: string;
   username: string;
   email: string;
+  password?: string;
   avatar: string;
   language: string;
   miles: number;
+  culturePoints: number;
+  foodPoints: number;
+  photoPoints: number;
   rank: TravelerRank;
   interests: string[];
   accessibility: 'standard' | 'wheelchair' | 'low_walking';
   isPublic: boolean;
   bio: string;
   age: number;
+  country?: string;
+  city?: string;
   badges: Badge[];
+  profileCuriosity?: string; // Nuevo: Dato curioso generado
   visitedCities: string[]; 
   completedTours: string[];
   stats: UserStats;
-  personalPhotos: string[]; // Álbum de fotos del viajero
+  socials?: SocialLinks;
   passportNumber?: string;
-  joinDate?: string;
-  city?: string;
-  country?: string;
-}
-
-export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend';
-
-export interface LeaderboardEntry {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string;
-  miles: number;
-  rank: number | string;
-  isPublic: boolean;
+  joinDate?: string; // Fecha de expedición
 }
 
 export interface Stop {
@@ -63,7 +68,7 @@ export interface Stop {
   type: 'historical' | 'food' | 'art' | 'business_ad' | 'nature' | 'photo' | 'culture';
   visited: boolean;
   imageUrl?: string; 
-  isRichInfo?: boolean;
+  curiosity?: string;
   photoSpot?: {
     angle: string;
     bestTime: string;
@@ -71,6 +76,7 @@ export interface Stop {
     milesReward: number;
     secretLocation?: string;
   };
+  isRichInfo?: boolean; 
 }
 
 export interface Tour {
@@ -84,9 +90,24 @@ export interface Tour {
   theme: string;
   isSponsored: boolean;
   stops: Stop[];
-  imageUrl?: string;  // Añadido para corregir error TS2339
-  safetyTip?: string; // Añadido para corregir error TS2353
-  wifiTip?: string;   // Añadido para corregir error TS2353
+  imageUrl?: string; 
+  cityImageUrl?: string; 
+  transportApps?: string[];
+  publicTransport?: string;
+  safetyTip?: string;
+  wifiTip?: string;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  username?: string;
+  avatar: string;
+  miles: number;
+  rank: number;
+  isPublic: boolean;
+  badges?: Badge[];
+  socials?: SocialLinks;
 }
 
 export enum AppView {
@@ -98,14 +119,13 @@ export enum AppView {
   PROFILE = 'PROFILE',
   SHOP = 'SHOP',
   LEADERBOARD = 'LEADERBOARD',
-  TOOLS = 'TOOLS',
-  COMMUNITY = 'COMMUNITY'
+  TOOLS = 'TOOLS'
 }
 
 export const LANGUAGES = [
   { code: 'es', name: 'Español' },
   { code: 'en', name: 'English' },
-  { code: 'sw', name: 'Kiswahili' },
   { code: 'ca', name: 'Català' },
+  { code: 'eu', name: 'Euskera' },
   { code: 'fr', name: 'Français' },
 ];

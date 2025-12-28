@@ -2,28 +2,6 @@
 import React, { useState } from 'react';
 import { Tour, Stop } from '../types';
 
-interface TourCardProps {
-    tour: Tour;
-    onSelect: (tour: Tour) => void;
-    onPlayAudio: (id: string, text: string) => void;
-    isPlayingAudio: boolean;
-    isAudioLoading: boolean;
-    language: string;
-}
-
-interface ActiveTourCardProps {
-    tour: Tour;
-    currentStopIndex: number;
-    onNext: () => void;
-    onPrev: () => void;
-    onPlayAudio: (id: string, text: string) => void;
-    audioPlayingId: string | null;
-    audioLoadingId: string | null;
-    onCheckIn?: (stopId: string, miles: number) => void;
-    onShare?: (platform: string) => void;
-    language: string;
-}
-
 const getThemeStyles = (themeStr: string) => {
   const theme = themeStr.toLowerCase();
   if (theme.includes('history')) return { badge: 'bg-amber-100 text-amber-900', icon: 'fa-landmark', color: 'from-amber-400 to-orange-600' };
@@ -51,7 +29,7 @@ const ImageFallback = ({ city, icon, colorClass }: { city: string, icon: string,
     </div>
 );
 
-export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, language }) => {
+export const TourCard: React.FC<any> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, language }) => {
   const [imgError, setImgError] = useState(false);
   const styles = getThemeStyles(tour.theme);
   const t = UI_TEXT[language] || UI_TEXT['es'];
@@ -89,7 +67,7 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, onPlayAudio,
   );
 };
 
-export const ActiveTourCard: React.FC<ActiveTourCardProps> = (props) => {
+export const ActiveTourCard: React.FC<any> = (props) => {
     const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, onShare, language } = props;
     const [imgError, setImgError] = useState(false);
     const [showSecret, setShowSecret] = useState(false);
@@ -132,7 +110,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = (props) => {
                  <div className="relative">
                     <article className="prose prose-slate max-w-none">
                         <div className="text-slate-800 leading-[2.1] font-serif text-xl mb-12 whitespace-pre-wrap selection:bg-amber-100 tracking-tight">
-                            {currentStop.description.split('\n\n').map((para: string, i: number) => (
+                            {currentStop.description.split('\n\n').map((para, i) => (
                                 <p key={i} className="mb-8 drop-shadow-sm first-letter:text-4xl first-letter:font-black first-letter:mr-1 first-letter:text-purple-600">
                                     {para}
                                 </p>
@@ -177,7 +155,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = (props) => {
                                             <p className="text-xs font-bold text-purple-400 italic">#{currentStop.photoSpot.instagramHook}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => onShare?.('instagram')} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                                    <button onClick={() => onShare('instagram')} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
                                         <i className="fab fa-instagram text-xl"></i>
                                         {t.share} (+150m)
                                     </button>
@@ -188,10 +166,11 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = (props) => {
                  )}
                  
                  <div className="space-y-4">
-                     <button onClick={() => onCheckIn?.(currentStop.id, 150)} className={`w-full py-7 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-4 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
+                     <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-7 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-4 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
                          {currentStop.visited ? <i className="fas fa-check-circle text-xl"></i> : <i className="fas fa-map-marker-alt text-xl"></i>}
                          {currentStop.visited ? t.visited : t.checkin}
                      </button>
+                     
                      <div className="grid grid-cols-2 gap-4">
                          <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-6 bg-slate-100 text-slate-400 rounded-[2.2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30 transition-all active:bg-slate-200">{t.prev}</button>
                          <button onClick={onNext} className="py-6 bg-purple-600 text-white rounded-[2.2rem] font-black uppercase tracking-widest text-[10px] shadow-xl transition-all active:scale-95 active:bg-purple-700">{t.next}</button>
