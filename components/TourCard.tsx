@@ -78,6 +78,25 @@ export const ActiveTourCard: React.FC<any> = (props) => {
     const isPlaying = audioPlayingId === currentStop.id;
     const isLoading = audioLoadingId === currentStop.id;
 
+    // Función de compartir mejorada para el móvil
+    const handleNativeShare = async () => {
+        const shareData = {
+            title: `bdai - ${currentStop.name}`,
+            text: `¡Mira este sitio increíble en ${tour.city}! Descúbrelo con bdai IA.`,
+            url: window.location.href,
+        };
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+                onShare('native'); // Recompensa millas
+            } catch (err) {
+                console.log('Share cancelled');
+            }
+        } else {
+            onShare('instagram'); // Fallback si no hay share API
+        }
+    };
+
     React.useEffect(() => { 
         setShowSecret(false); 
         const container = document.getElementById('tour-content-scroll');
@@ -155,8 +174,8 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                                             <p className="text-xs font-bold text-purple-400 italic">#{currentStop.photoSpot.instagramHook}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => onShare('instagram')} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
-                                        <i className="fab fa-instagram text-xl"></i>
+                                    <button onClick={handleNativeShare} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
+                                        <i className="fas fa-share-alt text-xl"></i>
                                         {t.share} (+150m)
                                     </button>
                                 </div>

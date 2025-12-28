@@ -11,6 +11,29 @@ const LANGUAGE_MAP: Record<string, string> = {
     fr: "French (Français de France)"
 };
 
+/**
+ * Modera el contenido del usuario antes de publicarlo en la comunidad.
+ * Devuelve true si el contenido es apto, false si es ofensivo.
+ */
+export const moderateContent = async (text: string): Promise<boolean> => {
+    if (!text || text.length < 2) return false;
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Analiza si el siguiente mensaje es apto para una comunidad de viajes. 
+            Responde "SAFE" si el mensaje es respetuoso y útil. 
+            Responde "UNSAFE" si contiene insultos, odio, spam agresivo o contenido inapropiado.
+            MENSAJE: "${text}"`,
+        });
+        const result = response.text?.trim().toUpperCase();
+        return result === "SAFE";
+    } catch (e) {
+        console.error("Moderation error, allowing by default:", e);
+        return true; // Si falla la API, permitimos para no bloquear al usuario, pero logueamos
+    }
+};
+
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
   const cityLower = cityInput.toLowerCase().trim();
   
@@ -20,20 +43,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const targetLanguage = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
 
   const prompt = `YOU ARE THE WORLD'S MOST EXPERT FREE TOUR GUIDE.
-  Your task is to design exactly 4 DIFFERENT THEMATIC TOURS (e.g., Iconic History, Foodie Paradise, Night Pulse, Hidden Nature/Secrets) for the city: ${cityInput}.
+  Your task is to design exactly 4 DIFFERENT THEMATIC TOURS for: ${cityInput}.
   
   UNBREAKABLE RULES:
   - Valid for ANY city in the world.
-  - Each tour MUST have exactly 10 REAL STOPS with high information density.
-  - Be specific. Mention street names, history, and "insider" tips.
+  - 10 REAL STOPS per tour.
   - LANGUAGE: All content strictly in ${targetLanguage}.
-  - Tailor to profile (Interests: ${userProfile.interests.join(", ")}).
-  
-  STOP FORMAT:
-  - Real place name.
-  - Description: 4 paragraphs (History, Legend/Mystery, AI Curiosities, Pro Tip).
-  - Exact GPS coordinates.
-  - Secret Photo Spot details.`;
+  - Tailor to profile (Interests: ${userProfile.interests.join(", ")}).`;
 
   const responseSchema = {
     type: Type.ARRAY,
