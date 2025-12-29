@@ -1,4 +1,6 @@
 
+
+
 export interface Badge {
   id: string;
   name: string;
@@ -69,6 +71,8 @@ export interface Stop {
   visited: boolean;
   imageUrl?: string; 
   curiosity?: string;
+  // Fix: renamed imageKeywords to imgKeywords to match usage in components/TourCard.tsx and services/geminiService.ts
+  imgKeywords?: string;
   photoSpot?: {
     angle: string;
     bestTime: string;

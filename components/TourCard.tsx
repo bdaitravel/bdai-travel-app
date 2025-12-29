@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tour, Stop } from '../types';
+import { SchematicMap } from './SchematicMap';
 
 const getThemeStyles = (themeStr: string) => {
   const theme = themeStr.toLowerCase();
@@ -12,55 +13,35 @@ const getThemeStyles = (themeStr: string) => {
 };
 
 const UI_TEXT: any = {
-    en: { start: "Start", preview: "Audio Preview", stop: "Stop", stopTag: "Stop", share: "Share to earn", checkin: "Check-in (+150m)", bestTime: "Best time", photoHook: "Instagram Hook", visited: "Place Visited", next: "Next", prev: "Back", secretTitle: "Secret Insider Spot", secretUnlock: "Tap to reveal hidden spot" },
-    es: { start: "Empezar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Compartir y ganar", checkin: "Hacer Check-in (+150m)", bestTime: "Mejor hora", photoHook: "Gancho Instagram", visited: "Lugar Visitado", next: "Siguiente", prev: "Atrás", secretTitle: "Spot Secreto Insider", secretUnlock: "Pulsa para revelar el sitio oculto" },
-    ca: { start: "Començar", preview: "Escuchar", stop: "Parar", stopTag: "Parada", share: "Comparteix i guanya", checkin: "Fer Check-in (+150m)", bestTime: "Millor hora", photoHook: "Ganxo Instagram", visited: "Lloc Visitat", next: "Següent", prev: "Enrere", secretTitle: "Spot Secret Insider", secretUnlock: "Prem per revelar el lloc ocult" },
-    eu: { start: "Hasi", preview: "Entzun", stop: "Gelditu", stopTag: "Geltokia", share: "Partekatu eta irabazi", checkin: "Check-in egin (+150m)", bestTime: "Ordu onena", photoHook: "Instagramerako kouka", visited: "Bisitatutako lekua", next: "Hurrengoa", prev: "Atzera", secretTitle: "Ezkutuko Spot-a", secretUnlock: "Sakatu ezkutuko tokia ikusteko" },
-    fr: { start: "Démarrer", preview: "Écouter", stop: "Arrêter", stopTag: "Étape", share: "Partager et gagner", checkin: "Enregistrer (+150m)", bestTime: "Meilleur moment", photoHook: "Accroche Insta", visited: "Lieu Visité", next: "Suivant", prev: "Retour", secretTitle: "Spot Secret Insider", secretUnlock: "Appuyez para révéler le lieu caché" }
+    en: { start: "Start", stop: "Stop", stopTag: "Stop", checkin: "Check-in (+150m)", visited: "Explored", next: "Next", prev: "Back", bestAngle: "Best Angle", bestTime: "Golden Hour", hook: "Social Hook", share: "Share Discovery" },
+    es: { start: "Empezar", stop: "Parar", stopTag: "Parada", checkin: "Hacer Check-in (+150m)", visited: "Explorado", next: "Siguiente", prev: "Atrás", bestAngle: "Ángulo Perfecto", bestTime: "Momento Ideal", hook: "Hook Social", share: "Compartir Hallazgo" },
+    ca: { start: "Començar", stop: "Parar", stopTag: "Parada", checkin: "Check-in (+150m)", visited: "Explorat", next: "Següent", prev: "Enrere", bestAngle: "Angle Perfecte", bestTime: "Moment Ideal", hook: "Hook Social", share: "Compartir" },
+    eu: { start: "Hasi", stop: "Gelditu", stopTag: "Geltokia", checkin: "Check-in (+150m)", visited: "Arakatuta", next: "Hurrengoa", prev: "Atzera", bestAngle: "Angelu Ona", bestTime: "Ordurik Onena", hook: "Hook Soziala", share: "Partekatu" },
+    fr: { start: "Démarrer", stop: "Arrêter", stopTag: "Étape", checkin: "Enregistrer (+150m)", visited: "Exploré", next: "Suivant", prev: "Retour", bestAngle: "Meilleur Angle", bestTime: "Heure Idéale", hook: "Hook Social", share: "Partager" }
 };
 
-const ImageFallback = ({ city, icon, colorClass }: { city: string, icon: string, colorClass: string }) => (
-    <div className={`w-full h-full bg-gradient-to-br ${colorClass} flex flex-col items-center justify-center p-6 text-white/90`}>
-        <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-4xl mb-4 border border-white/30 shadow-2xl">
-            <i className={`fas ${icon}`}></i>
-        </div>
-        <span className="text-xs font-black uppercase tracking-[0.3em] opacity-60 mb-1">bdai Guide</span>
-        <h4 className="text-2xl font-black text-center leading-tight tracking-tighter drop-shadow-md">{city}</h4>
-    </div>
-);
-
 export const TourCard: React.FC<any> = ({ tour, onSelect, onPlayAudio, isPlayingAudio, isAudioLoading, language }) => {
-  const [imgError, setImgError] = useState(false);
   const styles = getThemeStyles(tour.theme);
   const t = UI_TEXT[language] || UI_TEXT['es'];
+  const fallbackImg = `https://images.unsplash.com/photo-1543783232-261f9107558e?auto=format&fit=crop&w=800&q=80`;
 
   return (
-    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer h-full flex flex-col">
-      <div className="h-56 relative overflow-hidden bg-slate-200">
-        {!imgError && tour.imageUrl ? (
-            <img src={tour.imageUrl} onError={() => setImgError(true)} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" alt={tour.title} />
-        ) : (
-            <ImageFallback city={tour.city} icon={styles.icon} colorClass={styles.color} />
-        )}
-        <div className="absolute top-4 left-4">
-             <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg ${styles.badge} backdrop-blur-md bg-opacity-90`}>
-                 <i className={`fas ${styles.icon} mr-1`}></i> {tour.theme}
+    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-700 cursor-pointer h-full flex flex-col">
+      <div className="h-48 relative overflow-hidden bg-slate-200">
+        <img src={tour.imageUrl || fallbackImg} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={tour.title} />
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute top-6 left-6">
+             <span className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-2xl ${styles.badge} backdrop-blur-md bg-opacity-95`}>
+                 <i className={`fas ${styles.icon} mr-2`}></i> {tour.theme}
              </span>
         </div>
       </div>
-      <div className="p-6 flex flex-col flex-1">
-          <div className="flex flex-wrap gap-2 mb-4">
-              <span className="px-3 py-1 rounded-lg bg-slate-50 text-xs font-bold text-slate-500 flex items-center gap-1.5"><i className="fas fa-clock text-slate-400"></i> {tour.duration}</span>
-              <span className="px-3 py-1 rounded-lg bg-slate-50 text-xs font-bold text-slate-500 flex items-center gap-1.5"><i className="fas fa-walking text-slate-400"></i> {tour.distance}</span>
-          </div>
-          <h3 className="text-xl font-heading font-black text-slate-900 mb-3 leading-tight group-hover:text-purple-700 transition-colors">{tour.title}</h3>
-          <p className="text-slate-500 text-[11px] leading-relaxed mb-6 line-clamp-3 font-medium">{tour.description}</p>
+      <div className="p-8 flex flex-col flex-1">
+          <h3 className="text-2xl font-heading font-black text-slate-900 mb-4 leading-tight group-hover:text-purple-700 uppercase tracking-tighter">{tour.title}</h3>
+          <p className="text-slate-500 text-xs leading-relaxed mb-8 line-clamp-3 font-medium opacity-80">{tour.description}</p>
           <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-               <button onClick={(e) => {e.stopPropagation(); onPlayAudio(tour.id, tour.description);}} className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${isPlayingAudio ? 'text-red-500' : 'text-slate-400'}`}>
-                   {isAudioLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlayingAudio ? <i className="fas fa-stop"></i> : <i className="fas fa-play"></i>}
-                   {isPlayingAudio ? t.stop : t.preview}
-               </button>
-               <span className="text-slate-900 font-black text-[10px] uppercase tracking-widest">{t.start} <i className="fas fa-arrow-right ml-1"></i></span>
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><i className="fas fa-clock mr-2"></i> {tour.duration}</span>
+               <span className="text-slate-900 font-black text-[10px] uppercase tracking-[0.2em]">{t.start} <i className="fas fa-chevron-right ml-2"></i></span>
           </div>
       </div>
     </div>
@@ -68,134 +49,116 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, onPlayAudio, isPlaying
 };
 
 export const ActiveTourCard: React.FC<any> = (props) => {
-    const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, onCheckIn, onShare, language } = props;
-    const [imgError, setImgError] = useState(false);
-    const [showSecret, setShowSecret] = useState(false);
+    const { tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, userLocation, onCheckIn, onShare, language } = props;
     const currentStop = tour.stops[currentStopIndex] as Stop;
-    const styles = getThemeStyles(tour.theme);
     const t = UI_TEXT[language] || UI_TEXT['es'];
-
     const isPlaying = audioPlayingId === currentStop.id;
     const isLoading = audioLoadingId === currentStop.id;
 
-    // Función de compartir mejorada para el móvil
-    const handleNativeShare = async () => {
-        const shareData = {
-            title: `bdai - ${currentStop.name}`,
-            text: `¡Mira este sitio increíble en ${tour.city}! Descúbrelo con bdai IA.`,
-            url: window.location.href,
-        };
-        if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-                onShare('native'); // Recompensa millas
-            } catch (err) {
-                console.log('Share cancelled');
+    const renderDescription = () => {
+        // Separamos por párrafos para un renderizado limpio
+        const parts = currentStop.description.split('\n');
+        let firstParaFound = false;
+
+        return parts.map((line, idx) => {
+            // Limpieza básica para asegurar que no se vean etiquetas residuales
+            const cleanLine = line
+                .replace(/(\*\*|__)?(SECCIÓN NARRATIVA|EL SECRETO|DETALLE ARQUITECTÓNICO|NARRATIVA|SECRETO|DETALLE):?(\*\*|__)?/gi, '')
+                .replace(/\[.*?\]/g, '')
+                .replace(/\*+/g, '')
+                .trim();
+                
+            if (!cleanLine) return null;
+
+            // Estilo de "Letra Capitular" para el primer párrafo real
+            if (!firstParaFound) {
+                firstParaFound = true;
+                return (
+                    <div key={idx} className="mb-10">
+                        <p className="text-slate-800 font-serif text-2xl leading-relaxed first-letter:text-7xl first-letter:font-black first-letter:float-left first-letter:mr-3 first-letter:text-purple-600 first-letter:mt-2">
+                            {cleanLine}
+                        </p>
+                    </div>
+                );
             }
-        } else {
-            onShare('instagram'); // Fallback si no hay share API
-        }
+
+            // Párrafos normales con buen espaciado editorial
+            return <p key={idx} className="mb-10 text-slate-700 text-xl leading-relaxed font-sans font-medium">{cleanLine}</p>;
+        });
     };
 
-    React.useEffect(() => { 
-        setShowSecret(false); 
-        const container = document.getElementById('tour-content-scroll');
-        if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [currentStopIndex]);
-
     return (
-        <div id="tour-content-scroll" className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar scroll-smooth">
-             <div className="relative h-[40vh] w-full flex-shrink-0 bg-slate-100">
-                {!imgError && currentStop.imageUrl ? (
-                    <img src={currentStop.imageUrl} onError={() => setImgError(true)} className="w-full h-full object-cover" alt={currentStop.name} />
-                ) : (
-                    <ImageFallback city={currentStop.name} icon={styles.icon} colorClass={styles.color} />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/30"></div>
-                <div className="absolute top-6 right-6">
-                    <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all transform active:scale-90 ${isPlaying ? 'bg-red-500 text-white' : 'bg-white text-slate-900'}`}>
-                        {isLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlaying ? <i className="fas fa-stop"></i> : <i className="fas fa-play text-xl pl-1"></i>}
+        <div id="tour-content-scroll" className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar pb-80 scroll-smooth">
+             <div className="relative h-[45vh] w-full flex-shrink-0 bg-slate-100">
+                <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} userLocation={userLocation} />
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+                
+                <div className="absolute bottom-8 right-8 z-[400]">
+                    <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 ${isPlaying ? 'bg-red-600 text-white animate-pulse' : 'bg-purple-600 text-white'}`}>
+                        {isLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlaying ? <i className="fas fa-stop text-xl"></i> : <i className="fas fa-volume-up text-xl"></i>}
                     </button>
-                </div>
-                <div className="absolute bottom-8 left-8 right-8">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-0.5 rounded bg-white/20 backdrop-blur-md text-[8px] font-black text-white uppercase tracking-widest border border-white/20">{t.stopTag} {currentStopIndex + 1}/{tour.stops.length}</span>
-                    </div>
-                    <h1 className="text-3xl font-heading font-black text-white drop-shadow-xl leading-tight">{currentStop.name}</h1>
                 </div>
              </div>
              
-             <div className="px-8 pb-40 pt-10">
-                 <div className="relative">
-                    <article className="prose prose-slate max-w-none">
-                        <div className="text-slate-800 leading-[2.1] font-serif text-xl mb-12 whitespace-pre-wrap selection:bg-amber-100 tracking-tight">
-                            {currentStop.description.split('\n\n').map((para, i) => (
-                                <p key={i} className="mb-8 drop-shadow-sm first-letter:text-4xl first-letter:font-black first-letter:mr-1 first-letter:text-purple-600">
-                                    {para}
-                                </p>
-                            ))}
-                        </div>
-                    </article>
-                    <div className="h-20 -mt-20 pointer-events-none bg-gradient-to-t from-white to-transparent opacity-40"></div>
-                 </div>
+             <div className="px-8 pt-4">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="px-4 py-2 bg-slate-900 rounded-full text-[10px] font-black text-white uppercase tracking-widest">{t.stopTag} {currentStopIndex + 1}/{tour.stops.length}</span>
+                </div>
+                <h1 className="text-4xl font-heading font-black text-slate-900 tracking-tighter leading-tight uppercase mb-12">{currentStop.name}</h1>
+                
+                <div className="relative">
+                    {renderDescription()}
+                </div>
 
-                 {currentStop.photoSpot && (
-                     <div className="mb-12 relative overflow-hidden">
-                        <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl border-2 border-white/5">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-yellow-500 flex items-center justify-center text-slate-900 shadow-lg animate-pulse text-xl"><i className="fas fa-camera-retro"></i></div>
-                                    <h4 className="text-xs font-black text-white uppercase tracking-widest">{t.secretTitle}</h4>
-                                </div>
-                            </div>
-                            
-                            {!showSecret ? (
-                                <button 
-                                    onClick={() => setShowSecret(true)}
-                                    className="w-full py-10 bg-white/5 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center gap-3 group hover:bg-white/10 transition-all active:scale-[0.98]"
-                                >
-                                    <i className="fas fa-eye text-white/10 text-3xl group-hover:scale-110 transition-transform"></i>
-                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{t.secretUnlock}</span>
-                                </button>
-                            ) : (
-                                <div className="animate-fade-in space-y-6">
-                                    <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
-                                        <p className="text-yellow-400 text-sm font-black italic leading-relaxed">
-                                            "{currentStop.photoSpot.secretLocation}"
-                                        </p>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div>
-                                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">{t.bestTime}</p>
-                                            <p className="text-xs font-bold text-white flex items-center gap-2"><i className="far fa-clock text-yellow-500"></i> {currentStop.photoSpot.bestTime}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">{t.photoHook}</p>
-                                            <p className="text-xs font-bold text-purple-400 italic">#{currentStop.photoSpot.instagramHook}</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={handleNativeShare} className="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all">
-                                        <i className="fas fa-share-alt text-xl"></i>
-                                        {t.share} (+150m)
-                                    </button>
-                                </div>
-                            )}
+                {/* Photo Spot */}
+                {currentStop.photoSpot && (
+                    <div className="mt-16 mb-12 p-8 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-[3rem] border border-purple-100 shadow-xl relative overflow-hidden group">
+                        <div className="absolute -right-10 -bottom-10 text-9xl text-purple-200/20 rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                            <i className="fas fa-camera-retro"></i>
                         </div>
-                     </div>
-                 )}
+                        <div className="space-y-6 relative z-10">
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-purple-600 shadow-sm"><i className="fas fa-compress-arrows-alt"></i></div>
+                                <div><p className="text-[9px] font-black uppercase tracking-widest text-purple-400 mb-1">{t.bestAngle}</p><p className="text-lg font-bold text-slate-800">{currentStop.photoSpot.angle}</p></div>
+                            </div>
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-amber-500 shadow-sm"><i className="fas fa-sun"></i></div>
+                                <div><p className="text-[9px] font-black uppercase tracking-widest text-amber-400 mb-1">{t.bestTime}</p><p className="text-lg font-bold text-slate-800">{currentStop.photoSpot.bestTime}</p></div>
+                            </div>
+                            <div className="p-5 bg-white rounded-2xl border border-purple-100 shadow-inner italic text-slate-600 font-serif text-lg leading-relaxed">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-3 non-italic not-italic">{t.hook}</p>
+                                "{currentStop.photoSpot.instagramHook}"
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Redes Sociales */}
+                <div className="mt-12 mb-16 text-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">{t.share}</p>
+                    <div className="flex justify-center gap-6">
+                        <button onClick={() => onShare('instagram')} className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"><i className="fab fa-instagram text-2xl"></i></button>
+                        <button onClick={() => onShare('tiktok')} className="w-14 h-14 rounded-2xl bg-black text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"><i className="fab fa-tiktok text-2xl"></i></button>
+                        <button onClick={() => onShare('facebook')} className="w-14 h-14 rounded-2xl bg-[#1877F2] text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"><i className="fab fa-facebook-f text-2xl"></i></button>
+                    </div>
+                </div>
+             </div>
+
+             <div className="fixed bottom-12 left-8 right-8 z-[500] space-y-4">
+                 <button 
+                    disabled={currentStop.visited}
+                    onClick={() => onCheckIn(currentStop.id, 150)} 
+                    className={`w-full py-10 rounded-[3rem] font-black uppercase tracking-[0.4em] text-sm flex items-center justify-center gap-4 shadow-2xl border-4 transition-all active:scale-95 ${currentStop.visited ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-purple-600 border-purple-500 text-white'}`}
+                 >
+                    {currentStop.visited ? <i className="fas fa-check-double text-2xl"></i> : <i className="fas fa-map-pin text-2xl"></i>}
+                    {currentStop.visited ? t.visited : t.checkin}
+                 </button>
                  
-                 <div className="space-y-4">
-                     <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-7 rounded-[2.5rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-4 shadow-2xl transition-all transform active:scale-95 ${currentStop.visited ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'}`}>
-                         {currentStop.visited ? <i className="fas fa-check-circle text-xl"></i> : <i className="fas fa-map-marker-alt text-xl"></i>}
-                         {currentStop.visited ? t.visited : t.checkin}
-                     </button>
-                     
-                     <div className="grid grid-cols-2 gap-4">
-                         <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-6 bg-slate-100 text-slate-400 rounded-[2.2rem] font-black uppercase tracking-widest text-[10px] disabled:opacity-30 transition-all active:bg-slate-200">{t.prev}</button>
-                         <button onClick={onNext} className="py-6 bg-purple-600 text-white rounded-[2.2rem] font-black uppercase tracking-widest text-[10px] shadow-xl transition-all active:scale-95 active:bg-purple-700">{t.next}</button>
-                     </div>
+                 <div className="grid grid-cols-2 gap-4">
+                     <button onClick={onPrev} disabled={currentStopIndex === 0} className="py-8 bg-slate-950 text-white rounded-[2.5rem] font-black uppercase tracking-widest text-xs border border-white/10 active:scale-95 disabled:opacity-30">{t.prev}</button>
+                     <button onClick={onNext} disabled={currentStopIndex === tour.stops.length - 1} className="py-8 bg-slate-950 text-white rounded-[2.5rem] font-black uppercase tracking-widest text-xs border border-white/10 active:scale-95 disabled:opacity-30">{t.next}</button>
                  </div>
-            </div>
+             </div>
         </div>
     );
 };

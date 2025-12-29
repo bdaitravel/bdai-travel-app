@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
+import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES, TravelerRank } from './types';
 import { generateToursForCity, generateAudio } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { Leaderboard } from './components/Leaderboard';
@@ -10,7 +10,6 @@ import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { syncUserProfile, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode } from './services/supabaseClient';
 
-// --- Audio Helpers for Gemini TTS PCM Data ---
 function decodeBase64(base64: string) {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -40,57 +39,17 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: { 
-    welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", 
-    searchPlaceholder: "Search any city in the world...", login: "Issue Passport", tagline: "better destinations by ai", 
-    emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Email Verification", routes: "Routes", community: "Social", 
-    loading: "IA is creating world-class tours...", back: "Back", wine: "Gastronomy", architecture: "Urban Design", night: "City Pulse", tradition: "Heritage",
-    catWine: "Flavors & Spirits", catArch: "Modern Marvels", catNight: "Global Nightlife", catTrad: "Ancient Roots", errorLogin: "Invalid code or email.", confirmCode: "Confirm Code",
-    logout: "Log Out", trending: "Global Trends", hiddenGems: "Secret Escapes", festivals: "2026 Agenda", results: "AI Curated Tours",
-    spainTitle: "Spain Collection", spainSub: "The soul of the peninsula"
-  },
-  es: { 
-    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", 
-    searchPlaceholder: "Busca cualquier ciudad del mundo...", login: "Emitir Pasaporte", tagline: "better destinations by ai", 
-    emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación por Email", routes: "Rutas", community: "Social", 
-    loading: "La IA está creando rutas mundiales...", back: "Atrás", wine: "Gastronomía", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimonio",
-    catWine: "Sabores del Mundo", catArch: "Iconos Urbanos", catNight: "Ritmo Global", catTrad: "Raíces Ancestrales", errorLogin: "Código o email incorrecto.", confirmCode: "Confirmar Código",
-    logout: "Cerrar Sesión", trending: "Tendencias Globales", hiddenGems: "Joyas Ocultas", festivals: "Agenda 2026", results: "Tours de la IA",
-    spainTitle: "Colección España", spainSub: "El alma de la península"
-  },
-  ca: { 
-    welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", 
-    searchPlaceholder: "Cerca qualsevol ciutat del món...", login: "Emetre Passaport", tagline: "better destinations by ai", 
-    emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació per Correu", routes: "Rutes", community: "Social", 
-    loading: "La IA està creant rutes mundials...", back: "Enrere", wine: "Gastronomia", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Tradició",
-    catWine: "Sabors del Món", catArch: "Icones Urbanos", catNight: "Ritme Global", catTrad: "Arrels d'Espanya", errorLogin: "Codi o correu incorrecte.", confirmCode: "Confirmar Codi",
-    logout: "Tancar Sessió", trending: "Tendències Avui", hiddenGems: "Joies Ocultes", festivals: "Agenda 2026", results: "Tours Seleccionats",
-    spainTitle: "Col·lecció Espanya", spainSub: "L'ànima de la península"
-  },
-  eu: { 
-    welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", 
-    searchPlaceholder: "Bilatu munduko hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", 
-    emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Posta bidezko egiaztapena", routes: "Ibilbideak", community: "Soziala", 
-    loading: "IA munduko ibilbideak sortzen ari da...", back: "Atzera", wine: "Gastronomia", architecture: "Arkitektura", night: "Gau Giroa", tradition: "Tradizioa",
-    catWine: "Munduko Zaporeak", catArch: "Gaudi eta Avantguarda", catNight: "Madril eta Ibiza Erritmoak", catTrad: "Espainiako Sustraiak", errorLogin: "Kodea edo posta okerra.", confirmCode: "Kodea Berretsi",
-    logout: "Saioa Itxi", trending: "Joera Globalak", hiddenGems: "Ezkutuko Bitxiak", festivals: "2026 Agenda", results: "Hautatutako Tourrak",
-    spainTitle: "Espainia Bilduma", spainSub: "Iberiar penintsulako arima"
-  },
-  fr: { 
-    welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", 
-    searchPlaceholder: "Chercher une ville au monde...", login: "Émettre Passeport", tagline: "better destinations by ai", 
-    emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification par E-mail", routes: "Routes", community: "Social", 
-    loading: "L'IA prépare des circuits mondiaux...", back: "Retour", wine: "Gastronomie", architecture: "Architecture", night: "Vie Nocturne", tradition: "Tradition",
-    catWine: "Saveurs du Monde", catArch: "Gaudí et Avant-garde", catNight: "Rythmes de Madrid et Ibiza", catTrad: "Racines d'Espagne", errorLogin: "Code ou e-mail incorrect.", confirmCode: "Confirmer Code",
-    logout: "Déconnexion", trending: "Tendances du Jour", hiddenGems: "Joyaux Cachés", festivals: "Agenda 2026", results: "Circuits Sélectionnés",
-    spainTitle: "Collection Espagne", spainSub: "L'âme de la péninsule"
-  }
+  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", wine: "Gastronomy", architecture: "Urban Design", night: "City Pulse", tradition: "Heritage", errorLogin: "Invalid code.", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Try again in a few minutes.", loading: "Curating your global experience..." },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", wine: "Gastronomía", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimonio", errorLogin: "Código incorrecto.", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Reinténtalo en unos minutos.", loading: "Curando tu experiencia global..." },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", wine: "Gastronomia", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimoni", errorLogin: "Codi incorrecte.", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit. Torna a intentar-ho en uns minuts.", loading: "Curant la teva experiència..." },
+  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", wine: "Gastronomia", architecture: "Arkitektura", night: "Gau Giroa", tradition: "Tradizioa", errorLogin: "Kode okerra.", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da. Saiatu berriro minutu batzuk barru.", loading: "Esperientzia prestatzen..." },
+  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", wine: "Gastronomie", architecture: "Architecture", night: "Vie Nocturne", tradition: "Tradition", errorLogin: "Code incorrect.", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte. Réessayez dans quelques minutes.", loading: "Préparation de votre voyage..." }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
     switch(code) {
         case 'es': return ( <svg viewBox="0 0 750 500" className={className}><rect width="750" height="500" fill="#c60b1e"/><rect width="750" height="250" y="125" fill="#ffc400"/></svg> );
-        case 'en': return ( <svg viewBox="0 0 60 30" className={className}><clipPath id="s"><path d="M0,0 v30 h60 v-30 z"/></clipPath><g clipPath="url(#s)"><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" strokeWidth="6"/></g></svg> );
+        case 'en': return ( <svg viewBox="0 0 60 30" className={className}><clipPath id="s"><path d="M0,0 v30 h60 v-30 z"/></clipPath><g clipPath="url(#s)"><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10"/><path d="M30,0 v30" stroke="#C8102E" strokeWidth="6"/><path d="M0,15 h60" stroke="#C8102E" strokeWidth="6"/></g></svg> );
         case 'ca': return ( <svg viewBox="0 0 9 6" className={className}><rect width="9" height="6" fill="#FCDD09"/><path d="M0 1h9M0 2.33h9M0 3.66h9M0 5h9" stroke="#DA121A" strokeWidth="0.66"/></svg> );
         case 'eu': return ( <svg viewBox="0 0 280 160" className={className}><rect width="280" height="160" fill="#D31027"/><path d="M0 0l280 160M0 160L280 0" stroke="#009543" strokeWidth="20"/><path d="M140 0v160M0 80h280" stroke="#FFF" strokeWidth="16"/></svg> );
         case 'fr': return ( <svg viewBox="0 0 3 2" className={className}><rect width="1" height="2" fill="#002395"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#ed2939"/></svg> );
@@ -101,7 +60,7 @@ export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, classN
 const CategoryHeader = ({ title, subtitle }: { title: string, subtitle: string }) => (
     <div className="pt-8 pb-4">
         <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] flex items-center gap-3">
-            <div className="w-1.5 h-6 bg-purple-600 rounded-full shadow-[0_0_15px_rgba(147,51,234,0.5)]"></div>
+            <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
             {title}
         </h3>
         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 ml-4 opacity-60">{subtitle}</p>
@@ -146,12 +105,23 @@ export default function App() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('bdai_profile');
-    if (saved) return JSON.parse(saved);
-    return {
+    const defaultUser: UserProfile = {
       id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: '', email: '', avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, visitedCities: [], completedTours: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: `ES-${Math.floor(Math.random()*9000)+1000}-BDAI`, profileCuriosity: "Explorador global con IA."
     };
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            return { ...defaultUser, ...parsed, 
+                badges: Array.isArray(parsed.badges) ? parsed.badges : [],
+                visitedCities: Array.isArray(parsed.visitedCities) ? parsed.visitedCities : [],
+                completedTours: Array.isArray(parsed.completedTours) ? parsed.completedTours : []
+            };
+        } catch(e) { return defaultUser; }
+    }
+    return defaultUser;
   });
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
@@ -159,39 +129,98 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   
-  // Audio state & refs
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
+  const awardMiles = (amount: number, reason: string, details?: any) => {
+    setUser(prev => {
+        const safePrev = { ...prev, 
+            miles: prev.miles || 0,
+            badges: Array.isArray(prev.badges) ? [...prev.badges] : [],
+            visitedCities: Array.isArray(prev.visitedCities) ? [...prev.visitedCities] : []
+        };
+        
+        let currentMiles = safePrev.miles + amount;
+        let currentBadges = safePrev.badges;
+        let currentVisitedCities = safePrev.visitedCities;
+
+        if (reason === 'stop_checkin' && details?.city) {
+            const cityKey = details.city.trim();
+            if (!currentVisitedCities.includes(cityKey)) {
+                currentVisitedCities.push(cityKey);
+                currentMiles += 500;
+                const stampId = `visa_${cityKey.toLowerCase().replace(/\s/g, '_')}`;
+                if (!currentBadges.find(b => b.id === stampId)) {
+                    currentBadges.push({
+                        id: stampId,
+                        name: cityKey,
+                        icon: 'fa-stamp',
+                        description: `Sello oficial: Visita a ${cityKey}`,
+                        earnedAt: new Date().toLocaleDateString()
+                    });
+                }
+            }
+        }
+
+        let newRank: TravelerRank = 'Turist';
+        if (currentMiles >= 40000) newRank = 'Legend';
+        else if (currentMiles >= 15000) newRank = 'Globe-Trotter';
+        else if (currentMiles >= 5000) newRank = 'Wanderer';
+        else if (currentMiles >= 1000) newRank = 'Explorer';
+
+        return { ...safePrev, miles: currentMiles, rank: newRank, visitedCities: currentVisitedCities, badges: currentBadges };
+    });
+  };
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        null, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
+
+  useEffect(() => { stopAudio(); }, [currentStopIndex, activeTour?.id]);
+
   useEffect(() => {
     if (user.isLoggedIn && user.id !== 'guest') {
       localStorage.setItem('bdai_profile', JSON.stringify(user));
-      syncUserProfile(user);
+      syncUserProfile(user).catch(() => {});
     }
   }, [user]);
 
-  useEffect(() => {
-    getGlobalRanking().then(setLeaderboard);
-  }, []);
+  useEffect(() => { getGlobalRanking().then(setLeaderboard); }, []);
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
   const handleCitySelect = async (city: string) => {
     if (!city) return;
-    setSelectedCity(city);
+    const cleanCity = city.trim();
+    setSelectedCity(cleanCity);
     setIsLoading(true);
     setView(AppView.CITY_DETAIL);
     try {
-        const gen = await generateToursForCity(city, user);
-        setTours(gen || []);
-    } catch (e) { console.error("Load error:", e); } finally { setIsLoading(false); }
+        const gen = await generateToursForCity(cleanCity, user);
+        if (gen === 'QUOTA') {
+            alert(t('quotaError'));
+            setTours([]);
+        } else {
+            setTours(Array.isArray(gen) ? gen : []);
+        }
+    } catch (e) { 
+        console.error("Selection Error:", e);
+        setTours([]); 
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   const handleStartAuth = async (e: React.FormEvent) => {
       e.preventDefault();
-      setAuthError(null);
       setIsLoading(true);
       const { error } = await sendOtpEmail(user.email);
       setIsLoading(false);
@@ -201,67 +230,56 @@ export default function App() {
 
   const finalizeLogin = async () => {
       setIsLoading(true);
-      setAuthError(null);
       const { data, error } = await verifyOtpCode(user.email, otpCode);
       setIsLoading(false);
       if (error || !data.user) setAuthError(t('errorLogin'));
       else {
           const profile = await getUserProfileByEmail(user.email);
           if (profile) setUser(profile);
-          else {
-              setUser(prev => ({ 
-                  ...prev, 
-                  id: data.user!.id,
-                  isLoggedIn: true, 
-                  username: prev.firstName.toLowerCase().replace(/\s/g, '') || 'explorer'
-              }));
-          }
+          else setUser(prev => ({ ...prev, id: data.user!.id, isLoggedIn: true }));
           setView(AppView.HOME);
       }
   };
 
+  const handleCheckIn = (stopId: string, miles: number) => {
+    if (!activeTour) return;
+    const updatedStops = activeTour.stops.map(s => s.id === stopId ? { ...s, visited: true } : s);
+    setActiveTour({ ...activeTour, stops: updatedStops });
+    awardMiles(miles, 'stop_checkin', { city: activeTour.city });
+  };
+
   const stopAudio = () => {
     if (audioSourceRef.current) {
-        audioSourceRef.current.stop();
+        try { audioSourceRef.current.stop(); } catch (e) {}
         audioSourceRef.current = null;
     }
     setAudioPlayingId(null);
   };
 
   const handlePlayAudio = async (id: string, text: string) => {
-    if (audioPlayingId === id) {
-        stopAudio();
-        return;
-    }
-
+    if (audioPlayingId === id) { stopAudio(); return; }
     stopAudio();
     setAudioLoadingId(id);
-
     try {
         const base64 = await generateAudio(text, user.language);
+        if (base64 === "QUOTA_EXHAUSTED") {
+            alert(t('quotaError'));
+            return;
+        }
         if (base64) {
-            if (!audioContextRef.current) {
-                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-            }
+            if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
             const ctx = audioContextRef.current;
             const bytes = decodeBase64(base64);
             const buffer = await decodeAudioData(bytes, ctx, 24000, 1);
-            
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
-            source.onended = () => {
-                if (audioPlayingId === id) setAudioPlayingId(null);
-            };
+            source.onended = () => setAudioPlayingId(prev => prev === id ? null : prev);
             source.start();
             audioSourceRef.current = source;
             setAudioPlayingId(id);
         }
-    } catch (e) {
-        console.error("Audio error", e);
-    } finally {
-        setAudioLoadingId(null);
-    }
+    } catch (e) { console.error(e); } finally { setAudioLoadingId(null); }
   };
 
   return (
@@ -312,105 +330,65 @@ export default function App() {
                           <div className="flex items-center gap-2"><BdaiLogo className="w-8 h-8"/><span className="font-black text-2xl lowercase tracking-tighter">bdai</span></div>
                           <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-full border-2 border-purple-500 overflow-hidden shadow-lg active:scale-90 transition-transform"><img src={user.avatar} className="w-full h-full object-cover" /></button>
                       </header>
-                      
                       <div className="pt-4">
                           <h1 className="text-4xl font-black leading-tight mb-6">{t('welcome')} <br/><span className="text-white/30">{user.firstName || 'Explorer'}.</span></h1>
                           <div className="relative group">
-                            <i className="fas fa-search absolute left-5 top-5 text-slate-500 group-focus-within:text-purple-500 transition-colors"></i>
+                            <i className="fas fa-search absolute left-5 top-5 text-slate-500"></i>
                             <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 pl-14 pr-6 outline-none focus:border-purple-500 shadow-2xl transition-all" />
                           </div>
                       </div>
-
-                      {/* SECCIÓN ESPECIAL ESPAÑA */}
-                      <CategoryHeader title={t('spainTitle')} subtitle={t('spainSub')} />
+                      <CategoryHeader title={t('spainTitle')} subtitle="The soul of the peninsula" />
                       <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-6 px-6 pb-2">
-                          <div className="min-w-[200px]">
-                            <QuickCityBtn onClick={() => handleCitySelect('Madrid')} city="Madrid" label="Capital del Arte 🖼️" icon="fa-landmark" color="gold" />
-                          </div>
-                          <div className="min-w-[200px]">
-                            <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} city="Barcelona" label="Gaudí & Mar 🌊" icon="fa-archway" color="gold" />
-                          </div>
-                          <div className="min-w-[200px]">
-                            <QuickCityBtn onClick={() => handleCitySelect('Sevilla')} city="Sevilla" label="Duende & Historia 💃" icon="fa-fan" color="gold" />
-                          </div>
-                          <div className="min-w-[200px]">
-                            <QuickCityBtn onClick={() => handleCitySelect('Bilbao')} city="Bilbao" label="Guggenheim & Pintxos 🍴" icon="fa-shapes" color="gold" />
-                          </div>
-                          <div className="min-w-[200px]">
-                            <QuickCityBtn onClick={() => handleCitySelect('Granada')} city="Granada" label="Alhambra Mágica 🕌" icon="fa-moon" color="gold" />
-                          </div>
+                          <QuickCityBtn onClick={() => handleCitySelect('Madrid')} city="Madrid" label="Arte 🖼️" icon="fa-landmark" color="gold" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} city="Barcelona" label="Gaudí 🌊" icon="fa-archway" color="gold" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Logroño')} city="Logroño" label="Vinos 🍷" icon="fa-wine-glass" color="orange" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Sevilla')} city="Sevilla" label="Duende 💃" icon="fa-fan" color="gold" />
                       </div>
-
                       <CategoryHeader title={t('trending')} subtitle="The world's top choices" />
                       <div className="grid grid-cols-1 gap-3">
-                          <QuickCityBtn onClick={() => handleCitySelect('Tokyo')} city="Tokyo" label="Neon & Tradition 🏮" icon="fa-torii-gate" color="purple" />
-                          <QuickCityBtn onClick={() => handleCitySelect('New York')} city="New York" label="Empire State Dreams 🍎" icon="fa-city" color="indigo" />
-                          <QuickCityBtn onClick={() => handleCitySelect('Paris')} city="Paris" label="Louvre & Cafés 🥐" icon="fa-monument" color="cyan" />
-                      </div>
-
-                      <CategoryHeader title={t('hiddenGems')} subtitle="Escape the masses" />
-                      <div className="grid grid-cols-1 gap-3">
-                          <QuickCityBtn onClick={() => handleCitySelect('Kyoto')} city="Kyoto" label="Gion Zen Gardens 🎍" icon="fa-leaf" color="emerald" />
-                          <QuickCityBtn onClick={() => handleCitySelect('Porto')} city="Porto" label="Ribeira Riverside 🍷" icon="fa-bridge" color="orange" />
-                      </div>
-
-                      <CategoryHeader title={t('wine')} subtitle={t('catWine')} />
-                      <div className="grid grid-cols-1 gap-3">
-                          <QuickCityBtn onClick={() => handleCitySelect('Bordeaux')} city="Bordeaux" label="Vineyard Estates 🍇" icon="fa-wine-bottle" color="rose" />
-                          <QuickCityBtn onClick={() => handleCitySelect('Tuscany')} city="Tuscany" label="Rolling Hills 🍝" icon="fa-sun" color="orange" />
-                      </div>
-
-                      <CategoryHeader title={t('festivals')} subtitle="Pure Experience" />
-                      <div className="grid grid-cols-1 gap-3 pb-12">
-                          <QuickCityBtn onClick={() => handleCitySelect('Rio de Janeiro')} city="Rio" label="Carnaval 2026 🎊" icon="fa-mask" color="purple" />
-                          <QuickCityBtn onClick={() => handleCitySelect('Berlin')} city="Berlin" label="Techno Heritage 🎧" icon="fa-compact-disc" color="indigo" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Tokyo')} city="Tokyo" label="Neon 🏮" icon="fa-torii-gate" color="purple" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Paris')} city="Paris" label="Louvre 🥐" icon="fa-monument" color="cyan" />
                       </div>
                   </div>
                 )}
-                
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe px-6 animate-fade-in">
                       <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-slate-950/90 backdrop-blur-md z-10">
-                          <button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-arrow-left"></i></button>
+                          <button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
                           <h2 className="text-2xl font-black">{selectedCity}</h2>
                       </header>
                       {isLoading ? (
                           <div className="py-24 text-center text-slate-500 animate-pulse">
                               <i className="fas fa-brain text-4xl mb-4 text-purple-500"></i>
-                              <p className="text-[10px] uppercase font-black tracking-widest leading-relaxed">
-                                  {t('loading')}
-                              </p>
+                              <p className="text-[10px] uppercase font-black tracking-widest leading-relaxed">{t('loading')}</p>
                           </div>
                       ) : (
                           <div className="space-y-6 pb-12">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">{t('results')}</h3>
-                            {tours.map(tour => (
+                            {tours.length > 0 ? tours.map(tour => (
                               <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setCurrentStopIndex(0); setView(AppView.TOUR_ACTIVE);}} onPlayAudio={handlePlayAudio} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} language={user.language} />
-                            ))}
+                            )) : (
+                                <div className="py-12 text-center opacity-40 italic text-sm">No routes found. Try another city.</div>
+                            )}
                           </div>
                       )}
                   </div>
                 )}
-
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(prev => Math.min(prev + 1, activeTour.stops.length - 1))} onPrev={() => setCurrentStopIndex(prev => Math.max(prev - 1, 0))} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} onCheckIn={(id:string, m:number) => {}} onShare={(p:string) => alert(`Shared on ${p}`)} language={user.language} />
+                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(prev => Math.min(prev + 1, activeTour.stops.length - 1))} onPrev={() => setCurrentStopIndex(prev => Math.max(prev - 1, 0))} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} onCheckIn={handleCheckIn} onShare={() => {}} language={user.language} />
                 )}
-
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices language={user.language} onCitySelect={handleCitySelect} />}
-                {view === AppView.SHOP && <Shop user={user} onPurchase={() => {}} />}
+                {view === AppView.SHOP && <Shop user={user} onPurchase={(amount) => awardMiles(amount, 'shop')} />}
             </div>
-
             <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-6 pb-8 pointer-events-none">
                 <nav className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 px-4 py-4 flex justify-between items-center w-full rounded-[2.5rem] pointer-events-auto shadow-2xl">
                     <NavButton icon="fa-trophy" label={t('ranking')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
                     <NavButton icon="fa-rocket" label={t('toolkit')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
-                    <button onClick={() => setView(AppView.HOME)} className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 border-4 border-slate-950 shadow-2xl scale-110' : 'bg-white/5'}`}><BdaiLogo className="w-8 h-8" /></button>
+                    <button onClick={() => setView(AppView.HOME)} className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 border-4 border-slate-950 scale-110' : 'bg-white/5'}`}><BdaiLogo className="w-8 h-8" /></button>
                     <NavButton icon="fa-passport" label={t('passport')} isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
                     <NavButton icon="fa-shopping-bag" label={t('shop')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
                 </nav>
             </div>
-
             {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} />}
           </>
       )}

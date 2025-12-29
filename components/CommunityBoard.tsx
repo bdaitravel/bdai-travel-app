@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { getCommunityPosts, addCommunityPost } from '../services/supabaseClient';
@@ -33,7 +32,8 @@ export const CommunityBoard: React.FC<{ city: string, language: string, user: Us
 
     const fetchPosts = async () => {
         setLoading(true);
-        const data = await getCommunityPosts(city, user.isLoggedIn ? user.id : undefined);
+        // Fix: Removed the second argument (user.id) as getCommunityPosts in supabaseClient.ts only accepts one argument (city: string)
+        const data = await getCommunityPosts(city);
         setPosts(data as Post[]);
         setLoading(false);
     };

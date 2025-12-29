@@ -11,45 +11,33 @@ const LANGUAGE_MAP: Record<string, string> = {
     fr: "French (Français de France)"
 };
 
-/**
- * Modera el contenido del usuario antes de publicarlo en la comunidad.
- * Devuelve true si el contenido es apto, false si es ofensivo.
- */
-export const moderateContent = async (text: string): Promise<boolean> => {
-    if (!text || text.length < 2) return false;
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Analiza si el siguiente mensaje es apto para una comunidad de viajes. 
-            Responde "SAFE" si el mensaje es respetuoso y útil. 
-            Responde "UNSAFE" si contiene insultos, odio, spam agresivo o contenido inapropiado.
-            MENSAJE: "${text}"`,
-        });
-        const result = response.text?.trim().toUpperCase();
-        return result === "SAFE";
-    } catch (e) {
-        console.error("Moderation error, allowing by default:", e);
-        return true; // Si falla la API, permitimos para no bloquear al usuario, pero logueamos
+const retryWithBackoff = async <T>(fn: () => Promise<T>, retries = 2, delay = 2000): Promise<T> => {
+  try {
+    return await fn();
+  } catch (error: any) {
+    const isQuotaError = error?.message?.includes('429') || error?.status === 429 || error?.message?.includes('quota');
+    if (retries > 0 && isQuotaError) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return retryWithBackoff(fn, retries - 1, delay * 2);
     }
+    throw error;
+  }
 };
 
-export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[]> => {
-  const cityLower = cityInput.toLowerCase().trim();
-  
-  const globalCached = await getCachedTours(cityLower, userProfile.language);
-  if (globalCached && globalCached.length > 0) return globalCached;
-  
+export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[] | 'QUOTA'> => {
   const targetLanguage = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
 
-  const prompt = `YOU ARE THE WORLD'S MOST EXPERT FREE TOUR GUIDE.
-  Your task is to design exactly 4 DIFFERENT THEMATIC TOURS for: ${cityInput}.
-  
-  UNBREAKABLE RULES:
-  - Valid for ANY city in the world.
-  - 10 REAL STOPS per tour.
-  - LANGUAGE: All content strictly in ${targetLanguage}.
-  - Tailor to profile (Interests: ${userProfile.interests.join(", ")}).`;
+  // 1. Intentar recuperar de caché primero
+  const cached = await getCachedTours(cityInput, userProfile.language);
+  if (cached && cached.length > 0) return cached;
+
+  // 2. Si no hay caché, generar con Gemini
+  const prompt = `HISTORIAN PERSONA. CITY: ${cityInput}. LANG: ${targetLanguage}.
+  TASK: Create 2 premium tours (15 stops each). 
+  RULES:
+  - DESCRIPTION: Exactly 180-220 words per stop (Massive chronicles).
+  - NO HEADERS: Fluid story only.
+  - INTERESTS: ${userProfile.interests.join(", ")}.`;
 
   const responseSchema = {
     type: Type.ARRAY,
@@ -72,6 +60,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
               latitude: { type: Type.NUMBER },
               longitude: { type: Type.NUMBER },
               type: { type: Type.STRING },
+              imgKeywords: { type: Type.STRING },
               photoSpot: {
                 type: Type.OBJECT,
                 properties: { 
@@ -84,7 +73,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
                 required: ["angle", "bestTime", "instagramHook", "milesReward", "secretLocation"]
               }
             },
-            required: ["name", "description", "latitude", "longitude", "type", "photoSpot"]
+            required: ["name", "description", "latitude", "longitude", "type", "photoSpot", "imgKeywords"]
           }
         }
       },
@@ -94,35 +83,51 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview", 
+    const response: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({
+        model: "gemini-3-pro-preview", 
         contents: prompt,
         config: { 
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            temperature: 0.8
+            temperature: 0.7
         }
-    });
+    }));
     
     const parsed = JSON.parse(response.text || "[]");
+    if (!Array.isArray(parsed) || parsed.length === 0) return [];
+
     const processed = parsed.map((t: any, idx: number) => ({
         ...t, 
         id: `tour_${idx}_${Date.now()}`, 
         city: cityInput,
-        stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_${sIdx}`, visited: false }))
+        stops: t.stops.map((s: any, sIdx: number) => ({
+            ...s,
+            id: `s_${idx}_${sIdx}`,
+            visited: false,
+            imageUrl: `https://images.unsplash.com/photo-1543783232-261f9107558e?auto=format&fit=crop&w=1200&q=80&sig=${encodeURIComponent(s.imgKeywords || s.name)}`
+        }))
     }));
 
-    await saveToursToCache(cityLower, userProfile.language, processed);
+    // GUARDAR EN CACHÉ (Esperamos para asegurar persistencia)
+    await saveToursToCache(cityInput, userProfile.language, processed);
+    
     return processed;
-  } catch (error) { 
-    console.error("Gemini Global Tour Error:", error);
+  } catch (error: any) { 
+    if (error?.message?.includes('429') || error?.status === 429) return 'QUOTA';
     return []; 
   }
 };
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
-  const cleanText = text.replace(/[*_#\[\]]/g, '').trim().substring(0, 3000);
+  const cleanText = text
+    .replace(/(\*\*|__)?(SECCIÓN NARRATIVA|EL SECRETO|DETALLE ARQUITECTÓNICO|NARRATIVA|SECRETO|DETALLE|SECRET|HISTORY|ARCHITECTURE):?(\*\*|__)?/gi, '')
+    .replace(/\*+/g, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/\s+/g, ' ') 
+    .trim()
+    .substring(0, 1000);
+
   const cached = await getCachedAudio(cleanText, language);
   if (cached) return cached;
   
@@ -130,16 +135,42 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const audioResponse: GenerateContentResponse = await ai.models.generateContent({ 
+    const audioResponse: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Read with professional guide tone in ${targetLanguage}: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: `Narrate clearly in ${targetLanguage}: ${cleanText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } } 
       }
-    });
+    }));
     const base64 = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (base64) await saveAudioToCache(cleanText, language, base64);
     return base64;
-  } catch (e) { return ""; }
+  } catch (e: any) { 
+    if (e?.message?.includes('429')) return "QUOTA_EXHAUSTED";
+    return ""; 
+  }
+};
+
+export const moderateContent = async (text: string): Promise<boolean> => {
+  if (!text.trim()) return true;
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Is this travel comment safe? "${text}". Return only JSON {isSafe: boolean}.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: { isSafe: { type: Type.BOOLEAN } },
+          required: ["isSafe"]
+        }
+      }
+    });
+    const result = JSON.parse(response.text || '{"isSafe": true}');
+    return result.isSafe;
+  } catch (error) {
+    return true; 
+  }
 };
