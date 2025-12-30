@@ -20,7 +20,6 @@ function decodeBase64(base64: string) {
     }
     return bytes;
   } catch (e) {
-    console.error("[Buda] Error decodificando Base64:", e);
     return new Uint8Array(0);
   }
 }
@@ -44,11 +43,11 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", wine: "Gastronomy", architecture: "Urban Design", night: "City Pulse", tradition: "Heritage", errorLogin: "Invalid code.", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Try using your own API key for unlimited access.", loading: "Curating your global experience...", useOwnKey: "Use Own API Key" },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", wine: "Gastronomía", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimonio", errorLogin: "Código incorrecto.", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Usa tu propia clave de API para acceso ilimitado.", loading: "Curando tu experiencia global...", useOwnKey: "Usar mi propia clave API" },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", wine: "Gastronomia", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimoni", errorLogin: "Codi incorrecte.", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit. Utilitza la teva pròpia clau de API.", loading: "Curant la teva experiència...", useOwnKey: "Usar clau propia" },
-  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", wine: "Gastronomia", architecture: "Arkitektura", night: "Gau Giroa", tradition: "Tradizioa", errorLogin: "Kode okerra.", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da. Erabili zure API gakoa.", loading: "Esperientzia prestatzen...", useOwnKey: "Nire gakoa erabili" },
-  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", wine: "Gastronomie", architecture: "Architecture", night: "Vie Nocturne", tradition: "Tradition", errorLogin: "Code incorrect.", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte. Utilisez votre propre clé API.", loading: "Préparation de votre voyage...", useOwnKey: "Utiliser ma propre clé" }
+  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Use your own API key for unlimited access.", loading: "Curating your experience...", useOwnKey: "Use Own API Key" },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Usa tu propia clave de API para acceso ilimitado.", loading: "Curando tu experiencia global...", useOwnKey: "Usar mi propia clave API" },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit. Utilitza la teva pròpia clau de API.", loading: "Curant la teva experiència...", useOwnKey: "Usar clau propia" },
+  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da. Erabili zure API gakoa.", loading: "Esperientzia prestatzen...", useOwnKey: "Nire gakoa erabili" },
+  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte. Utilisez votre propre clé API.", loading: "Préparation de votre voyage...", useOwnKey: "Utiliser ma propre clé" }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -63,7 +62,7 @@ export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, classN
 };
 
 const CategoryHeader = ({ title, subtitle }: { title: string, subtitle: string }) => (
-    <div className="pt-8 pb-4">
+    <div className="pt-8 pb-4 px-6">
         <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] flex items-center gap-3">
             <div className="w-1.5 h-6 bg-purple-600 rounded-full"></div>
             {title}
@@ -84,7 +83,7 @@ const QuickCityBtn = ({ onClick, city, color, icon, label }: any) => {
         gold: 'from-yellow-600/20 to-amber-600/20 text-yellow-500 border-yellow-500/30'
     };
     return (
-        <button onClick={onClick} className={`flex items-center gap-4 p-5 rounded-[2.2rem] bg-gradient-to-br border backdrop-blur-md transition-all active:scale-95 ${colors[color] || colors.purple}`}>
+        <button onClick={onClick} className={`flex-shrink-0 flex items-center gap-4 p-5 rounded-[2.2rem] bg-gradient-to-br border backdrop-blur-md transition-all active:scale-95 ${colors[color] || colors.purple}`}>
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl">
                 <i className={`fas ${icon}`}></i>
             </div>
@@ -112,23 +111,14 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [quotaHit, setQuotaHit] = useState(false);
+  
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('bdai_profile');
-    const defaultUser: UserProfile = {
-      id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: '', email: '', avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, visitedCities: [], completedTours: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: `ES-${Math.floor(Math.random()*9000)+1000}-BDAI`, profileCuriosity: "Explorador global con IA."
-    };
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            return { ...defaultUser, ...parsed, 
-                badges: Array.isArray(parsed.badges) ? parsed.badges : [],
-                visitedCities: Array.isArray(parsed.visitedCities) ? parsed.visitedCities : [],
-                completedTours: Array.isArray(parsed.completedTours) ? parsed.completedTours : []
-            };
-        } catch(e) { return defaultUser; }
-    }
-    return defaultUser;
+    const base: UserProfile = { id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: '', email: '', avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, visitedCities: [], completedTours: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: `ES-${Math.floor(Math.random()*9000)+1000}-BDAI` };
+    if (saved) return { ...base, ...JSON.parse(saved) };
+    return base;
   });
+
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -143,125 +133,60 @@ export default function App() {
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
   const handleOpenSelectKey = async () => {
-    try {
+    if ((window as any).aistudio) {
         await (window as any).aistudio.openSelectKey();
         setQuotaHit(false);
-        // Recargar el tour si estábamos en medio de una búsqueda
         if (selectedCity) handleCitySelect(selectedCity);
-    } catch (e) {
-        console.error("Key selection failed", e);
     }
   };
 
   const handleCitySelect = async (city: string) => {
-    if (!city) return;
-    const cleanCity = city.trim();
-    setSelectedCity(cleanCity);
     setIsLoading(true);
     setQuotaHit(false);
+    setSelectedCity(city);
     setView(AppView.CITY_DETAIL);
     try {
-        const gen = await generateToursForCity(cleanCity, user);
-        if (gen === 'QUOTA') {
-            setQuotaHit(true);
-            setTours([]);
-        } else {
-            setTours(Array.isArray(gen) ? gen : []);
-        }
-    } catch (e) { 
-        console.error("Selection Error:", e);
-        setTours([]); 
-    } finally { 
-        setIsLoading(false); 
+        const res = await generateToursForCity(city, user);
+        if (res === 'QUOTA') setQuotaHit(true);
+        else setTours(Array.isArray(res) ? res : []);
+    } catch (e) {
+        setQuotaHit(true);
+    } finally {
+        setIsLoading(false);
     }
   };
 
   const handlePlayAudio = async (id: string, text: string) => {
-    if (audioPlayingId === id) { 
-        stopAudio(); 
-        return; 
+    if (audioPlayingId === id) {
+        if (audioSourceRef.current) audioSourceRef.current.stop();
+        setAudioPlayingId(null);
+        return;
     }
-    
-    stopAudio();
     setAudioLoadingId(id);
-    
     try {
         const base64 = await generateAudio(text, user.language);
-        
         if (base64 === "QUOTA_EXHAUSTED") {
             setQuotaHit(true);
             return;
         }
-
         if (base64) {
             if (!audioContextRef.current) {
                 audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
             }
             const ctx = audioContextRef.current;
             if (ctx.state === 'suspended') await ctx.resume();
-            const bytes = decodeBase64(base64);
-            const buffer = await decodeAudioData(bytes, ctx, 24000, 1);
+            const buffer = await decodeAudioData(decodeBase64(base64), ctx, 24000, 1);
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
-            source.onended = () => setAudioPlayingId(prev => prev === id ? null : prev);
+            source.onended = () => setAudioPlayingId(null);
             source.start(0);
             audioSourceRef.current = source;
             setAudioPlayingId(id);
         }
-    } catch (e) { 
-        console.error("[Buda] Audio error:", e); 
-    } finally { 
-        setAudioLoadingId(null); 
-    }
+    } catch (e) { console.error("Audio error", e); }
+    finally { setAudioLoadingId(null); }
   };
-
-  const awardMiles = (amount: number, reason: string, details?: any) => {
-    setUser(prev => {
-        const safePrev = { ...prev, miles: prev.miles || 0, badges: Array.isArray(prev.badges) ? [...prev.badges] : [], visitedCities: Array.isArray(prev.visitedCities) ? [...prev.visitedCities] : [] };
-        let currentMiles = safePrev.miles + amount;
-        let currentBadges = safePrev.badges;
-        let currentVisitedCities = safePrev.visitedCities;
-        if (reason === 'stop_checkin' && details?.city) {
-            const cityKey = details.city.trim();
-            if (!currentVisitedCities.includes(cityKey)) {
-                currentVisitedCities.push(cityKey);
-                currentMiles += 500;
-                const stampId = `visa_${cityKey.toLowerCase().replace(/\s/g, '_')}`;
-                if (!currentBadges.find(b => b.id === stampId)) {
-                    currentBadges.push({ id: stampId, name: cityKey, icon: 'fa-stamp', description: `Sello oficial: Visita a ${cityKey}`, earnedAt: new Date().toLocaleDateString() });
-                }
-            }
-        }
-        let newRank: TravelerRank = 'Turist';
-        if (currentMiles >= 40000) newRank = 'Legend';
-        else if (currentMiles >= 15000) newRank = 'Globe-Trotter';
-        else if (currentMiles >= 5000) newRank = 'Wanderer';
-        else if (currentMiles >= 1000) newRank = 'Explorer';
-        return { ...safePrev, miles: currentMiles, rank: newRank, visitedCities: currentVisitedCities, badges: currentBadges };
-    });
-  };
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      const watchId = navigator.geolocation.watchPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        null, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-      return () => navigator.geolocation.clearWatch(watchId);
-    }
-  }, []);
-
-  useEffect(() => { stopAudio(); }, [currentStopIndex, activeTour?.id]);
-
-  useEffect(() => {
-    if (user.isLoggedIn && user.id !== 'guest') {
-      localStorage.setItem('bdai_profile', JSON.stringify(user));
-      syncUserProfile(user).catch(() => {});
-    }
-  }, [user]);
-
-  useEffect(() => { getGlobalRanking().then(setLeaderboard); }, []);
 
   const handleStartAuth = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -285,20 +210,14 @@ export default function App() {
       }
   };
 
-  const handleCheckIn = (stopId: string, miles: number) => {
-    if (!activeTour) return;
-    const updatedStops = activeTour.stops.map(s => s.id === stopId ? { ...s, visited: true } : s);
-    setActiveTour({ ...activeTour, stops: updatedStops });
-    awardMiles(miles, 'stop_checkin', { city: activeTour.city });
-  };
-
-  const stopAudio = () => {
-    if (audioSourceRef.current) {
-        try { audioSourceRef.current.stop(); } catch (e) {}
-        audioSourceRef.current = null;
+  useEffect(() => {
+    getGlobalRanking().then(setLeaderboard);
+    if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition((pos) => {
+            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        });
     }
-    setAudioPlayingId(null);
-  };
+  }, []);
 
   return (
     <div className="max-w-md mx-auto h-screen bg-slate-950 flex flex-col shadow-2xl relative overflow-hidden text-white font-sans">
@@ -324,7 +243,6 @@ export default function App() {
                           <button disabled={isLoading} type="submit" className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
                               {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('login')}
                           </button>
-                          {authError && <p className="text-red-500 text-[10px] text-center font-bold uppercase">{authError}</p>}
                       </form>
                   ) : (
                       <div className="space-y-6 text-center animate-slide-up">
@@ -333,7 +251,6 @@ export default function App() {
                           <button onClick={finalizeLogin} disabled={isLoading} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl">
                               {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('confirmCode')}
                           </button>
-                          {authError && <p className="text-red-500 text-[10px] text-center font-bold uppercase">{authError}</p>}
                           <button onClick={() => setLoginStep('FORM')} className="text-white/40 text-[10px] font-bold uppercase tracking-widest">{t('back')}</button>
                       </div>
                   )}
@@ -343,12 +260,12 @@ export default function App() {
           <>
             <div className="flex-1 overflow-y-auto no-scrollbar pb-32 z-10 relative">
                 {view === AppView.HOME && (
-                  <div className="space-y-4 pt-safe animate-fade-in px-6">
-                      <header className="flex justify-between items-center pt-6">
+                  <div className="space-y-4 pt-safe animate-fade-in">
+                      <header className="flex justify-between items-center pt-6 px-6">
                           <div className="flex items-center gap-2"><BdaiLogo className="w-8 h-8"/><span className="font-black text-2xl lowercase tracking-tighter">bdai</span></div>
-                          <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-full border-2 border-purple-500 overflow-hidden shadow-lg active:scale-90 transition-transform"><img src={user.avatar} className="w-full h-full object-cover" /></button>
+                          <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-full border-2 border-purple-500 overflow-hidden shadow-lg"><img src={user.avatar} className="w-full h-full object-cover" /></button>
                       </header>
-                      <div className="pt-4">
+                      <div className="pt-4 px-6">
                           <h1 className="text-4xl font-black leading-tight mb-6">{t('welcome')} <br/><span className="text-white/30">{user.firstName || 'Explorer'}.</span></h1>
                           <div className="relative group">
                             <i className="fas fa-search absolute left-5 top-5 text-slate-500"></i>
@@ -356,16 +273,16 @@ export default function App() {
                           </div>
                       </div>
                       <CategoryHeader title={t('spainTitle')} subtitle="The soul of the peninsula" />
-                      <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-6 px-6 pb-2">
+                      <div className="flex gap-4 overflow-x-auto no-scrollbar px-6 pb-2">
                           <QuickCityBtn onClick={() => handleCitySelect('Madrid')} city="Madrid" label="Arte 🖼️" icon="fa-landmark" color="gold" />
                           <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} city="Barcelona" label="Gaudí 🌊" icon="fa-archway" color="gold" />
                           <QuickCityBtn onClick={() => handleCitySelect('Logroño')} city="Logroño" label="Vinos 🍷" icon="fa-wine-glass" color="orange" />
                           <QuickCityBtn onClick={() => handleCitySelect('Sevilla')} city="Sevilla" label="Duende 💃" icon="fa-fan" color="gold" />
                       </div>
                       <CategoryHeader title={t('trending')} subtitle="The world's top choices" />
-                      <div className="grid grid-cols-1 gap-3">
-                          <QuickCityBtn onClick={() => handleCitySelect('Tokyo')} city="Tokyo" label="Neon 🏮" icon="fa-torii-gate" color="purple" />
-                          <QuickCityBtn onClick={() => handleCitySelect('Paris')} city="Paris" label="Louvre 🥐" icon="fa-monument" color="cyan" />
+                      <div className="px-6 space-y-3">
+                          <QuickCityBtn onClick={() => handleCitySelect('Tokyo')} city="Tokyo" icon="fa-torii-gate" color="purple" />
+                          <QuickCityBtn onClick={() => handleCitySelect('Paris')} city="Paris" icon="fa-monument" color="cyan" />
                       </div>
                   </div>
                 )}
@@ -376,36 +293,30 @@ export default function App() {
                           <h2 className="text-2xl font-black">{selectedCity}</h2>
                       </header>
                       {isLoading ? (
-                          <div className="py-24 text-center text-slate-500 animate-pulse">
-                              <i className="fas fa-brain text-4xl mb-4 text-purple-500"></i>
-                              <p className="text-[10px] uppercase font-black tracking-widest leading-relaxed">{t('loading')}</p>
-                          </div>
+                          <div className="py-24 text-center text-slate-500 animate-pulse">{t('loading')}</div>
                       ) : quotaHit ? (
-                          <div className="py-20 text-center px-8 bg-white/5 rounded-[2.5rem] border border-white/10 mx-2 animate-slide-up">
-                              <i className="fas fa-crown text-4xl mb-6 text-yellow-500"></i>
+                          <div className="py-20 text-center px-8 bg-white/5 rounded-[2.5rem] border border-white/10">
+                              <i className="fas fa-key text-3xl mb-6 text-yellow-500"></i>
                               <p className="text-sm font-bold text-slate-300 leading-relaxed mb-8">{t('quotaError')}</p>
-                              <button onClick={handleOpenSelectKey} className="w-full py-5 bg-yellow-500 text-slate-950 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3">
-                                  <i className="fas fa-key"></i> {t('useOwnKey')}
+                              <button onClick={handleOpenSelectKey} className="w-full py-5 bg-yellow-500 text-slate-950 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl">
+                                  {t('useOwnKey')}
                               </button>
-                              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[9px] uppercase font-black text-slate-500 tracking-widest mt-6 block underline">Consultar documentación de facturación</a>
                           </div>
                       ) : (
                           <div className="space-y-6 pb-12">
-                            {tours.length > 0 ? tours.map(tour => (
-                              <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setCurrentStopIndex(0); setView(AppView.TOUR_ACTIVE);}} onPlayAudio={handlePlayAudio} isPlayingAudio={audioPlayingId === tour.id} isAudioLoading={audioLoadingId === tour.id} language={user.language} />
-                            )) : (
-                                <div className="py-12 text-center opacity-40 italic text-sm">No routes found. Try another city.</div>
-                            )}
+                            {tours.map(tour => (
+                              <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE);}} language={user.language} />
+                            ))}
                           </div>
                       )}
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(prev => Math.min(prev + 1, activeTour.stops.length - 1))} onPrev={() => setCurrentStopIndex(prev => Math.max(prev - 1, 0))} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} onCheckIn={handleCheckIn} onShare={() => {}} language={user.language} />
+                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(prev => prev + 1)} onPrev={() => setCurrentStopIndex(prev => prev - 1)} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} language={user.language} />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices language={user.language} onCitySelect={handleCitySelect} />}
-                {view === AppView.SHOP && <Shop user={user} onPurchase={(amount) => awardMiles(amount, 'shop')} />}
+                {view === AppView.SHOP && <Shop user={user} onPurchase={() => {}} />}
             </div>
             <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-6 pb-8 pointer-events-none">
                 <nav className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 px-4 py-4 flex justify-between items-center w-full rounded-[2.5rem] pointer-events-auto shadow-2xl">
