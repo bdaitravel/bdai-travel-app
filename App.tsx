@@ -10,6 +10,20 @@ import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, supabase } from './services/supabaseClient';
 
+// Función para calcular distancia entre dos coordenadas (Haversine)
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371e3; // Radio de la tierra en metros
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // en metros
+}
+
 function decodeBase64(base64: string) {
   try {
     const binaryString = atob(base64);
@@ -44,7 +58,7 @@ async function decodeAudioData(
 
 const TRANSLATIONS: any = {
   en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Sign Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached.", loading: "Dai is curating your route...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code.", daiGreeting: "I'm Dai, your smart guide." },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado.", loading: "Dai está preparando tu ruta...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código.", daiGreeting: "Soy Dai, tu guía inteligente." },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atras", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado.", loading: "Dai está preparando tu ruta...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código.", daiGreeting: "Soy Dai, tu guía inteligente." },
   ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit.", loading: "La Dai està preparant la ruta...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació.", daiGreeting: "Sóc la Dai, la teva guia." },
   eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da.", loading: "Dai ibilbidea prestatzen ari da...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan.", daiGreeting: "Dai naiz, zure gida adimenduna." },
   fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte.", loading: "Dai prépare votre itinéraire...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification.", daiGreeting: "Je suis Dai, votre guide." }
@@ -121,6 +135,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
+  const [distToNext, setDistToNext] = useState<string | null>(null);
   
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
@@ -137,9 +152,23 @@ export default function App() {
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition((pos) => {
             setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        });
+        }, (err) => console.error(err), { enableHighAccuracy: true });
     }
   }, []);
+
+  // Monitorización de distancia a la siguiente parada
+  useEffect(() => {
+      if (activeTour && userLocation) {
+          const stop = activeTour.stops[currentStopIndex];
+          if (stop) {
+              const d = calculateDistance(userLocation.lat, userLocation.lng, stop.latitude, stop.longitude);
+              if (d < 1000) setDistToNext(`${Math.round(d)} m`);
+              else setDistToNext(`${(d/1000).toFixed(1)} km`);
+          }
+      } else {
+          setDistToNext(null);
+      }
+  }, [userLocation, activeTour, currentStopIndex]);
 
   useEffect(() => {
       if (user.isLoggedIn) {
@@ -346,7 +375,18 @@ export default function App() {
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(prev => prev + 1)} onPrev={() => setCurrentStopIndex(prev => prev - 1)} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} language={user.language} />
+                  <ActiveTourCard 
+                    tour={activeTour} 
+                    currentStopIndex={currentStopIndex} 
+                    onNext={() => setCurrentStopIndex(prev => prev + 1)} 
+                    onPrev={() => setCurrentStopIndex(prev => prev - 1)} 
+                    onPlayAudio={handlePlayAudio} 
+                    audioPlayingId={audioPlayingId} 
+                    audioLoadingId={audioLoadingId} 
+                    userLocation={userLocation} 
+                    language={user.language}
+                    distanceToNext={distToNext}
+                  />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices language={user.language} onCitySelect={handleCitySelect} />}

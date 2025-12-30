@@ -5,11 +5,11 @@ import { SchematicMap } from './SchematicMap';
 import { cleanDescriptionText } from '../services/geminiService';
 
 const UI_TEXT: any = {
-    en: { start: "Start", stop: "Stop", stopTag: "Stop", checkin: "Check-in (+150m)", visited: "Explored", next: "Next", prev: "Back", bestAngle: "Best Angle", bestTime: "Golden Hour", hook: "Social Hook", share: "Share Discovery", listen: "Dai's Voice Guide" },
-    es: { start: "Empezar", stop: "Parar", stopTag: "Parada", checkin: "Hacer Check-in (+150m)", visited: "Explorado", next: "Siguiente", prev: "Atrás", bestAngle: "Ángulo Perfecto", bestTime: "Momento Ideal", hook: "Hook Social", share: "Compartir Hallazgo", listen: "Guía de voz: Dai" },
-    ca: { start: "Començar", stop: "Parar", stopTag: "Parada", checkin: "Check-in (+150m)", visited: "Explorat", next: "Següent", prev: "Enrere", bestAngle: "Angle Perfecte", bestTime: "Moment Ideal", hook: "Hook Social", share: "Compartir", listen: "Veu de la Dai" },
-    eu: { start: "Hasi", stop: "Gelditu", stopTag: "Geltokia", checkin: "Check-in (+150m)", visited: "Arakatuta", next: "Hurrengoa", prev: "Atzera", bestAngle: "Angelu Ona", bestTime: "Ordurik Onena", hook: "Hook Soziala", share: "Partekatu", listen: "Dairen ahotsa" },
-    fr: { start: "Démarrer", stop: "Arrêter", stopTag: "Étape", checkin: "Enregistrer (+150m)", visited: "Exploré", next: "Suivant", prev: "Retour", bestAngle: "Meilleur Angle", bestTime: "Heure Idéale", hook: "Hook Social", share: "Partager", listen: "Guide vocal: Dai" }
+    en: { start: "Start", stop: "Stop", stopTag: "Stop", checkin: "Check-in (+150m)", visited: "Explored", next: "Next", prev: "Back", bestAngle: "Master Angle", bestTime: "Golden Hour", hook: "Viral Hook", share: "Share Discovery", listen: "Dai's Voice Guide", distLabel: "Distance", intelTitle: "Photo Intel" },
+    es: { start: "Empezar", stop: "Parar", stopTag: "Parada", checkin: "Hacer Check-in (+150m)", visited: "Explorado", next: "Siguiente", prev: "Atrás", bestAngle: "Ángulo Maestro", bestTime: "Momento Ideal", hook: "Hook Viral", share: "Compartir Hallazgo", listen: "Guía de voz: Dai", distLabel: "Distancia", intelTitle: "Estrategia de Captura" },
+    ca: { start: "Començar", stop: "Parar", stopTag: "Parada", checkin: "Check-in (+150m)", visited: "Explorat", next: "Següent", prev: "Enrere", bestAngle: "Angle Mestre", bestTime: "Moment Ideal", hook: "Hook Viral", share: "Compartir", listen: "Veu de la Dai", distLabel: "Distància", intelTitle: "Intel·ligència Fotogràfica" },
+    eu: { start: "Hasi", stop: "Gelditu", stopTag: "Geltokia", checkin: "Check-in (+150m)", visited: "Arakatuta", next: "Hurrengoa", prev: "Atzera", bestAngle: "Angelu Ona", bestTime: "Ordurik Onena", hook: "Hook Soziala", share: "Partekatu", listen: "Dairen ahotsa", distLabel: "Distantzia", intelTitle: "Argazki Inteligentzia" },
+    fr: { start: "Démarrer", stop: "Arrêter", stopTag: "Étape", checkin: "Enregistrer (+150m)", visited: "Exploré", next: "Suivant", prev: "Retour", bestAngle: "Meilleur Angle", bestTime: "Heure Idéale", hook: "Hook Viral", share: "Partager", listen: "Guide vocal: Dai", distLabel: "Distance", intelTitle: "Photo Intel" }
 };
 
 export const TourCard: React.FC<any> = ({ tour, onSelect, language }) => {
@@ -39,16 +39,42 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language }) => {
   );
 };
 
-export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, userLocation, onCheckIn, language }) => {
+export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, onPrev, onPlayAudio, audioPlayingId, audioLoadingId, userLocation, onCheckIn, language, distanceToNext }) => {
     const currentStop = tour.stops[currentStopIndex] as Stop;
     const t = UI_TEXT[language] || UI_TEXT['es'];
     const isPlaying = audioPlayingId === currentStop.id;
     const isLoading = audioLoadingId === currentStop.id;
 
+    const handleShare = async () => {
+        const shareData = {
+            title: `Explorando ${currentStop.name} con bdai`,
+            text: `Mira este descubrimiento en ${tour.city}: ${currentStop.photoSpot?.instagramHook || '¡Increíble lugar!'}`,
+            url: window.location.href
+        };
+        try {
+            if (navigator.share) await navigator.share(shareData);
+            else alert("¡Copiado al portapapeles!");
+        } catch (e) { console.error(e); }
+    };
+
     return (
         <div className="h-full flex flex-col bg-white overflow-y-auto no-scrollbar pb-80">
              <div className="relative h-[45vh] w-full flex-shrink-0 bg-slate-100">
                 <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} userLocation={userLocation} />
+                
+                {/* Radar de Distancia Flotante */}
+                {distanceToNext && (
+                    <div className="absolute top-6 left-6 z-[400] bg-white/95 backdrop-blur shadow-2xl rounded-2xl p-4 border border-purple-100 flex items-center gap-3 animate-slide-up">
+                        <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white">
+                            <i className="fas fa-person-walking"></i>
+                        </div>
+                        <div>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.distLabel}</p>
+                            <p className="text-sm font-black text-slate-900 font-mono">{distanceToNext}</p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="absolute bottom-8 right-8 z-[400] flex flex-col items-center gap-3">
                     <span className={`text-[8px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-lg border-2 transition-all ${isPlaying ? 'bg-purple-600 border-purple-400 text-white' : 'bg-white/95 border-purple-100 text-purple-600'}`}>
                         {t.listen}
@@ -58,16 +84,71 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                     </button>
                 </div>
              </div>
+
              <div className="px-8 pt-8">
-                <span className="px-4 py-2 bg-slate-900 rounded-full text-[10px] font-black text-white uppercase tracking-widest">{t.stopTag} {currentStopIndex + 1}/{tour.stops.length}</span>
-                <h1 className="text-4xl font-heading font-black text-slate-900 tracking-tighter leading-tight uppercase my-6">{currentStop.name}</h1>
-                <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6">
+                    <span className="px-4 py-2 bg-slate-900 rounded-full text-[10px] font-black text-white uppercase tracking-widest">{t.stopTag} {currentStopIndex + 1}/{tour.stops.length}</span>
+                    <button onClick={handleShare} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-900 active:scale-90 transition-transform">
+                        <i className="fas fa-share-alt"></i>
+                    </button>
+                </div>
+
+                <h1 className="text-4xl font-heading font-black text-slate-900 tracking-tighter leading-tight uppercase mb-6">{currentStop.name}</h1>
+                
+                <div className="space-y-6 mb-10">
                     {currentStop.description.split('\n').map((line, idx) => {
                         const clean = cleanDescriptionText(line);
                         return clean ? <p key={idx} className="text-slate-700 text-lg leading-relaxed font-medium">{clean}</p> : null;
                     })}
                 </div>
+
+                {/* PHOTO INTEL SECTION */}
+                {currentStop.photoSpot && (
+                    <div className="bg-purple-50 rounded-[2.5rem] p-8 border border-purple-100 mb-12 animate-slide-up">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-lg">
+                                <i className="fas fa-camera"></i>
+                            </div>
+                            <h4 className="text-sm font-black text-purple-900 uppercase tracking-widest">{t.intelTitle}</h4>
+                            {currentStop.photoSpot.milesReward && (
+                                <span className="ml-auto bg-yellow-400 text-yellow-900 text-[8px] font-black px-3 py-1.5 rounded-full shadow-sm">
+                                    +{currentStop.photoSpot.milesReward} MILES
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="flex gap-4">
+                                <div className="w-8 text-purple-300 text-xl"><i className="fas fa-expand"></i></div>
+                                <div>
+                                    <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">{t.bestAngle}</p>
+                                    <p className="text-sm font-bold text-slate-800">{currentStop.photoSpot.angle}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <div className="w-8 text-purple-300 text-xl"><i className="fas fa-clock"></i></div>
+                                <div>
+                                    <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">{t.bestTime}</p>
+                                    <p className="text-sm font-bold text-slate-800">{currentStop.photoSpot.bestTime}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 p-5 bg-white rounded-3xl border border-purple-100">
+                                <div className="w-8 text-pink-500 text-xl"><i className="fab fa-instagram"></i></div>
+                                <div className="flex-1">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.hook}</p>
+                                    <p className="text-xs font-serif italic text-slate-600 leading-relaxed">"{currentStop.photoSpot.instagramHook}"</p>
+                                </div>
+                                <button onClick={() => {navigator.clipboard.writeText(currentStop.photoSpot?.instagramHook || ""); alert("¡Copiado!");}} className="text-purple-600 p-2">
+                                    <i className="far fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
              </div>
+
              <div className="fixed bottom-12 left-8 right-8 z-[500] space-y-4">
                  <button onClick={() => onCheckIn(currentStop.id, 150)} className={`w-full py-10 rounded-[3rem] font-black uppercase tracking-[0.4em] text-sm flex items-center justify-center gap-4 shadow-2xl border-4 transition-all ${currentStop.visited ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-purple-600 border-purple-500 text-white'}`}>
                     {currentStop.visited ? t.visited : t.checkin}
