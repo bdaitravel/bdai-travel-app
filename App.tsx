@@ -156,7 +156,7 @@ export default function App() {
     }
   };
 
-  const handlePlayAudio = async (id: string, text: string) => {
+  const handlePlayAudio = async (id: string, text: string, stopIndex: number = 0) => {
     if (audioPlayingId === id) {
         if (audioSourceRef.current) audioSourceRef.current.stop();
         setAudioPlayingId(null);
@@ -164,7 +164,9 @@ export default function App() {
     }
     setAudioLoadingId(id);
     try {
-        const base64 = await generateAudio(text, user.language);
+        // Alternamos voz femenina en paradas impares
+        const isFemale = stopIndex % 2 !== 0;
+        const base64 = await generateAudio(text, user.language, isFemale);
         if (base64 === "QUOTA_EXHAUSTED") {
             setQuotaHit(true);
             return;

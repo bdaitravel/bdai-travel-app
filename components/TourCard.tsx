@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Tour, Stop } from '../types';
 import { SchematicMap } from './SchematicMap';
+import { cleanDescriptionText } from '../services/geminiService';
 
 const getThemeStyles = (themeStr: string) => {
   const theme = themeStr.toLowerCase();
@@ -56,34 +57,17 @@ export const ActiveTourCard: React.FC<any> = (props) => {
     const isLoading = audioLoadingId === currentStop.id;
 
     const renderDescription = () => {
-        // Separamos por párrafos para un renderizado limpio
         const parts = currentStop.description.split('\n');
-        let firstParaFound = false;
 
         return parts.map((line, idx) => {
-            // Limpieza básica para asegurar que no se vean etiquetas residuales
-            const cleanLine = line
-                .replace(/(\*\*|__)?(SECCIÓN NARRATIVA|EL SECRETO|DETALLE ARQUITECTÓNICO|NARRATIVA|SECRETO|DETALLE):?(\*\*|__)?/gi, '')
-                .replace(/\[.*?\]/g, '')
-                .replace(/\*+/g, '')
-                .trim();
-                
+            const cleanLine = cleanDescriptionText(line);
             if (!cleanLine) return null;
 
-            // Estilo de "Letra Capitular" para el primer párrafo real
-            if (!firstParaFound) {
-                firstParaFound = true;
-                return (
-                    <div key={idx} className="mb-10">
-                        <p className="text-slate-800 font-serif text-2xl leading-relaxed first-letter:text-7xl first-letter:font-black first-letter:float-left first-letter:mr-3 first-letter:text-purple-600 first-letter:mt-2">
-                            {cleanLine}
-                        </p>
-                    </div>
-                );
-            }
-
-            // Párrafos normales con buen espaciado editorial
-            return <p key={idx} className="mb-10 text-slate-700 text-xl leading-relaxed font-sans font-medium">{cleanLine}</p>;
+            return (
+                <p key={idx} className="mb-6 text-slate-700 text-lg leading-relaxed font-sans font-medium text-left">
+                    {cleanLine}
+                </p>
+            );
         });
     };
 
@@ -94,7 +78,7 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                 <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
                 
                 <div className="absolute bottom-8 right-8 z-[400]">
-                    <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 ${isPlaying ? 'bg-red-600 text-white animate-pulse' : 'bg-purple-600 text-white'}`}>
+                    <button onClick={() => onPlayAudio(currentStop.id, currentStop.description, currentStopIndex)} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 ${isPlaying ? 'bg-red-600 text-white animate-pulse' : 'bg-purple-600 text-white'}`}>
                         {isLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlaying ? <i className="fas fa-stop text-xl"></i> : <i className="fas fa-volume-up text-xl"></i>}
                     </button>
                 </div>
@@ -104,7 +88,7 @@ export const ActiveTourCard: React.FC<any> = (props) => {
                 <div className="flex items-center gap-3 mb-4">
                     <span className="px-4 py-2 bg-slate-900 rounded-full text-[10px] font-black text-white uppercase tracking-widest">{t.stopTag} {currentStopIndex + 1}/{tour.stops.length}</span>
                 </div>
-                <h1 className="text-4xl font-heading font-black text-slate-900 tracking-tighter leading-tight uppercase mb-12">{currentStop.name}</h1>
+                <h1 className="text-4xl font-heading font-black text-slate-900 tracking-tighter leading-tight uppercase mb-8">{currentStop.name}</h1>
                 
                 <div className="relative">
                     {renderDescription()}

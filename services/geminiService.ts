@@ -11,6 +11,18 @@ const LANGUAGE_MAP: Record<string, string> = {
     fr: "French (Français de France)"
 };
 
+/**
+ * Limpia el texto de etiquetas de la IA como "SECCIÓN NARRATIVA", asteriscos y corchetes
+ * para que el audio y la lectura sean fluidos.
+ */
+export const cleanDescriptionText = (text: string): string => {
+  return text
+    .replace(/(\*\*|__)?(SECCIÓN NARRATIVA|EL SECRETO|DETALLE ARQUITECTÓNICO|NARRATIVA|SECRETO|DETALLE|HISTORIA|CURIOSIDAD):?(\*\*|__)?/gi, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/\*+/g, '')
+    .trim();
+};
+
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[] | 'QUOTA'> => {
   const targetLanguage = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
   const cached = await getCachedTours(cityInput, userProfile.language);
@@ -97,24 +109,49 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   }
 };
 
-export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
+export const generateAudio = async (text: string, language: string = 'es', useFemaleVoice: boolean = false): Promise<string> => {
   if (!text) return "";
-  const cleanText = text.substring(0, 1000);
-  const cached = await getCachedAudio(cleanText, language);
+  
+  // Limpiamos el texto antes de enviar al TTS para que no lea etiquetas artificiales
+  const cleanedTextForTTS = cleanDescriptionText(text);
+  
+  // Ampliamos el límite a 3000 caracteres para evitar cortes en crónicas largas
+  const finalAudioText = cleanedTextForTTS.substring(0, 3000);
+  
+  const voiceKey = useFemaleVoice ? 'FEM' : 'MASC';
+  const cached = await getCachedAudio(finalAudioText, `${language}_${voiceKey}`);
   if (cached) return cached;
   
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    // Prompt optimizado: Buscamos entusiasmo, alma y acento de Madrid/España.
+    const narrationPrompt = language === 'es' 
+        ? `Eres un guía turístico de élite en España, apasionado y entusiasta. 
+           Narra este texto con alma, usando un acento de Madrid (Castellano puro) impecable. 
+           No seas monótono, usa entonaciones variadas, hazlo interesante y acogedor. 
+           PROHIBIDO: Acento latinoamericano o robótico. 
+           NUNCA digas frases como 'sección narrativa' o 'el secreto'. Solo cuenta la historia: ${finalAudioText}`
+        : `Narrate as an enthusiastic and professional British travel guide with passion: ${finalAudioText}`;
+
+    const selectedVoice = useFemaleVoice ? 'Kore' : 'Zephyr';
+
     const audioResponse: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Narrate clearly: ${cleanText}` }] }], 
+      contents: [{ parts: [{ text: narrationPrompt }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } } 
+        speechConfig: { 
+            voiceConfig: { 
+                prebuiltVoiceConfig: { 
+                    voiceName: selectedVoice 
+                } 
+            } 
+        } 
       }
     });
     const base64 = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (base64) await saveAudioToCache(cleanText, language, base64);
+    if (base64) await saveAudioToCache(finalAudioText, `${language}_${voiceKey}`, base64);
     return base64;
   } catch (e: any) { 
     if (e.message?.toLowerCase().includes('quota')) return "QUOTA_EXHAUSTED";
