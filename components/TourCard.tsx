@@ -63,6 +63,7 @@ export const ActiveTourCard: React.FC<any> = (props) => {
             const cleanLine = cleanDescriptionText(line);
             if (!cleanLine) return null;
 
+            // Tipografía Inter unificada para legibilidad superior
             return (
                 <p key={idx} className="mb-6 text-slate-700 text-lg leading-relaxed font-sans font-medium text-left">
                     {cleanLine}

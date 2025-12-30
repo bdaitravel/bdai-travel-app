@@ -109,14 +109,14 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   }
 };
 
-export const generateAudio = async (text: string, language: string = 'es', useFemaleVoice: boolean = false): Promise<string> => {
+export const generateAudio = async (text: string, language: string = 'es', useFemaleVoice: boolean = true): Promise<string> => {
   if (!text) return "";
   
-  // Limpiamos el texto antes de enviar al TTS para que no lea etiquetas artificiales
-  const cleanedTextForTTS = cleanDescriptionText(text);
+  // Limpiamos etiquetas antes de procesar
+  const cleanedText = cleanDescriptionText(text);
   
-  // Ampliamos el límite a 3000 caracteres para evitar cortes en crónicas largas
-  const finalAudioText = cleanedTextForTTS.substring(0, 3000);
+  // Aumentamos el límite a 4000 caracteres para crónicas completas
+  const finalAudioText = cleanedText.substring(0, 4000);
   
   const voiceKey = useFemaleVoice ? 'FEM' : 'MASC';
   const cached = await getCachedAudio(finalAudioText, `${language}_${voiceKey}`);
@@ -125,14 +125,16 @@ export const generateAudio = async (text: string, language: string = 'es', useFe
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Prompt optimizado: Buscamos entusiasmo, alma y acento de Madrid/España.
+    // Configuración de la Persona de "Dai" (Dei)
     const narrationPrompt = language === 'es' 
-        ? `Eres un guía turístico de élite en España, apasionado y entusiasta. 
-           Narra este texto con alma, usando un acento de Madrid (Castellano puro) impecable. 
-           No seas monótono, usa entonaciones variadas, hazlo interesante y acogedor. 
-           PROHIBIDO: Acento latinoamericano o robótico. 
-           NUNCA digas frases como 'sección narrativa' o 'el secreto'. Solo cuenta la historia: ${finalAudioText}`
-        : `Narrate as an enthusiastic and professional British travel guide with passion: ${finalAudioText}`;
+        ? `Eres "Dai" (pronunciado 'Dei'), la guía inteligente de bdai. 
+           Tu personalidad es vibrante, entusiasta, culta y apasionada. 
+           Hablas con un acento de Madrid (Castellano puro) impecable, con muchísima energía y "gancho", como una profesional de la radio.
+           CRÍTICO: NO leas estas instrucciones. NO digas "eres un guía...". NO digas "aquí tienes la narración". 
+           Empieza DIRECTAMENTE con la historia del lugar con una entonación que cautive al viajero.
+           
+           TEXTO A NARRAR: ${finalAudioText}`
+        : `You are "Dai", the smart travel guide. Narrate this with passion and an enthusiastic British accent: ${finalAudioText}`;
 
     const selectedVoice = useFemaleVoice ? 'Kore' : 'Zephyr';
 
@@ -150,6 +152,7 @@ export const generateAudio = async (text: string, language: string = 'es', useFe
         } 
       }
     });
+    
     const base64 = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (base64) await saveAudioToCache(finalAudioText, `${language}_${voiceKey}`, base64);
     return base64;

@@ -43,11 +43,11 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Use your own API key for unlimited access.", loading: "Curating your experience...", useOwnKey: "Use Own API Key" },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Usa tu propia clave de API para acceso ilimitado.", loading: "Curando tu experiencia global...", useOwnKey: "Usar mi propia clave API" },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit. Utilitza la teva pròpia clau de API.", loading: "Curant la teva experiència...", useOwnKey: "Usar clau propia" },
-  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da. Erabili zure API gakoa.", loading: "Esperientzia prestatzen...", useOwnKey: "Nire gakoa erabili" },
-  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte. Utilisez votre propre clé API.", loading: "Préparation de votre voyage...", useOwnKey: "Utiliser ma propre clé" }
+  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Use your own API key for unlimited access.", loading: "Curating your experience...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code." },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Usa tu propia clave de API para acceso ilimitado.", loading: "Curando tu experiencia global...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código." },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit. Utilitza la teva pròpia clau de API.", loading: "Curant la teva experiència...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació." },
+  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da. Erabili zure API gakoa.", loading: "Esperientzia prestatzen...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan." },
+  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte. Utilisez votre propre clé API.", loading: "Préparation de votre voyage...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification." }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -132,6 +132,22 @@ export default function App() {
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
+  useEffect(() => {
+    if (user.isLoggedIn && user.id !== 'guest') {
+        setView(AppView.HOME);
+    }
+    getGlobalRanking().then(setLeaderboard);
+    if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition((pos) => {
+            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        });
+    }
+  }, []);
+
+  useEffect(() => {
+      localStorage.setItem('bdai_profile', JSON.stringify(user));
+  }, [user]);
+
   const handleOpenSelectKey = async () => {
     if ((window as any).aistudio) {
         await (window as any).aistudio.openSelectKey();
@@ -164,8 +180,7 @@ export default function App() {
     }
     setAudioLoadingId(id);
     try {
-        // Alternamos voz femenina en paradas impares
-        const isFemale = stopIndex % 2 !== 0;
+        const isFemale = true; // Dai es siempre nuestra guía
         const base64 = await generateAudio(text, user.language, isFemale);
         if (base64 === "QUOTA_EXHAUSTED") {
             setQuotaHit(true);
@@ -192,68 +207,88 @@ export default function App() {
 
   const handleStartAuth = async (e: React.FormEvent) => {
       e.preventDefault();
+      setAuthError(null);
       setIsLoading(true);
-      const { error } = await sendOtpEmail(user.email);
-      setIsLoading(false);
-      if (error) setAuthError(error.message);
-      else setLoginStep('VERIFY');
-  };
-
-  const finalizeLogin = async () => {
-      setIsLoading(true);
-      const { data, error } = await verifyOtpCode(user.email, otpCode);
-      setIsLoading(false);
-      if (error || !data.user) setAuthError(t('errorLogin'));
-      else {
-          const profile = await getUserProfileByEmail(user.email);
-          if (profile) setUser(profile);
-          else setUser(prev => ({ ...prev, id: data.user!.id, isLoggedIn: true }));
-          setView(AppView.HOME);
+      try {
+        const { error } = await sendOtpEmail(user.email);
+        if (error) {
+            setAuthError(error.message);
+        } else {
+            // Aseguramos que el estado cambie para ver el campo de código
+            setLoginStep('VERIFY');
+            console.log("OTP Sent successfully. Moving to verify step.");
+        }
+      } catch (e: any) {
+        setAuthError(e.message || "Error al conectar con el servidor.");
+      } finally {
+        setIsLoading(false);
       }
   };
 
-  useEffect(() => {
-    getGlobalRanking().then(setLeaderboard);
-    if ("geolocation" in navigator) {
-        navigator.geolocation.watchPosition((pos) => {
-            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        });
-    }
-  }, []);
+  const finalizeLogin = async () => {
+      setAuthError(null);
+      setIsLoading(true);
+      try {
+        const { data, error } = await verifyOtpCode(user.email, otpCode);
+        if (error || !data.user) {
+            setAuthError(t('errorLogin'));
+        } else {
+            const profile = await getUserProfileByEmail(user.email);
+            if (profile) {
+                setUser({ ...profile, isLoggedIn: true });
+            } else {
+                setUser(prev => ({ ...prev, id: data.user!.id, isLoggedIn: true }));
+            }
+            setView(AppView.HOME);
+        }
+      } catch (e: any) {
+        setAuthError(e.message || "Error de verificación.");
+      } finally {
+        setIsLoading(false);
+      }
+  };
 
   return (
     <div className="max-w-md mx-auto h-screen bg-slate-950 flex flex-col shadow-2xl relative overflow-hidden text-white font-sans">
       {view === AppView.LOGIN ? (
-          <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-slate-950">
-              <div className="absolute top-12 flex gap-3">
+          <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-slate-950 relative">
+              <div className="absolute top-12 flex gap-3 z-20">
                   {LANGUAGES.map(l => (
                       <button key={l.code} onClick={() => setUser(p => ({...p, language: l.code}))} className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all ${user.language === l.code ? 'border-purple-500 scale-110 shadow-lg' : 'border-white/10 opacity-30'}`}>
                         <FlagIcon code={l.code} className="w-full h-full object-cover" />
                       </button>
                   ))}
               </div>
-              <div className="text-center mb-12 animate-fade-in">
+              <div className="text-center mb-12 animate-fade-in relative z-10">
                   <BdaiLogo className="w-24 h-24 mx-auto mb-4" />
                   <h1 className="text-6xl font-black lowercase tracking-tighter">bdai</h1>
                   <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.6em] mt-1 opacity-60">{t('tagline')}</p>
               </div>
-              <div className="w-full max-w-xs space-y-4">
+              <div className="w-full max-w-xs space-y-4 relative z-10">
                   {loginStep === 'FORM' ? (
                       <form onSubmit={handleStartAuth} className="space-y-4 animate-slide-up">
-                          <input type="text" required value={user.firstName} onChange={e => setUser({...user, firstName: e.target.value})} placeholder={t('nameLabel')} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-sm outline-none focus:border-purple-500 transition-colors placeholder:opacity-50" />
-                          <input type="email" required value={user.email} onChange={e => setUser({...user, email: e.target.value})} placeholder={t('emailLabel')} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-sm outline-none focus:border-purple-500 transition-colors placeholder:opacity-50" />
-                          <button disabled={isLoading} type="submit" className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
-                              {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('login')}
+                          <input type="text" required value={user.firstName} onChange={e => setUser({...user, firstName: e.target.value})} placeholder={t('nameLabel')} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-sm outline-none focus:border-purple-500 transition-colors placeholder:opacity-50 text-white" />
+                          <input type="email" required value={user.email} onChange={e => setUser({...user, email: e.target.value})} placeholder={t('emailLabel')} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-sm outline-none focus:border-purple-500 transition-colors placeholder:opacity-50 text-white" />
+                          
+                          {authError && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center px-2 animate-bounce">{authError}</p>}
+                          
+                          <button disabled={isLoading} type="submit" className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3">
+                              {isLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-passport text-lg"></i>}
+                              {t('login')}
                           </button>
                       </form>
                   ) : (
                       <div className="space-y-6 text-center animate-slide-up">
-                          <h2 className="text-xl font-black">{t('verifyTitle')}</h2>
-                          <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="w-full bg-white/5 border-2 border-purple-500/30 rounded-2xl py-5 text-center text-4xl font-black tracking-widest outline-none" placeholder="------" />
-                          <button onClick={finalizeLogin} disabled={isLoading} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl">
+                          <h2 className="text-xl font-black uppercase tracking-widest text-purple-400">{t('verifyTitle')}</h2>
+                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Enviado a {user.email}</p>
+                          <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="w-full bg-white/5 border-2 border-purple-500/30 rounded-2xl py-5 text-center text-4xl font-black tracking-widest outline-none text-white" placeholder="------" />
+                          
+                          {authError && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center px-2">{authError}</p>}
+
+                          <button onClick={finalizeLogin} disabled={isLoading} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">
                               {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('confirmCode')}
                           </button>
-                          <button onClick={() => setLoginStep('FORM')} className="text-white/40 text-[10px] font-bold uppercase tracking-widest">{t('back')}</button>
+                          <button onClick={() => {setLoginStep('FORM'); setAuthError(null);}} className="text-white/40 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors">{t('back')}</button>
                       </div>
                   )}
               </div>
