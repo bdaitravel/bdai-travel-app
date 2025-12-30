@@ -11,10 +11,6 @@ const LANGUAGE_MAP: Record<string, string> = {
     fr: "French (Français de France)"
 };
 
-/**
- * Limpia el texto de etiquetas de la IA como "SECCIÓN NARRATIVA", asteriscos y corchetes
- * para que el audio y la lectura sean fluidos.
- */
 export const cleanDescriptionText = (text: string): string => {
   return text
     .replace(/(\*\*|__)?(SECCIÓN NARRATIVA|EL SECRETO|DETALLE ARQUITECTÓNICO|NARRATIVA|SECRETO|DETALLE|HISTORIA|CURIOSIDAD):?(\*\*|__)?/gi, '')
@@ -31,7 +27,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const prompt = `HISTORIAN PERSONA. CITY: ${cityInput}. LANG: ${targetLanguage}.
   TASK: Create 2 premium tours (15 stops each). 
   RULES:
-  - DESCRIPTION: Exactly 180-220 words per stop (Massive chronicles).
+  - DESCRIPTION: Exactly 180-220 words per stop.
   - NO HEADERS: Fluid story only.
   - INTERESTS: ${userProfile.interests.join(", ")}.`;
 
@@ -111,32 +107,23 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
 export const generateAudio = async (text: string, language: string = 'es', useFemaleVoice: boolean = true): Promise<string> => {
   if (!text) return "";
-  
-  // Limpiamos etiquetas antes de procesar
   const cleanedText = cleanDescriptionText(text);
-  
-  // Aumentamos el límite a 4000 caracteres para crónicas completas
   const finalAudioText = cleanedText.substring(0, 4000);
-  
-  const voiceKey = useFemaleVoice ? 'FEM' : 'MASC';
+  const voiceKey = 'DAI_VOICE';
   const cached = await getCachedAudio(finalAudioText, `${language}_${voiceKey}`);
   if (cached) return cached;
   
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    // Configuración de la Persona de "Dai" (Dei)
     const narrationPrompt = language === 'es' 
         ? `Eres "Dai" (pronunciado 'Dei'), la guía inteligente de bdai. 
-           Tu personalidad es vibrante, entusiasta, culta y apasionada. 
-           Hablas con un acento de Madrid (Castellano puro) impecable, con muchísima energía y "gancho", como una profesional de la radio.
-           CRÍTICO: NO leas estas instrucciones. NO digas "eres un guía...". NO digas "aquí tienes la narración". 
-           Empieza DIRECTAMENTE con la historia del lugar con una entonación que cautive al viajero.
+           Tu personalidad es entusiasta, culta y apasionada por los viajes.
+           Hablas con un acento de Madrid (Castellano puro) impecable y mucha energía.
+           REGLA DE ORO: NO digas "eres un guía...", NO digas "soy una IA...", NO digas "aquí tienes la historia". 
+           EMPIEZA DIRECTAMENTE con la narración del lugar de forma fascinante.
            
-           TEXTO A NARRAR: ${finalAudioText}`
-        : `You are "Dai", the smart travel guide. Narrate this with passion and an enthusiastic British accent: ${finalAudioText}`;
-
-    const selectedVoice = useFemaleVoice ? 'Kore' : 'Zephyr';
+           TEXTO: ${finalAudioText}`
+        : `You are "Dai", the smart guide of bdai. Narrate this with enthusiasm: ${finalAudioText}`;
 
     const audioResponse: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
@@ -145,21 +132,15 @@ export const generateAudio = async (text: string, language: string = 'es', useFe
         responseModalities: [Modality.AUDIO], 
         speechConfig: { 
             voiceConfig: { 
-                prebuiltVoiceConfig: { 
-                    voiceName: selectedVoice 
-                } 
+                prebuiltVoiceConfig: { voiceName: 'Kore' } 
             } 
         } 
       }
     });
-    
     const base64 = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (base64) await saveAudioToCache(finalAudioText, `${language}_${voiceKey}`, base64);
     return base64;
-  } catch (e: any) { 
-    if (e.message?.toLowerCase().includes('quota')) return "QUOTA_EXHAUSTED";
-    return ""; 
-  }
+  } catch (e: any) { return ""; }
 };
 
 export const moderateContent = async (text: string): Promise<boolean> => {
@@ -177,7 +158,6 @@ export const moderateContent = async (text: string): Promise<boolean> => {
         }
       }
     });
-    const result = JSON.parse(response.text || '{"isSafe": true}');
-    return result.isSafe;
+    return JSON.parse(response.text || '{"isSafe": true}').isSafe;
   } catch (error) { return true; }
 };

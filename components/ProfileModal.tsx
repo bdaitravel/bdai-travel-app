@@ -22,11 +22,11 @@ const AVATARS = [
 ];
 
 const UI_TEXT: any = {
-    en: { passport: "Global Passport", surname: "Surname", givenNames: "Given Names", rank: "Rank", miles: "Total Miles", bio: "Bio", badges: "Badges", stamps: "Visa Stamps", edit: "Edit", save: "Save", langLabel: "Native Language", username: "Username", email: "Email", expedition: "Expedition Date", passportNo: "Passport No.", curios: "Explorer Motto", wall: "Social Wall", logout: "Sign Out", changeAvatar: "Pick Photo", city: "City of Origin", country: "Country", age: "Age", apiKey: "Manage API Access" },
-    es: { passport: "Pasaporte Global", surname: "Apellidos", givenNames: "Nombres", rank: "Rango", miles: "Millas Totales", bio: "Biografía", badges: "Insignias", stamps: "Sellos Visa", edit: "Editar", save: "Guardar", langLabel: "Idioma Nativo", username: "Usuario", email: "Correo", expedition: "Fecha Expedición", passportNo: "Nº Pasaporte", curios: "Lema del Explorador", wall: "Muro Social", logout: "Cerrar Sesión", changeAvatar: "Elegir Foto", city: "Ciudad de Origen", country: "País", age: "Edad", apiKey: "Gestionar acceso API" },
-    ca: { passport: "Passaport Global", surname: "Cognoms", givenNames: "Noms", rank: "Rang", miles: "Milles Totals", bio: "Biografia", badges: "Insignies", stamps: "Segells Visa", edit: "Editar", save: "Desar", langLabel: "Idioma Natiu", username: "Usuari", email: "Correu", expedition: "Data Expedició", passportNo: "Núm. Passaport", curios: "Lema de l'Explorador", wall: "Mur Social", logout: "Tancar Sessió", changeAvatar: "Tria Foto", city: "Ciutat d'Origen", country: "País", age: "Edat", apiKey: "Gestió API" },
-    eu: { passport: "Pasaporte Globala", surname: "Abizenak", givenNames: "Izenak", rank: "Maila", miles: "Miliak Guztira", bio: "Biografia", badges: "Intsigniak", stamps: "Visa zigiluak", edit: "Editatu", save: "Gorde", langLabel: "Ama Hizkuntza", username: "Erabiltzailea", email: "Helbidea", expedition: "Jaulkipen Data", passportNo: "Pasaporte Zbk.", curios: "Esploratzailearen Lemak", wall: "Muru Soziala", logout: "Saioa Itxi", changeAvatar: "Argazkia Aukeratu", city: "Jatorrizko Hiria", country: "Herrialdea", age: "Adina", apiKey: "API sarbidea kudeatu" },
-    fr: { passport: "Passeport Global", surname: "Nom", givenNames: "Prénoms", rank: "Rang", miles: "Miles Totaux", bio: "Bio", badges: "Badges", stamps: "Tampons Visa", edit: "Modifier", save: "Enregistrer", langLabel: "Langue Maternelle", username: "Utilisateur", email: "E-mail", expedition: "Date d'émission", passportNo: "N° Passeport", curios: "Devise de l'Explorateur", wall: "Mur Social", logout: "Déconnexion", changeAvatar: "Choisir Photo", city: "Ville d'Origine", country: "Pays", age: "Âge", apiKey: "Gérer l'accès API" }
+    en: { passport: "Global Passport", surname: "Surname", givenNames: "Given Names", rank: "Rank", miles: "Total Miles", bio: "Bio", badges: "Badges", stamps: "Visa Stamps", edit: "Edit", save: "Save", langLabel: "Native Language", username: "Username", email: "Email", expedition: "Expedition Date", passportNo: "Passport No.", curios: "Explorer Motto", wall: "Social Wall", logout: "Sign Out", changeAvatar: "Pick Photo", city: "City of Origin", country: "Country", age: "Age", apiKey: "Satellite Connection", apiDesc: "Use your own key for unlimited AI access." },
+    es: { passport: "Pasaporte Global", surname: "Apellidos", givenNames: "Nombres", rank: "Rango", miles: "Millas Totales", bio: "Biografía", badges: "Insignias", stamps: "Sellos Visa", edit: "Editar", save: "Guardar", langLabel: "Idioma Nativo", username: "Usuario", email: "Correo", expedition: "Fecha Expedición", passportNo: "Nº Pasaporte", curios: "Lema del Explorador", wall: "Muro Social", logout: "Cerrar Sesión", changeAvatar: "Elegir Foto", city: "Ciudad de Origen", country: "País", age: "Edad", apiKey: "Conexión Satelital", apiDesc: "Usa tu propia clave para acceso IA ilimitado." },
+    ca: { passport: "Passaport Global", surname: "Cognoms", givenNames: "Noms", rank: "Rang", miles: "Milles Totals", bio: "Biografia", badges: "Insignies", stamps: "Segells Visa", edit: "Editar", save: "Desar", langLabel: "Idioma Natiu", username: "Usuari", email: "Correu", expedition: "Data Expedició", passportNo: "Núm. Passaport", curios: "Lema de l'Explorador", wall: "Mur Social", logout: "Tancar Sessió", changeAvatar: "Tria Foto", city: "Ciutat d'Origen", country: "País", age: "Edat", apiKey: "Connexió Satel·lital", apiDesc: "Usa la teva clau per a IA il·limitada." },
+    eu: { passport: "Pasaporte Globala", surname: "Abizenak", givenNames: "Izenak", rank: "Maila", miles: "Miliak Guztira", bio: "Biografia", badges: "Intsigniak", stamps: "Visa zigiluak", edit: "Editatu", save: "Gorde", langLabel: "Ama Hizkuntza", username: "Erabiltzailea", email: "Helbidea", expedition: "Jaulkipen Data", passportNo: "Pasaporte Zbk.", curios: "Esploratzailearen Lemak", wall: "Muru Soziala", logout: "Saioa Itxi", changeAvatar: "Argazkia Aukeratu", city: "Jatorrizko Hiria", country: "Herrialdea", age: "Adina", apiKey: "Satelite Konexioa", apiDesc: "Erabili zure gakoa mugarik gabeko IArako." },
+    fr: { passport: "Passeport Global", surname: "Nom", givenNames: "Prénoms", rank: "Rang", miles: "Miles Totaux", bio: "Bio", badges: "Badges", stamps: "Tampons Visa", edit: "Modifier", save: "Enregistrer", langLabel: "Langue Maternelle", username: "Utilisateur", email: "E-mail", expedition: "Date d'émission", passportNo: "N° Passeport", curios: "Devise de l'Explorateur", wall: "Mur Social", logout: "Déconnexion", changeAvatar: "Choisir Photo", city: "Ville d'Origine", country: "Pays", age: "Âge", apiKey: "Connexion Satellite", apiDesc: "Utilisez votre clé pour un accès IA illimité." }
 };
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwnProfile, onUpdateUser, onSelectOwnKey, language = 'es' }) => {
@@ -71,7 +71,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-950/98 backdrop-blur-xl" onClick={onClose}></div>
-      <div className="bg-[#1e293b] w-full max-w-sm rounded-[2.8rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] relative z-10 border border-white/10 flex flex-col max-h-[92vh] animate-slide-up">
+      <div className="bg-[#1e293b] w-full max-w-sm rounded-[2.8rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] relative z-10 border border-white/10 flex flex-col max-h-[92vh] animate-slide-up text-white font-sans">
         
         <div className="flex bg-white/5 border-b border-white/5 p-2">
             <button onClick={() => setActiveTab('passport')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${activeTab === 'passport' ? 'text-yellow-500' : 'text-white/30'}`}>PASSPORT</button>
@@ -172,9 +172,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                     </div>
 
                     {isOwnProfile && onSelectOwnKey && (
-                        <button onClick={onSelectOwnKey} className="w-full mb-10 py-4 border-2 border-slate-200 bg-white text-slate-900 rounded-2xl flex items-center justify-center gap-3 font-black uppercase text-[9px] tracking-widest shadow-sm hover:bg-slate-50 transition-colors">
-                            <i className="fas fa-key text-yellow-600"></i> {t.apiKey}
-                        </button>
+                        <div className="mb-10 space-y-2">
+                            <button onClick={onSelectOwnKey} className="w-full py-4 border-2 border-slate-200 bg-white text-slate-900 rounded-2xl flex items-center justify-center gap-3 font-black uppercase text-[9px] tracking-widest shadow-sm hover:bg-slate-50 transition-colors">
+                                <i className="fas fa-satellite text-purple-600"></i> {t.apiKey}
+                            </button>
+                            <p className="text-[8px] text-center text-slate-400 font-bold uppercase tracking-widest px-4">{t.apiDesc}</p>
+                        </div>
                     )}
 
                     <div>

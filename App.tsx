@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES, TravelerRank } from './types';
+import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, generateAudio } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { Leaderboard } from './components/Leaderboard';
@@ -8,7 +8,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
-import { syncUserProfile, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode } from './services/supabaseClient';
+import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode } from './services/supabaseClient';
 
 function decodeBase64(base64: string) {
   try {
@@ -43,11 +43,11 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Use your own API key for unlimited access.", loading: "Curating your experience...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code." },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Usa tu propia clave de API para acceso ilimitado.", loading: "Curando tu experiencia global...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código." },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit. Utilitza la teva pròpia clau de API.", loading: "Curant la teva experiència...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació." },
-  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da. Erabili zure API gakoa.", loading: "Esperientzia prestatzen...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan." },
-  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte. Utilisez votre propre clé API.", loading: "Préparation de votre voyage...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification." }
+  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Use your own API key for unlimited access.", loading: "Curating your experience...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code.", daiGreeting: "I'm Dai, your smart guide." },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Usa tu propia clave de API.", loading: "Curando tu experiencia global...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código.", daiGreeting: "Soy Dai, tu guía inteligente." },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit.", loading: "Curant la teva experiència...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació.", daiGreeting: "Sóc la Dai, la teva guia." },
+  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da.", loading: "Esperientzia prestatzen...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan.", daiGreeting: "Dai naiz, zure gida adimenduna." },
+  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte.", loading: "Préparation de votre voyage...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification.", daiGreeting: "Je suis Dai, votre guide." }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -74,13 +74,9 @@ const CategoryHeader = ({ title, subtitle }: { title: string, subtitle: string }
 const QuickCityBtn = ({ onClick, city, color, icon, label }: any) => {
     const colors: any = {
         purple: 'from-purple-600/20 to-indigo-600/20 text-purple-400 border-purple-500/30',
-        indigo: 'from-indigo-600/20 to-blue-600/20 text-indigo-400 border-indigo-500/30',
-        blue: 'from-blue-600/20 to-cyan-600/20 text-blue-400 border-blue-500/30',
+        gold: 'from-yellow-600/20 to-amber-600/20 text-yellow-500 border-yellow-500/30',
         orange: 'from-orange-600/20 to-red-600/20 text-orange-400 border-orange-500/30',
-        emerald: 'from-emerald-600/20 to-teal-600/20 text-emerald-400 border-emerald-500/30',
-        rose: 'from-rose-600/20 to-pink-600/20 text-rose-400 border-rose-500/30',
         cyan: 'from-cyan-600/20 to-blue-600/20 text-cyan-400 border-cyan-500/30',
-        gold: 'from-yellow-600/20 to-amber-600/20 text-yellow-500 border-yellow-500/30'
     };
     return (
         <button onClick={onClick} className={`flex-shrink-0 flex items-center gap-4 p-5 rounded-[2.2rem] bg-gradient-to-br border backdrop-blur-md transition-all active:scale-95 ${colors[color] || colors.purple}`}>
@@ -89,7 +85,7 @@ const QuickCityBtn = ({ onClick, city, color, icon, label }: any) => {
             </div>
             <div className="text-left">
                 <span className="text-sm font-black text-white block leading-none mb-1">{city}</span>
-                <span className="text-[9px] font-bold opacity-50 uppercase tracking-widest">{label || 'IA GUIDE'}</span>
+                <span className="text-[9px] font-bold opacity-50 uppercase tracking-widest">{label || 'DAI GUIDE'}</span>
             </div>
         </button>
     );
@@ -172,7 +168,7 @@ export default function App() {
     }
   };
 
-  const handlePlayAudio = async (id: string, text: string, stopIndex: number = 0) => {
+  const handlePlayAudio = async (id: string, text: string) => {
     if (audioPlayingId === id) {
         if (audioSourceRef.current) audioSourceRef.current.stop();
         setAudioPlayingId(null);
@@ -180,8 +176,7 @@ export default function App() {
     }
     setAudioLoadingId(id);
     try {
-        const isFemale = true; // Dai es siempre nuestra guía
-        const base64 = await generateAudio(text, user.language, isFemale);
+        const base64 = await generateAudio(text, user.language, true);
         if (base64 === "QUOTA_EXHAUSTED") {
             setQuotaHit(true);
             return;
@@ -214,12 +209,10 @@ export default function App() {
         if (error) {
             setAuthError(error.message);
         } else {
-            // Aseguramos que el estado cambie para ver el campo de código
             setLoginStep('VERIFY');
-            console.log("OTP Sent successfully. Moving to verify step.");
         }
       } catch (e: any) {
-        setAuthError(e.message || "Error al conectar con el servidor.");
+        setAuthError(e.message || "Error al conectar.");
       } finally {
         setIsLoading(false);
       }
@@ -242,7 +235,7 @@ export default function App() {
             setView(AppView.HOME);
         }
       } catch (e: any) {
-        setAuthError(e.message || "Error de verificación.");
+        setAuthError(e.message || "Error.");
       } finally {
         setIsLoading(false);
       }
@@ -280,15 +273,12 @@ export default function App() {
                   ) : (
                       <div className="space-y-6 text-center animate-slide-up">
                           <h2 className="text-xl font-black uppercase tracking-widest text-purple-400">{t('verifyTitle')}</h2>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Enviado a {user.email}</p>
                           <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="w-full bg-white/5 border-2 border-purple-500/30 rounded-2xl py-5 text-center text-4xl font-black tracking-widest outline-none text-white" placeholder="------" />
-                          
                           {authError && <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center px-2">{authError}</p>}
-
-                          <button onClick={finalizeLogin} disabled={isLoading} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">
+                          <button onClick={finalizeLogin} disabled={isLoading} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl">
                               {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('confirmCode')}
                           </button>
-                          <button onClick={() => {setLoginStep('FORM'); setAuthError(null);}} className="text-white/40 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors">{t('back')}</button>
+                          <button onClick={() => {setLoginStep('FORM'); setAuthError(null);}} className="text-white/40 text-[10px] font-bold uppercase tracking-widest">{t('back')}</button>
                       </div>
                   )}
               </div>
@@ -303,6 +293,10 @@ export default function App() {
                           <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-full border-2 border-purple-500 overflow-hidden shadow-lg"><img src={user.avatar} className="w-full h-full object-cover" /></button>
                       </header>
                       <div className="pt-4 px-6">
+                          <div className="flex items-center gap-3 mb-4 bg-purple-600/10 border border-purple-500/20 p-4 rounded-[2rem] animate-slide-up">
+                              <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white"><i className="fas fa-robot text-xs"></i></div>
+                              <p className="text-[11px] font-black uppercase tracking-widest text-purple-400">{t('daiGreeting')}</p>
+                          </div>
                           <h1 className="text-4xl font-black leading-tight mb-6">{t('welcome')} <br/><span className="text-white/30">{user.firstName || 'Explorer'}.</span></h1>
                           <div className="relative group">
                             <i className="fas fa-search absolute left-5 top-5 text-slate-500"></i>
@@ -331,14 +325,6 @@ export default function App() {
                       </header>
                       {isLoading ? (
                           <div className="py-24 text-center text-slate-500 animate-pulse">{t('loading')}</div>
-                      ) : quotaHit ? (
-                          <div className="py-20 text-center px-8 bg-white/5 rounded-[2.5rem] border border-white/10">
-                              <i className="fas fa-key text-3xl mb-6 text-yellow-500"></i>
-                              <p className="text-sm font-bold text-slate-300 leading-relaxed mb-8">{t('quotaError')}</p>
-                              <button onClick={handleOpenSelectKey} className="w-full py-5 bg-yellow-500 text-slate-950 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl">
-                                  {t('useOwnKey')}
-                              </button>
-                          </div>
                       ) : (
                           <div className="space-y-6 pb-12">
                             {tours.map(tour => (
