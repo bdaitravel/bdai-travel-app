@@ -5,11 +5,11 @@ import { SchematicMap } from './SchematicMap';
 import { cleanDescriptionText } from '../services/geminiService';
 
 const UI_TEXT: any = {
-    en: { start: "Start", stop: "Stop", stopTag: "Stop", checkin: "Check-in (+150m)", visited: "Explored", next: "Next", prev: "Back", bestAngle: "Best Angle", bestTime: "Golden Hour", hook: "Social Hook", share: "Share Discovery", listen: "Listen to Dai" },
-    es: { start: "Empezar", stop: "Parar", stopTag: "Parada", checkin: "Hacer Check-in (+150m)", visited: "Explorado", next: "Siguiente", prev: "Atrás", bestAngle: "Ángulo Perfecto", bestTime: "Momento Ideal", hook: "Hook Social", share: "Compartir Hallazgo", listen: "Escuchar a Dai" },
-    ca: { start: "Començar", stop: "Parar", stopTag: "Parada", checkin: "Check-in (+150m)", visited: "Explorat", next: "Següent", prev: "Enrere", bestAngle: "Angle Perfecte", bestTime: "Moment Ideal", hook: "Hook Social", share: "Compartir", listen: "Escolta la Dai" },
-    eu: { start: "Hasi", stop: "Gelditu", stopTag: "Geltokia", checkin: "Check-in (+150m)", visited: "Arakatuta", next: "Hurrengoa", prev: "Atzera", bestAngle: "Angelu Ona", bestTime: "Ordurik Onena", hook: "Hook Soziala", share: "Partekatu", listen: "Dai entzun" },
-    fr: { start: "Démarrer", stop: "Arrêter", stopTag: "Étape", checkin: "Enregistrer (+150m)", visited: "Exploré", next: "Suivant", prev: "Retour", bestAngle: "Meilleur Angle", bestTime: "Heure Idéale", hook: "Hook Social", share: "Partager", listen: "Écouter Dai" }
+    en: { start: "Start", stop: "Stop", stopTag: "Stop", checkin: "Check-in (+150m)", visited: "Explored", next: "Next", prev: "Back", bestAngle: "Best Angle", bestTime: "Golden Hour", hook: "Social Hook", share: "Share Discovery", listen: "Dai's Voice Guide" },
+    es: { start: "Empezar", stop: "Parar", stopTag: "Parada", checkin: "Hacer Check-in (+150m)", visited: "Explorado", next: "Siguiente", prev: "Atrás", bestAngle: "Ángulo Perfecto", bestTime: "Momento Ideal", hook: "Hook Social", share: "Compartir Hallazgo", listen: "Guía de voz: Dai" },
+    ca: { start: "Començar", stop: "Parar", stopTag: "Parada", checkin: "Check-in (+150m)", visited: "Explorat", next: "Següent", prev: "Enrere", bestAngle: "Angle Perfecte", bestTime: "Moment Ideal", hook: "Hook Social", share: "Compartir", listen: "Veu de la Dai" },
+    eu: { start: "Hasi", stop: "Gelditu", stopTag: "Geltokia", checkin: "Check-in (+150m)", visited: "Arakatuta", next: "Hurrengoa", prev: "Atzera", bestAngle: "Angelu Ona", bestTime: "Ordurik Onena", hook: "Hook Soziala", share: "Partekatu", listen: "Dairen ahotsa" },
+    fr: { start: "Démarrer", stop: "Arrêter", stopTag: "Étape", checkin: "Enregistrer (+150m)", visited: "Exploré", next: "Suivant", prev: "Retour", bestAngle: "Meilleur Angle", bestTime: "Heure Idéale", hook: "Hook Social", share: "Partager", listen: "Guide vocal: Dai" }
 };
 
 export const TourCard: React.FC<any> = ({ tour, onSelect, language }) => {
@@ -50,7 +50,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
              <div className="relative h-[45vh] w-full flex-shrink-0 bg-slate-100">
                 <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} userLocation={userLocation} />
                 <div className="absolute bottom-8 right-8 z-[400] flex flex-col items-center gap-3">
-                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-900 bg-white/90 px-3 py-1 rounded-full shadow-sm">{t.listen}</span>
+                    <span className={`text-[8px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-lg border-2 transition-all ${isPlaying ? 'bg-purple-600 border-purple-400 text-white' : 'bg-white/95 border-purple-100 text-purple-600'}`}>
+                        {t.listen}
+                    </span>
                     <button onClick={() => onPlayAudio(currentStop.id, currentStop.description)} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 ${isPlaying ? 'bg-red-600 text-white animate-pulse' : 'bg-purple-600 text-white'}`}>
                         {isLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlaying ? <i className="fas fa-stop text-xl"></i> : <i className="fas fa-volume-up text-xl"></i>}
                     </button>

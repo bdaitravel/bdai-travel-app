@@ -9,6 +9,7 @@ interface ProfileModalProps {
   isOwnProfile?: boolean;
   onUpdateUser?: (updatedUser: UserProfile) => void;
   onSelectOwnKey?: () => void;
+  onLogout?: () => void;
   language?: string;
 }
 
@@ -29,7 +30,7 @@ const UI_TEXT: any = {
     fr: { passport: "Passeport Global", surname: "Nom", givenNames: "Prénoms", rank: "Rang", miles: "Miles Totaux", bio: "Bio", badges: "Badges", stamps: "Tampons Visa", edit: "Modifier", save: "Enregistrer", langLabel: "Langue Maternelle", username: "Utilisateur", email: "E-mail", expedition: "Date d'émission", passportNo: "N° Passeport", curios: "Devise de l'Explorateur", wall: "Mur Social", logout: "Déconnexion", changeAvatar: "Choisir Photo", city: "Ville d'Origine", country: "Pays", age: "Âge", apiKey: "Connexion Satellite", apiDesc: "Utilisez votre clé pour un accès IA illimité." }
 };
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwnProfile, onUpdateUser, onSelectOwnKey, language = 'es' }) => {
+export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwnProfile, onUpdateUser, onSelectOwnKey, onLogout, language = 'es' }) => {
   const profile = user as UserProfile;
   const t = UI_TEXT[language] || UI_TEXT['es'];
   const [isEditing, setIsEditing] = useState(false);
@@ -205,7 +206,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
             )}
             
             <div className="mt-8 px-7">
-                <button onClick={onClose} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-2xl active:scale-95 transition-all">
+                <button onClick={onLogout} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-2xl active:scale-95 transition-all">
                     {t.logout}
                 </button>
             </div>

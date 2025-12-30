@@ -8,7 +8,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
-import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode } from './services/supabaseClient';
+import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, supabase } from './services/supabaseClient';
 
 function decodeBase64(base64: string) {
   try {
@@ -43,11 +43,11 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Use your own API key for unlimited access.", loading: "Curating your experience...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code.", daiGreeting: "I'm Dai, your smart guide." },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Usa tu propia clave de API.", loading: "Curando tu experiencia global...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código.", daiGreeting: "Soy Dai, tu guía inteligente." },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit.", loading: "Curant la teva experiència...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació.", daiGreeting: "Sóc la Dai, la teva guia." },
-  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da.", loading: "Esperientzia prestatzen...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan.", daiGreeting: "Dai naiz, zure gida adimenduna." },
-  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte.", loading: "Préparation de votre voyage...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification.", daiGreeting: "Je suis Dai, votre guide." }
+  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Sign Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached.", loading: "Dai is curating your route...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code.", daiGreeting: "I'm Dai, your smart guide." },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado.", loading: "Dai está preparando tu ruta...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código.", daiGreeting: "Soy Dai, tu guía inteligente." },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit.", loading: "La Dai està preparant la ruta...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació.", daiGreeting: "Sóc la Dai, la teva guia." },
+  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da.", loading: "Dai ibilbidea prestatzen ari da...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan.", daiGreeting: "Dai naiz, zure gida adimenduna." },
+  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte.", loading: "Dai prépare votre itinéraire...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification.", daiGreeting: "Je suis Dai, votre guide." }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -108,11 +108,12 @@ export default function App() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [quotaHit, setQuotaHit] = useState(false);
   
+  const GUEST_PROFILE: UserProfile = { id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: '', email: '', avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, visitedCities: [], completedTours: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: `ES-${Math.floor(Math.random()*9000)+1000}-BDAI` };
+
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('bdai_profile');
-    const base: UserProfile = { id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: '', email: '', avatar: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, visitedCities: [], completedTours: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: `ES-${Math.floor(Math.random()*9000)+1000}-BDAI` };
-    if (saved) return { ...base, ...JSON.parse(saved) };
-    return base;
+    if (saved) return { ...GUEST_PROFILE, ...JSON.parse(saved) };
+    return GUEST_PROFILE;
   });
 
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
@@ -141,8 +142,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-      localStorage.setItem('bdai_profile', JSON.stringify(user));
+      if (user.isLoggedIn) {
+        localStorage.setItem('bdai_profile', JSON.stringify(user));
+      }
   }, [user]);
+
+  const handleLogout = async () => {
+      await supabase.auth.signOut();
+      localStorage.removeItem('bdai_profile');
+      setUser(GUEST_PROFILE);
+      setLoginStep('FORM');
+      setView(AppView.LOGIN);
+  };
 
   const handleOpenSelectKey = async () => {
     if ((window as any).aistudio) {
@@ -350,7 +361,7 @@ export default function App() {
                     <NavButton icon="fa-shopping-bag" label={t('shop')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
                 </nav>
             </div>
-            {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} onSelectOwnKey={handleOpenSelectKey} />}
+            {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} onSelectOwnKey={handleOpenSelectKey} onLogout={handleLogout} />}
           </>
       )}
     </div>
