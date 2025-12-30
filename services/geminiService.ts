@@ -82,9 +82,10 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   };
 
   try {
+    // Usamos Flash para mayor disponibilidad y velocidad
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({
-        model: "gemini-3-pro-preview", 
+        model: "gemini-3-flash-preview", 
         contents: prompt,
         config: { 
             responseMimeType: "application/json", 
@@ -108,12 +109,11 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         }))
     }));
 
-    // GUARDAR EN CACHÉ (Esperamos para asegurar persistencia)
     await saveToursToCache(cityInput, userProfile.language, processed);
-    
     return processed;
   } catch (error: any) { 
-    if (error?.message?.includes('429') || error?.status === 429) return 'QUOTA';
+    console.error("[Buda] Error Gemini:", error);
+    if (error?.message?.includes('429') || error?.status === 429 || error?.message?.includes('quota')) return 'QUOTA';
     return []; 
   }
 };

@@ -11,13 +11,18 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { syncUserProfile, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode } from './services/supabaseClient';
 
 function decodeBase64(base64: string) {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  try {
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  } catch (e) {
+    console.error("[Buda] Error decodificando Base64:", e);
+    return new Uint8Array(0);
   }
-  return bytes;
 }
 
 async function decodeAudioData(
@@ -39,11 +44,11 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", wine: "Gastronomy", architecture: "Urban Design", night: "City Pulse", tradition: "Heritage", errorLogin: "Invalid code.", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Try again in a few minutes.", loading: "Curating your global experience..." },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", wine: "Gastronomía", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimonio", errorLogin: "Código incorrecto.", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Reinténtalo en unos minutos.", loading: "Curando tu experiencia global..." },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", wine: "Gastronomia", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimoni", errorLogin: "Codi incorrecte.", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit. Torna a intentar-ho en uns minuts.", loading: "Curant la teva experiència..." },
-  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", wine: "Gastronomia", architecture: "Arkitektura", night: "Gau Giroa", tradition: "Tradizioa", errorLogin: "Kode okerra.", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da. Saiatu berriro minutu batzuk barru.", loading: "Esperientzia prestatzen..." },
-  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", wine: "Gastronomie", architecture: "Architecture", night: "Vie Nocturne", tradition: "Tradition", errorLogin: "Code incorrect.", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte. Réessayez dans quelques minutes.", loading: "Préparation de votre voyage..." }
+  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", wine: "Gastronomy", architecture: "Urban Design", night: "City Pulse", tradition: "Heritage", errorLogin: "Invalid code.", confirmCode: "Confirm", logout: "Log Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached. Try using your own API key for unlimited access.", loading: "Curating your global experience...", useOwnKey: "Use Own API Key" },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atrás", wine: "Gastronomía", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimonio", errorLogin: "Código incorrecto.", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado. Usa tu propia clave de API para acceso ilimitado.", loading: "Curando tu experiencia global...", useOwnKey: "Usar mi propia clave API" },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", wine: "Gastronomia", architecture: "Arquitectura", night: "Vida Nocturna", tradition: "Patrimoni", errorLogin: "Codi incorrecte.", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit. Utilitza la teva pròpia clau de API.", loading: "Curant la teva experiència...", useOwnKey: "Usar clau propia" },
+  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", wine: "Gastronomia", architecture: "Arkitektura", night: "Gau Giroa", tradition: "Tradizioa", errorLogin: "Kode okerra.", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da. Erabili zure API gakoa.", loading: "Esperientzia prestatzen...", useOwnKey: "Nire gakoa erabili" },
+  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", wine: "Gastronomie", architecture: "Architecture", night: "Vie Nocturne", tradition: "Tradition", errorLogin: "Code incorrect.", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte. Utilisez votre propre clé API.", loading: "Préparation de votre voyage...", useOwnKey: "Utiliser ma propre clé" }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -106,6 +111,7 @@ export default function App() {
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [quotaHit, setQuotaHit] = useState(false);
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('bdai_profile');
     const defaultUser: UserProfile = {
@@ -134,18 +140,88 @@ export default function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
+  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
+
+  const handleOpenSelectKey = async () => {
+    try {
+        await (window as any).aistudio.openSelectKey();
+        setQuotaHit(false);
+        // Recargar el tour si estábamos en medio de una búsqueda
+        if (selectedCity) handleCitySelect(selectedCity);
+    } catch (e) {
+        console.error("Key selection failed", e);
+    }
+  };
+
+  const handleCitySelect = async (city: string) => {
+    if (!city) return;
+    const cleanCity = city.trim();
+    setSelectedCity(cleanCity);
+    setIsLoading(true);
+    setQuotaHit(false);
+    setView(AppView.CITY_DETAIL);
+    try {
+        const gen = await generateToursForCity(cleanCity, user);
+        if (gen === 'QUOTA') {
+            setQuotaHit(true);
+            setTours([]);
+        } else {
+            setTours(Array.isArray(gen) ? gen : []);
+        }
+    } catch (e) { 
+        console.error("Selection Error:", e);
+        setTours([]); 
+    } finally { 
+        setIsLoading(false); 
+    }
+  };
+
+  const handlePlayAudio = async (id: string, text: string) => {
+    if (audioPlayingId === id) { 
+        stopAudio(); 
+        return; 
+    }
+    
+    stopAudio();
+    setAudioLoadingId(id);
+    
+    try {
+        const base64 = await generateAudio(text, user.language);
+        
+        if (base64 === "QUOTA_EXHAUSTED") {
+            setQuotaHit(true);
+            return;
+        }
+
+        if (base64) {
+            if (!audioContextRef.current) {
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            }
+            const ctx = audioContextRef.current;
+            if (ctx.state === 'suspended') await ctx.resume();
+            const bytes = decodeBase64(base64);
+            const buffer = await decodeAudioData(bytes, ctx, 24000, 1);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.onended = () => setAudioPlayingId(prev => prev === id ? null : prev);
+            source.start(0);
+            audioSourceRef.current = source;
+            setAudioPlayingId(id);
+        }
+    } catch (e) { 
+        console.error("[Buda] Audio error:", e); 
+    } finally { 
+        setAudioLoadingId(null); 
+    }
+  };
+
   const awardMiles = (amount: number, reason: string, details?: any) => {
     setUser(prev => {
-        const safePrev = { ...prev, 
-            miles: prev.miles || 0,
-            badges: Array.isArray(prev.badges) ? [...prev.badges] : [],
-            visitedCities: Array.isArray(prev.visitedCities) ? [...prev.visitedCities] : []
-        };
-        
+        const safePrev = { ...prev, miles: prev.miles || 0, badges: Array.isArray(prev.badges) ? [...prev.badges] : [], visitedCities: Array.isArray(prev.visitedCities) ? [...prev.visitedCities] : [] };
         let currentMiles = safePrev.miles + amount;
         let currentBadges = safePrev.badges;
         let currentVisitedCities = safePrev.visitedCities;
-
         if (reason === 'stop_checkin' && details?.city) {
             const cityKey = details.city.trim();
             if (!currentVisitedCities.includes(cityKey)) {
@@ -153,23 +229,15 @@ export default function App() {
                 currentMiles += 500;
                 const stampId = `visa_${cityKey.toLowerCase().replace(/\s/g, '_')}`;
                 if (!currentBadges.find(b => b.id === stampId)) {
-                    currentBadges.push({
-                        id: stampId,
-                        name: cityKey,
-                        icon: 'fa-stamp',
-                        description: `Sello oficial: Visita a ${cityKey}`,
-                        earnedAt: new Date().toLocaleDateString()
-                    });
+                    currentBadges.push({ id: stampId, name: cityKey, icon: 'fa-stamp', description: `Sello oficial: Visita a ${cityKey}`, earnedAt: new Date().toLocaleDateString() });
                 }
             }
         }
-
         let newRank: TravelerRank = 'Turist';
         if (currentMiles >= 40000) newRank = 'Legend';
         else if (currentMiles >= 15000) newRank = 'Globe-Trotter';
         else if (currentMiles >= 5000) newRank = 'Wanderer';
         else if (currentMiles >= 1000) newRank = 'Explorer';
-
         return { ...safePrev, miles: currentMiles, rank: newRank, visitedCities: currentVisitedCities, badges: currentBadges };
     });
   };
@@ -194,30 +262,6 @@ export default function App() {
   }, [user]);
 
   useEffect(() => { getGlobalRanking().then(setLeaderboard); }, []);
-
-  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
-
-  const handleCitySelect = async (city: string) => {
-    if (!city) return;
-    const cleanCity = city.trim();
-    setSelectedCity(cleanCity);
-    setIsLoading(true);
-    setView(AppView.CITY_DETAIL);
-    try {
-        const gen = await generateToursForCity(cleanCity, user);
-        if (gen === 'QUOTA') {
-            alert(t('quotaError'));
-            setTours([]);
-        } else {
-            setTours(Array.isArray(gen) ? gen : []);
-        }
-    } catch (e) { 
-        console.error("Selection Error:", e);
-        setTours([]); 
-    } finally { 
-        setIsLoading(false); 
-    }
-  };
 
   const handleStartAuth = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -254,32 +298,6 @@ export default function App() {
         audioSourceRef.current = null;
     }
     setAudioPlayingId(null);
-  };
-
-  const handlePlayAudio = async (id: string, text: string) => {
-    if (audioPlayingId === id) { stopAudio(); return; }
-    stopAudio();
-    setAudioLoadingId(id);
-    try {
-        const base64 = await generateAudio(text, user.language);
-        if (base64 === "QUOTA_EXHAUSTED") {
-            alert(t('quotaError'));
-            return;
-        }
-        if (base64) {
-            if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-            const ctx = audioContextRef.current;
-            const bytes = decodeBase64(base64);
-            const buffer = await decodeAudioData(bytes, ctx, 24000, 1);
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
-            source.onended = () => setAudioPlayingId(prev => prev === id ? null : prev);
-            source.start();
-            audioSourceRef.current = source;
-            setAudioPlayingId(id);
-        }
-    } catch (e) { console.error(e); } finally { setAudioLoadingId(null); }
   };
 
   return (
@@ -362,6 +380,15 @@ export default function App() {
                               <i className="fas fa-brain text-4xl mb-4 text-purple-500"></i>
                               <p className="text-[10px] uppercase font-black tracking-widest leading-relaxed">{t('loading')}</p>
                           </div>
+                      ) : quotaHit ? (
+                          <div className="py-20 text-center px-8 bg-white/5 rounded-[2.5rem] border border-white/10 mx-2 animate-slide-up">
+                              <i className="fas fa-crown text-4xl mb-6 text-yellow-500"></i>
+                              <p className="text-sm font-bold text-slate-300 leading-relaxed mb-8">{t('quotaError')}</p>
+                              <button onClick={handleOpenSelectKey} className="w-full py-5 bg-yellow-500 text-slate-950 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3">
+                                  <i className="fas fa-key"></i> {t('useOwnKey')}
+                              </button>
+                              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[9px] uppercase font-black text-slate-500 tracking-widest mt-6 block underline">Consultar documentación de facturación</a>
+                          </div>
                       ) : (
                           <div className="space-y-6 pb-12">
                             {tours.length > 0 ? tours.map(tour => (
@@ -389,7 +416,7 @@ export default function App() {
                     <NavButton icon="fa-shopping-bag" label={t('shop')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
                 </nav>
             </div>
-            {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} />}
+            {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} onSelectOwnKey={handleOpenSelectKey} />}
           </>
       )}
     </div>
