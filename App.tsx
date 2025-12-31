@@ -57,11 +57,11 @@ async function decodeAudioData(
 }
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search any city...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Sign Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached.", loading: "Dai is curating your route...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code.", daiGreeting: "I'm Dai, your smart guide." },
-  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atras", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado.", loading: "Dai está preparando tu ruta...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código.", daiGreeting: "Soy Dai, tu guía inteligente." },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit.", loading: "La Dai està preparant la ruta...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació.", daiGreeting: "Sóc la Dai, la teva guia." },
-  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da.", loading: "Dai ibilbidea prestatzen ari da...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan.", daiGreeting: "Dai naiz, zure gida adimenduna." },
-  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte.", loading: "Dai prépare votre itinéraire...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification.", daiGreeting: "Je suis Dai, votre guide." }
+  en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search city or theme (e.g. Valencia Cinema)...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Sign Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached.", loading: "Dai is curating your route...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code.", daiGreeting: "I'm Dai, your smart guide.", hacksTitle: "Dai Hacks: Try themes", themes: { cine: "Cinema 🎬", gratis: "Free 🎟️", gastro: "Food 🥘", secretos: "Secrets 🤫", noche: "Night 🌙" } },
+  es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca ciudad o tema (ej. Valencia Cine)...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atras", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado.", loading: "Dai está preparando tu ruta...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código.", daiGreeting: "Soy Dai, tu guía inteligente.", hacksTitle: "Dai Hacks: Prueba temas", themes: { cine: "Cine 🎬", gratis: "Gratis 🎟️", gastro: "Gastro 🥘", secretos: "Secretos 🤫", noche: "Noche 🌙" } },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca ciutat o tema (ex. Valencia Cinema)...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit.", loading: "La Dai està preparant la ruta...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació.", daiGreeting: "Sóc la Dai, la teva guia.", hacksTitle: "Dai Hacks: Prova temes", themes: { cine: "Cine 🎬", gratis: "Gratis 🎟️", gastro: "Gastro 🥘", secretos: "Secrets 🤫", noche: "Nit 🌙" } },
+  eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak edo gaiak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da.", loading: "Dai ibilbidea prestatzen ari da...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan.", daiGreeting: "Dai naiz, zure gida adimenduna.", hacksTitle: "Dai Hacks: Gaiak probatu", themes: { cine: "Zinema 🎬", gratis: "Doan 🎟️", gastro: "Gastro 🥘", secretos: "Sekretuak 🤫", noche: "Gaua 🌙" } },
+  fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville ou un thème...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte.", loading: "Dai prépare votre itinéraire...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification.", daiGreeting: "Je suis Dai, votre guide.", hacksTitle: "Dai Hacks: Thèmes", themes: { cine: "Ciné 🎬", gratis: "Gratuit 🎟️", gastro: "Gastro 🥘", secretos: "Secrets 🤫", noche: "Nuit 🌙" } }
 };
 
 export const FlagIcon = ({ code, className = "w-6 h-4" }: { code: string, className?: string }) => {
@@ -143,6 +143,7 @@ export default function App() {
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
+  const th = (key: string) => (TRANSLATIONS[user.language]?.themes || TRANSLATIONS['es'].themes)[key] || key;
 
   useEffect(() => {
     if (user.isLoggedIn && user.id !== 'guest') {
@@ -345,6 +346,7 @@ export default function App() {
                       </div>
                       <CategoryHeader title={t('spainTitle')} subtitle="The soul of the peninsula" />
                       <div className="flex gap-4 overflow-x-auto no-scrollbar px-6 pb-2">
+                          <QuickCityBtn onClick={() => handleCitySelect('Valencia')} city="Valencia" label="Secretos y Gastro 🥘" icon="fa-shrimp" color="orange" />
                           <QuickCityBtn onClick={() => handleCitySelect('Madrid')} city="Madrid" label="Arte 🖼️" icon="fa-landmark" color="gold" />
                           <QuickCityBtn onClick={() => handleCitySelect('Barcelona')} city="Barcelona" label="Gaudí 🌊" icon="fa-archway" color="gold" />
                           <QuickCityBtn onClick={() => handleCitySelect('Logroño')} city="Logroño" label="Vinos 🍷" icon="fa-wine-glass" color="orange" />
@@ -363,6 +365,29 @@ export default function App() {
                           <button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
                           <h2 className="text-2xl font-black">{selectedCity}</h2>
                       </header>
+
+                      {/* Dai Hacks Section */}
+                      <div className="mb-8 animate-slide-up">
+                          <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                              <i className="fas fa-magic animate-pulse"></i> {t('hacksTitle')}
+                          </p>
+                          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-2 px-2">
+                              {['cine', 'gratis', 'gastro', 'secretos', 'noche'].map(key => {
+                                  const themeLabel = th(key);
+                                  const cityName = selectedCity?.split(' ')[0] || selectedCity || '';
+                                  return (
+                                    <button 
+                                        key={key} 
+                                        onClick={() => handleCitySelect(`${cityName} ${themeLabel.split(' ')[0]}`)}
+                                        className="flex-shrink-0 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-[11px] font-black uppercase tracking-widest hover:border-purple-500 hover:text-purple-400 transition-all active:scale-95 whitespace-nowrap"
+                                    >
+                                        {themeLabel}
+                                    </button>
+                                  );
+                              })}
+                          </div>
+                      </div>
+
                       {isLoading ? (
                           <div className="py-24 text-center text-slate-500 animate-pulse">{t('loading')}</div>
                       ) : (

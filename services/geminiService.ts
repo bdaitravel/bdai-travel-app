@@ -24,11 +24,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const cached = await getCachedTours(cityInput, userProfile.language);
   if (cached && cached.length > 0) return cached;
 
-  const prompt = `HISTORIAN PERSONA. CITY: ${cityInput}. LANG: ${targetLanguage}.
-  TASK: Create 2 premium tours (15 stops each). 
+  const prompt = `EXPERT LOCAL GUIDE PERSONA. CITY/THEME: ${cityInput}. LANG: ${targetLanguage}.
+  TASK: Create 2 "Elite" level tours (15 stops each) that feel like a "Free Tour" style but with professional depth.
   RULES:
-  - DESCRIPTION: Exactly 180-220 words per stop.
-  - NO HEADERS: Fluid story only.
+  - PRIORITIZE: Hidden gems, secrets, free entrance spots, and local gastronomic spots.
+  - THEME FOCUS: If the user provides a theme (e.g., Cinema, Food, Secrets), tailor the stops 100% to that.
+  - DESCRIPTION: Exactly 180-220 words per stop. Fluid narrative, no bullet points.
+  - PHOTO INTEL: Provide specific instructions for the best Instagram photo and a viral hook.
   - INTERESTS: ${userProfile.interests.join(", ")}.`;
 
   const responseSchema = {
