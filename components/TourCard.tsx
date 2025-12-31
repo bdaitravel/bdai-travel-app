@@ -5,11 +5,11 @@ import { SchematicMap } from './SchematicMap';
 import { cleanDescriptionText } from '../services/geminiService';
 
 const UI_TEXT: any = {
-    en: { start: "Start", stop: "Stop", stopTag: "Stop", checkin: "Check-in (+150m)", visited: "Explored", next: "Next", prev: "Back", bestAngle: "Master Angle", bestTime: "Golden Hour", hook: "Viral Hook", share: "Share Discovery", listen: "Dai's Voice Guide", distLabel: "Distance", intelTitle: "Photo Intel" },
-    es: { start: "Empezar", stop: "Parar", stopTag: "Parada", checkin: "Hacer Check-in (+150m)", visited: "Explorado", next: "Siguiente", prev: "Atrás", bestAngle: "Ángulo Maestro", bestTime: "Momento Ideal", hook: "Hook Viral", share: "Compartir Hallazgo", listen: "Guía de voz: Dai", distLabel: "Distancia", intelTitle: "Estrategia de Captura" },
-    ca: { start: "Començar", stop: "Parar", stopTag: "Parada", checkin: "Check-in (+150m)", visited: "Explorat", next: "Següent", prev: "Enrere", bestAngle: "Angle Mestre", bestTime: "Moment Ideal", hook: "Hook Viral", share: "Compartir", listen: "Veu de la Dai", distLabel: "Distància", intelTitle: "Intel·ligència Fotogràfica" },
-    eu: { start: "Hasi", stop: "Gelditu", stopTag: "Geltokia", checkin: "Check-in (+150m)", visited: "Arakatuta", next: "Hurrengoa", prev: "Atzera", bestAngle: "Angelu Ona", bestTime: "Ordurik Onena", hook: "Hook Soziala", share: "Partekatu", listen: "Dairen ahotsa", distLabel: "Distantzia", intelTitle: "Argazki Inteligentzia" },
-    fr: { start: "Démarrer", stop: "Arrêter", stopTag: "Étape", checkin: "Enregistrer (+150m)", visited: "Exploré", next: "Suivant", prev: "Retour", bestAngle: "Meilleur Angle", bestTime: "Heure Idéale", hook: "Hook Viral", share: "Partager", listen: "Guide vocal: Dai", distLabel: "Distance", intelTitle: "Photo Intel" }
+    en: { start: "Start", stop: "Stop", stopTag: "Stop", checkin: "Check-in (+150m)", visited: "Explored", next: "Next", prev: "Back", bestAngle: "Master Angle", bestTime: "Golden Hour", hook: "Viral Hook", share: "Share Discovery", listen: "Dai's Voice Guide", distLabel: "Distance", intelTitle: "Photo Intel", recommended: "RECOMMENDED: ESSENTIAL" },
+    es: { start: "Empezar", stop: "Parar", stopTag: "Parada", checkin: "Hacer Check-in (+150m)", visited: "Explorado", next: "Siguiente", prev: "Atrás", bestAngle: "Ángulo Maestro", bestTime: "Momento Ideal", hook: "Hook Viral", share: "Compartir Hallazgo", listen: "Guía de voz: Dai", distLabel: "Distancia", intelTitle: "Estrategia de Captura", recommended: "RECOMENDADO: IMPRESCINDIBLE" },
+    ca: { start: "Començar", stop: "Parar", stopTag: "Parada", checkin: "Check-in (+150m)", visited: "Explorat", next: "Següent", prev: "Enrere", bestAngle: "Angle Mestre", bestTime: "Moment Ideal", hook: "Hook Viral", share: "Compartir", listen: "Veu de la Dai", distLabel: "Distància", intelTitle: "Intel·ligència Fotogràfica", recommended: "RECOMANAT: IMPRESCINDIBLE" },
+    eu: { start: "Hasi", stop: "Gelditu", stopTag: "Geltokia", checkin: "Check-in (+150m)", visited: "Arakatuta", next: "Hurrengoa", prev: "Atzera", bestAngle: "Angelu Ona", bestTime: "Ordurik Onena", hook: "Hook Soziala", share: "Partekatu", listen: "Dairen ahotsa", distLabel: "Distantzia", intelTitle: "Argazki Inteligentzia", recommended: "GOMENDATUA: EZINBESTEKOA" },
+    fr: { start: "Démarrer", stop: "Arrêter", stopTag: "Étape", checkin: "Enregistrer (+150m)", visited: "Exploré", next: "Suivant", prev: "Retour", bestAngle: "Meilleur Angle", bestTime: "Heure Idéale", hook: "Hook Viral", share: "Partager", listen: "Guide vocal: Dai", distLabel: "Distance", intelTitle: "Photo Intel", recommended: "RECOMMANDÉ: ESSENTIEL" }
 };
 
 export const TourCard: React.FC<any> = ({ tour, onSelect, language }) => {
@@ -17,7 +17,14 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language }) => {
   const fallbackImg = `https://images.unsplash.com/photo-1543783232-261f9107558e?auto=format&fit=crop&w=800&q=80`;
 
   return (
-    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-700 cursor-pointer h-full flex flex-col">
+    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-700 cursor-pointer h-full flex flex-col relative">
+      {tour.isEssential && (
+          <div className="absolute top-0 right-0 z-10">
+              <div className="bg-yellow-400 text-yellow-900 text-[8px] font-black px-4 py-2 rounded-bl-2xl shadow-lg uppercase tracking-widest animate-pulse">
+                  <i className="fas fa-star mr-2"></i> {t.recommended}
+              </div>
+          </div>
+      )}
       <div className="h-48 relative overflow-hidden bg-slate-200">
         <img src={tour.imageUrl || fallbackImg} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={tour.title} />
         <div className="absolute inset-0 bg-black/20"></div>
@@ -98,7 +105,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                 <div className="space-y-6 mb-10">
                     {currentStop.description.split('\n').map((line, idx) => {
                         const clean = cleanDescriptionText(line);
-                        return clean ? <p key={idx} className="text-slate-700 text-lg leading-relaxed font-medium">{clean}</p> : null;
+                        return clean ? <p key={idx} className="text-slate-700 text-lg font-medium leading-relaxed">{clean}</p> : null;
                     })}
                 </div>
 

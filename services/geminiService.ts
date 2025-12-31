@@ -25,11 +25,15 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   if (cached && cached.length > 0) return cached;
 
   const prompt = `EXPERT LOCAL GUIDE PERSONA. CITY/THEME: ${cityInput}. LANG: ${targetLanguage}.
-  TASK: Create 2 "Elite" level tours (15 stops each) that feel like a "Free Tour" style but with professional depth.
-  RULES:
-  - PRIORITIZE: Hidden gems, secrets, free entrance spots, and local gastronomic spots.
-  - THEME FOCUS: If the user provides a theme (e.g., Cinema, Food, Secrets), tailor the stops 100% to that.
-  - DESCRIPTION: Exactly 180-220 words per stop. Fluid narrative, no bullet points.
+  TASK: Create 2 "Elite" level tours (15 stops each).
+  
+  STRUCTURE RULES:
+  - TOUR 1: Must be the "ESSENTIAL & MUST-SEE" tour. Include the absolute iconic landmarks (e.g., if Paris, include Eiffel Tower). It's the "Basics" tour.
+  - TOUR 2: Can be "Hidden Gems", "Thematic" (Cinema, Food, etc.) or "Secrets".
+  
+  QUALITY RULES:
+  - ORTHOGRAPHY: Crucial. Use perfect grammar, punctuation, and CORRECT ACCENT MARKS (TILDES) for the language.
+  - NARRATIVE: Exactly 180-220 words per stop. Fluid and engaging style.
   - PHOTO INTEL: Provide specific instructions for the best Instagram photo and a viral hook.
   - INTERESTS: ${userProfile.interests.join(", ")}.`;
 
@@ -91,6 +95,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         ...t, 
         id: `tour_${idx}_${Date.now()}`, 
         city: cityInput,
+        isEssential: idx === 0, // Marcar el primero como esencial
         stops: t.stops.map((s: any, sIdx: number) => ({
             ...s,
             id: `s_${idx}_${sIdx}`,
@@ -118,12 +123,7 @@ export const generateAudio = async (text: string, language: string = 'es', useFe
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const narrationPrompt = language === 'es' 
-        ? `Eres "Dai" (pronunciado 'Dei'), la guía inteligente de bdai. 
-           Tu personalidad es entusiasta, culta y apasionada por los viajes.
-           Hablas con un acento de Madrid (Castellano puro) impecable y mucha energía.
-           REGLA DE ORO: NO digas "eres un guía...", NO digas "soy una IA...", NO digas "aquí tienes la historia". 
-           EMPIEZA DIRECTAMENTE con la narración del lugar de forma fascinante.
-           
+        ? `Eres "Dai", la guía inteligente. Usa una dicción perfecta y acento de España.
            TEXTO: ${finalAudioText}`
         : `You are "Dai", the smart guide of bdai. Narrate this with enthusiasm: ${finalAudioText}`;
 
