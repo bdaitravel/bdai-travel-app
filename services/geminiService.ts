@@ -4,7 +4,7 @@ import { Tour, Stop, UserProfile } from '../types';
 import { getCachedTours, saveToursToCache, getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const LANGUAGE_MAP: Record<string, string> = {
-    es: "Spanish (Castellano de España)",
+    es: "Spanish (Castellano de España, RAE Standard, ACENTUACIÓN PERFECTA)",
     en: "English (British)",
     ca: "Catalan (Català de Catalunya)",
     eu: "Basque (Euskara de Euskal Herria)",
@@ -24,18 +24,14 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const cached = await getCachedTours(cityInput, userProfile.language);
   if (cached && cached.length > 0) return cached;
 
-  const prompt = `EXPERT LOCAL GUIDE PERSONA. CITY/THEME: ${cityInput}. LANG: ${targetLanguage}.
-  TASK: Create 2 "Elite" level tours (15 stops each).
+  const prompt = `ERES UN GUÍA LOCAL CULTO Y EXPERTO. CIUDAD/TEMA: ${cityInput}. IDIOMA: ${targetLanguage}.
   
-  STRUCTURE RULES:
-  - TOUR 1: Must be the "ESSENTIAL & MUST-SEE" tour. Include the absolute iconic landmarks (e.g., if Paris, include Eiffel Tower). It's the "Basics" tour.
-  - TOUR 2: Can be "Hidden Gems", "Thematic" (Cinema, Food, etc.) or "Secrets".
-  
-  QUALITY RULES:
-  - ORTHOGRAPHY: Crucial. Use perfect grammar, punctuation, and CORRECT ACCENT MARKS (TILDES) for the language.
-  - NARRATIVE: Exactly 180-220 words per stop. Fluid and engaging style.
-  - PHOTO INTEL: Provide specific instructions for the best Instagram photo and a viral hook.
-  - INTERESTS: ${userProfile.interests.join(", ")}.`;
+  REGLAS DE ORO (INCUMPLIRLAS ES UN ERROR GRAVE):
+  1. ORTOGRAFÍA: Debes escribir con corrección absoluta. ES OBLIGATORIO PONER TODAS LAS TILDES (ej. "está", "mañana", "música", "Gandía"). La falta de tildes es inadmisible.
+  2. TOUR 1 (EL IMPRESCINDIBLE): El primer tour de la lista DEBE ser la ruta básica, típica y esencial. Los 15 puntos que cualquier turista debe ver (Torre Eiffel, Sagrada Familia, etc.).
+  3. TOUR 2 (TEMÁTICO): Puede ser sobre secretos, cine o gastro.
+  4. NARRATIVA: 200 palabras por parada. Estilo elegante y emocionante.
+  5. INTERESES DEL USUARIO: ${userProfile.interests.join(", ")}.`;
 
   const responseSchema = {
     type: Type.ARRAY,
@@ -95,7 +91,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         ...t, 
         id: `tour_${idx}_${Date.now()}`, 
         city: cityInput,
-        isEssential: idx === 0, // Marcar el primero como esencial
+        isEssential: idx === 0,
         stops: t.stops.map((s: any, sIdx: number) => ({
             ...s,
             id: `s_${idx}_${sIdx}`,
@@ -116,14 +112,14 @@ export const generateAudio = async (text: string, language: string = 'es', useFe
   if (!text) return "";
   const cleanedText = cleanDescriptionText(text);
   const finalAudioText = cleanedText.substring(0, 4000);
-  const voiceKey = 'DAI_VOICE';
+  const voiceKey = 'DAI_VOICE_V3';
   const cached = await getCachedAudio(finalAudioText, `${language}_${voiceKey}`);
   if (cached) return cached;
   
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const narrationPrompt = language === 'es' 
-        ? `Eres "Dai", la guía inteligente. Usa una dicción perfecta y acento de España.
+        ? `Eres "Dai", la guía inteligente. Usa una dicción perfecta y acento de España. Respeta escrupulosamente todas las tildes y signos de puntuación.
            TEXTO: ${finalAudioText}`
         : `You are "Dai", the smart guide of bdai. Narrate this with enthusiasm: ${finalAudioText}`;
 

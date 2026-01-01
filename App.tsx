@@ -8,7 +8,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
-import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, supabase } from './services/supabaseClient';
+import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, supabase, syncUserProfile } from './services/supabaseClient';
 
 // Función para calcular distancia entre dos coordenadas (Haversine)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -59,7 +59,7 @@ async function decodeAudioData(
 const TRANSLATIONS: any = {
   en: { welcome: "Hello,", explore: "Explore", toolkit: "Hub", passport: "Visa", shop: "Store", ranking: "Elite", searchPlaceholder: "Search city or theme (e.g. Valencia Cinema)...", login: "Issue Passport", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "First Name", verifyTitle: "Verification", back: "Back", confirmCode: "Confirm", logout: "Sign Out", trending: "Global Trends", spainTitle: "Spain Collection", results: "AI Tours", quotaError: "Daily limit reached.", loading: "Dai is curating your route...", useOwnKey: "Use Own API Key", errorLogin: "Check your email and code.", daiGreeting: "I'm Dai, your smart guide.", hacksTitle: "Dai Hacks: Try themes", themes: { cine: "Cinema 🎬", gratis: "Free 🎟️", gastro: "Food 🥘", secretos: "Secrets 🤫", noche: "Night 🌙" } },
   es: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Tienda", ranking: "Elite", searchPlaceholder: "Busca ciudad o tema (ej. Valencia Cine)...", login: "Emitir Pasaporte", tagline: "better destinations by ai", emailLabel: "Email", nameLabel: "Nombre", verifyTitle: "Verificación", back: "Atras", confirmCode: "Confirmar", logout: "Cerrar Sesión", trending: "Tendencias", spainTitle: "Colección España", results: "Tours IA", quotaError: "Límite diario alcanzado.", loading: "Dai está preparando tu ruta...", useOwnKey: "Usar mi propia clave API", errorLogin: "Error al verificar. Revisa tu email y el código.", daiGreeting: "Soy Dai, tu guía inteligente.", hacksTitle: "Dai Hacks: Prueba temas", themes: { cine: "Cine 🎬", gratis: "Gratis 🎟️", gastro: "Gastro 🥘", secretos: "Secretos 🤫", noche: "Noche 🌙" } },
-  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca ciutat o tema (ex. Valencia Cinema)...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit.", loading: "La Dai està preparant la ruta...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació.", daiGreeting: "Sóc la Dai, la teva guia.", hacksTitle: "Dai Hacks: Prova temes", themes: { cine: "Cine 🎬", gratis: "Gratis 🎟️", gastro: "Gastro 🥘", secretos: "Secrets 🤫", noche: "Nit 🌙" } },
+  ca: { welcome: "Hola,", explore: "Explorar", toolkit: "Hub", passport: "Visa", shop: "Botiga", ranking: "Elit", searchPlaceholder: "Cerca ciutat o tema (ex. Valencia Cinema)...", login: "Emetre Passaport", tagline: "better destinations by ai", emailLabel: "Correu", nameLabel: "Nom", verifyTitle: "Verificació", back: "Enrere", confirmCode: "Confirmar", logout: "Tancar Sessió", trending: "Tendències", spainTitle: "Colecció Espanya", results: "Tours IA", quotaError: "Límit diari assolit.", loading: "La Dai està preparant la ruta...", useOwnKey: "Usar clau propia", errorLogin: "Error de verificació.", daiGreeting: "Sóc la Dai, la teva guia.", hacksTitle: "Dai Hacks: Prova temes", themes: { cine: "Cine 🎬", gratis: "Gratis 🎟️", gastro: "Gastro 🥘", secretos: "Secrets 🤫", noche: "Noche 🌙" } },
   eu: { welcome: "Kaixo,", explore: "Esploratu", toolkit: "Gunea", passport: "Visa", shop: "Denda", ranking: "Elitea", searchPlaceholder: "Bilatu hiriak edo gaiak...", login: "Pasaportea Igortu", tagline: "better destinations by ai", emailLabel: "Posta", nameLabel: "Izena", verifyTitle: "Egiaztapena", back: "Atzera", confirmCode: "Berretsi", logout: "Saioa Itxi", trending: "Joerak", spainTitle: "Espainia Bilduma", results: "IA Ibilbideak", quotaError: "Eguneko muga gainditu da.", loading: "Dai ibilbidea prestatzen ari da...", useOwnKey: "Nire gakoa erabili", errorLogin: "Errorea egiaztatzerakoan.", daiGreeting: "Dai naiz, zure gida adimenduna.", hacksTitle: "Dai Hacks: Gaiak probatu", themes: { cine: "Zinema 🎬", gratis: "Doan 🎟️", gastro: "Gastro 🥘", secretos: "Sekretuak 🤫", noche: "Gaua 🌙" } },
   fr: { welcome: "Bonjour,", explore: "Explorer", toolkit: "Hub", passport: "Visa", shop: "Boutique", ranking: "Élite", searchPlaceholder: "Chercher une ville ou un thème...", login: "Émettre Passeport", tagline: "better destinations by ai", emailLabel: "E-mail", nameLabel: "Prénom", verifyTitle: "Vérification", back: "Retour", confirmCode: "Confirmer", logout: "Déconnexion", trending: "Tendances", spainTitle: "Collection Espagne", results: "Circuits IA", quotaError: "Limite quotidienne atteinte.", loading: "Dai prépare votre itinéraire...", useOwnKey: "Utiliser ma propre clé", errorLogin: "Erreur de vérification.", daiGreeting: "Je suis Dai, votre guide.", hacksTitle: "Dai Hacks: Thèmes", themes: { cine: "Ciné 🎬", gratis: "Gratuit 🎟️", gastro: "Gastro 🥘", secretos: "Secrets 🤫", noche: "Nuit 🌙" } }
 };
@@ -174,6 +174,7 @@ export default function App() {
   useEffect(() => {
       if (user.isLoggedIn) {
         localStorage.setItem('bdai_profile', JSON.stringify(user));
+        syncUserProfile(user);
       }
   }, [user]);
 
@@ -239,6 +240,28 @@ export default function App() {
         }
     } catch (e) { console.error("Audio error", e); }
     finally { setAudioLoadingId(null); }
+  };
+
+  const handleCheckIn = (stopId: string, reward: number) => {
+    if (!activeTour) return;
+    const isVisited = activeTour.stops.find(s => s.id === stopId)?.visited;
+    if (isVisited) return;
+
+    const updatedTours = tours.map(t => {
+        if (t.id === activeTour.id) {
+            return {
+                ...t,
+                stops: t.stops.map(s => s.id === stopId ? { ...s, visited: true } : s)
+            };
+        }
+        return t;
+    });
+    setTours(updatedTours);
+    setActiveTour({
+        ...activeTour,
+        stops: activeTour.stops.map(s => s.id === stopId ? { ...s, visited: true } : s)
+    });
+    setUser(prev => ({ ...prev, miles: prev.miles + reward }));
   };
 
   const handleStartAuth = async (e: React.FormEvent) => {
@@ -411,6 +434,7 @@ export default function App() {
                     userLocation={userLocation} 
                     language={user.language}
                     distanceToNext={distToNext}
+                    onCheckIn={handleCheckIn}
                   />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
