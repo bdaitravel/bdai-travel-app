@@ -1,6 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { Tour, UserProfile, LeaderboardEntry, HubIntel } from '../types';
+import { Tour, UserProfile, LeaderboardEntry, HubIntel, SocialLinks } from '../types';
 
 const supabaseUrl = "https://slldavgsoxunkphqeamx.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
@@ -58,6 +58,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       savedIntel: Array.isArray(data.saved_intel) ? data.saved_intel : [],
       stats: data.stats || { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 },
       badges: Array.isArray(data.badges) ? data.badges : [],
+      socialLinks: data.social_links || {},
       joinDate: data.join_date || data.created_at || new Date().toLocaleDateString(),
       passportNumber: data.passport_number || `XP-${data.id.substring(0,4).toUpperCase()}-BDAI`,
       isLoggedIn: true
@@ -68,7 +69,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
 export const syncUserProfile = async (user: UserProfile) => {
   if (!user || !user.isLoggedIn || user.id === 'guest') return;
   
-  // Mapeo riguroso de camelCase a snake_case según el esquema de Supabase
+  // Limpiamos el payload de columnas que podrían faltar en el schema físico
   const payload: any = {
     id: user.id,
     email: user.email.toLowerCase().trim(),
@@ -94,22 +95,15 @@ export const syncUserProfile = async (user: UserProfile) => {
     saved_intel: user.savedIntel || [],
     stats: user.stats,
     badges: user.badges || [],
-    join_date: user.joinDate,
-    passport_number: user.passportNumber,
+    social_links: user.socialLinks || {},
     updated_at: new Date().toISOString()
   };
 
   try {
     const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
-    if (error) {
-        console.group("🛑 Supabase Sync Error");
-        console.error("Mensaje:", error.message);
-        console.error("Detalle:", error.details);
-        console.warn("SOLUCIÓN: Asegúrate de haber ejecutado el script SQL para actualizar la tabla 'profiles'.");
-        console.groupEnd();
-    }
+    if (error) console.warn("Supabase Sync Sync Warning:", error.message);
   } catch (e) { 
-    console.error("Error crítico en la sincronización:", e);
+    console.error("Critical Sync Error:", e);
   }
 };
 
@@ -140,10 +134,8 @@ export const getCachedTours = async (city: string, language: string): Promise<To
     const { data, error } = await supabase
       .from('tours_cache')
       .select('data')
-      .ilike('city', `%${cleanCity}%`)
+      .ilike('city', cleanCity)
       .eq('language', language)
-      .order('created_at', { ascending: false })
-      .limit(1)
       .maybeSingle();
     
     if (error || !data) return null;
@@ -154,18 +146,20 @@ export const getCachedTours = async (city: string, language: string): Promise<To
 export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
   const cleanCity = normalizeKey(city);
   try {
-    await supabase.from('tours_cache').insert({
+    await supabase.from('tours_cache').upsert({
       city: cleanCity, 
       language, 
       data: tours, 
       created_at: new Date().toISOString()
-    });
-  } catch (e) { }
+    }, { onConflict: 'city,language' });
+  } catch (e) { 
+      console.error("Cache Save Error:", e);
+  }
 };
 
 const generateSecureHash = (text: string, lang: string) => {
     const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-    return `BDAI_V8_${lang}_${clean.length}_${clean.substring(0, 30)}`;
+    return `${lang}_${clean.length}_${clean.substring(0, 50)}`;
 };
 
 export const getCachedAudio = async (text: string, language: string): Promise<string | null> => {
@@ -183,16 +177,18 @@ export const saveAudioToCache = async (text: string, language: string, base64: s
     await supabase.from('audio_cache').upsert({
       text_hash: hash, language, base64, created_at: new Date().toISOString()
     }, { onConflict: 'text_hash,language' });
-  } catch (e) { }
+  } catch (e) { 
+      console.error("Audio Cache Save Error:", e);
+  }
 }
 
 export const getCommunityPosts = async (city: string) => {
   const cleanCity = normalizeKey(city);
   try {
-    const { data, error } = await supabase.from('community_posts').select('*').ilike('city', `%${cleanCity}%`).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('community_posts').select('*').ilike('city', cleanCity).order('created_at', { ascending: false });
     if (error) return [];
     return data.map(post => ({
-      id: post.id, user: post.user, content: post.content, time: post.created_at, likes: post.likes || 0, type: post.type || 'comment', userId: post.user_id
+      id: post.id, user: post.user, content: post.content, time: new Date(post.created_at).toLocaleTimeString(), likes: post.likes || 0, type: post.type || 'comment', userId: post.user_id, avatar: post.avatar
     }));
   } catch (e) { return []; }
 };
@@ -200,7 +196,7 @@ export const getCommunityPosts = async (city: string) => {
 export const addCommunityPost = async (postData: any) => {
   try {
     return await supabase.from('community_posts').insert({
-      city: normalizeKey(postData.city), user_id: postData.userId, user: postData.user, content: postData.content, type: postData.type, created_at: new Date().toISOString()
+      city: normalizeKey(postData.city), user_id: postData.userId, user: postData.user, avatar: postData.avatar, content: postData.content, type: postData.type, created_at: new Date().toISOString()
     });
   } catch (e) { return { error: e }; }
 };

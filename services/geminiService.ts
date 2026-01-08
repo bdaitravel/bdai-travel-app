@@ -1,71 +1,32 @@
 
 import { GoogleGenAI, Modality, GenerateContentResponse, Type } from "@google/genai";
 import { Tour, Stop, UserProfile } from '../types';
-import { getCachedTours, saveToursToCache, getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const LANGUAGE_MAP: Record<string, string> = {
-    es: "Castellano de España (Acento de Madrid/Castilla, dicción clara, elegante y profesional, sin dejes latinos)",
-    en: "British English (UK Standard)",
-    ca: "Català (Barcelona/Catalunya)",
-    eu: "Euskera (Batua)",
-    fr: "Français de France"
+    es: "Castellano de ESPAÑA. Tono: Archivista Supremo, analítico, técnico y elegante. Evita clichés turísticos.",
+    en: "British English (Oxford standard). Professional and technical tone.",
+    ca: "Català. Tò acadèmic i tècnic.",
+    eu: "Euskera. Tonu teknikoa eta sakona.",
+    fr: "Français. Ton sophistiqué et technique."
 };
 
 export const cleanDescriptionText = (text: string): string => {
-  return text
-    .replace(/(\*\*|__)?(SECCIÓN NARRATIVA|EL SECRETO DE DAI|SECRETO DE DAI|TÁCTICA DE DAI|EL SECRETO|DETALLE ARQUITECTÓNICO|NARRATIVA|SECRETO|DETALLE|HISTORIA|CURIOSIDAD):?(\*\*|__)?/gi, '')
-    .replace(/^(El )?Secreto de Dai:?/gi, '')
-    .replace(/^De Dai:?/gi, '')
-    .replace(/\[.*?\]/g, '')
-    .replace(/\*+/g, '')
-    .trim();
-};
-
-export const moderateContent = async (text: string): Promise<boolean> => {
-  if (!text) return true;
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `Evalúa si el siguiente mensaje para una comunidad de viajeros es seguro. No debe contener odio, insultos o contenido sexual. Responde solo con un JSON { "isSafe": boolean }. Mensaje: "${text}"`,
-      config: { responseMimeType: "application/json" }
-    });
-    const result = JSON.parse(response.text || '{"isSafe": true}');
-    return !!result.isSafe;
-  } catch (error) {
-    return true; 
-  }
+  return text.trim();
 };
 
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[] | 'QUOTA'> => {
   const targetLanguage = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
-  const userInterests = userProfile.interests.length > 0 ? userProfile.interests.join(", ") : "Cultura general y secretos locales";
   
-  const cached = await getCachedTours(cityInput, userProfile.language);
-  if (cached && cached.length > 0) return cached;
-
-  const prompt = `PERSONALIDAD: GUÍA DE "FREE TOUR" DE ÉLITE. Experto, carismático y sofisticado.
-  CIUDAD/PUEBLO: ${cityInput}. 
-  IDIOMA: ${targetLanguage}.
-  PERFIL USUARIO: Interesado en [${userInterests}].
+  const prompt = `ERES EL ARCHIVISTA SUPREMO DE BDAI. GENERA EL TOUR DEFINITIVO PARA: ${cityInput}.
   
-  TAREA: Crear 2 rutas a pie (10 paradas c/u).
-  
-  REGLAS DE RUTA (CRÍTICO):
-  1. ORDEN GEOGRÁFICO LÓGICO: Las paradas deben formar un recorrido CONTINUO y SECUENCIAL. 
-  2. NO VOLVER ATRÁS: El usuario debe caminar del punto A al B, del B al C, etc., sin cruzar la ciudad de forma caótica.
-  3. CERCANÍA: Cada parada debe estar a menos de 10 minutos a pie de la anterior.
-  
-  REGLAS NARRATIVAS:
-  1. NO uses etiquetas ("Secreto de Dai:", etc). Empieza directamente con la historia.
-  2. Revela el CHISME HISTÓRICO con elegancia.
-  3. Mínimo 800 palabras por parada para una experiencia inmersiva.
-  
-  ESTILO: 
-  Ruta 1: "Lo Imprescindible y sus Sombras" (Centro histórico).
-  Ruta 2: "El Lado Oculto" (Leyendas y rincones secretos).
-  
-  FORMATO: JSON puro respetando el esquema.`;
+  REQUISITOS DE CONTENIDO (MÁXIMA CALIDAD):
+  1. TRAZADO LINEAL: Las paradas DEBEN formar una línea lógica de caminata (ej. Norte a Sur). Prohibido zigzag.
+  2. DENSIDAD DE INFORMACIÓN: Cada parada debe tener una descripción de MÍNIMO 250 palabras.
+  3. DATOS TÉCNICOS: Incluye detalles sobre arquitectura, ingeniería, geología local, materiales de construcción (sillar, granito, hierro) y secretos históricos validados.
+  4. TONO: Profesional, profundo, analítico. No uses frases genéricas de guía de viajes. Queremos "inteligencia de campo".
+  5. ESTRUCTURA: 12 paradas obligatorias.
+  6. IDIOMA: ${targetLanguage}.
+  7. NO USES ETIQUETAS: No añadas títulos como "SECRETO:", "DETALLE TÉCNICO:", etc. Integra la información de forma fluida en el texto.`;
 
   const responseSchema = {
     type: Type.ARRAY,
@@ -87,7 +48,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
               description: { type: Type.STRING },
               latitude: { type: Type.NUMBER },
               longitude: { type: Type.NUMBER },
-              type: { type: Type.STRING },
+              type: { type: Type.STRING, enum: ['historical', 'food', 'art', 'nature', 'photo', 'culture'] },
               photoSpot: {
                 type: Type.OBJECT,
                 properties: { 
@@ -113,44 +74,107 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     const response: GenerateContentResponse = await ai.models.generateContent({
         model: 'gemini-3-pro-preview', 
         contents: prompt,
-        config: { responseMimeType: "application/json", responseSchema: responseSchema }
+        config: { 
+            responseMimeType: "application/json", 
+            responseSchema: responseSchema,
+            thinkingConfig: { thinkingBudget: 16000 }
+        }
     });
     
     const parsed = JSON.parse(response.text || "[]");
-    const processed = parsed.map((t: any, idx: number) => ({
+    return parsed.map((t: any, idx: number) => ({
         ...t, 
         id: `tour_${idx}_${Date.now()}`, 
         city: cityInput,
         stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_${sIdx}`, visited: false }))
     }));
-
-    await saveToursToCache(cityInput, userProfile.language, processed);
-    return processed;
   } catch (error: any) { return []; }
+};
+
+export const generateHubIntel = async (query: string, language: string): Promise<any> => {
+    const prompt = `Analiza: ${query}. Dame inteligencia de campo.
+    1. Un "Secreto de Arquitecto" (detalle técnico curioso).
+    2. Una frase de supervivencia real.
+    3. Un evento clave 2026.
+    Idioma: ${LANGUAGE_MAP[language] || 'es'}.`;
+
+    const schema = {
+        type: Type.OBJECT,
+        properties: {
+            curiosities: { type: Type.ARRAY, items: { type: Type.STRING } },
+            phrases: { 
+                type: Type.ARRAY, 
+                items: { 
+                    type: Type.OBJECT, 
+                    properties: { original: { type: Type.STRING }, meaning: { type: Type.STRING }, context: { type: Type.STRING } },
+                    required: ["original", "meaning", "context"]
+                } 
+            },
+            events: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT, 
+                    properties: { title: { type: Type.STRING }, date: { type: Type.STRING }, importance: { type: Type.STRING } },
+                    required: ["title", "date", "importance"]
+                }
+            }
+        },
+        required: ["curiosities", "phrases", "events"]
+    };
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: { responseMimeType: "application/json", responseSchema: schema }
+        });
+        return JSON.parse(response.text || "{}");
+    } catch (e) { return null; }
 };
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
-  const cleanedText = cleanDescriptionText(text).substring(0, 4000);
-  const cached = await getCachedAudio(cleanedText, language);
-  if (cached) return cached;
+  const cleanedText = cleanDescriptionText(text).substring(0, 5000);
+  
+  // Forzamos el acento peninsular mediante instrucción directa en el texto del TTS
+  const accentInstruction = language === 'es' ? "Lee con acento de España, castellano puro: " : "";
   
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const voicePrompt = language === 'es' 
-      ? `Actúa como un guía local de élite. Habla con un acento castellano impecable, cálido y envolvente. Narra esto como una confidencia entre amigos: ${cleanedText}`
-      : cleanedText;
-
     const response: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: voicePrompt }] }], 
+      contents: [{ parts: [{ text: `${accentInstruction}${cleanedText}` }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
+        speechConfig: { 
+          voiceConfig: { 
+            // Cambiamos a Zephyr que tiene un perfil fonético más adecuado para Europa
+            prebuiltVoiceConfig: { voiceName: 'Zephyr' } 
+          } 
+        } 
       }
     });
-    const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (base64) await saveAudioToCache(cleanedText, language, base64);
-    return base64;
+    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
   } catch (e) { return ""; }
+};
+
+export const moderateContent = async (content: string): Promise<boolean> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Safe? "${content}"`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: { isSafe: { type: Type.BOOLEAN } },
+          required: ["isSafe"]
+        }
+      }
+    });
+    const parsed = JSON.parse(response.text || '{"isSafe": true}');
+    return parsed.isSafe;
+  } catch (e) { return true; }
 };

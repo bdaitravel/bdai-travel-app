@@ -22,31 +22,36 @@ const ONBOARDING_TEXT: any = {
     en: {
         step1Title: "Your AI Guide", step1Desc: "We create unique routes based on who you are and what you love.",
         step2Title: "Explore the World", step2Desc: "Every city in the world at your fingertips. AI translates culture for you.",
-        step3Title: "Digital Passport", step3Desc: "Earn miles, collect stamps, and climb the global explorer ranking.",
+        step3Title: "Proof of Visit", step3Desc: "To earn miles, you must physically be at the spot. GPS verifies your achievement.",
+        step4Title: "Digital Passport", step4Desc: "Collect stamps and climb the global explorer ranking.",
         skip: "Skip", next: "Next", start: "Get Started", selectLang: "Choose Language", selectInt: "Your Interests"
     },
     es: {
         step1Title: "Tu Guía IA", step1Desc: "Creamos rutas únicas basadas en quién eres y qué te gusta.",
         step2Title: "Explora el Mundo", step2Desc: "Todas las ciudades del mundo a tu alcance. La IA traduce la cultura para ti.",
-        step3Title: "Pasaporte Digital", step3Desc: "Gana millas, colecciona sellos y sube en el ranking global.",
+        step3Title: "Prueba de Visita", step3Desc: "Para ganar millas debes estar físicamente en el sitio. El GPS verifica tu hazaña.",
+        step4Title: "Pasaporte Digital", step4Desc: "Colecciona sellos reales y sube en el ranking global.",
         skip: "Saltar", next: "Siguiente", start: "Empezar", selectLang: "Elige Idioma", selectInt: "Tus Intereses"
     },
     ca: {
         step1Title: "La teva Guia IA", step1Desc: "Creem rutes úniques basades en qui ets i què t'agrada.",
         step2Title: "Explora el Món", step2Desc: "Totes les ciutats del món al teu abast. La IA tradueix la cultura per a tu.",
-        step3Title: "Passaport Digital", step3Desc: "Guanya milles, col·lecciona segells i puja en el rànquing global.",
+        step3Title: "Prova de Visita", step3Desc: "Per guanyar milles has d'estar físicament al lloc. El GPS verifica la teva gesta.",
+        step4Title: "Passaport Digital", step4Desc: "Col·lecciona segells i puja en el rànquing global.",
         skip: "Saltar", next: "Següent", start: "Començar", selectLang: "Tria Idioma", selectInt: "Interessos"
     },
     eu: {
         step1Title: "Zure IA Gida", step1Desc: "Ibilbide bereziak sortzen ditugu nor zaren eta zer gustatzen zaizun kontuan hartuta.",
         step2Title: "Mundua Esploratu", step2Desc: "Munduko hiri guztiak zure esku. IA-k kultura itzultzen du zuretzat.",
-        step3Title: "Pasaporte Digitala", step3Desc: "Irabazi miliak, zigiluak bildu eta igo esploratzaileen rankingean.",
+        step3Title: "Bisita Egiaztapena", step3Desc: "Miliak irabazteko fisikoki lekuan egon behar duzu. GPSak zure lorpena egiaztatzen du.",
+        step4Title: "Pasaporte Digitala", step4Desc: "Zigiluak bildu eta igo esploratzaileen rankingean.",
         skip: "Saltatu", next: "Hurrengoa", start: "Hasi", selectLang: "Hizkuntza Aukeratu", selectInt: "Zure Interesak"
     },
     fr: {
         step1Title: "Votre Guide IA", step1Desc: "Nous créons des itinéraires uniques basés sur qui vous êtes et ce que vous aimez.",
         step2Title: "Explorer le Monde", step2Desc: "Toutes les villes du monde à portée de main. L'IA traduit la culture pour vous.",
-        step3Title: "Passeport Numérique", step3Desc: "Gagnez des miles, collectionnez des tampons et grimpez dans le classement.",
+        step3Title: "Preuve de Visite", step3Desc: "Pour gagner des miles, vous devez être physiquement sur place. Le GPS vérifie votre exploit.",
+        step4Title: "Passeport Numérique", step4Desc: "Gagnez des miles y collectionnez des tampons.",
         skip: "Passer", next: "Suivant", start: "Commencer", selectLang: "Choisir la Langue", selectInt: "Vos Interêts"
     }
 };
@@ -62,7 +67,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
     };
 
     const handleNext = () => {
-        if (step < 4) setStep(step + 1);
+        if (step < 5) setStep(step + 1);
         else onComplete(selectedInterests);
     };
 
@@ -103,13 +108,21 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
 
                 {step === 3 && (
                     <div className="animate-slide-up text-center">
-                        <div className="w-20 h-20 bg-amber-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl shadow-amber-500/40">🎟️</div>
+                        <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl shadow-red-500/40">📍</div>
                         <h2 className="text-2xl font-black text-white mb-4">{t.step3Title}</h2>
                         <p className="text-slate-400 text-sm leading-relaxed mb-8">{t.step3Desc}</p>
                     </div>
                 )}
 
                 {step === 4 && (
+                    <div className="animate-slide-up text-center">
+                        <div className="w-20 h-20 bg-amber-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl shadow-amber-500/40">🎟️</div>
+                        <h2 className="text-2xl font-black text-white mb-4">{t.step4Title}</h2>
+                        <p className="text-slate-400 text-sm leading-relaxed mb-8">{t.step4Desc}</p>
+                    </div>
+                )}
+
+                {step === 5 && (
                     <div className="animate-slide-up">
                         <h2 className="text-2xl font-black text-white mb-6 text-center">{t.selectInt}</h2>
                         <div className="grid grid-cols-2 gap-3 mb-8">
@@ -125,17 +138,17 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
 
                 <div className="flex flex-col gap-4 mt-8">
                     <button onClick={handleNext} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
-                        {step === 4 ? t.start : t.next}
+                        {step === 5 ? t.start : t.next}
                     </button>
-                    {step < 4 && (
-                        <button onClick={() => setStep(4)} className="text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:text-white transition-colors">
+                    {step < 5 && (
+                        <button onClick={() => setStep(5)} className="text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:text-white transition-colors">
                             {t.skip}
                         </button>
                     )}
                 </div>
 
                 <div className="flex justify-center gap-1.5 mt-8">
-                    {[0,1,2,3,4].map(i => (
+                    {[0,1,2,3,4,5].map(i => (
                         <div key={i} className={`h-1 rounded-full transition-all ${i === step ? 'w-6 bg-purple-500' : 'w-2 bg-white/10'}`}></div>
                     ))}
                 </div>

@@ -16,6 +16,14 @@ export interface UserStats {
   referralsCount: number;
 }
 
+export interface SocialLinks {
+  instagram?: string;
+  tiktok?: string;
+  twitter?: string;
+  linkedin?: string;
+  website?: string;
+}
+
 export interface HubIntel {
   id: string;
   type: 'festival' | 'curiosity' | 'gastro' | 'expat';
@@ -54,6 +62,7 @@ export interface UserProfile {
   savedIntel?: HubIntel[];
   stats: UserStats;
   badges: Badge[];
+  socialLinks?: SocialLinks;
   passportNumber?: string;
   joinDate?: string; 
   profileCuriosity?: string;
@@ -120,6 +129,15 @@ export const LANGUAGES = [
   { code: 'fr', name: 'Français' },
 ];
 
+export const INTEREST_OPTIONS = [
+  { id: 'history', label: 'Historia', icon: '🏛️' },
+  { id: 'food', label: 'Gastro', icon: '🍷' },
+  { id: 'art', label: 'Arte', icon: '🎨' },
+  { id: 'photo', label: 'Foto', icon: '📸' },
+  { id: 'nature', label: 'Naturaleza', icon: '🌿' },
+  { id: 'night', label: 'Ocio Nocturno', icon: '🌙' }
+];
+
 export const AVATARS = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
@@ -127,4 +145,19 @@ export const AVATARS = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack",
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Patches",
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Coco"
+];
+
+export const RANK_THRESHOLDS: Record<TravelerRank, number> = {
+  'Turist': 0,
+  'Explorer': 1000,
+  'Wanderer': 5000,
+  'Globe-Trotter': 15000,
+  'Legend': 50000
+};
+
+export const BADGE_DEFINITIONS: Badge[] = [
+  { id: 'pioneer', name: 'Pioneer', icon: 'fa-shoe-prints', description: 'Realiza tu primera visita verificada con GPS.' },
+  { id: 'city_hopper', name: 'City Hopper', icon: 'fa-map-location-dot', description: 'Has explorado 3 ciudades diferentes.' },
+  { id: 'archivist', name: 'Archivist', icon: 'fa-box-archive', description: 'Has guardado 3 secretos en el Intel Hub.' },
+  { id: 'photo_elite', name: 'Photo Elite', icon: 'fa-camera-retro', description: 'Has reclamado 5 Photo Spots épicos.' }
 ];
