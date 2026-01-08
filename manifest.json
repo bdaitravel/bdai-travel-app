@@ -5,16 +5,16 @@
   "description": "Tu guía de viajes inteligente con IA. Free tours por todo el mundo.",
   "icons": [
     {
-      "src": "https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzAyMDYxNyIvPgogIDxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMTkwIiBmaWxsPSIjZjZjNjA0Ii8+CiAgPHBhdGggZD0iTTI1NiAxNDBjLTU1LjIgMC0xMDAgNDQuOC0xMDAgMTAwIDAgNzAgMTAwIDE3MiAxMDAgMTcyczEwMC0xMDIgMTAwLTE3MmMwLTU1LjItNDQuOC0xMDAtMTAwLTEwMHptMCAxMzVjLTE5LjMgMC0zNS0xNS43LTM1LTM1czE1LjctMzUgMzUtMzUgMzUgMTUuNyAzNSAzNS0xNS43IDM1LTM1IDM1eiIgZmlsbD0iIzVlMTdlYiIvPgo8L3N2Zz4=",
       "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyMCIgZmlsbD0iIzAyMDYxNyIvPgogIDxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMTkwIiBmaWxsPSIjZjZjNjA0Ii8+CiAgPHBhdGggZD0iTTI1NiAxNDBjLTU1LjIgMC0xMDAgNDQuOC0xMDAgMTAwIDAgNzAgMTAwIDE3MiAxMDAgMTcyczEwMC0xMDIgMTAwLTE3MmMwLTU1LjItNDQuOC0xMDAtMTAwLTEwMHptMCAxMzVjLTE5LjMgMC0zNS0xNS43LTM1LTM1czE1LjctMzUgMzUtMzUgMzUgMTUuNyAzNSAzNS0xNS43IDM1LTM1IDM1eiIgZmlsbD0iIzVlMTdlYiIvPgo8L3N2Zz4=",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ],
   "start_url": "/",
