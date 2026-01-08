@@ -6,16 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#020617">
     
     <!-- SEO & Social Sharing -->
     <title>bdai | Better Destinations AI - World Tour Guide</title>
-    <meta name="description" content="Tu guía global inteligente con IA. Explora cualquier ciudad del mundo con tours personalizados y agenda 2026." />
-    <meta property="og:title" content="bdai | Global Explorer" />
-    <meta property="og:description" content="Descubre el mundo con rutas generadas por IA y gana recompensas en tu pasaporte digital." />
-    <meta property="og:image" content="https://slldavgsoxunkphqeamx.supabase.co/storage/v1/object/public/assets/og-image.png" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image">
+    <meta name="description" content="Tu guía global inteligente con IA. Explora cualquier ciudad del mundo con tours personalizados." />
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
@@ -24,12 +19,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
       :root {
         --font-heading: 'Outfit', sans-serif;
         --font-body: 'Inter', sans-serif;
+        /* Safe Areas para Notch y Home Indicator */
         --sat: env(safe-area-inset-top);
         --sab: env(safe-area-inset-bottom);
       }
@@ -38,6 +34,8 @@
         background-color: #020617;
         overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
+        margin: 0;
+        padding: 0;
       }
       h1, h2, h3, h4, h5, h6, .font-heading {
         font-family: var(--font-heading);
@@ -53,8 +51,10 @@
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-      .pt-safe { padding-top: calc(1rem + var(--sat)); }
+      /* Ajustes de padding para dispositivos móviles con Notch */
+      .pt-safe { padding-top: calc(1.5rem + var(--sat)); }
       .pb-safe { padding-bottom: calc(1rem + var(--sab)); }
+      .bottom-safe { bottom: var(--sab); }
     </style>
   <script type="importmap">
 {
@@ -66,17 +66,17 @@
     "vite": "https://aistudiocdn.com/vite@^7.2.7",
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.2",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.39.7",
-    "@capacitor/app": "https://esm.sh/@capacitor/app@^8.0.0",
-    "@capacitor/haptics": "https://esm.sh/@capacitor/haptics@^8.0.0",
-    "@capacitor/status-bar": "https://esm.sh/@capacitor/status-bar@^8.0.0",
-    "@capacitor/splash-screen": "https://esm.sh/@capacitor/splash-screen@^8.0.0"
+    "@capacitor/app": "https://esm.sh/@capacitor/app@^6.0.0",
+    "@capacitor/haptics": "https://esm.sh/@capacitor/haptics@^6.0.0",
+    "@capacitor/status-bar": "https://esm.sh/@capacitor/status-bar@^6.0.0",
+    "@capacitor/splash-screen": "https://esm.sh/@capacitor/splash-screen@^6.0.0"
   }
 }
 </script>
 </head>
   <body class="text-slate-100 antialiased selection:bg-purple-500/30">
     <div id="root"></div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

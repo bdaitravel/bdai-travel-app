@@ -11,7 +11,7 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { FlagIcon } from './components/FlagIcon';
 import { Onboarding } from './components/Onboarding';
 import { STATIC_TOURS } from './data/toursData';
-import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile } from './services/supabaseClient';
+import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache } from './services/supabaseClient';
 
 // Importaciones de Capacitor para comportamiento nativo
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -71,18 +71,13 @@ export default function App() {
 
   const [milesToast, setMilesToast] = useState<{show: boolean, amount: number, text?: string}>({show: false, amount: 0});
 
-  // Inicialización de entorno nativo
   useEffect(() => {
     const initNative = async () => {
       try {
-        // Configurar la barra de estado para que sea oscura (acorde al diseño)
+        await StatusBar.setOverlaysWebView({ overlay: true });
         await StatusBar.setStyle({ style: Style.Dark });
-        await StatusBar.setBackgroundColor({ color: '#020617' });
-        
-        // Ocultar el Splash Screen una vez que el JS ha arrancado
         await SplashScreen.hide();
 
-        // Manejo del botón atrás en Android
         CapacitorApp.addListener('backButton', ({ canGoBack }) => {
           if (!canGoBack) {
             CapacitorApp.exitApp();
@@ -91,7 +86,7 @@ export default function App() {
           }
         });
       } catch (e) {
-        console.warn("Entorno nativo no disponible.");
+        console.warn("Native environment not available.");
       }
     };
 
@@ -123,7 +118,7 @@ export default function App() {
             setAuthError(error.message || "Error al enviar el código.");
         } else {
             setLoginStep('VERIFY');
-            Haptics.notification({ type: 'SUCCESS' as any });
+            Haptics.notification({ type: ImpactStyle.Heavy as any });
         }
     } catch (e) {
         setAuthError("Fallo de conexión.");
@@ -155,7 +150,7 @@ export default function App() {
 
   const handleVisit = async (stopId: string, bonus: number = 100) => {
       if (!activeTour) return;
-      await Haptics.notification({ type: 'SUCCESS' as any });
+      await Haptics.notification({ type: ImpactStyle.Heavy as any });
       
       const updatedStops = activeTour.stops.map(s => s.id === stopId ? { ...s, visited: true } : s);
       const updatedTour = { ...activeTour, stops: updatedStops };
@@ -185,12 +180,14 @@ export default function App() {
   const handleCitySelect = async (cityInput: string) => {
     const cityNormalized = cityInput.trim().toLowerCase();
     if (!cityNormalized) return;
+    
     await Haptics.impact({ style: ImpactStyle.Medium });
     setSelectedCity(cityInput.trim());
     setView(AppView.CITY_DETAIL);
     setIsLoading(true);
 
     try {
+        // 1. BUSCAR EN TOUR ESTÁTICOS (HARDCODED)
         const staticTour = STATIC_TOURS.find(t => t.city.toLowerCase() === cityNormalized);
         if (staticTour) {
             setTours([staticTour]);
@@ -198,9 +195,20 @@ export default function App() {
             return;
         }
 
+        // 2. BUSCAR EN CACHÉ DE SUPABASE
+        const cached = await getCachedTours(cityInput.trim(), user.language);
+        if (cached && cached.length > 0) {
+            setTours(cached);
+            setIsLoading(false);
+            return;
+        }
+
+        // 3. SI NO HAY CACHÉ, GENERAR CON GEMINI
         const res = await generateToursForCity(cityInput.trim(), user);
-        if (Array.isArray(res)) {
+        if (Array.isArray(res) && res.length > 0) {
             setTours(res);
+            // GUARDAR EN CACHÉ PARA EL PRÓXIMO USUARIO
+            await saveToursToCache(cityInput.trim(), user.language, res);
         }
     } catch (e) { 
         console.error("Selection Error:", e); 
@@ -306,7 +314,7 @@ export default function App() {
             <div className="flex-1 overflow-y-auto no-scrollbar pb-44 z-10 relative bg-[#020617]">
                 {view === AppView.HOME && (
                   <div className="space-y-4 pt-safe animate-fade-in">
-                      <header className="flex justify-between items-center pt-8 px-8">
+                      <header className="flex justify-between items-center pt-4 px-8">
                           <BdaiLogo className="w-10 h-10"/>
                           <div className="flex items-center gap-4">
                             <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 text-xs font-black text-white">
@@ -354,7 +362,7 @@ export default function App() {
             </div>
             
             <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-8 pb-12 pointer-events-none pb-safe">
-                <nav className="bg-slate-900/95 backdrop-blur-3xl border border-white/10 px-6 py-5 flex justify-between items-center w-full rounded-[3rem] pointer-events-auto shadow-2xl">
+                <nav className="bg-slate-900/95 backdrop-blur-3xl border border-white/10 px-6 py-4 flex justify-between items-center w-full rounded-[3rem] pointer-events-auto shadow-2xl">
                     <NavButton icon="fa-trophy" label="Elite" isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
                     <NavButton icon="fa-compass" label="Hub" isActive={view === AppView.TOOLS} onClick={() => navigateTo(AppView.TOOLS)} />
                     <button onClick={() => navigateTo(AppView.HOME)} className={`w-16 h-16 rounded-[2rem] flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 shadow-lg rotate-45' : 'bg-white/5'}`}><div className={view === AppView.HOME ? '-rotate-45' : ''}><BdaiLogo className="w-8 h-8" /></div></button>
