@@ -11,7 +11,6 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { FlagIcon } from './components/FlagIcon';
 import { Onboarding } from './components/Onboarding';
 import { CommunityBoard } from './components/CommunityBoard';
-import { CurrencyConverter } from './components/CurrencyConverter';
 import { STATIC_TOURS } from './data/toursData';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache } from './services/supabaseClient';
 
@@ -371,7 +370,6 @@ export default function App() {
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && (
                     <div className="pt-safe px-8 space-y-10 animate-fade-in pb-24">
-                        <CurrencyConverter language={user.language} />
                         <TravelServices mode="HUB" language={user.language} onCitySelect={handleCitySelect} />
                     </div>
                 )}

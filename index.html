@@ -3,11 +3,14 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <!-- viewport-fit=cover es vital para que la app ocupe TODA la pantalla detrás del notch -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="bdai">
     <meta name="theme-color" content="#020617">
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb">
     
     <title>bdai | Better Destinations AI</title>
     
@@ -22,14 +25,12 @@
       :root {
         --font-heading: 'Outfit', sans-serif;
         --font-body: 'Inter', sans-serif;
-        /* Estas variables detectan automáticamente el tamaño de la ceja/notch del móvil */
         --sat: env(safe-area-inset-top);
         --sab: env(safe-area-inset-bottom);
       }
       body {
         font-family: var(--font-body);
         background-color: #020617;
-        /* Evita que la pantalla rebote al hacer scroll (típico de web, feo en app) */
         overscroll-behavior: none;
         -webkit-tap-highlight-color: transparent;
         margin: 0;
@@ -37,25 +38,28 @@
         height: 100vh;
         width: 100vw;
         overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
       }
       #root {
         height: 100%;
         display: flex;
         flex-direction: column;
       }
-      /* Clases de utilidad para el layout nativo */
-      .pt-safe { padding-top: calc(1rem + var(--sat)); }
-      .pb-safe { padding-bottom: calc(1rem + var(--sab)); }
+      .pt-safe { padding-top: calc(0.5rem + var(--sat)); }
+      .pb-safe { padding-bottom: calc(0.5rem + var(--sab)); }
       .mb-safe { margin-bottom: var(--sab); }
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-      /* Animaciones fluidas estilo iOS */
       .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
       .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      
+      /* Optimización para inputs en móvil */
+      input, textarea { font-size: 16px !important; } 
     </style>
   <script type="importmap">
 {
@@ -79,5 +83,15 @@
     <div id="root"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      // Registro simple de Service Worker para cumplimiento de PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js').catch(err => {
+            console.log('SW registration failed: ', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
