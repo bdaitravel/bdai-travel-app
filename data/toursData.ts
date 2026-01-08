@@ -6,9 +6,9 @@ export const STATIC_TOURS: Tour[] = [
     id: "vitoria_medieval_elite",
     city: "Vitoria",
     title: "Vitoria: Sangre, Naipes y la Almendra Sagrada",
-    description: "Un recorrido lineal perfecto por el corazón gótico. De la Virgen Blanca a la Muralla, descubriendo palacios que esconden el origen de la baraja española y túneles medievales.",
+    description: "Un recorrido lineal perfecto por el corazón gótico de la ciudad. Ascenderemos la colina de la 'Almendra' descubriendo palacios que esconden el origen de la baraja española, secretos de la Inquisición y la catedral que cautivó a Ken Follett.",
     duration: "3.5h",
-    distance: "2.9 km",
+    distance: "2.8 km",
     difficulty: "Moderate",
     theme: "Historia y Secretos",
     isEssential: true,
@@ -16,135 +16,151 @@ export const STATIC_TOURS: Tour[] = [
       {
         id: "vit_s1",
         name: "Plaza de la Virgen Blanca: El Espejo de la Ciudad",
-        description: "Empezamos en el kilómetro cero. Fíjate en el monumento central: no es solo piedra, es el relato de la Batalla de Vitoria de 1813. ¿Sabías que los vitorianos robaron el equipaje de José Bonaparte, incluyendo su orinal de plata, mientras huía? Ese botín aún circula por algunas casas nobles de la ciudad. Mira hacia arriba, a los miradores blancos: son el 'aislamiento inteligente' del siglo XVIII, diseñados para atrapar el sol del norte y calentar las casas. Aquí cada 4 de agosto, Celedón baja por un cable; es un homenaje a un aldeano real que jamás faltaba a la fiesta.",
+        description: "Empezamos en el kilómetro cero. Fíjate en el monumento central: narra la Batalla de Vitoria de 1813. El gran secreto es que, tras la victoria, los vitorianos saquearon el carruaje de José Bonaparte, ¡robándole hasta su orinal de plata! Ese botín real aún se rumorea que adorna alguna casa noble del casco viejo. Mira los miradores blancos de las casas; no son solo estética, son 'trampas de sol' diseñadas en el XVIII para calentar las viviendas sin carbón. Aquí cada agosto baja Celedón por un cable, un personaje que existió de verdad y cuya casa aún puedes visitar en el pueblo de Zalduondo.",
         latitude: 42.8465,
         longitude: -2.6734,
         type: "historical",
         visited: false,
         photoSpot: {
-          angle: "Desde la base del monumento, encuadrando la torre de San Miguel.",
+          angle: "Desde la base del monumento, encuadrando la torre de San Miguel entre los balcones blancos.",
           bestTime: "11:30 AM.",
-          instagramHook: "Donde la historia napoleónica se encuentra con el diseño bioclimático. 🏛️ #VitoriaGasteiz",
+          instagramHook: "Donde la historia napoleónica se encuentra con el diseño bioclimático del XVIII. 🏛️ #VitoriaGasteiz",
           milesReward: 100,
-          secretLocation: "Letras de musgo 'Green Capital'."
+          secretLocation: "Letras de musgo 'Vitoria-Gasteiz' en la plaza."
         }
       },
       {
         id: "vit_s2",
         name: "Plaza de España: El Neoclasicismo de Olaguíbel",
-        description: "A solo 50 metros, entramos en un cuadrado perfecto. Olaguíbel tenía un reto: unir la ciudad alta con la baja. Si caminas por los soportales, busca las marcas en las columnas; son los números originales del 'puzzle' que fue construir este edificio. El chisme: debajo de esta plaza pasa el río Zapardiel, que fue el alcantarillado natural de la ciudad durante siglos. Hoy el Ayuntamiento preside este espacio, pero antes aquí se celebraban corridas de toros que los nobles veían desde sus balcones.",
+        description: "A solo unos pasos entramos en un cuadrado perfecto. Olaguíbel diseñó esta plaza en 1781 para unir la ciudad alta con la nueva. Si te fijas en los soportales, verás marcas en las columnas; son los números originales del 'puzzle' de piedra que fue su construcción. El chisme oculto: bajo tus pies corre el río Zapardiel, que fue el alcantarillado medieval y hoy está canalizado. En su día, esta plaza era el 'coso taurino' de la ciudad, y los nobles alquilaban sus balcones por fortunas para ver las corridas.",
         latitude: 42.8460,
         longitude: -2.6726,
         type: "historical",
         visited: false,
         photoSpot: {
-          angle: "Bajo el arco central, buscando la simetría de las farolas.",
+          angle: "Bajo el arco central del Ayuntamiento, buscando la simetría de las farolas.",
           bestTime: "Mañana temprano.",
-          instagramHook: "Simetría que calma el alma. 🏛️ #Architecture",
+          instagramHook: "Simetría neoclásica que calma el alma. 🏛️ #Architecture",
           milesReward: 80,
-          secretLocation: "Punto central bajo el reloj."
+          secretLocation: "Punto central bajo el reloj municipal."
         }
       },
       {
         id: "vit_s3",
-        name: "Los Arquillos: La Calle de Dos Pisos",
-        description: "Subimos hacia la colina por la joya de la corona. Olaguíbel creó esta calle suspendida para salvar los 10 metros de desnivel. Es una genialidad: por arriba es una calle, por abajo son soportales. Estos arcos actúan como un túnel de viento natural; los vitorianos lo llamamos 'el cierzo'. Era el lugar donde la burguesía paseaba para ver y ser vista sin mojarse cuando llovía. Fíjate en las vigas de madera: son originales del siglo XVIII.",
+        name: "Los Arquillos: La Calle Suspendida",
+        description: "Subimos hacia la colina por esta genialidad de ingeniería. Olaguíbel creó estos arcos para salvar los 10 metros de desnivel. Lo que nadie te cuenta es que estos soportales crean un túnel de viento natural que los vitorianos llamamos 'el cierzo'. Era el lugar favorito de la burguesía para pasear los días de lluvia sin mojarse. Fíjate en las vigas de madera: son robles de los montes de Álava que llevan soportando el peso de la ciudad desde hace más de 200 años.",
         latitude: 42.8471,
         longitude: -2.6724,
         type: "art",
         visited: false,
         photoSpot: {
-          angle: "Desde la mitad de la escalinata de San Miguel.",
-          bestTime: "Atardecer (luz de oro).",
-          instagramHook: "Caminar por el aire en una ciudad con dos alturas. 🌉 #Engineering",
+          angle: "Desde la mitad de la escalinata de San Miguel, mirando hacia el túnel de los Arquillos.",
+          bestTime: "Atardecer.",
+          instagramHook: "Caminar por el aire en una ciudad con dos niveles. 🌉 #Olaguibel",
           milesReward: 120,
-          secretLocation: "Rellano superior de la escalera."
+          secretLocation: "Rellano superior de la escalera mecánica."
         }
       },
       {
         id: "vit_s4",
-        name: "Plaza del Machete: Juramentos de Vida o Muerte",
-        description: "Llegamos a la frontera del Casco Viejo. En el muro de la iglesia de San Vicente hay una hornacina con un machete real. No es una réplica: es el arma sobre la que el Procurador General juraba defender los fueros. La frase era: 'Que se me corte la cabeza con este machete si no cumplo mi palabra'. Aquí la política se tomaba muy en serio. Fíjate en la anchura de las calles que bajan, diseñadas para que pasaran los carros de bueyes medievales.",
+        name: "Plaza del Machete: Juramentos de Acero",
+        description: "Llegamos a la frontera del casco viejo. En el muro de la iglesia de San Vicente verás una hornacina con un machete real. No es decoración: sobre él, el Procurador General juraba defender los fueros. Si no cumplía su palabra, se le cortaba la cabeza con ese mismo acero. Esta plaza era también la 'muga' o frontera del mercado. Fíjate en las casas de la ladera: algunas tienen pasadizos ocultos que conectan con las bodegas del barrio de abajo.",
         latitude: 42.8476,
         longitude: -2.6717,
         type: "historical",
         visited: false,
         photoSpot: {
-          angle: "Macro del machete dentro de su urna.",
+          angle: "Macro del machete dentro de su urna, con el reflejo de la torre de San Vicente.",
           bestTime: "Cualquier hora.",
-          instagramHook: "Justicia a golpe de acero. ⚔️ #MedievalVibe",
+          instagramHook: "Justicia a golpe de machete. ⚔️ #MedievalVibe",
           milesReward: 150,
           secretLocation: "Nicho en la pared de la Iglesia."
         }
       },
       {
         id: "vit_s5",
-        name: "Palacio de Villa Suso",
-        description: "Justo encima del Machete. Este palacio renacentista es fascinante porque integra la muralla antigua en su salón principal. Fue construido por un embajador de Carlos V que quería demostrar su poder. El patio es un remanso de paz. El chisme: se dice que en sus sótanos aún quedan restos de una necrópolis de cuando Gasteiz era apenas una aldea de pastores.",
+        name: "Palacio de Villa Suso: La Muralla en el Salón",
+        description: "En la misma plaza se alza este palacio renacentista. Fue construido por un embajador de Carlos V que quería demostrar su riqueza tras volver de Italia. Lo fascinante es que el palacio 'se comió' un trozo de la muralla original del siglo XI, que aún puedes ver integrada en su salón principal. El secreto: durante su restauración aparecieron restos de una necrópolis medieval justo debajo del patio, confirmando que este fue el primer asentamiento de la aldea de Gasteiz.",
         latitude: 42.8479,
         longitude: -2.6715,
         type: "historical",
         visited: false,
         photoSpot: {
-          angle: "Fachada desde la plaza superior.",
+          angle: "Fachada desde la plaza superior, buscando el escudo de armas.",
           bestTime: "Mañana.",
-          instagramHook: "Piedra que respira renacimiento. 🏰 #Renaissance",
+          instagramHook: "Renacimiento vitoriano sobre cimientos del siglo XI. 🏰 #Renaissance",
           milesReward: 100,
           secretLocation: "Puerta lateral del palacio."
         }
       },
       {
         id: "vit_s6",
-        name: "Casa del Cordón: El Secreto del Converso",
-        description: "En plena calle Cuchillería. Se llama así por el cordón franciscano de su puerta. Fue construida por un judío converso que puso el cordón para evitar que la Inquisición sospechara de él. Dentro se esconde una torre medieval de 15 metros que quedó 'atrapada' por el palacio. Aquí durmió el Papa Adriano VI cuando supo que era el nuevo Pontífice. Imagina a un Papa rodeado de carniceros vitorianos.",
+        name: "Casa del Cordón: El Refugio del Converso",
+        description: "Bajamos a la calle Cuchillería. Este palacio es un enigma. Se llama así por el cordón franciscano de su puerta, puesto por el judío converso Sánchez de Bilbao para demostrar una fe cristiana extrema y evitar a la Inquisición. Dentro se esconde una torre medieval de 15 metros intacta. Un dato histórico de élite: aquí durmió el Papa Adriano VI en 1522 cuando le comunicaron que había sido elegido Pontífice. El hombre más poderoso del mundo estaba en esta humilde calle de artesanos.",
         latitude: 42.8488,
         longitude: -2.6712,
         type: "historical",
         visited: false,
         photoSpot: {
-          angle: "Detalle del cordón de piedra sobre el arco.",
+          angle: "Detalle del cordón de piedra sobre el arco de entrada.",
           bestTime: "Mediodía.",
-          instagramHook: "Secretos de la Inquisición en piedra. 🧵 #HiddenHistory",
+          instagramHook: "Secretos de la Inquisición grabados en piedra. 🧵 #HiddenHistory",
           milesReward: 140,
-          secretLocation: "Entrada de Cuchillería 24."
+          secretLocation: "Cuchillería 24."
         }
       },
       {
         id: "vit_s7",
         name: "Museo Fournier de Naipes (Palacio Bendaña)",
-        description: "Vitoria es la capital mundial de las cartas. Heraclio Fournier revolucionó el juego aquí. El palacio es una joya con un patio renacentista increíble. Verás barajas imperiales chinas y la baraja española actual, que se diseñó basándose en caras reales de ciudadanos de Vitoria de la época. La torre lateral era un símbolo de estatus: cuanto más alta la torre, más rico el dueño.",
+        description: "Vitoria puso las cartas en las manos de todo el mundo. Heraclio Fournier revolucionó el diseño de la baraja aquí en 1870. El palacio de Bendaña es una joya del XVI con un patio interior renacentista que te dejará mudo. Verás desde barajas imperiales chinas hasta la que usaba la corte de Versalles. El chisme: el diseño de la baraja española actual se inspiró en los rostros de ciudadanos vitorianos de la época que Fournier veía pasar por su imprenta.",
         latitude: 42.8495,
         longitude: -2.6715,
         type: "culture",
         visited: false,
         photoSpot: {
-          angle: "Desde el patio mirando hacia la galería superior.",
+          angle: "Desde el centro del patio mirando hacia la galería superior de madera.",
           bestTime: "12:00 PM.",
-          instagramHook: "Donde nacieron todos tus juegos de cartas. 🃏 #Fournier",
+          instagramHook: "Donde nació tu baraja favorita. 🃏 #FournierNaipes",
           milesReward: 160,
           secretLocation: "Pozo del patio central."
         }
       },
       {
         id: "vit_s8",
-        name: "Catedral de Santa María: Abierto por Obras",
-        description: "Esta catedral inspiró a Ken Follett. Está 'enferma': sus cimientos cedieron y la estructura se dobló, creando un efecto de 'paredes líquidas'. No vengas a verla terminada, ven a ver cómo se salva. La restauración reveló que originalmente estaba pintada de rojos y azules chillones, no era gris. Entrar con casco es una experiencia que te cambia la perspectiva sobre cómo se construía hace 800 años.",
+        name: "Muralla Medieval y la Nevera",
+        description: "Llegamos a la zona alta. Esta muralla del siglo XI se descubrió hace poco, estaba oculta tras casas viejas. Lo más increíble es la 'Nevera': un pozo de 8 metros donde los monjes guardaban la nieve del invierno mezclada con paja para tener hielo en verano. Vendían el hielo para conservar pescado y curar fiebres. Es el 'frigorífico' más antiguo de Vitoria. Fíjate en las saeteras: están diseñadas para que un arquero viera toda la llanada alavesa sin ser visto.",
+        latitude: 42.8500,
+        longitude: -2.6710,
+        type: "historical",
+        visited: false,
+        photoSpot: {
+          angle: "Desde el adarve superior mirando hacia el valle.",
+          bestTime: "Atardecer.",
+          instagramHook: "Guardián de la frontera norte. 🛡️ #CityWalls",
+          milesReward: 180,
+          secretLocation: "Entrada a la Nevera."
+        }
+      },
+      {
+        id: "vit_s9",
+        name: "Catedral de Santa María: Abierta por Obras",
+        description: "Esta catedral no es solo un templo, es un paciente en cuidados intensivos. Sus cimientos cedieron y la iglesia empezó a doblarse, creando paredes curvadas que parecen de plastilina. Ken Follett se inspiró aquí para 'Un mundo sin fin'. La restauración es tan famosa que ha recibido premios mundiales; entras con casco para ver cómo salvan un edificio del colapso. El secreto: bajo el altar aparecieron túneles que conectan con la antigua muralla.",
         latitude: 42.8505,
         longitude: -2.6722,
         type: "art",
         visited: false,
         photoSpot: {
-          angle: "Desde la Plaza de la Burullería, buscando el pórtico.",
+          angle: "Desde la Plaza de la Burullería, buscando el pórtico majestuoso.",
           bestTime: "Puesta de sol.",
           instagramHook: "La catedral que inspiró los pilares de la tierra. ⛪ #SantaMaria",
           milesReward: 200,
-          secretLocation: "Escultura de Ken Follett."
+          secretLocation: "Estatua de Ken Follett junto al muro."
         }
       },
       {
-        id: "vit_s9",
-        name: "Plaza de la Burullería y El Portalón",
-        description: "Donde se vendían las telas ('burullos'). El edificio de madera es El Portalón, un mesón del siglo XV que sigue vivo. Sus puertas son enormes porque los caballos entraban directos al patio. Al lado está la Torre de los Anda, la más antigua. Si te fijas en la base de la torre, verás piedras romanas reutilizadas; en Vitoria siempre hemos reciclado la historia.",
+        id: "vit_s10",
+        name: "Plaza de la Burullería: El Fin de la Almendra",
+        description: "Terminamos donde comerciaban los tejedores ('burulleros'). El edificio de madera y ladrillo es El Portalón, un mesón del siglo XV que sigue vivo. Sus puertas son tan grandes porque los caballos y carruajes entraban directamente al patio interior. Al lado está la Torre de los Anda, la más antigua de la ciudad. Fíjate en los escudos: cuentan la historia de las familias que defendieron Vitoria de los ataques de bandidos de la sierra.",
         latitude: 42.8508,
         longitude: -2.6719,
         type: "historical",
@@ -152,25 +168,9 @@ export const STATIC_TOURS: Tour[] = [
         photoSpot: {
           angle: "Diagonal que incluya el Portalón y la Torre de los Anda.",
           bestTime: "Tarde.",
-          instagramHook: "Regreso al siglo XV. 🕰 #MedievalArchitecture",
+          instagramHook: "Viaje directo al siglo XV. 🕰️ #MedievalArchitecture",
           milesReward: 110,
           secretLocation: "Bajo el arco de la torre."
-        }
-      },
-      {
-        id: "vit_s10",
-        name: "Muralla Medieval y la Nevera",
-        description: "Terminamos en la cresta de la colina. Esta muralla del siglo XI se descubrió casi por accidente. Lo más curioso es la 'Nevera': un pozo profundo donde guardaban nieve con paja para tener hielo en verano. Era el aire acondicionado de los nobles medievales. Desde aquí tienes la mejor vista del valle de Álava, el mismo que vigilaban los arqueros hace mil años.",
-        latitude: 42.8500,
-        longitude: -2.6710,
-        type: "historical",
-        visited: false,
-        photoSpot: {
-          angle: "Desde el adarve superior mirando al valle.",
-          bestTime: "Atardecer.",
-          instagramHook: "Guardián de la frontera norte. 🏰 #OldWalls",
-          milesReward: 180,
-          secretLocation: "Entrada a la Nevera."
         }
       }
     ]
@@ -179,7 +179,7 @@ export const STATIC_TOURS: Tour[] = [
     id: "vitoria_romantic_green",
     city: "Vitoria",
     title: "Vitoria: Palacios, Poder y la Senda Verde",
-    description: "Un recorrido lineal por el Ensanche romántico y el Anillo Verde. De la majestuosidad de la Florida al modernismo de la Calle Dato.",
+    description: "Un recorrido lineal por el Ensanche romántico y el Anillo Verde interior. De la majestuosidad de la Florida al modernismo de la Calle Dato.",
     duration: "3h",
     distance: "3.4 km",
     difficulty: "Easy",
@@ -188,30 +188,78 @@ export const STATIC_TOURS: Tour[] = [
     stops: [
       {
         id: "vit_g1",
-        name: "Parque de la Florida",
-        description: "El jardín botánico de la ciudad desde 1820. Pasea entre secuoyas gigantes. El secreto: las estatuas de los reyes godos fueron un regalo de Madrid porque 'sobraban' en el Palacio Real. Aquí se monta el Belén a escala real más grande del mundo en Navidad. Es el lugar donde los vitorianos se han enamorado durante dos siglos.",
+        name: "Estatua del Caminante",
+        description: "Empezamos en el corazón social. Esta figura de bronce de 3,5 metros representa al vitoriano que siempre está de paso, paseando por su ciudad. Es obra de Juan José Eguizábal y se ha convertido en el símbolo moderno. El chisme: en fiestas o eventos importantes (como el ascenso del Alavés), los ciudadanos lo disfrazan. Es el ciudadano más alto y silencioso de Gasteiz. Desde aquí sale la calle Dato, la milla de oro.",
+        latitude: 42.8462,
+        longitude: -2.6720,
+        type: "culture",
+        visited: false,
+        photoSpot: {
+          angle: "Haciendo que caminas al lado de la estatua.",
+          bestTime: "Día.",
+          instagramHook: "Uno más en la ciudad del paseo. 🚶‍♂️ #CaminanteVitoria",
+          milesReward: 90,
+          secretLocation: "Plaza del Arca."
+        }
+      },
+      {
+        id: "vit_g2",
+        name: "Plaza de los Fueros: El Granito de Chillida",
+        description: "A dos minutos del Caminante. Obra maestra de Eduardo Chillida y Peña Ganchegui. Es un anfiteatro de granito rosa que rinde homenaje a las leyes vascas. El secreto: dentro de la estructura hay un frontón escondido, uniendo el deporte tradicional con el arte de vanguardia. Es un lugar para perderse entre sus ángulos rectos y sentir el peso del granito. Fíjate en la escultura de la mano de hierro que emerge del suelo.",
+        latitude: 42.8455,
+        longitude: -2.6710,
+        type: "art",
+        visited: false,
+        photoSpot: {
+          angle: "Desde el foso central mirando hacia arriba para captar las formas.",
+          bestTime: "Día soleado (sombras fuertes).",
+          instagramHook: "Perdido en el laberinto de Chillida. 🧱 #EduardoChillida",
+          milesReward: 150,
+          secretLocation: "Escultura de la mano de hierro."
+        }
+      },
+      {
+        id: "vit_g3",
+        name: "Calle Dato y Confituras Goya",
+        description: "Caminamos por la calle peatonal por excelencia. Aquí se viene a ver y ser visto. Lo más importante: Confituras Goya. Tienes que probar los 'Vasquitos y Nesquitas', bombones de chocolate que definen el paladar de Vitoria desde 1886. El secreto de la calle: mira hacia arriba, los balcones conservan la forja original del siglo XIX de cuando esta calle era el centro de la moda del norte de España.",
+        latitude: 42.8445,
+        longitude: -2.6728,
+        type: "culture",
+        visited: false,
+        photoSpot: {
+          angle: "Perspectiva de la calle desde el Caminante hacia el sur.",
+          bestTime: "Hora del vermut.",
+          instagramHook: "El pulso de la ciudad en una sola calle. ☕ #CalleDato",
+          milesReward: 80,
+          secretLocation: "Escaparate de Confituras Goya."
+        }
+      },
+      {
+        id: "vit_g4",
+        name: "Parque de la Florida: El Jardín Francés",
+        description: "Al final de Dato entramos en el pulmón romántico. Inaugurado en 1820, es un jardín botánico con secuoyas gigantes. El secreto: las estatuas de los reyes godos fueron un regalo de Madrid porque 'sobraban' en el Palacio Real. Aquí se monta el Belén a escala real más grande del mundo en Navidad. Busca el sauce llorón junto al quiosco; es el lugar donde los vitorianos se han declarado amor desde hace dos siglos.",
         latitude: 42.8445,
         longitude: -2.6750,
         type: "nature",
         visited: false,
         photoSpot: {
-          angle: "Bajo el sauce llorón principal.",
+          angle: "Bajo el sauce llorón principal con el quiosco de fondo.",
           bestTime: "Mañana.",
           instagramHook: "Un rincón de París en el corazón de Álava. 🌿 #FloridaPark",
           milesReward: 100,
-          secretLocation: "Puente de piedra del riachuelo."
+          secretLocation: "Puente de piedra sobre el riachuelo."
         }
       },
       {
-        id: "vit_g2",
-        name: "Catedral Nueva (Inmaculada)",
-        description: "Un gigante neogótico que estuvo 50 años parado por falta de dinero. Es tan grande que podrías meter la catedral de Santander dentro. Fíjate en las gárgolas: algunas son muy raras porque los escultores modernos hicieron lo que quisieron. Su cripta es de lo mejor de España. Fue construida sobre un antiguo hospital de sangre.",
+        id: "vit_g5",
+        name: "Catedral Nueva (Inmaculada): El Gigante Inacabado",
+        description: "Justo al lado de la Florida. Esta mole neogótica es tan grande que podrías meter la catedral de Santander dentro. Estuvo 50 años parada por falta de dinero. Fíjate en las gárgolas: algunas son muy raras porque los escultores modernos se tomaron licencias creativas. Su cripta es de lo mejor de España. Fue construida sobre un antiguo hospital de sangre, lo que le da un aire místico y algo oscuro.",
         latitude: 42.8438,
         longitude: -2.6765,
         type: "art",
         visited: false,
         photoSpot: {
-          angle: "Desde la plaza lateral para captar la altura.",
+          angle: "Desde la plaza lateral para captar la altura de los contrafuertes.",
           bestTime: "Mediodía.",
           instagramHook: "Arquitectura que desafía al cielo. ⛪ #NeoGothic",
           milesReward: 150,
@@ -219,57 +267,57 @@ export const STATIC_TOURS: Tour[] = [
         }
       },
       {
-        id: "vit_g3",
-        name: "Paseo de la Senda: La Milla de Oro",
-        description: "El paseo más elegante del norte. Un túnel de castaños flanqueado por palacetes de la burguesía industrial. Aquí el aire es distinto: el Anillo Verde entra directo al centro. Es el lugar del 'postureo' vitoriano histórico: pasear los domingos para que todos supieran que tu cuenta en el banco estaba llena.",
+        id: "vit_g6",
+        name: "Paseo de la Senda: La Milla de Oro Burguesa",
+        description: "Salimos hacia el paseo más elegante. Flanqueado por castaños de indias y palacetes. Aquí vivía la aristocracia industrial que hizo fortuna con el acero y el azúcar. Es el lugar del 'postureo' histórico: pasear los domingos para lucir el abrigo de piel. El aire aquí es distinto: es el Anillo Verde entrando directo al centro de la ciudad. Fíjate en las verjas de hierro: son obras maestras de la forja local.",
         latitude: 42.8425,
         longitude: -2.6780,
         type: "culture",
         visited: false,
         photoSpot: {
-          angle: "Perspectiva infinita bajo los árboles.",
+          angle: "Perspectiva del túnel de árboles mirando hacia el sur.",
           bestTime: "Otoño.",
-          instagramHook: "Elegancia que no pasa de moda. 🌳 #LaSenda",
+          instagramHook: "Elegancia que no pasa de moda. 🌳 #LaSendaVitoria",
           milesReward: 120,
           secretLocation: "Entrada del Palacio Zulueta."
         }
       },
       {
-        id: "vit_g4",
-        name: "Palacio Zulueta",
-        description: "Un palacete de un rico comerciante de azúcar en Cuba. Representa el éxito de los vitorianos que 'hicieron las Américas'. Su jardín romántico es perfecto para leer. La cúpula de cristal era revolucionaria para su época. Hoy guarda el archivo más importante de la cultura vasca (Sancho el Sabio).",
+        id: "vit_g7",
+        name: "Palacio Zulueta: El Sueño del Indiano",
+        description: "Este palacete fue la casa de un rico comerciante que hizo fortuna en Cuba. Representa el éxito de los vitorianos en América. Su cúpula de cristal era una locura tecnológica en su época. El jardín delantero es público y es el lugar más tranquilo para leer un libro. Hoy guarda el archivo más importante de la cultura vasca (Fundación Sancho el Sabio). Mira los detalles de las ventanas: son de estilo ecléctico, mezclando todo lo que el dueño vio en sus viajes.",
         latitude: 42.8415,
         longitude: -2.6795,
         type: "art",
         visited: false,
         photoSpot: {
-          angle: "Hacia la fachada desde el jardín.",
-          bestTime: "Tarde.",
+          angle: "Hacia la fachada desde el jardín delantero.",
+          bestTime: "Luz de tarde.",
           instagramHook: "Vivir como un marqués del siglo XIX. 💍 #PalaceLife",
           milesReward: 130,
           secretLocation: "Banco junto a la fuente."
         }
       },
       {
-        id: "vit_g5",
-        name: "Palacio de Ajuria Enea",
-        description: "La residencia del Lehendakari (Presidente Vasco). Un palacio neovasco de 1920 que antes fue de una familia de magnates del acero. El chisme: tuvieron que venderlo porque perdieron su fortuna y acabó siendo hasta un museo antes de ser la sede del gobierno. La fachada es una lección de arquitectura regionalista.",
+        id: "vit_g8",
+        name: "Palacio de Ajuria Enea: El Corazón del Poder",
+        description: "Llegamos a la residencia oficial del Lehendakari (Presidente Vasco). Un palacio neovasco de 1920 que antes fue de la familia Ajuria, magnates del acero. El chisme de élite: la familia perdió su fortuna y el edificio fue hasta un colegio antes de ser sede del gobierno. Es el edificio más protegido de Euskadi. Fíjate en el escudo de la puerta: representa la unión de los territorios vascos bajo un mismo techo.",
         latitude: 42.8405,
         longitude: -2.6805,
         type: "historical",
         visited: false,
         photoSpot: {
-          angle: "Fachada lateral desde la valla.",
+          angle: "Fachada lateral desde la valla de seguridad.",
           bestTime: "Tarde.",
-          instagramHook: "La casa del Lehendakari. 🛡️ #AjuriaEnea",
+          instagramHook: "La casa del Presidente. 🛡️ #AjuriaEnea",
           milesReward: 180,
           secretLocation: "Portón de seguridad."
         }
       },
       {
-        id: "vit_g6",
-        name: "Museo de Armería",
-        description: "Justo enfrente de Ajuria Enea. Guarda el secreto militar de la ciudad: las armas reales de la Batalla de Vitoria y armaduras que parecen de Juego de Tronos. Vitoria ha sido estratégica desde hace 4.000 años, como demuestra un hacha de bronce encontrada cerca. Aquí entiendes por qué los vascos tienen fama de buenos herreros.",
+        id: "vit_g9",
+        name: "Museo de Armería: El Acero de la Historia",
+        description: "Justo frente a Ajuria Enea. Guarda el secreto militar de la ciudad. Verás las armas reales de la Batalla de Vitoria y armaduras medievales que parecen de película. Lo más curioso: un hacha de la Edad de Bronce encontrada muy cerca, demostrando que Vitoria ha sido estratégica desde hace 4.000 años. Aquí entiendes por qué los vascos tienen fama mundial de ser los mejores herreros de la historia.",
         latitude: 42.8402,
         longitude: -2.6812,
         type: "culture",
@@ -277,73 +325,25 @@ export const STATIC_TOURS: Tour[] = [
         photoSpot: {
           angle: "Detalle de los cañones de la entrada.",
           bestTime: "Mañana.",
-          instagramHook: "Historia escrita en acero. ⚔️ #Armory",
+          instagramHook: "Historia escrita en acero y pólvora. ⚔️ #ArmoryMuseum",
           milesReward: 100,
-          secretLocation: "Patio exterior."
+          secretLocation: "Patio de artillería."
         }
       },
       {
-        id: "vit_g7",
+        id: "vit_g10",
         name: "Museo de Bellas Artes (Palacio de Augusti)",
-        description: "El palacio más recargado y bonito. Lo mandó construir un empresario por amor a su mujer. Es puro estilo neoplateresco. El jardín trasero es un secreto entre locales; el lugar más tranquilo del mundo. Fíjate en las columnas: parece que están hechas de encaje en lugar de piedra.",
+        description: "Terminamos en el palacio más romántico y recargado. Fue un regalo de un empresario a su mujer por amor. Su fachada neoplateresca parece de encaje, no de piedra. El jardín trasero es el secreto mejor guardado de los locales: un oasis de paz absoluta. Dentro hay una colección de pintura vasca que es un viaje por la luz y el paisaje de nuestra tierra. Es el final perfecto para entender la alma burguesa y artística de Vitoria.",
         latitude: 42.8395,
         longitude: -2.6820,
         type: "art",
         visited: false,
         photoSpot: {
-          angle: "Gran angular desde la acera de enfrente.",
-          bestTime: "Tarde suave.",
-          instagramHook: "El palacio más romántico de Gasteiz. 🎨 #FineArts",
+          angle: "Gran angular desde la acera de enfrente para captar toda la fachada.",
+          bestTime: "Luz de tarde suave.",
+          instagramHook: "El palacio más bello de Gasteiz. 🎨 #FineArtsVitoria",
           milesReward: 130,
           secretLocation: "Bancos del jardín trasero."
-        }
-      },
-      {
-        id: "vit_g8",
-        name: "Plaza de los Fueros",
-        description: "Obra de Eduardo Chillida. Un anfiteatro de granito rosa que rinde homenaje a las leyes vascas. No es solo una plaza, es un laberinto artístico. Hay un frontón escondido dentro de la estructura, uniendo el deporte tradicional con el arte de vanguardia. Un lugar para perderse entre ángulos rectos.",
-        latitude: 42.8455,
-        longitude: -2.6710,
-        type: "art",
-        visited: false,
-        photoSpot: {
-          angle: "Desde el foso central mirando hacia arriba.",
-          bestTime: "Día soleado (sombras fuertes).",
-          instagramHook: "Perdido en el laberinto de Chillida. 🧱 #Art",
-          milesReward: 150,
-          secretLocation: "Estatua de la mano de hierro."
-        }
-      },
-      {
-        id: "vit_g9",
-        name: "Estatua del Caminante",
-        description: "El símbolo moderno de la ciudad. Representa al vitoriano que siempre está paseando. Mide 3.5 metros y está hecho de bronce. Es costumbre disfrazarlo en fiestas o ponerle bufanda si hace frío. Es el habitante más alto y silencioso de la Plaza del Arca. Una foto con él es obligatoria para decir que has estado en Gasteiz.",
-        latitude: 42.8462,
-        longitude: -2.6720,
-        type: "culture",
-        visited: false,
-        photoSpot: {
-          angle: "Caminando al lado de la estatua.",
-          bestTime: "Día.",
-          instagramHook: "Uno más en la ciudad del paseo. 🚶‍♂️ #Caminante",
-          milesReward: 90,
-          secretLocation: "Plaza del Arca."
-        }
-      },
-      {
-        id: "vit_g10",
-        name: "Calle Dato y Confituras Goya",
-        description: "Terminamos en la calle social por excelencia. Pero el secreto real son los 'Vasquitos y Nesquitas' de Confituras Goya, bombones que definen el paladar de aquí desde 1886. Fue la primera calle peatonal y sigue siendo el corazón de la vida vitoriana. Desde aquí estás a un paso de volver a la Virgen Blanca para cerrar el círculo.",
-        latitude: 42.8445,
-        longitude: -2.6728,
-        type: "culture",
-        visited: false,
-        photoSpot: {
-          angle: "Perspectiva de la calle hacia el sur.",
-          bestTime: "Hora del vermut.",
-          instagramHook: "El pulso de la ciudad en una calle. ☕ #CalleDato",
-          milesReward: 80,
-          secretLocation: "Escaparate de Goya."
         }
       }
     ]
