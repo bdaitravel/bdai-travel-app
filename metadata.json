@@ -5,5 +5,11 @@
     "geolocation",
     "camera",
     "microphone"
-  ]
+  ],
+  "nativePermissions": {
+    "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para verificar que estás en las paradas del tour y canjear tus millas.",
+    "NSCameraUsageDescription": "Acceso a la cámara necesario para capturar Photo Spots épicos y ganar recompensas adicionales.",
+    "NSMicrophoneUsageDescription": "El micrófono se utiliza para las interacciones de voz con tu guía IA personal.",
+    "NSPhotoLibraryAddUsageDescription": "Permítenos guardar tus capturas de viaje en la galería del dispositivo."
+  }
 }

@@ -9,6 +9,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "static-build": "vite build && npx cap copy",
+    "sync": "npm run build && npx cap sync",
     "open-ios": "npx cap open ios",
     "open-android": "npx cap open android"
   },
@@ -20,7 +21,12 @@
     "@supabase/supabase-js": "^2.39.7",
     "@capacitor/core": "^6.0.0",
     "@capacitor/ios": "^6.0.0",
-    "@capacitor/android": "^6.0.0"
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/keyboard": "^6.0.0",
+    "@capacitor/app": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

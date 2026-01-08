@@ -11,7 +11,13 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { FlagIcon } from './components/FlagIcon';
 import { Onboarding } from './components/Onboarding';
 import { STATIC_TOURS } from './data/toursData';
-import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, supabase, getCachedTours, saveToursToCache, getCachedAudio, saveAudioToCache, syncUserProfile } from './services/supabaseClient';
+import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile } from './services/supabaseClient';
+
+// Importaciones de Capacitor para comportamiento nativo
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const TRANSLATIONS: any = {
   en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", login: "Issue Passport", verify: "Verify Code", tagline: "better destinations by ai", loading: "Accessing Global Archives...", rankUp: "RANK INCREASED!", badgeUnlock: "NEW BADGE!", langSelect: "Select System Language", changeEmail: "Edit email", otpPlaceholder: "OTP CODE", resend: "Resend Code", spamNote: "If not received, check your Junk/Spam folder" },
@@ -65,7 +71,32 @@ export default function App() {
 
   const [milesToast, setMilesToast] = useState<{show: boolean, amount: number, text?: string}>({show: false, amount: 0});
 
+  // Inicialización de entorno nativo
   useEffect(() => {
+    const initNative = async () => {
+      try {
+        // Configurar la barra de estado para que sea oscura (acorde al diseño)
+        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setBackgroundColor({ color: '#020617' });
+        
+        // Ocultar el Splash Screen una vez que el JS ha arrancado
+        await SplashScreen.hide();
+
+        // Manejo del botón atrás en Android
+        CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+          if (!canGoBack) {
+            CapacitorApp.exitApp();
+          } else {
+            window.history.back();
+          }
+        });
+      } catch (e) {
+        console.warn("Entorno nativo no disponible.");
+      }
+    };
+
+    initNative();
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
@@ -77,6 +108,11 @@ export default function App() {
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
+  const navigateTo = async (newView: AppView) => {
+    await Haptics.impact({ style: ImpactStyle.Light });
+    setView(newView);
+  };
+
   const handleSendOtp = async () => {
     if (!email || !email.includes('@')) { setAuthError("Email inválido"); return; }
     setIsLoading(true);
@@ -87,6 +123,7 @@ export default function App() {
             setAuthError(error.message || "Error al enviar el código.");
         } else {
             setLoginStep('VERIFY');
+            Haptics.notification({ type: 'SUCCESS' as any });
         }
     } catch (e) {
         setAuthError("Fallo de conexión.");
@@ -111,13 +148,15 @@ export default function App() {
       const newUser = profile ? { ...profile, isLoggedIn: true } : { ...user, id: data.user?.id || 'new', email: email, isLoggedIn: true };
       setUser(newUser);
       localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-      setView(AppView.HOME);
+      navigateTo(AppView.HOME);
       if (!newUser.interests || newUser.interests.length === 0) setShowOnboarding(true);
       setIsLoading(false);
   };
 
-  const handleVisit = (stopId: string, bonus: number = 100) => {
+  const handleVisit = async (stopId: string, bonus: number = 100) => {
       if (!activeTour) return;
+      await Haptics.notification({ type: 'SUCCESS' as any });
+      
       const updatedStops = activeTour.stops.map(s => s.id === stopId ? { ...s, visited: true } : s);
       const updatedTour = { ...activeTour, stops: updatedStops };
       setActiveTour(updatedTour);
@@ -146,6 +185,7 @@ export default function App() {
   const handleCitySelect = async (cityInput: string) => {
     const cityNormalized = cityInput.trim().toLowerCase();
     if (!cityNormalized) return;
+    await Haptics.impact({ style: ImpactStyle.Medium });
     setSelectedCity(cityInput.trim());
     setView(AppView.CITY_DETAIL);
     setIsLoading(true);
@@ -158,17 +198,9 @@ export default function App() {
             return;
         }
 
-        const cached = await getCachedTours(cityInput.trim(), user.language);
-        if (cached && cached.length > 0) {
-            setTours(cached);
-            setIsLoading(false);
-            return;
-        }
-
         const res = await generateToursForCity(cityInput.trim(), user);
         if (Array.isArray(res)) {
             setTours(res);
-            saveToursToCache(cityInput.trim(), user.language, res);
         }
     } catch (e) { 
         console.error("Selection Error:", e); 
@@ -184,11 +216,7 @@ export default function App() {
         return;
     }
     setAudioLoadingId(id);
-    let base64 = await getCachedAudio(text, user.language);
-    if (!base64) {
-        base64 = await generateAudio(text, user.language);
-        if (base64) saveAudioToCache(text, user.language, base64);
-    }
+    const base64 = await generateAudio(text, user.language);
     if (base64) {
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
         const ctx = audioContextRef.current;
@@ -230,7 +258,7 @@ export default function App() {
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-center p-10 bg-[#020617] relative">
-              <div className="absolute top-12 flex gap-4 animate-fade-in">
+              <div className="absolute top-12 flex gap-4 animate-fade-in pt-safe">
                   {LANGUAGES.map(l => (
                       <button key={l.code} onClick={() => setUser({...user, language: l.code})} className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden ${user.language === l.code ? 'border-purple-500 scale-125 shadow-lg shadow-purple-500/30' : 'border-white/10 opacity-40'}`}>
                           <FlagIcon code={l.code} className="w-full h-full object-cover" />
@@ -284,7 +312,7 @@ export default function App() {
                             <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 text-xs font-black text-white">
                                 <i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}
                             </div>
-                            <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-2xl border-2 border-purple-500/50 overflow-hidden shadow-xl active:scale-90 transition-all">
+                            <button onClick={() => navigateTo(AppView.PROFILE)} className="w-12 h-12 rounded-2xl border-2 border-purple-500/50 overflow-hidden shadow-xl active:scale-90 transition-all">
                                 <img src={user.avatar} className="w-full h-full object-cover" />
                             </button>
                           </div>
@@ -304,34 +332,34 @@ export default function App() {
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe px-6 animate-fade-in">
                       <header className="flex items-center gap-4 mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20">
-                          <button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white"><i className="fas fa-arrow-left"></i></button>
+                          <button onClick={() => navigateTo(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white"><i className="fas fa-arrow-left"></i></button>
                           <h2 className="text-3xl font-black font-heading truncate uppercase tracking-tighter text-white">{selectedCity}</h2>
                       </header>
                       {isLoading ? (
                           <div className="py-32 text-center text-slate-500 font-black uppercase text-[10px] tracking-[0.5em] animate-pulse">{t('loading')}</div>
                       ) : (
                           <div className="space-y-8 pb-12">
-                            {tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language} />)}
+                            {tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); navigateTo(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language} />)}
                           </div>
                       )}
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(p => Math.min(activeTour.stops.length - 1, p + 1))} onPrev={() => setCurrentStopIndex(p => Math.max(0, p - 1))} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} onVisit={handleVisit} />
+                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(p => Math.min(activeTour.stops.length - 1, p + 1))} onPrev={() => setCurrentStopIndex(p => Math.max(0, p - 1))} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language} onBack={() => navigateTo(AppView.CITY_DETAIL)} userLocation={userLocation} onVisit={handleVisit} />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={handleCitySelect} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => setUser({...user, miles: user.miles + reward})} />}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} onLogout={() => { setView(AppView.LOGIN); }} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} onLogout={() => { navigateTo(AppView.LOGIN); }} />}
             </div>
             
-            <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-8 pb-12 pointer-events-none">
+            <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-8 pb-12 pointer-events-none pb-safe">
                 <nav className="bg-slate-900/95 backdrop-blur-3xl border border-white/10 px-6 py-5 flex justify-between items-center w-full rounded-[3rem] pointer-events-auto shadow-2xl">
-                    <NavButton icon="fa-trophy" label="Elite" isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
-                    <NavButton icon="fa-compass" label="Hub" isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
-                    <button onClick={() => setView(AppView.HOME)} className={`w-16 h-16 rounded-[2rem] flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 shadow-lg rotate-45' : 'bg-white/5'}`}><div className={view === AppView.HOME ? '-rotate-45' : ''}><BdaiLogo className="w-8 h-8" /></div></button>
-                    <NavButton icon="fa-id-card" label="Visa" isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
-                    <NavButton icon="fa-shopping-bag" label="Store" isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
+                    <NavButton icon="fa-trophy" label="Elite" isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
+                    <NavButton icon="fa-compass" label="Hub" isActive={view === AppView.TOOLS} onClick={() => navigateTo(AppView.TOOLS)} />
+                    <button onClick={() => navigateTo(AppView.HOME)} className={`w-16 h-16 rounded-[2rem] flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 shadow-lg rotate-45' : 'bg-white/5'}`}><div className={view === AppView.HOME ? '-rotate-45' : ''}><BdaiLogo className="w-8 h-8" /></div></button>
+                    <NavButton icon="fa-id-card" label="Visa" isActive={view === AppView.PROFILE} onClick={() => navigateTo(AppView.PROFILE)} />
+                    <NavButton icon="fa-shopping-bag" label="Store" isActive={view === AppView.SHOP} onClick={() => navigateTo(AppView.SHOP)} />
                 </nav>
             </div>
           </>

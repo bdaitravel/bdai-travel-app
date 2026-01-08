@@ -7,7 +7,25 @@
   "server": {
     "androidScheme": "https"
   },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": false,
+      "backgroundColor": "#020617",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": true,
+      "spinnerColor": "#9333ea"
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "dark",
+      "resizeOnFullScreen": true
+    }
+  },
   "ios": {
-    "contentInset": "always"
+    "contentInset": "always",
+    "allowsLinkPreview": false,
+    "isResizeElement": true
   }
 }
