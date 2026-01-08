@@ -1,234 +1,232 @@
 
 import React, { useState, useRef } from 'react';
-import { UserProfile, LeaderboardEntry, LANGUAGES } from '../types';
-import { FlagIcon } from '../App';
+import { UserProfile, LANGUAGES, AVATARS, HubIntel } from '../types';
+import { FlagIcon } from './FlagIcon';
 
 interface ProfileModalProps {
-  user: UserProfile | LeaderboardEntry;
+  user: UserProfile;
   onClose: () => void;
   isOwnProfile?: boolean;
   onUpdateUser?: (updatedUser: UserProfile) => void;
-  onSelectOwnKey?: () => void;
   onLogout?: () => void;
   language?: string;
 }
 
-const AVATARS = [
-    "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aria",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Luna",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Milo"
-];
-
-const UI_TEXT: any = {
-    en: { passport: "Global Passport", surname: "Surname", givenNames: "Given Names", rank: "Rank", miles: "Total Miles", bio: "Bio", badges: "Badges", stamps: "Visa Stamps", edit: "Edit", save: "Save", langLabel: "Native Language", username: "Username", email: "Email", expedition: "Expedition Date", passportNo: "Passport No.", curios: "Explorer Motto", wall: "Social Wall", logout: "Sign Out", changeAvatar: "Pick Photo", city: "City of Origin", country: "Country", age: "Age", apiKey: "Satellite Connection", apiDesc: "Use your own key for unlimited AI access." },
-    es: { passport: "Pasaporte Global", surname: "Apellidos", givenNames: "Nombres", rank: "Rango", miles: "Millas Totales", bio: "Biografía", badges: "Insignias", stamps: "Sellos Visa", edit: "Editar", save: "Guardar", langLabel: "Idioma Nativo", username: "Usuario", email: "Correo", expedition: "Fecha Expedición", passportNo: "Nº Pasaporte", curios: "Lema del Explorador", wall: "Muro Social", logout: "Cerrar Sesión", changeAvatar: "Elegir Foto", city: "Ciudad de Origen", country: "País", age: "Edad", apiKey: "Conexión Satelital", apiDesc: "Usa tu propia clave para acceso IA ilimitado." },
-    ca: { passport: "Passaport Global", surname: "Cognoms", givenNames: "Noms", rank: "Rang", miles: "Milles Totals", bio: "Biografia", badges: "Insignies", stamps: "Segells Visa", edit: "Editar", save: "Desar", langLabel: "Idioma Natiu", username: "Usuari", email: "Correu", expedition: "Data Expedició", passportNo: "Núm. Passaport", curios: "Lema de l'Explorador", wall: "Mur Social", logout: "Tancar Sessió", changeAvatar: "Tria Foto", city: "Ciutat d'Origen", country: "País", age: "Edat", apiKey: "Connexió Satel·lital", apiDesc: "Usa la teva clau per a IA il·limitada." },
-    eu: { passport: "Pasaporte Globala", surname: "Abizenak", givenNames: "Izenak", rank: "Maila", miles: "Miliak Guztira", bio: "Biografia", badges: "Intsigniak", stamps: "Visa zigiluak", edit: "Editatu", save: "Gorde", langLabel: "Ama Hizkuntza", username: "Erabiltzailea", email: "Helbidea", expedition: "Jaulkipen Data", passportNo: "Pasaporte Zbk.", curios: "Esploratzailearen Lemak", wall: "Muru Soziala", logout: "Saioa Itxi", changeAvatar: "Argazkia Aukeratu", city: "Jatorrizko Hiria", country: "Herrialdea", age: "Adina", apiKey: "Satelite Konexioa", apiDesc: "Erabili zure gakoa mugarik gabeko IArako." },
-    fr: { passport: "Passeport Global", surname: "Nom", givenNames: "Prénoms", rank: "Rang", miles: "Miles Totaux", bio: "Bio", badges: "Badges", stamps: "Tampons Visa", edit: "Modifier", save: "Enregistrer", langLabel: "Langue Maternelle", username: "Utilisateur", email: "E-mail", expedition: "Date d'émission", passportNo: "N° Passeport", curios: "Devise de l'Explorateur", wall: "Mur Social", logout: "Déconnexion", changeAvatar: "Choisir Photo", city: "Ville d'Origine", country: "Pays", age: "Âge", apiKey: "Connexion Satellite", apiDesc: "Utilisez votre clé pour un accès IA illimité." }
-};
-
-export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwnProfile, onUpdateUser, onSelectOwnKey, onLogout, language = 'es' }) => {
-  const profile = user as UserProfile;
-  const t = UI_TEXT[language] || UI_TEXT['es'];
+export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwnProfile, onUpdateUser, onLogout }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'passport' | 'wall'>('passport');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
-      firstName: profile.firstName || '',
-      lastName: profile.lastName || '',
-      username: profile.username || '',
-      email: profile.email || '',
-      avatar: profile.avatar || AVATARS[0],
-      language: profile.language || 'es',
-      profileCuriosity: profile.profileCuriosity || "Escribe aquí tu frase inspiradora de viaje...",
-      city: profile.city || '',
-      country: profile.country || '',
-      age: profile.age || 25
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      username: user.username || 'traveler',
+      city: user.city || 'Madrid',
+      country: user.country || 'España',
+      bio: user.bio || '',
+      avatar: user.avatar || AVATARS[0],
+      birthday: user.birthday || '2000-01-01',
+      language: user.language || 'es'
   });
 
   const handleSave = () => {
-      if (onUpdateUser) onUpdateUser({ ...profile, ...formData, name: `${formData.firstName} ${formData.lastName}` });
+      if (onUpdateUser) onUpdateUser({ 
+          ...user, 
+          ...formData, 
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          name: `${formData.firstName} ${formData.lastName}`,
+          language: formData.language,
+          username: formData.username,
+          birthday: formData.birthday
+      });
       setIsEditing(false);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setFormData({...formData, avatar: reader.result as string});
-      reader.readAsDataURL(file);
-    }
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setFormData(p => ({ ...p, avatar: reader.result as string }));
+          };
+          reader.readAsDataURL(file);
+      }
   };
 
-  const handleLanguageChange = (code: string) => {
-    setFormData({...formData, language: code});
-    if (onUpdateUser) onUpdateUser({ ...profile, ...formData, language: code });
+  const getStampRotation = (city: string) => {
+      let hash = 0;
+      for (let i = 0; i < city.length; i++) hash = city.charCodeAt(i) + ((hash << 5) - hash);
+      return (hash % 20); 
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-950/98 backdrop-blur-xl" onClick={onClose}></div>
-      <div className="bg-[#1e293b] w-full max-w-sm rounded-[2.8rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] relative z-10 border border-white/10 flex flex-col max-h-[92vh] animate-slide-up text-white font-sans">
+      
+      <div className="bg-[#f2efe4] w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] relative z-10 border-[6px] border-[#d4cfbd] flex flex-col max-h-[90vh] text-slate-900 font-sans">
         
-        <div className="flex bg-white/5 border-b border-white/5 p-2">
-            <button onClick={() => setActiveTab('passport')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${activeTab === 'passport' ? 'text-yellow-500' : 'text-white/30'}`}>PASSPORT</button>
-            <button onClick={() => setActiveTab('wall')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${activeTab === 'wall' ? 'text-yellow-500' : 'text-white/30'}`}>{t.wall}</button>
+        {/* Passport Header */}
+        <div className="bg-[#7b1b1b] p-6 flex flex-col gap-1 border-b-[6px] border-[#d4cfbd] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-full bg-white/5 skew-x-12"></div>
+            <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center text-slate-900 shadow-lg">
+                        <i className="fas fa-globe-americas text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 className="text-yellow-500 font-black text-[10px] uppercase tracking-[0.4em]">bdai Global Explorer Passport</h2>
+                        <p className="text-white/40 text-[7px] font-bold uppercase tracking-widest">Document of Identity</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    {isOwnProfile && (
+                        <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center transition-all active:scale-90">
+                            <i className={`fas ${isEditing ? 'fa-save text-green-400' : 'fa-edit'}`}></i>
+                        </button>
+                    )}
+                    <button onClick={onClose} className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center"><i className="fas fa-times"></i></button>
+                </div>
+            </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto no-scrollbar bg-[#fcf9f2] m-4 rounded-[2rem] shadow-inner text-slate-900 pb-12">
-            {activeTab === 'passport' ? (
-                <div className="p-7">
-                    <div className="flex justify-between items-start mb-8">
-                        <div className="space-y-1">
-                            <h2 className="text-red-900 font-black text-[11px] uppercase tracking-[0.3em]">{t.passport}</h2>
-                            <p className="font-mono text-[10px] opacity-40 uppercase tracking-widest">{profile.passportNumber || 'WORLD-992-BDAI'}</p>
-                        </div>
-                        <div className="flex gap-2">
-                            {isOwnProfile && <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className="w-10 h-10 rounded-full bg-yellow-500 text-slate-900 flex items-center justify-center shadow-lg active:scale-90 transition-transform"><i className={`fas ${isEditing ? 'fa-save' : 'fa-pen-nib'} text-xs`}></i></button>}
-                            <button onClick={onClose} className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center"><i className="fas fa-times text-xs"></i></button>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-5 mb-10">
-                        <div className="relative group">
-                            <div className="w-32 h-40 bg-white p-2 rounded-lg shadow-2xl border border-slate-300 transform -rotate-1 relative overflow-hidden flex-shrink-0 cursor-pointer" onClick={() => isEditing && fileInputRef.current?.click()}>
-                                <img src={formData.avatar} className="w-full h-full object-cover grayscale-[0.2]" alt="ID" />
-                                <div className="absolute inset-0 bg-red-900/5 pointer-events-none border-4 border-slate-200/50"></div>
-                                {isEditing && (
-                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-[8px] font-black uppercase text-center p-2 opacity-100 transition-opacity">
-                                        <i className="fas fa-camera text-xl mb-1 block"></i><br/>{t.changeAvatar}
-                                    </div>
-                                )}
+        <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-10">
+            {/* Foto & Biometría */}
+            <div className="flex gap-8 items-start">
+                <div className="relative group shrink-0">
+                    <div className="w-36 h-48 bg-white border-4 border-[#d4cfbd] rounded-xl shadow-inner overflow-hidden flex items-center justify-center p-2 relative">
+                        <img src={formData.avatar} className="w-full h-full object-cover filter contrast-110 saturate-[0.8] mix-blend-multiply" />
+                        {isEditing && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                <i className="fas fa-camera text-white text-2xl"></i>
                             </div>
-                            <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-                        </div>
-
-                        <div className="flex-1 space-y-4 pt-1">
-                            {isEditing ? (
-                                <div className="space-y-3">
-                                    <InputLabel label={t.surname} value={formData.lastName} onChange={v => setFormData({...formData, lastName: v})} />
-                                    <InputLabel label={t.givenNames} value={formData.firstName} onChange={v => setFormData({...formData, firstName: v})} />
-                                    <InputLabel label={t.username} value={formData.username} onChange={v => setFormData({...formData, username: v})} prefix="@" />
-                                </div>
-                            ) : (
-                                <>
-                                    <DataBlock label={t.surname} value={profile.lastName || 'EXPLORER'} />
-                                    <DataBlock label={t.givenNames} value={profile.firstName || 'BDAI'} />
-                                    <DataBlock label={t.username} value={`@${profile.username || 'explorador'}`} color="text-red-800" />
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-y-6 gap-x-4 mb-10">
-                         {isEditing ? (
-                             <>
-                                <InputLabel label={t.city} value={formData.city} onChange={v => setFormData({...formData, city: v})} />
-                                <InputLabel label={t.country} value={formData.country} onChange={v => setFormData({...formData, country: v})} />
-                                <InputLabel label={t.age} value={formData.age.toString()} onChange={v => setFormData({...formData, age: parseInt(v) || 0})} />
-                             </>
-                         ) : (
-                             <>
-                                <DataBlock label={t.city} value={profile.city || 'Desconocida'} />
-                                <DataBlock label={t.country} value={profile.country || 'Planeta Tierra'} />
-                                <DataBlock label={t.age} value={profile.age?.toString() || '25'} />
-                             </>
-                         )}
-                         <DataBlock label={t.rank} value={profile.rank || 'Turist'} color="text-red-900" />
-                    </div>
-
-                    <div className="mb-10 p-5 bg-white/60 rounded-3xl border border-black/5 shadow-sm">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">{t.langLabel}</p>
-                        <div className="flex flex-wrap gap-2">
-                            {LANGUAGES.map(lang => (
-                                <button key={lang.code} onClick={() => handleLanguageChange(lang.code)} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all ${formData.language === lang.code ? 'border-red-900 bg-red-900/10' : 'border-transparent bg-white/50'}`}>
-                                    <FlagIcon code={lang.code} className="w-5" />
-                                    <span className="text-[10px] font-black uppercase">{lang.name}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="mb-10 border-l-4 border-red-900 pl-5 py-4 bg-red-900/5 rounded-r-2xl pr-5">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">{t.curios}</p>
-                        {isEditing ? (
-                            <textarea 
-                                value={formData.profileCuriosity} 
-                                onChange={e => setFormData({...formData, profileCuriosity: e.target.value})}
-                                className="w-full bg-white/50 rounded-xl p-3 text-xs font-serif italic border border-slate-300 outline-none focus:border-red-900 min-h-[80px]"
-                                placeholder="Escribe tu frase aquí..."
-                            />
-                        ) : (
-                            <p className="text-sm font-bold font-serif leading-relaxed italic text-slate-700">"{profile.profileCuriosity || formData.profileCuriosity}"</p>
                         )}
                     </div>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                    <div className="mt-3 text-[8px] font-black text-slate-400 uppercase tracking-tighter text-center bg-slate-200/50 py-1 rounded">ID: {user.passportNumber}</div>
+                </div>
 
-                    <div className="grid grid-cols-2 gap-4 mb-6 bg-slate-900 p-6 rounded-3xl border border-white/10 shadow-2xl">
-                        <DataBlock label={t.miles} value={profile.miles.toLocaleString()} color="text-yellow-500" />
-                        <DataBlock label={t.expedition} value={profile.joinDate || new Date().toLocaleDateString()} color="text-white" />
+                <div className="flex-1 space-y-4 font-mono text-[10px]">
+                    <div className="border-b border-slate-300 pb-1">
+                        <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Surname / Apellidos</p>
+                        {isEditing ? (
+                             <input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black" />
+                        ) : (
+                             <p className="font-black text-slate-800 uppercase">{(formData.lastName || 'EXPLORADOR').toUpperCase()}</p>
+                        )}
                     </div>
-
-                    {isOwnProfile && onSelectOwnKey && (
-                        <div className="mb-10 space-y-2">
-                            <button onClick={onSelectOwnKey} className="w-full py-4 border-2 border-slate-200 bg-white text-slate-900 rounded-2xl flex items-center justify-center gap-3 font-black uppercase text-[9px] tracking-widest shadow-sm hover:bg-slate-50 transition-colors">
-                                <i className="fas fa-satellite text-purple-600"></i> {t.apiKey}
-                            </button>
-                            <p className="text-[8px] text-center text-slate-400 font-bold uppercase tracking-widest px-4">{t.apiDesc}</p>
-                        </div>
-                    )}
-
-                    <div>
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">{t.badges}</p>
-                        <div className="flex flex-wrap gap-2">
-                            {profile.badges && profile.badges.length > 0 ? (
-                                profile.badges.map(badge => (
-                                    <div key={badge.id} className="bg-white p-3 rounded-2xl border border-slate-200 flex items-center gap-3 shadow-sm">
-                                        <i className={`fas ${badge.icon} text-red-800 text-xs`}></i>
-                                        <span className="text-[8px] font-black uppercase text-slate-800">{badge.name}</span>
-                                    </div>
-                                ))
+                    <div className="border-b border-slate-300 pb-1">
+                        <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Given Names / Nombres</p>
+                        {isEditing ? (
+                             <input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black" />
+                        ) : (
+                             <p className="font-black text-slate-800 uppercase">{(formData.firstName || 'USUARIO').toUpperCase()}</p>
+                        )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="border-b border-slate-300 pb-1">
+                            <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Birthday / Nacimiento</p>
+                            {isEditing ? (
+                                <input type="date" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black" />
                             ) : (
-                                <p className="text-[10px] font-bold text-slate-300 uppercase italic">Visa stamps pending...</p>
+                                <p className="font-black text-slate-800 uppercase">{formData.birthday}</p>
+                            )}
+                        </div>
+                        <div className="border-b border-slate-300 pb-1">
+                            <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Issued / Expedición</p>
+                            <p className="font-black text-slate-800 uppercase">{user.joinDate || '20/05/2025'}</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="border-b border-slate-300 pb-1">
+                            <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">User / Usuario</p>
+                            {isEditing ? (
+                                <input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black" />
+                            ) : (
+                                <p className="font-black text-slate-800 uppercase">@{formData.username}</p>
+                            )}
+                        </div>
+                        <div className="border-b border-slate-300 pb-1">
+                            <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Lang / Idioma</p>
+                            {isEditing ? (
+                                <select value={formData.language} onChange={e => setFormData({...formData, language: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black appearance-none">
+                                    {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+                                </select>
+                            ) : (
+                                <div className="flex items-center gap-1">
+                                    <FlagIcon code={formData.language} className="w-3" />
+                                    <p className="font-black text-slate-800 uppercase">{LANGUAGES.find(l => l.code === formData.language)?.name}</p>
+                                </div>
                             )}
                         </div>
                     </div>
                 </div>
-            ) : (
-                <div className="p-12 text-center py-24">
-                    <i className="fas fa-tower-broadcast text-5xl text-slate-300 mb-6 animate-pulse"></i>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">{t.wall}</p>
-                    <p className="text-[11px] text-slate-500 font-medium">Coming soon: Connect with other explorers in this city.</p>
-                </div>
-            )}
-            
-            <div className="mt-8 px-7">
-                <button onClick={onLogout} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-2xl active:scale-95 transition-all">
-                    {t.logout}
-                </button>
             </div>
+
+            {/* Millas & Rango */}
+            <div className="bg-[#1e293b] p-8 rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-transparent opacity-50"></div>
+                <div className="relative z-10 flex items-center justify-between">
+                    <div>
+                        <p className="text-[9px] font-black text-purple-400 uppercase tracking-[0.4em] mb-1">Millas Totales</p>
+                        <h3 className="text-4xl font-black text-white tracking-tighter">{user.miles.toLocaleString()} <span className="text-xs">m</span></h3>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">Estatus</p>
+                        <p className="text-xl font-black text-yellow-500 uppercase tracking-tighter">{user.rank}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* SECCIÓN: ARCHIVOS DE INTELIGENCIA (INTEL ARCHIVES) */}
+            <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3 px-1">
+                    <i className="fas fa-folder-open text-slate-800"></i> Archivos de Inteligencia
+                </h4>
+                <div className="grid grid-cols-1 gap-4">
+                    {user.savedIntel && user.savedIntel.length > 0 ? user.savedIntel.map((intel: HubIntel) => (
+                        <div key={intel.id} className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow group">
+                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${intel.color} flex items-center justify-center text-white text-xl shadow-lg shrink-0 group-hover:scale-110 transition-transform`}>
+                                <i className={`fas ${intel.icon}`}></i>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-start">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{intel.type} • {intel.location}</p>
+                                    <i className="fas fa-bookmark text-purple-600 text-[8px]"></i>
+                                </div>
+                                <p className="text-sm font-black text-slate-800 uppercase tracking-tight truncate">{intel.title}</p>
+                                <p className="text-[9px] text-slate-500 italic mt-1 line-clamp-2 leading-relaxed">{intel.description}</p>
+                                {intel.details && <div className="mt-2 text-[8px] font-black text-purple-600 uppercase border-t border-slate-100 pt-2 flex items-center gap-2 animate-pulse"><i className="fas fa-eye"></i> Secreto Revelado</div>}
+                            </div>
+                        </div>
+                    )) : (
+                        <div className="py-12 bg-white/40 border-2 border-dashed border-slate-200 rounded-[2.5rem] text-center px-8">
+                            <i className="fas fa-microchip text-slate-300 text-3xl mb-4"></i>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">No has archivado ninguna inteligencia. Visita el Hub para robar secretos del mundo.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Sellos de Ciudad */}
+            <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-1">Visados Verificados</h4>
+                <div className="grid grid-cols-4 gap-6">
+                    {user.visitedCities && user.visitedCities.length > 0 ? user.visitedCities.map((city) => (
+                        <div key={city} style={{ transform: `rotate(${getStampRotation(city)}deg)` }} className="aspect-square rounded-full border-[3px] border-red-800/40 flex items-center justify-center p-1.5 opacity-80 mix-blend-multiply hover:scale-110 transition-transform">
+                            <div className="w-full h-full rounded-full border-2 border-red-800/30 flex flex-col items-center justify-center text-red-800/60 font-black text-center leading-tight">
+                                <span className="text-[8px] uppercase tracking-tighter">{city.substring(0,8)}</span>
+                                <span className="text-[5px] tracking-widest">VERIFIED</span>
+                            </div>
+                        </div>
+                    )) : (
+                        <div className="col-span-4 py-16 bg-slate-300/20 rounded-[2.5rem] border-2 border-dashed border-slate-400/50 text-center text-[9px] font-black text-slate-500 uppercase">Explora para recibir sellos</div>
+                    )}
+                </div>
+            </div>
+
+            <button onClick={onLogout} className="w-full py-4 text-slate-400 font-black text-[9px] uppercase tracking-widest hover:text-red-600 transition-colors">Cerrar Sesión</button>
         </div>
       </div>
     </div>
   );
 };
-
-const DataBlock = ({ label, value, color = "text-slate-900" }: any) => (
-    <div>
-        <p className="text-[7px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">{label}</p>
-        <p className={`text-[12px] font-black uppercase tracking-tight font-mono ${color}`}>{value || '---'}</p>
-    </div>
-);
-
-const InputLabel = ({ label, value, onChange, prefix = "" }: any) => (
-    <div>
-        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-        <div className="flex items-center gap-1 border-b border-slate-300 pb-1">
-            {prefix && <span className="text-[12px] font-black text-slate-400">{prefix}</span>}
-            <input value={value} onChange={e => onChange(e.target.value)} className="w-full bg-transparent text-[12px] font-black uppercase outline-none focus:text-red-900" />
-        </div>
-    </div>
-);

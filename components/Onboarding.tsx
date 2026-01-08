@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { LANGUAGES } from '../types';
-import { FlagIcon } from '../App';
+import { FlagIcon } from './FlagIcon';
 
 interface OnboardingProps {
     onComplete: (interests: string[]) => void;
@@ -47,7 +47,7 @@ const ONBOARDING_TEXT: any = {
         step1Title: "Votre Guide IA", step1Desc: "Nous créons des itinéraires uniques basés sur qui vous êtes et ce que vous aimez.",
         step2Title: "Explorer le Monde", step2Desc: "Toutes les villes du monde à portée de main. L'IA traduit la culture pour vous.",
         step3Title: "Passeport Numérique", step3Desc: "Gagnez des miles, collectionnez des tampons et grimpez dans le classement.",
-        skip: "Passer", next: "Suivant", start: "Commencer", selectLang: "Choisir la Langue", selectInt: "Vos Intérêts"
+        skip: "Passer", next: "Suivant", start: "Commencer", selectLang: "Choisir la Langue", selectInt: "Vos Interêts"
     }
 };
 

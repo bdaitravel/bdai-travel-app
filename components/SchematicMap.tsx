@@ -2,7 +2,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Stop } from '../types';
 
-// Access Leaflet from global window since it's loaded via CDN
 const L = (window as any).L;
 
 interface SchematicMapProps {
@@ -14,15 +13,15 @@ interface SchematicMapProps {
 export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, currentStopIndex, userLocation }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const stopMarkersRef = useRef<any[]>([]);
+  const markersRef = useRef<any[]>([]);
   const userMarkerRef = useRef<any>(null);
   const routeLineRef = useRef<any>(null);
-  const lastStopIndexRef = useRef<number>(-1);
+  const checkInRangeRef = useRef<any>(null);
   const [mapError, setMapError] = useState(false);
 
-  // Initialize Map (Only once)
   useEffect(() => {
-    if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
+    if (!mapContainerRef.current || !L) return;
+    if (mapInstanceRef.current) return;
 
     try {
         const map = L.map(mapContainerRef.current, {
@@ -31,7 +30,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, currentStopIn
         }).setView([0, 0], 2);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
             subdomains: 'abcd',
             maxZoom: 20
         }).addTo(map);
@@ -50,111 +49,109 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, currentStopIn
     };
   }, []);
 
-  // Effect 1: Draw Static Elements (Stops & Route)
-  // Only runs when 'stops' or 'currentStopIndex' changes, NOT on userLocation
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !L) return;
 
-    // Cleanup stop markers and route
-    stopMarkersRef.current.forEach(m => map.removeLayer(m));
-    stopMarkersRef.current = [];
+    markersRef.current.forEach(m => map.removeLayer(m));
+    markersRef.current = [];
     if (routeLineRef.current) map.removeLayer(routeLineRef.current);
+    if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
+    if (checkInRangeRef.current) map.removeLayer(checkInRangeRef.current);
 
     const validStops = stops.filter(s => s.latitude && s.longitude && (Math.abs(s.latitude) > 0.1 || Math.abs(s.longitude) > 0.1));
-    if (validStops.length === 0) return;
+    
+    if (validStops.length === 0) {
+        if (userLocation && userLocation.lat) map.setView([userLocation.lat, userLocation.lng], 15);
+        return; 
+    }
 
-    // Draw Route
     const latLngs = validStops.map(s => [s.latitude, s.longitude]);
     routeLineRef.current = L.polyline(latLngs, {
         color: '#8b5cf6',
-        weight: 5,
-        opacity: 0.6,
-        dashArray: '1, 10',
+        weight: 4,
+        opacity: 0.5,
+        dashArray: '5, 10',
         lineCap: 'round'
     }).addTo(map);
 
-    // Draw Stop Markers
+    const activeStop = stops[currentStopIndex];
+
+    // Check-in validation circle (visual only)
+    if (activeStop && !activeStop.visited) {
+        checkInRangeRef.current = L.circle([activeStop.latitude, activeStop.longitude], {
+            radius: 100,
+            color: '#a855f7',
+            fillColor: '#a855f7',
+            fillOpacity: 0.15,
+            weight: 1,
+            className: 'animate-pulse'
+        }).addTo(map);
+    }
+
     validStops.forEach((stop, idx) => {
         const isActive = idx === currentStopIndex;
+        const isVisited = stop.visited;
+
         const iconHtml = `
             <div class="relative flex items-center justify-center w-full h-full">
-                <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-[10px] font-black transition-all
-                    ${isActive ? 'bg-yellow-400 text-yellow-900 scale-125 z-50 ring-4 ring-yellow-400/30' : 
-                      stop.visited ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'}
+                <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-xs font-bold transition-all
+                    ${isActive ? 'bg-purple-600 text-white scale-125 z-50 ring-4 ring-purple-500/20' : 
+                      isVisited ? 'bg-green-500 text-white' : 'bg-slate-900 text-white'}
                 ">
-                    ${idx + 1}
+                    ${isActive ? '<i class="fas fa-person-walking"></i>' : idx + 1}
                 </div>
-                ${isActive ? '<div class="absolute -inset-2 bg-yellow-400 rounded-full animate-ping opacity-30"></div>' : ''}
             </div>
         `;
 
-        const marker = L.marker([stop.latitude, stop.longitude], { 
-            icon: L.divIcon({ className: 'bg-transparent', html: iconHtml, iconSize: [32, 32], iconAnchor: [16, 16] }) 
-        }).addTo(map);
-        
-        stopMarkersRef.current.push(marker);
+        const icon = L.divIcon({
+            className: 'bg-transparent',
+            html: iconHtml,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+        });
+
+        const marker = L.marker([stop.latitude, stop.longitude], { icon }).addTo(map);
+        markersRef.current.push(marker);
     });
 
-    // Auto-fit bounds ONLY if the stop has changed
-    if (lastStopIndexRef.current !== currentStopIndex) {
-        lastStopIndexRef.current = currentStopIndex;
-        const activeStop = validStops[currentStopIndex];
-        if (activeStop) {
-            // Focus view on the active stop initially
-            map.flyTo([activeStop.latitude, activeStop.longitude], 16, { duration: 1 });
-        }
-    }
-  }, [stops, currentStopIndex]);
-
-  // Effect 2: Update User Location Marker (Smooth update)
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !L || !userLocation?.lat) return;
-
-    if (!userMarkerRef.current) {
+    if (userLocation && userLocation.lat) {
         const userIcon = L.divIcon({
             className: 'bg-transparent',
             html: `
                 <div class="relative flex items-center justify-center w-full h-full">
-                    <div class="w-5 h-5 bg-blue-600 rounded-full border-2 border-white shadow-2xl z-20"></div>
-                    <div class="absolute w-12 h-12 bg-blue-500/30 rounded-full animate-pulse z-10"></div>
+                    <div class="w-5 h-5 bg-blue-600 rounded-full border-2 border-white shadow-2xl relative z-20"></div>
+                    <div class="absolute w-12 h-12 bg-blue-500/30 rounded-full animate-ping z-10"></div>
                 </div>
             `,
             iconSize: [48, 48],
             iconAnchor: [24, 24]
         });
-        userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
-    } else {
-        userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
+        userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, zIndexOffset: 10000 }).addTo(map);
     }
-  }, [userLocation]);
 
-  if (mapError) return <div className="w-full h-full bg-slate-100 flex items-center justify-center rounded-3xl text-slate-400">Map Error</div>;
+    if (activeStop && userLocation) {
+        const bounds = L.latLngBounds([
+            [userLocation.lat, userLocation.lng],
+            [activeStop.latitude, activeStop.longitude]
+        ]);
+        map.fitBounds(bounds, { padding: [100, 100], maxZoom: 17 });
+    } else if (activeStop) {
+        map.setView([activeStop.latitude, activeStop.longitude], 17);
+    }
+
+  }, [stops, currentStopIndex, userLocation]);
+
+  if (mapError) return <div className="w-full h-full bg-slate-100 flex items-center justify-center rounded-3xl"><p>Map unavailable</p></div>;
 
   return (
     <div className="w-full h-full relative rounded-3xl overflow-hidden shadow-inner border border-slate-200">
         <div ref={mapContainerRef} className="w-full h-full z-0 bg-slate-50" />
-        
         <div className="absolute top-4 right-4 z-[400]">
-            <div className={`px-3 py-1.5 rounded-full text-[9px] font-black shadow-md flex items-center gap-2 border transition-colors ${userLocation ? 'bg-white border-green-200 text-green-700' : 'bg-white border-slate-200 text-slate-400'}`}>
-                {userLocation ? <><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> GPS ACTIVO</> : 'BUSCANDO GPS...'}
+            <div className={`px-3 py-1.5 rounded-full text-[10px] font-bold shadow-md flex items-center gap-2 border bg-white ${userLocation ? 'border-green-200 text-green-700' : 'border-slate-200 text-slate-400'}`}>
+                {userLocation ? <><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>GPS Activo</> : 'Buscando GPS...'}
             </div>
         </div>
-        
-        <button 
-            className="absolute bottom-8 right-4 z-[400] bg-white text-slate-900 p-4 rounded-2xl shadow-2xl active:scale-90 transition-all border border-slate-100"
-            onClick={() => {
-                const map = mapInstanceRef.current;
-                const active = stops[currentStopIndex];
-                if (map && userLocation && active) {
-                    const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [active.latitude, active.longitude]]);
-                    map.fitBounds(bounds, { padding: [80, 80], maxZoom: 17 });
-                }
-            }}
-        >
-            <i className="fas fa-location-crosshairs"></i>
-        </button>
     </div>
   );
 };

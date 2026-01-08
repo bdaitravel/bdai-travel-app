@@ -7,16 +7,6 @@ export interface Badge {
   earnedAt?: string;
 }
 
-export interface SocialLinks {
-  instagram?: string;
-  tiktok?: string;
-  twitter?: string;
-  x?: string;
-  linkedin?: string;
-  facebook?: string;
-  website?: string;
-}
-
 export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend';
 
 export interface UserStats {
@@ -26,6 +16,18 @@ export interface UserStats {
   referralsCount: number;
 }
 
+export interface HubIntel {
+  id: string;
+  type: 'festival' | 'curiosity' | 'gastro' | 'expat';
+  title: string;
+  location: string;
+  description: string;
+  details?: string;
+  icon: string;
+  color: string;
+  savedAt?: string;
+}
+
 export interface UserProfile {
   id: string;
   isLoggedIn: boolean;
@@ -33,9 +35,8 @@ export interface UserProfile {
   lastName: string;
   name: string;
   username: string;
-  email: string;
-  password?: string;
   avatar: string;
+  email: string;
   language: string;
   miles: number;
   culturePoints: number;
@@ -47,16 +48,27 @@ export interface UserProfile {
   isPublic: boolean;
   bio: string;
   age: number;
-  country?: string;
-  city?: string;
-  badges: Badge[];
-  profileCuriosity?: string; // Nuevo: Dato curioso generado
+  birthday?: string;
   visitedCities: string[]; 
   completedTours: string[];
+  savedIntel?: HubIntel[];
   stats: UserStats;
-  socials?: SocialLinks;
+  badges: Badge[];
   passportNumber?: string;
-  joinDate?: string; // Fecha de expedición
+  joinDate?: string; 
+  profileCuriosity?: string;
+  city?: string; 
+  country?: string; 
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  username: string;
+  avatar: string;
+  miles: number;
+  rank: number;
+  isPublic: boolean;
 }
 
 export interface Stop {
@@ -65,19 +77,15 @@ export interface Stop {
   description: string;
   latitude: number;
   longitude: number;
-  type: 'historical' | 'food' | 'art' | 'business_ad' | 'nature' | 'photo' | 'culture';
+  type: 'historical' | 'food' | 'art' | 'nature' | 'photo' | 'culture';
   visited: boolean;
-  imageUrl?: string; 
-  curiosity?: string;
-  imgKeywords?: string;
   photoSpot?: {
     angle: string;
     bestTime: string;
     instagramHook: string;
     milesReward: number;
-    secretLocation?: string;
+    secretLocation: string;
   };
-  isRichInfo?: boolean; 
 }
 
 export interface Tour {
@@ -89,32 +97,12 @@ export interface Tour {
   distance: string;
   difficulty: 'Easy' | 'Moderate' | 'Hard';
   theme: string;
-  isSponsored: boolean;
-  isEssential?: boolean; // Campo añadido para marcar el tour básico
+  isEssential?: boolean; 
   stops: Stop[];
-  imageUrl?: string; 
-  cityImageUrl?: string; 
-  transportApps?: string[];
-  publicTransport?: string;
-  safetyTip?: string;
-  wifiTip?: string;
-}
-
-export interface LeaderboardEntry {
-  id: string;
-  name: string;
-  username?: string;
-  avatar: string;
-  miles: number;
-  rank: number;
-  isPublic: boolean;
-  badges?: Badge[];
-  socials?: SocialLinks;
 }
 
 export enum AppView {
   LOGIN = 'LOGIN',
-  WELCOME = 'WELCOME',
   HOME = 'HOME',
   CITY_DETAIL = 'CITY_DETAIL',
   TOUR_ACTIVE = 'TOUR_ACTIVE',
@@ -130,4 +118,13 @@ export const LANGUAGES = [
   { code: 'ca', name: 'Català' },
   { code: 'eu', name: 'Euskera' },
   { code: 'fr', name: 'Français' },
+];
+
+export const AVATARS = [
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Spooky",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Patches",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Coco"
 ];
