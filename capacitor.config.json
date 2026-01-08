@@ -1,6 +1,6 @@
 
 {
-  "appId": "com.techtravel.bdai",
+  "appId": "com.bdai.app",
   "appName": "bdai",
   "webDir": "dist",
   "bundledWebRuntime": false,
@@ -10,17 +10,21 @@
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 3000,
-      "launchAutoHide": false,
+      "launchAutoHide": true,
       "backgroundColor": "#020617",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": true,
       "spinnerColor": "#9333ea"
     },
+    "StatusBar": {
+      "style": "dark",
+      "overlay": true,
+      "backgroundColor": "#020617"
+    },
     "Keyboard": {
       "resize": "body",
-      "style": "dark",
-      "resizeOnFullScreen": true
+      "style": "dark"
     }
   },
   "ios": {

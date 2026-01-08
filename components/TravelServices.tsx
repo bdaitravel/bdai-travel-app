@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { generateHubIntel } from '../services/geminiService';
 
 const UI_LABELS: any = {
     es: { 

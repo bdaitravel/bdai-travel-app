@@ -7,9 +7,10 @@
     "microphone"
   ],
   "nativePermissions": {
-    "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para verificar que estás en las paradas del tour y canjear tus millas.",
-    "NSCameraUsageDescription": "Acceso a la cámara necesario para capturar Photo Spots épicos y ganar recompensas adicionales.",
-    "NSMicrophoneUsageDescription": "El micrófono se utiliza para las interacciones de voz con tu guía IA personal.",
-    "NSPhotoLibraryAddUsageDescription": "Permítenos guardar tus capturas de viaje en la galería del dispositivo."
+    "NSLocationWhenInUseUsageDescription": "bdai utiliza tu ubicación para guiarte por los puntos del tour y permitirte canjear millas cuando llegas a un destino.",
+    "NSCameraUsageDescription": "Necesitamos acceso a tu cámara para que puedas capturar los Photo Spots y verificar tus visitas a monumentos.",
+    "NSMicrophoneUsageDescription": "El micrófono se utiliza para la interacción por voz con tu guía turístico IA.",
+    "NSPhotoLibraryUsageDescription": "Permítenos guardar las postales generadas por IA y tus fotos de viaje en tu galería.",
+    "NSPhotoLibraryAddUsageDescription": "Guardaremos las fotos de tus tours en tu dispositivo."
   }
 }

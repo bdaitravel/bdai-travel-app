@@ -1,8 +1,8 @@
 
 {
   "short_name": "bdai",
-  "name": "bdai | Better Destinations AI",
-  "description": "Tu guía de viajes inteligente con IA.",
+  "name": "bdai | better destinations by ai",
+  "description": "Tu guía de viajes inteligente con IA. Free tours por todo el mundo.",
   "icons": [
     {
       "src": "https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb",
@@ -22,6 +22,5 @@
   "theme_color": "#020617",
   "background_color": "#020617",
   "orientation": "portrait",
-  "scope": "/",
-  "categories": ["travel", "productivity"]
+  "scope": "/"
 }

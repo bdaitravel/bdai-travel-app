@@ -3,22 +3,16 @@ import { GoogleGenAI, Modality, GenerateContentResponse, Type } from "@google/ge
 import { Tour, Stop, UserProfile } from '../types';
 
 const LANGUAGE_RULES: Record<string, string> = {
-    es: "IDIOMA: Español de ESPAÑA. Usa distinción 'z/c' y 's'. TONO: Guía experto de Free Tour, técnico y culto.",
-    en: "LANGUAGE: British English. TONE: Professional urban planner and historian.",
-    ca: "IDIOMA: Català normatiu. TONO: Acadèmic, profund i tècnic. PROHIBIT usar castellà o anglès.",
-    eu: "IDIOMA: Euskara batua. TONO: Teknikoa eta sakona. PROHIBIT erabili gaztelania edo ingelesa.",
-    fr: "LANGUE: Français de France. TON: Expert local, sophistiqué et technique."
+    es: "IDIOMA: Español de ESPAÑA. TONO: Guía experto, culto y cercano.",
+    en: "LANGUAGE: British English. TONE: Professional historian.",
+    ca: "IDIOMA: Català normatiu. TONO: Acadèmic i profund.",
+    eu: "IDIOMA: Euskara batua. TONO: Teknikoa eta sakona.",
+    fr: "LANGUE: Français de France. TON: Expert local sophistiqué."
 };
 
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
-    return text
-        .replace(/\*\*/g, '')
-        .replace(/###/g, '')
-        .replace(/#/g, '')
-        .replace(/^- /g, '')
-        .replace(/^\d+\. /g, '')
-        .trim();
+    return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '').replace(/^- /g, '').replace(/^\d+\. /g, '').trim();
 };
 
 export const moderateContent = async (text: string): Promise<boolean> => {
@@ -35,20 +29,10 @@ export const moderateContent = async (text: string): Promise<boolean> => {
 
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[] | 'QUOTA'> => {
   const langRule = LANGUAGE_RULES[userProfile.language] || LANGUAGE_RULES.es;
-  
-  const prompt = `ACTÚA COMO UN ALGORITMO DE URBANISMO DE PRECISIÓN MILITAR Y GUÍA MAESTRO PARA: ${cityInput}.
-  
-  REGLAS DE TRAZADO GEOGRÁFICO (PARA EVITAR VUELTAS ABSURDAS):
-  1. VECTOR LINEAL: Las 12 paradas DEBEN avanzar siempre hacia adelante en un vector geográfico claro (ej: alejándose del punto de inicio).
-  2. PROHIBIDO RETROCEDER: La Parada N+1 nunca puede estar más cerca del punto de inicio que la Parada N. 
-  3. COHERENCIA PEATONAL: La distancia entre paradas consecutivas debe ser de entre 100m y 400m máximo. Verifica coordenadas reales.
-  4. SIN SALTOS ERRÁTICOS: No cruces la ciudad de punta a punta. Elige un barrio y explótalo linealmente.
-  
-  REGLAS DE CONTENIDO:
-  1. TRADUCCIÓN NATIVA: Escribe TODO el JSON directamente en: ${langRule}.
-  2. DENSIDAD TÉCNICA EXTREMA (500 PALABRAS): Cada parada debe tener una descripción técnica profunda (500 palabras). Analiza ingeniería, historia cruda y materiales.
-  
-  ESTRUCTURA: Devuelve un array de 1 objeto Tour con sus 12 stops.`;
+  const prompt = `ACTÚA COMO UN GUÍA MAESTRO PARA: ${cityInput}. 
+  CREA UN TOUR DE 12 PARADAS LINEALES. 
+  TRADUCCIÓN NATIVA: ${langRule}. 
+  DENSIDAD TÉCNICA: 300 palabras por parada.`;
 
   const responseSchema = {
     type: Type.ARRAY,
@@ -73,13 +57,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
               type: { type: Type.STRING, enum: ['historical', 'food', 'art', 'nature', 'photo', 'culture'] },
               photoSpot: {
                 type: Type.OBJECT,
-                properties: { 
-                    angle: { type: Type.STRING }, 
-                    bestTime: { type: Type.STRING }, 
-                    instagramHook: { type: Type.STRING }, 
-                    milesReward: { type: Type.NUMBER },
-                    secretLocation: { type: Type.STRING }
-                },
+                properties: { angle: { type: Type.STRING }, bestTime: { type: Type.STRING }, instagramHook: { type: Type.STRING }, milesReward: { type: Type.NUMBER }, secretLocation: { type: Type.STRING } },
                 required: ["angle", "bestTime", "instagramHook", "milesReward", "secretLocation"]
               }
             },
@@ -93,63 +71,73 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview', 
         contents: prompt,
-        config: { 
-            responseMimeType: "application/json", 
-            responseSchema: responseSchema,
-            thinkingConfig: { thinkingBudget: 32000 }
-        }
+        config: { responseMimeType: "application/json", responseSchema: responseSchema }
     });
     const parsed = JSON.parse(response.text || "[]");
     return parsed.map((t: any, idx: number) => ({
         ...t, id: `tour_${idx}_${Date.now()}`, city: cityInput,
         stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_${sIdx}`, visited: false }))
     }));
-  } catch (error: any) { return []; }
+  } catch (error) { return []; }
 };
 
-export const generateHubIntel = async (city: string, language: string = 'es'): Promise<any> => {
-    const langRule = LANGUAGE_RULES[language] || LANGUAGE_RULES.es;
-    const prompt = `ACTÚA COMO AGENTE DE INTELIGENCIA LOCAL. Genera datos profundos para: ${city}.
-    TODO EL CONTENIDO EN: ${langRule}. Proporciona curiosidades técnicas y frases de jerga real.`;
-
-    const schema = {
-        type: Type.OBJECT,
-        properties: {
-            curiosities: { type: Type.ARRAY, items: { type: Type.STRING } },
-            phrases: { 
-                type: Type.ARRAY, 
-                items: { 
-                    type: Type.OBJECT, 
-                    properties: { original: { type: Type.STRING }, meaning: { type: Type.STRING }, context: { type: Type.STRING } },
-                    required: ["original", "meaning", "context"]
-                } 
-            }
-        },
-        required: ["curiosities", "phrases"]
-    };
-
+/**
+ * Genera una postal artística de la ciudad usando Gemini 2.5 Flash Image
+ */
+export const generateCityPostcard = async (city: string, userInterests: string[]): Promise<string | null> => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `A cinematic, artistic travel postcard of ${city}. 
+        Focus on these themes: ${userInterests.join(', ')}. 
+        Style: Professional travel photography, vibrant colors, iconic landmarks in the background, high resolution. 
+        No text on the image.`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts: [{ text: prompt }] },
+            config: { imageConfig: { aspectRatio: "9:16" } }
+        });
+
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+        }
+        return null;
+    } catch (e) {
+        console.error("Image Gen Error:", e);
+        return null;
+    }
+};
+
+/**
+ * Obtiene información en tiempo real usando Google Search Grounding
+ */
+export const getRealTimeCityNews = async (city: string, language: string = 'es'): Promise<{text: string, sources: any[]}> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `¿Qué eventos importantes, clima o noticias hay hoy en ${city}? Responde en ${language}.`;
+        
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: prompt,
-            config: { responseMimeType: "application/json", responseSchema: schema }
+            config: { tools: [{ googleSearch: {} }] }
         });
-        return JSON.parse(response.text || "{}");
-    } catch (e) { return null; }
+
+        const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+        return { text: response.text || "", sources };
+    } catch (e) {
+        return { text: "No se pudo obtener información en tiempo real.", sources: [] };
+    }
 };
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
-  if (!text) return "";
-  const cleanedText = text.trim().substring(0, 5000);
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response: GenerateContentResponse = await ai.models.generateContent({ 
+    const response = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: cleanedText }] }], 
+      contents: [{ parts: [{ text: text.substring(0, 5000) }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } } 

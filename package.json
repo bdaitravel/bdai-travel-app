@@ -1,6 +1,6 @@
 
 {
-  "name": "techtravel-app",
+  "name": "bdai-app",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -8,10 +8,11 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "static-build": "vite build && npx cap copy",
-    "sync": "npm run build && npx cap sync",
-    "open-ios": "npx cap open ios",
-    "open-android": "npx cap open android"
+    "cap-sync": "npm run build && npx cap sync",
+    "add-android": "npx cap add android",
+    "add-ios": "npx cap add ios",
+    "open-android": "npx cap open android",
+    "open-ios": "npx cap open ios"
   },
   "dependencies": {
     "react": "^18.2.0",

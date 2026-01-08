@@ -9,27 +9,24 @@
     <meta name="apple-mobile-web-app-title" content="bdai">
     <meta name="theme-color" content="#020617">
     
+    <title>bdai | better destinations by ai</title>
+    
     <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb">
-    
-    <title>bdai | Better Destinations AI</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
       :root {
         --font-heading: 'Outfit', sans-serif;
-        --font-body: 'Inter', sans-serif;
         --sat: env(safe-area-inset-top);
         --sab: env(safe-area-inset-bottom);
       }
       body {
-        font-family: var(--font-body);
+        font-family: 'Outfit', sans-serif;
         background-color: #020617;
         overscroll-behavior: none;
         -webkit-tap-highlight-color: transparent;
@@ -38,28 +35,17 @@
         height: 100vh;
         width: 100vw;
         overflow: hidden;
-        user-select: none;
-        -webkit-user-select: none;
       }
-      #root {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-      .pt-safe { padding-top: calc(0.5rem + var(--sat)); }
-      .pb-safe { padding-bottom: calc(0.5rem + var(--sab)); }
-      .mb-safe { margin-bottom: var(--sab); }
+      #root { height: 100%; display: flex; flex-direction: column; }
+      /* Padding dinámico para iPhone con Notch y Android con barra gestual */
+      .pt-safe { padding-top: calc(1.5rem + var(--sat)); }
+      .pb-safe { padding-bottom: calc(1.5rem + var(--sab)); }
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-      .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-      .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-      
-      /* Optimización para inputs en móvil */
-      input, textarea { font-size: 16px !important; } 
+      .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      input, textarea { font-size: 16px !important; } /* Evita zoom automático en iOS */
     </style>
   <script type="importmap">
 {
@@ -83,15 +69,5 @@
     <div id="root"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="/index.tsx"></script>
-    <script>
-      // Registro simple de Service Worker para cumplimiento de PWA
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js').catch(err => {
-            console.log('SW registration failed: ', err);
-          });
-        });
-      }
-    </script>
   </body>
 </html>
