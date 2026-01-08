@@ -2,31 +2,53 @@
 import { GoogleGenAI, Modality, GenerateContentResponse, Type } from "@google/genai";
 import { Tour, Stop, UserProfile } from '../types';
 
-const LANGUAGE_MAP: Record<string, string> = {
-    es: "Castellano de ESPAÑA. Tono: Archivista Supremo, analítico, técnico y elegante. Evita clichés turísticos.",
-    en: "British English (Oxford standard). Professional and technical tone.",
-    ca: "Català. Tò acadèmic i tècnic.",
-    eu: "Euskera. Tonu teknikoa eta sakona.",
-    fr: "Français. Ton sophistiqué et technique."
+const LANGUAGE_RULES: Record<string, string> = {
+    es: "IDIOMA: Español de ESPAÑA. Usa distinción 'z/c' y 's'. TONO: Guía experto de Free Tour, técnico y culto.",
+    en: "LANGUAGE: British English. TONE: Professional urban planner and historian.",
+    ca: "IDIOMA: Català normatiu. TONO: Acadèmic, profund i tècnic. PROHIBIT usar castellà o anglès.",
+    eu: "IDIOMA: Euskara batua. TONO: Teknikoa eta sakona. PROHIBIT erabili gaztelania edo ingelesa.",
+    fr: "LANGUE: Français de France. TON: Expert local, sophistiqué et technique."
 };
 
 export const cleanDescriptionText = (text: string): string => {
-  return text.trim();
+    if (!text) return "";
+    return text
+        .replace(/\*\*/g, '')
+        .replace(/###/g, '')
+        .replace(/#/g, '')
+        .replace(/^- /g, '')
+        .replace(/^\d+\. /g, '')
+        .trim();
+};
+
+export const moderateContent = async (text: string): Promise<boolean> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Moderate this: "${text}"`,
+            config: { systemInstruction: "Reply ONLY with SAFE or UNSAFE." }
+        });
+        return response.text?.trim().toUpperCase() === 'SAFE';
+    } catch (e) { return true; }
 };
 
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile): Promise<Tour[] | 'QUOTA'> => {
-  const targetLanguage = LANGUAGE_MAP[userProfile.language] || LANGUAGE_MAP.es;
+  const langRule = LANGUAGE_RULES[userProfile.language] || LANGUAGE_RULES.es;
   
-  const prompt = `ERES EL ARCHIVISTA SUPREMO DE BDAI. GENERA EL TOUR DEFINITIVO PARA: ${cityInput}.
+  const prompt = `ACTÚA COMO UN ALGORITMO DE URBANISMO DE PRECISIÓN MILITAR Y GUÍA MAESTRO PARA: ${cityInput}.
   
-  REQUISITOS DE CONTENIDO (MÁXIMA CALIDAD):
-  1. TRAZADO LINEAL: Las paradas DEBEN formar una línea lógica de caminata (ej. Norte a Sur). Prohibido zigzag.
-  2. DENSIDAD DE INFORMACIÓN: Cada parada debe tener una descripción de MÍNIMO 250 palabras.
-  3. DATOS TÉCNICOS: Incluye detalles sobre arquitectura, ingeniería, geología local, materiales de construcción (sillar, granito, hierro) y secretos históricos validados.
-  4. TONO: Profesional, profundo, analítico. No uses frases genéricas de guía de viajes. Queremos "inteligencia de campo".
-  5. ESTRUCTURA: 12 paradas obligatorias.
-  6. IDIOMA: ${targetLanguage}.
-  7. NO USES ETIQUETAS: No añadas títulos como "SECRETO:", "DETALLE TÉCNICO:", etc. Integra la información de forma fluida en el texto.`;
+  REGLAS DE TRAZADO GEOGRÁFICO (PARA EVITAR VUELTAS ABSURDAS):
+  1. VECTOR LINEAL: Las 12 paradas DEBEN avanzar siempre hacia adelante en un vector geográfico claro (ej: alejándose del punto de inicio).
+  2. PROHIBIDO RETROCEDER: La Parada N+1 nunca puede estar más cerca del punto de inicio que la Parada N. 
+  3. COHERENCIA PEATONAL: La distancia entre paradas consecutivas debe ser de entre 100m y 400m máximo. Verifica coordenadas reales.
+  4. SIN SALTOS ERRÁTICOS: No cruces la ciudad de punta a punta. Elige un barrio y explótalo linealmente.
+  
+  REGLAS DE CONTENIDO:
+  1. TRADUCCIÓN NATIVA: Escribe TODO el JSON directamente en: ${langRule}.
+  2. DENSIDAD TÉCNICA EXTREMA (500 PALABRAS): Cada parada debe tener una descripción técnica profunda (500 palabras). Analiza ingeniería, historia cruda y materiales.
+  
+  ESTRUCTURA: Devuelve un array de 1 objeto Tour con sus 12 stops.`;
 
   const responseSchema = {
     type: Type.ARRAY,
@@ -77,26 +99,21 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         config: { 
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            thinkingConfig: { thinkingBudget: 16000 }
+            thinkingConfig: { thinkingBudget: 32000 }
         }
     });
-    
     const parsed = JSON.parse(response.text || "[]");
     return parsed.map((t: any, idx: number) => ({
-        ...t, 
-        id: `tour_${idx}_${Date.now()}`, 
-        city: cityInput,
+        ...t, id: `tour_${idx}_${Date.now()}`, city: cityInput,
         stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_${sIdx}`, visited: false }))
     }));
   } catch (error: any) { return []; }
 };
 
-export const generateHubIntel = async (query: string, language: string): Promise<any> => {
-    const prompt = `Analiza: ${query}. Dame inteligencia de campo.
-    1. Un "Secreto de Arquitecto" (detalle técnico curioso).
-    2. Una frase de supervivencia real.
-    3. Un evento clave 2026.
-    Idioma: ${LANGUAGE_MAP[language] || 'es'}.`;
+export const generateHubIntel = async (city: string, language: string = 'es'): Promise<any> => {
+    const langRule = LANGUAGE_RULES[language] || LANGUAGE_RULES.es;
+    const prompt = `ACTÚA COMO AGENTE DE INTELIGENCIA LOCAL. Genera datos profundos para: ${city}.
+    TODO EL CONTENIDO EN: ${langRule}. Proporciona curiosidades técnicas y frases de jerga real.`;
 
     const schema = {
         type: Type.OBJECT,
@@ -109,17 +126,9 @@ export const generateHubIntel = async (query: string, language: string): Promise
                     properties: { original: { type: Type.STRING }, meaning: { type: Type.STRING }, context: { type: Type.STRING } },
                     required: ["original", "meaning", "context"]
                 } 
-            },
-            events: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT, 
-                    properties: { title: { type: Type.STRING }, date: { type: Type.STRING }, importance: { type: Type.STRING } },
-                    required: ["title", "date", "importance"]
-                }
             }
         },
-        required: ["curiosities", "phrases", "events"]
+        required: ["curiosities", "phrases"]
     };
 
     try {
@@ -135,46 +144,17 @@ export const generateHubIntel = async (query: string, language: string): Promise
 
 export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
   if (!text) return "";
-  const cleanedText = cleanDescriptionText(text).substring(0, 5000);
-  
-  // Forzamos el acento peninsular mediante instrucción directa en el texto del TTS
-  const accentInstruction = language === 'es' ? "Lee con acento de España, castellano puro: " : "";
-  
+  const cleanedText = text.trim().substring(0, 5000);
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response: GenerateContentResponse = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `${accentInstruction}${cleanedText}` }] }], 
+      contents: [{ parts: [{ text: cleanedText }] }], 
       config: { 
         responseModalities: [Modality.AUDIO], 
-        speechConfig: { 
-          voiceConfig: { 
-            // Cambiamos a Zephyr que tiene un perfil fonético más adecuado para Europa
-            prebuiltVoiceConfig: { voiceName: 'Zephyr' } 
-          } 
-        } 
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } } 
       }
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
   } catch (e) { return ""; }
-};
-
-export const moderateContent = async (content: string): Promise<boolean> => {
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Safe? "${content}"`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: { isSafe: { type: Type.BOOLEAN } },
-          required: ["isSafe"]
-        }
-      }
-    });
-    const parsed = JSON.parse(response.text || '{"isSafe": true}');
-    return parsed.isSafe;
-  } catch (e) { return true; }
 };

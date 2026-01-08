@@ -1,6 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { Tour, UserProfile, LeaderboardEntry, HubIntel, SocialLinks } from '../types';
+import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
 const supabaseUrl = "https://slldavgsoxunkphqeamx.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
@@ -58,7 +58,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       savedIntel: Array.isArray(data.saved_intel) ? data.saved_intel : [],
       stats: data.stats || { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 },
       badges: Array.isArray(data.badges) ? data.badges : [],
-      socialLinks: data.social_links || {},
+      socialLinks: {}, 
       joinDate: data.join_date || data.created_at || new Date().toLocaleDateString(),
       passportNumber: data.passport_number || `XP-${data.id.substring(0,4).toUpperCase()}-BDAI`,
       isLoggedIn: true
@@ -69,7 +69,6 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
 export const syncUserProfile = async (user: UserProfile) => {
   if (!user || !user.isLoggedIn || user.id === 'guest') return;
   
-  // Limpiamos el payload de columnas que podrían faltar en el schema físico
   const payload: any = {
     id: user.id,
     email: user.email.toLowerCase().trim(),
@@ -95,13 +94,12 @@ export const syncUserProfile = async (user: UserProfile) => {
     saved_intel: user.savedIntel || [],
     stats: user.stats,
     badges: user.badges || [],
-    social_links: user.socialLinks || {},
     updated_at: new Date().toISOString()
   };
 
   try {
     const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
-    if (error) console.warn("Supabase Sync Sync Warning:", error.message);
+    if (error) console.warn("Supabase Sync Warning:", error.message);
   } catch (e) { 
     console.error("Critical Sync Error:", e);
   }

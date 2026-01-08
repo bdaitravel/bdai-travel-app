@@ -9,17 +9,16 @@ import { Shop } from './components/Shop';
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { FlagIcon } from './components/FlagIcon';
-import { HubDetailModal } from './components/HubDetailModal';
 import { Onboarding } from './components/Onboarding';
 import { STATIC_TOURS } from './data/toursData';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, supabase, getCachedTours, saveToursToCache, getCachedAudio, saveAudioToCache, syncUserProfile } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Hello,", explorer: "Explorer", searchPlaceholder: "Search city...", login: "Issue Passport", verify: "Verify", tagline: "better destinations by ai", loading: "Accessing Archives...", rankUp: "RANK INCREASED!", badgeUnlock: "NEW BADGE!", langSelect: "Choose Language", changeEmail: "Change email", otpPlaceholder: "CODE", resend: "Resend Code", spamNote: "Check your Spam/Junk folder" },
-  es: { welcome: "Hola,", explorer: "Explorador", searchPlaceholder: "Buscar ciudad...", login: "Emitir Pasaporte", verify: "Verificar", tagline: "better destinations by ai", loading: "Consultando Archivos...", rankUp: "¡SUBIDA DE RANGO!", badgeUnlock: "¡NUEVA INSIGNIA!", langSelect: "Elige Idioma", changeEmail: "Cambiar email", otpPlaceholder: "CÓDIGO", resend: "Reenviar código", spamNote: "Revisa tu carpeta de Spam o Correo no deseado" },
-  ca: { welcome: "Hola,", explorer: "Explorador", searchPlaceholder: "Cerca ciutat...", login: "Emetre Passaport", verify: "Validar", tagline: "better destinations by ai", loading: "Consultant Arxius...", rankUp: "¡PUIADA DE RANG!", badgeUnlock: "¡NOVA INSÍGNIA!", langSelect: "Tria Idioma", changeEmail: "Canviar email", otpPlaceholder: "CODI", resend: "Reenviar codi", spamNote: "Revisa el correu brossa" },
-  eu: { welcome: "Kaixo,", explorer: "Esploratzailea", searchPlaceholder: "Hiria bilatu...", login: "Pasaportea Lortu", verify: "Egiaztatu", tagline: "better destinations by ai", loading: "Artxiboak Kontsultatzen...", rankUp: "¡MAILA IGO DA!", badgeUnlock: "¡INTZIGNIA BERRIA!", langSelect: "Hizkuntza Aukeratu", changeEmail: "Emaila aldatu", otpPlaceholder: "KODEA", resend: "Kodea birbidali", spamNote: "Begiratu Spam karpeta" },
-  fr: { welcome: "Bonjour,", explorer: "Explorateur", searchPlaceholder: "Chercher ville...", login: "Passeport", verify: "Vérifier", tagline: "better destinations by ai", loading: "Consultation...", rankUp: "¡RANG AUGMENTÉ!", badgeUnlock: "NOUVEAU BADGE!", langSelect: "Choisir Langue", changeEmail: "Changer d'email", otpPlaceholder: "CODE", resend: "Renvoyer le code", spamNote: "Vérifiez vos spams" }
+  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", login: "Issue Passport", verify: "Verify Code", tagline: "better destinations by ai", loading: "Accessing Global Archives...", rankUp: "RANK INCREASED!", badgeUnlock: "NEW BADGE!", langSelect: "Select System Language", changeEmail: "Edit email", otpPlaceholder: "OTP CODE", resend: "Resend Code", spamNote: "If not received, check your Junk/Spam folder" },
+  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", login: "Emitir Pasaporte", verify: "Verificar Código", tagline: "better destinations by ai", loading: "Consultando Archivos Globales...", rankUp: "¡SUBIDA DE RANGO!", badgeUnlock: "¡NUEVA INSIGNIA!", langSelect: "Idioma del Sistema", changeEmail: "Editar email", otpPlaceholder: "CÓDIGO OTP", resend: "Reenviar código", spamNote: "Si no llega, revisa tu carpeta de Spam o Correo no deseado" },
+  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Emetre Passaport", verify: "Validar Codi", tagline: "better destinations by ai", loading: "Consultant Arxius Globals...", rankUp: "¡PUJADA DE RANG!", badgeUnlock: "¡NOVA INSÍGNIA!", langSelect: "Idioma del Sistema", changeEmail: "Canviar email", otpPlaceholder: "CODI OTP", resend: "Reenviar codi", spamNote: "Si no arriba, revisa el correu brossa" },
+  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu edozein hiri...", login: "Pasaportea Lortu", verify: "Kodea Egiaztatu", tagline: "better destinations by ai", loading: "Artxibo Globalak Kontsultatzen...", rankUp: "¡MAILA IGO DA!", badgeUnlock: "¡INTZIGNIA BERRIA!", langSelect: "Sistemaren Hizkuntza", changeEmail: "Emaila aldatu", otpPlaceholder: "OTP KODEA", resend: "Kodea birbidali", spamNote: "Iritsi ezean, begiratu Spam karpeta" },
+  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", login: "Émettre Passeport", verify: "Vérifier Code", tagline: "better destinations by ai", loading: "Consultation des Archives...", rankUp: "¡RANG AUGMENTÉ!", badgeUnlock: "NOUVEAU BADGE!", langSelect: "Langue du Système", changeEmail: "Modifier l'email", otpPlaceholder: "CODE OTP", resend: "Renvoyer le code", spamNote: "Vérifiez vos spams si vous ne recevez rien" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -152,7 +151,6 @@ export default function App() {
     setIsLoading(true);
 
     try {
-        // 1. PRIORIDAD: Buscar en Tours Estáticos (Logroño, etc.)
         const staticTour = STATIC_TOURS.find(t => t.city.toLowerCase() === cityNormalized);
         if (staticTour) {
             setTours([staticTour]);
@@ -160,7 +158,6 @@ export default function App() {
             return;
         }
 
-        // 2. Buscar en Caché de Supabase
         const cached = await getCachedTours(cityInput.trim(), user.language);
         if (cached && cached.length > 0) {
             setTours(cached);
@@ -168,7 +165,6 @@ export default function App() {
             return;
         }
 
-        // 3. Generar con IA si no hay nada más
         const res = await generateToursForCity(cityInput.trim(), user);
         if (Array.isArray(res)) {
             setTours(res);
