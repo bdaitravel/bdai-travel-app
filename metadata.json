@@ -1,8 +1,9 @@
 {
   "name": "bdai",
-  "description": "Better Destinations AI - Verified smart travel guides for Spain.",
+  "description": "Better Destinations AI - Tu guía de viajes inteligente con IA para todo el mundo.",
   "requestFramePermissions": [
     "geolocation",
+    "camera",
     "microphone"
   ]
 }

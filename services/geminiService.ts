@@ -13,7 +13,9 @@ const LANGUAGE_MAP: Record<string, string> = {
 
 export const cleanDescriptionText = (text: string): string => {
   return text
-    .replace(/(\*\*|__)?(SECCIÓN NARRATIVA|EL SECRETO|DETALLE ARQUITECTÓNICO|NARRATIVA|SECRETO|DETALLE|HISTORIA|CURIOSIDAD):?(\*\*|__)?/gi, '')
+    .replace(/(\*\*|__)?(SECCIÓN NARRATIVA|EL SECRETO DE DAI|SECRETO DE DAI|TÁCTICA DE DAI|EL SECRETO|DETALLE ARQUITECTÓNICO|NARRATIVA|SECRETO|DETALLE|HISTORIA|CURIOSIDAD):?(\*\*|__)?/gi, '')
+    .replace(/^(El )?Secreto de Dai:?/gi, '')
+    .replace(/^De Dai:?/gi, '')
     .replace(/\[.*?\]/g, '')
     .replace(/\*+/g, '')
     .trim();
@@ -42,22 +44,26 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const cached = await getCachedTours(cityInput, userProfile.language);
   if (cached && cached.length > 0) return cached;
 
-  const prompt = `PERSONALIDAD: GUÍA DE "FREE TOUR" DE ÉLITE. Experto, carismático, buscador de propinas morales.
+  const prompt = `PERSONALIDAD: GUÍA DE "FREE TOUR" DE ÉLITE. Experto, carismático y sofisticado.
   CIUDAD/PUEBLO: ${cityInput}. 
   IDIOMA: ${targetLanguage}.
   PERFIL USUARIO: Interesado en [${userInterests}].
   
-  TAREA: Crear 2 rutas a pie (10 paradas c/u) estilo 'Free Tour'.
+  TAREA: Crear 2 rutas a pie (10 paradas c/u).
   
-  ESTRUCTURA 'FREE TOUR' MAGISTRAL:
-  1. No recites fechas aburridas. Cuéntame el CHISME HISTÓRICO.
-  2. "El Secreto de Dai": En cada parada, revela algo que el 99% de los turistas (y locales) pasan por alto. Un símbolo oculto, una tragedia olvidada o un detalle visual sorprendente.
-  3. Adapta el tono a los intereses del usuario (${userInterests}).
-  4. La narrativa debe ser larga y envolvente (mínimo 800 palabras por parada), como si estuvieras allí guiándome por el brazo.
+  REGLAS DE RUTA (CRÍTICO):
+  1. ORDEN GEOGRÁFICO LÓGICO: Las paradas deben formar un recorrido CONTINUO y SECUENCIAL. 
+  2. NO VOLVER ATRÁS: El usuario debe caminar del punto A al B, del B al C, etc., sin cruzar la ciudad de forma caótica.
+  3. CERCANÍA: Cada parada debe estar a menos de 10 minutos a pie de la anterior.
+  
+  REGLAS NARRATIVAS:
+  1. NO uses etiquetas ("Secreto de Dai:", etc). Empieza directamente con la historia.
+  2. Revela el CHISME HISTÓRICO con elegancia.
+  3. Mínimo 800 palabras por parada para una experiencia inmersiva.
   
   ESTILO: 
-  Ruta 1: "Lo Imprescindible y sus Sombras" (Centro histórico con giros inesperados).
-  Ruta 2: "El Lado Oculto" (Barrios menos conocidos, callejones con historia real, leyendas negras).
+  Ruta 1: "Lo Imprescindible y sus Sombras" (Centro histórico).
+  Ruta 2: "El Lado Oculto" (Leyendas y rincones secretos).
   
   FORMATO: JSON puro respetando el esquema.`;
 
@@ -132,7 +138,7 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const voicePrompt = language === 'es' 
-      ? `Actúa como Dai, guía local de élite de España. Habla con un acento castellano impecable, cálido y envolvente. Cuéntame este secreto como si estuviéramos tomando un café: ${cleanedText}`
+      ? `Actúa como un guía local de élite. Habla con un acento castellano impecable, cálido y envolvente. Narra esto como una confidencia entre amigos: ${cleanedText}`
       : cleanedText;
 
     const response: GenerateContentResponse = await ai.models.generateContent({ 

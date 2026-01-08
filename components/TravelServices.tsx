@@ -11,19 +11,41 @@ const CATEGORIES = [
 ];
 
 const EXPLORE_GRID = [
-    { name: 'Madrid', theme: 'Kilómetro Cero', cat: 'cities', color: 'from-blue-700 to-indigo-950', icon: 'fa-bear-combined' },
+    // METRÓPOLIS
+    { name: 'Madrid', theme: 'Kilómetro Cero', cat: 'cities', color: 'from-blue-700 to-indigo-950', icon: 'fa-building-columns' },
+    { name: 'Vitoria', theme: 'Green Capital', cat: 'cities', color: 'from-green-600 to-emerald-950', icon: 'fa-leaf' },
     { name: 'Barcelona', theme: 'Modernismo', cat: 'cities', color: 'from-red-600 to-amber-900', icon: 'fa-monument' },
     { name: 'Sevilla', theme: 'Duende y Arte', cat: 'cities', color: 'from-orange-500 to-red-800', icon: 'fa-fan' },
     { name: 'Valencia', theme: 'Fuego y Mar', cat: 'cities', color: 'from-amber-400 to-orange-700', icon: 'fa-fire' },
+    { name: 'Bilbao', theme: 'Vanguardia', cat: 'cities', color: 'from-slate-700 to-zinc-900', icon: 'fa-shuttle-space' },
     { name: 'Málaga', theme: 'Costa del Sol', cat: 'cities', color: 'from-cyan-500 to-blue-800', icon: 'fa-umbrella-beach' },
-    { name: 'Logroño', theme: 'Tierra de Vino', cat: 'cities', color: 'from-purple-700 to-rose-950', icon: 'fa-grapes' },
-    { name: 'Albarracín', theme: 'Pueblo Mágico', cat: 'villages', color: 'from-orange-600 to-amber-900', icon: 'fa-chess-rook' },
-    { name: 'Girona', theme: 'History Hub', cat: 'cities', color: 'from-amber-700 to-yellow-900', icon: 'fa-fort-awesome' }
+
+    // PUEBLOS MÁGICOS
+    { name: 'Albarracín', theme: 'Murallas Rojas', cat: 'villages', color: 'from-orange-600 to-amber-900', icon: 'fa-chess-rook' },
+    { name: 'Cadaqués', theme: 'Refugio Dalí', cat: 'villages', color: 'from-blue-400 to-slate-200', icon: 'fa-anchor' },
+    { name: 'Ronda', theme: 'El Tajo Eterno', cat: 'villages', color: 'from-stone-500 to-orange-900', icon: 'fa-bridge' },
+    { name: 'Cudillero', theme: 'Anfiteatro Mar', cat: 'villages', color: 'from-emerald-400 to-blue-600', icon: 'fa-ship' },
+    { name: 'Valldemossa', theme: 'Cartuja Real', cat: 'villages', color: 'from-green-700 to-stone-800', icon: 'fa-leaf' },
+    { name: 'Frigiliana', theme: 'Blanco Puro', cat: 'villages', color: 'from-slate-50 to-blue-100', icon: 'fa-sun' },
+
+    // GASTRO GEMS
+    { name: 'San Sebastián', theme: 'Pintxos de Élite', cat: 'gastro', color: 'from-blue-800 to-emerald-900', icon: 'fa-utensils' },
+    { name: 'Logroño', theme: 'Calle Laurel', cat: 'gastro', color: 'from-purple-700 to-rose-950', icon: 'fa-grapes' },
+    { name: 'Sanlúcar', theme: 'Manzanilla y Mar', cat: 'gastro', color: 'from-amber-500 to-orange-800', icon: 'fa-wine-glass' },
+    { name: 'Segovia', theme: 'Asado Real', cat: 'gastro', color: 'from-amber-700 to-stone-900', icon: 'fa-piggy-bank' },
+    { name: 'Jabugo', theme: 'Templo del Jamón', cat: 'gastro', color: 'from-red-800 to-zinc-950', icon: 'fa-drumstick-bite' },
+
+    // HIDDEN GEMS
+    { name: 'Setenil', theme: 'Bajo la Roca', cat: 'secret', color: 'from-stone-600 to-zinc-900', icon: 'fa-mountain' },
+    { name: 'Siurana', theme: 'Salto de Reina', cat: 'secret', color: 'from-rose-700 to-amber-950', icon: 'fa-mountain-sun' },
+    { name: 'Morella', theme: 'Gótico de Interior', cat: 'secret', color: 'from-slate-800 to-indigo-950', icon: 'fa-castle' },
+    { name: 'Alquézar', theme: 'Cañones de Agua', cat: 'secret', color: 'from-teal-600 to-blue-900', icon: 'fa-water' },
+    { name: 'Guadalupe', theme: 'Monasterio Místico', cat: 'secret', color: 'from-amber-600 to-stone-800', icon: 'fa-cross' }
 ];
 
 const TRENDING_2026 = [
-    { name: 'Seúl', theme: 'K-Future', icon: 'fa-k' },
-    { name: 'Riad', theme: 'Visión 2030', icon: 'fa-palace' },
+    { name: 'Seúl', theme: 'K-Future', icon: 'fa-tower-observation' },
+    { name: 'Riad', theme: 'Visión 2030', icon: 'fa-landmark-dome' },
     { name: 'CDMX', theme: 'Gastro Hub', icon: 'fa-pepper-hot' },
     { name: 'Tokio', theme: 'Neo-Tradition', icon: 'fa-torii-gate' },
     { name: 'Oslo', theme: 'Eco-Avant-Garde', icon: 'fa-leaf' }
@@ -38,7 +60,7 @@ const FIESTAS: HubIntel[] = [
         color: 'from-zinc-700 to-black', 
         icon: 'fa-paint-roller', 
         description: 'Un ritual de barro y pintura que se remonta al siglo XV. El "Cascamorras" debe cruzar la ciudad de Baza sin ser manchado para recuperar una virgen sagrada.',
-        details: 'Secreto de Dai: La pintura que se usa hoy es una mezcla ecológica de aceite vegetal y hollín. El Cascamorras real tiene un entrenamiento físico de atleta de élite para aguantar las horas de asedio.'
+        details: 'La pintura que se usa hoy es una mezcla ecológica de aceite vegetal y hollín. El Cascamorras real tiene un entrenamiento físico de atleta de élite.'
     },
     { 
         id: 'f2', 
@@ -47,8 +69,8 @@ const FIESTAS: HubIntel[] = [
         location: 'Valencia', 
         color: 'from-orange-500 to-red-600', 
         icon: 'fa-fire', 
-        description: 'Monumentos efímeros de madera y cartón que arden en la Nit de la Cremà. Un festival de pólvora (Mascletà) y arte satírico único en el mundo.',
-        details: 'Dato de Élite: Las figuras más altas pueden superar los 20 metros de altura y costar más de 200.000 euros, solo para ser reducidas a cenizas en cuestión de minutos.'
+        description: 'Monumentos efímeros de madera y cartón que arden en la Nit de la Cremà. Un festival de pólvora (Mascletà) y arte satírico único.',
+        details: 'Las figuras más altas pueden superar los 20 metros de altura y costar más de 200.000 euros.'
     }
 ];
 
@@ -60,8 +82,8 @@ const CURIOSIDADES: HubIntel[] = [
         location: 'Madrid', 
         icon: 'fa-utensils', 
         color: 'from-amber-700 to-orange-950',
-        description: 'Fundado en 1725, es el restaurante más antiguo del mundo según el Guinness. Su horno nunca se ha apagado totalmente para mantener el alma de sus asados.',
-        details: 'Intel Exclusivo: Francisco de Goya trabajó aquí fregando platos antes de ser el pintor de cámara del Rey.'
+        description: 'Fundado en 1725, es el restaurante más antiguo del mundo según el Guinness. Su horno nunca se ha apagado totalmente.',
+        details: 'Francisco de Goya trabajó aquí fregando platos antes de ser el pintor de cámara del Rey.'
     },
     { 
         id: 'c3', 
@@ -70,8 +92,8 @@ const CURIOSIDADES: HubIntel[] = [
         location: 'Logroño', 
         icon: 'fa-wine-glass', 
         color: 'from-purple-600 to-indigo-900',
-        description: 'La zona de pinchos más famosa de La Rioja. Cada bar tiene su especialidad "estrella" que debes probar acompañada de un tinto local.',
-        details: 'Táctica de Dai: Pide el "Matrimonio" (anchoa y boquerón) o el "Champi" del Bar Soriano. Es el corazón gastro de la ciudad.'
+        description: 'La zona de pinchos más famosa de La Rioja. Cada bar tiene su especialidad "estrella".',
+        details: 'Consejo local: Pide el "Matrimonio" (anchoa y boquerón) o el "Champi" del Bar Soriano.'
     }
 ];
 
@@ -83,8 +105,8 @@ const GASTRO_ES: HubIntel[] = [
         location: 'Toda España', 
         icon: 'fa-egg', 
         color: 'from-yellow-400 to-amber-600',
-        description: 'El ADN de nuestra cocina. Patata, huevo, sal y (según los puristas de Dai) cebolla muy pochada.',
-        details: 'Dato de Élite: El primer documento que la menciona es de 1817, en las Cortes de Navarra. Se inventó como plato nutritivo y barato para las tropas.'
+        description: 'El ADN de nuestra cocina. Patata, huevo, sal y cebolla muy pochada.',
+        details: 'El primer documento que la menciona es de 1817, en las Cortes de Navarra.'
     },
     { 
         id: 'g2', 
@@ -93,8 +115,8 @@ const GASTRO_ES: HubIntel[] = [
         location: 'Madrid', 
         icon: 'fa-bowl-food', 
         color: 'from-orange-400 to-red-800',
-        description: 'Un ritual en tres vuelcos: sopa, legumbres y carnes. Es el corazón del invierno en la capital.',
-        details: 'Regla de Oro: Se debe comer sin prisa. Los mejores se cocinan en ollas de barro individuales sobre fuego de encina durante más de 6 horas.'
+        description: 'Un ritual en tres vuelcos: sopa, legumbres y carnes.',
+        details: 'Los mejores se cocinan en ollas de barro individuales sobre fuego de encina durante más de 6 horas.'
     },
     { 
         id: 'g3', 
@@ -103,8 +125,8 @@ const GASTRO_ES: HubIntel[] = [
         location: 'Galicia', 
         icon: 'fa-fish-fins', 
         color: 'from-red-500 to-rose-900',
-        description: 'Servido sobre plato de madera con aceite de oliva, sal gorda y pimentón de la Vera.',
-        details: 'Táctica de Dai: Para que no quede duro, el pulpo se debe "asustar" tres veces metiéndolo y sacándolo del agua hirviendo antes de la cocción definitiva.'
+        description: 'Servido sobre plato de madera con aceite de oliva, sal gorda y pimentón.',
+        details: 'Se debe "asustar" tres veces metiéndolo y sacándolo del agua hirviendo antes de la cocción.'
     }
 ];
 
@@ -147,7 +169,7 @@ export const TravelServices: React.FC<{
                     <div className="flex justify-between items-end mb-6">
                         <div>
                             <h3 className="text-xs font-black text-white uppercase tracking-[0.4em]">City Secrets</h3>
-                            <p className="text-[8px] text-amber-400 uppercase tracking-widest mt-1">Descubrimientos de Dai</p>
+                            <p className="text-[8px] text-amber-400 uppercase tracking-widest mt-1">Descubrimientos verificados</p>
                         </div>
                         <i className="fas fa-eye text-amber-500"></i>
                     </div>
@@ -197,23 +219,42 @@ export const TravelServices: React.FC<{
     return (
         <div className="space-y-12 pb-24">
             <section className="px-8 mt-4">
-                <div className="relative h-64 w-full rounded-[3rem] overflow-hidden group shadow-2xl border border-white/10 bg-[#020617]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-indigo-950/20 to-black z-0"></div>
-                    <div className="relative z-20 h-full p-8 flex flex-col justify-between">
-                        <div>
-                            <div className="bg-purple-600 text-white text-[8px] font-black uppercase tracking-[0.3em] py-1 px-3 rounded-full w-fit mb-3">Expedición 2026</div>
-                            <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">Descubre el<br/><span className="text-purple-400">Próximo Mundo</span></h3>
+                <div className="relative h-[340px] w-full rounded-[3.5rem] overflow-hidden group shadow-[0_40px_100px_rgba(0,0,0,0.6)] border border-white/10 bg-slate-950">
+                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #4f46e5 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-transparent to-black z-0"></div>
+                    
+                    <div className="relative z-20 h-full p-10 flex flex-col">
+                        <div className="mb-10 animate-fade-in">
+                            <div className="inline-flex items-center gap-2 bg-purple-600/20 backdrop-blur-md text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] py-2 px-4 rounded-full border border-purple-500/30 mb-5">
+                                <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                                Expedición 2026
+                            </div>
+                            <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-[0.9] drop-shadow-2xl">
+                                Descubre el<br/>
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-300">Próximo Mundo</span>
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-4 opacity-60">Metrópolis en tendencia orbital</p>
                         </div>
-                        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                            {TRENDING_2026.map(city => (
-                                <div key={city.name} onClick={() => onCitySelect(city.name)} className="min-w-[130px] h-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-4 flex flex-col justify-between group/item cursor-pointer hover:bg-white/10 transition-all border-l-purple-500/50">
-                                    <i className={`fas ${city.icon} text-[10px] text-purple-400`}></i>
-                                    <div>
-                                        <p className="text-[7px] font-black text-white/40 uppercase tracking-widest mb-0.5">{city.theme}</p>
-                                        <p className="text-xs font-black text-white uppercase">{city.name}</p>
+                        
+                        <div className="mt-auto -mx-10 overflow-hidden">
+                            <div className="flex gap-5 overflow-x-auto no-scrollbar pb-10 px-10 snap-x">
+                                {TRENDING_2026.map(city => (
+                                    <div 
+                                        key={city.name} 
+                                        onClick={() => onCitySelect(city.name)} 
+                                        className="min-w-[150px] h-28 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 p-5 flex flex-col justify-between group/item cursor-pointer hover:bg-white/15 transition-all snap-center border-l-4 border-l-purple-500"
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <i className={`fas ${city.icon} text-lg text-white/40 group-hover/item:text-purple-400 transition-colors`}></i>
+                                            <i className="fas fa-arrow-up-right text-[10px] text-white/10 group-hover/item:text-white/40"></i>
+                                        </div>
+                                        <div>
+                                            <p className="text-[7px] font-black text-purple-400 uppercase tracking-widest mb-1">{city.theme}</p>
+                                            <p className="text-sm font-black text-white uppercase tracking-tighter">{city.name}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

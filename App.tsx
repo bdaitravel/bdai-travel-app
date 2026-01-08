@@ -10,6 +10,8 @@ import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { FlagIcon } from './components/FlagIcon';
 import { HubDetailModal } from './components/HubDetailModal';
+import { Onboarding } from './components/Onboarding';
+import { STATIC_TOURS } from './data/toursData';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, supabase, getCachedTours, syncUserProfile } from './services/supabaseClient';
 
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -77,6 +79,7 @@ const GUEST_PROFILE: UserProfile = {
 export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [loginStep, setLoginStep] = useState<'FORM' | 'VERIFY'>('FORM');
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -104,6 +107,11 @@ export default function App() {
   const [selectedHubIntel, setSelectedHubIntel] = useState<HubIntel | null>(null);
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
         pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
@@ -121,10 +129,21 @@ export default function App() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
             const profile = await getUserProfileByEmail(session.user.email!);
-            const finalUser = profile ? { ...profile, isLoggedIn: true } : { ...GUEST_PROFILE, id: session.user.id, email: session.user.email!, isLoggedIn: true };
-            setUser(finalUser);
-            localStorage.setItem('bdai_profile', JSON.stringify(finalUser));
-            setView(AppView.HOME);
+            if (profile) {
+                const finalUser = { ...profile, isLoggedIn: true };
+                setUser(finalUser);
+                localStorage.setItem('bdai_profile', JSON.stringify(finalUser));
+                setView(AppView.HOME);
+                if (!profile.interests || profile.interests.length === 0) {
+                    setShowOnboarding(true);
+                }
+            } else {
+                // Si no hay perfil, es un nuevo usuario
+                const newUser = { ...GUEST_PROFILE, id: session.user.id, email: session.user.email!, isLoggedIn: true };
+                setUser(newUser);
+                setView(AppView.HOME);
+                setShowOnboarding(true);
+            }
         }
     };
     checkSession();
@@ -135,6 +154,12 @@ export default function App() {
     setUser(updatedUser);
     localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
     if (updatedUser.isLoggedIn) syncUserProfile(updatedUser);
+  };
+
+  const handleOnboardingComplete = (interests: string[]) => {
+    const updatedUser = { ...user, interests };
+    handleUpdateProfile(updatedUser);
+    setShowOnboarding(false);
   };
 
   const handleSendOtp = async () => {
@@ -177,14 +202,21 @@ export default function App() {
   const handleCitySelect = async (cityInput: string) => {
     const city = cityInput.trim().split(' ')[0].replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
     setSelectedCity(city);
+    setView(AppView.CITY_DETAIL);
+
+    const staticMatch = STATIC_TOURS.filter(t => t.city.toLowerCase() === city.toLowerCase());
+    if (staticMatch.length > 0) {
+        setTours(staticMatch);
+        return;
+    }
+
     const cached = await getCachedTours(city, user.language);
     if (cached && cached.length > 0) {
         setTours(cached);
-        setView(AppView.CITY_DETAIL);
         return; 
     }
+
     setIsLoading(true);
-    setView(AppView.CITY_DETAIL);
     try {
         const res = await generateToursForCity(city, user);
         setTours(Array.isArray(res) ? res : []);
@@ -206,11 +238,14 @@ export default function App() {
     const totalReward = 50 + (stop.photoSpot?.milesReward || 0);
     const updatedTour = { ...activeTour, stops: activeTour.stops.map(s => s.id === stopId ? {...s, visited: true} : s) };
     setActiveTour(updatedTour);
-    handleUpdateProfile({
+    
+    const updatedUser = {
         ...user,
         miles: (user.miles || 0) + totalReward,
         visitedCities: user.visitedCities.includes(activeTour.city) ? user.visitedCities : [...user.visitedCities, activeTour.city]
-    });
+    };
+    handleUpdateProfile(updatedUser);
+    
     setMilesToast({show: true, amount: totalReward});
     setTimeout(() => setMilesToast({show: false, amount: 0}), 2000);
   };
@@ -228,6 +263,9 @@ export default function App() {
           await syncUserProfile(newUser);
           setIsLoading(false);
           setView(AppView.HOME);
+          if (!newUser.interests || newUser.interests.length === 0) {
+            setShowOnboarding(true);
+          }
       }
   };
 
@@ -258,8 +296,16 @@ export default function App() {
   };
 
   return (
-    <div className="max-w-md mx-auto h-screen bg-[#020617] flex flex-col shadow-2xl relative overflow-hidden text-slate-100 font-sans">
+    <div className="max-w-md mx-auto h-screen bg-[#020617] flex flex-col shadow-2xl relative overflow-hidden text-slate-100 font-sans select-none">
       
+      {showOnboarding && (
+          <Onboarding 
+            language={user.language} 
+            onLanguageSelect={(lang) => setUser(p => ({...p, language: lang}))} 
+            onComplete={handleOnboardingComplete} 
+          />
+      )}
+
       {milesToast.show && (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[2000] animate-bounce pointer-events-none">
               <div className="bg-yellow-500 text-slate-950 px-6 py-3 rounded-full font-black text-xl shadow-[0_20px_60px_rgba(234,179,8,0.6)] border-4 border-white flex flex-col items-center">

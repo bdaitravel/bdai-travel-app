@@ -32,49 +32,104 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
   try {
     const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase().trim()).maybeSingle();
     if (error || !data) return null;
+    
     return {
-      ...data, 
-      firstName: data.first_name || '', 
+      id: data.id,
+      email: data.email,
+      firstName: data.first_name || '',
       lastName: data.last_name || '',
-      visitedCities: Array.isArray(data.visited_cities) ? data.visited_cities : [], 
-      completedTours: Array.isArray(data.completed_tours) ? data.completed_tours : [],
-      interests: Array.isArray(data.interests) ? data.interests : [], 
-      badges: Array.isArray(data.badges) ? data.badges : [],
-      savedIntel: Array.isArray(data.saved_intel) ? data.saved_intel : [],
+      name: data.name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Traveler',
+      username: data.username || 'traveler',
+      avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username || 'Explorer'}`,
+      language: data.language || 'es',
       miles: data.miles || 0,
-      isLoggedIn: true,
-      joinDate: data.join_date || data.created_at || new Date().toLocaleDateString()
+      rank: data.rank || 'Turist',
+      culturePoints: data.culture_points || 0,
+      foodPoints: data.food_points || 0,
+      photoPoints: data.photo_points || 0,
+      interests: Array.isArray(data.interests) ? data.interests : [],
+      accessibility: data.accessibility || 'standard',
+      isPublic: data.is_public ?? false,
+      bio: data.bio || '',
+      age: data.age || 25,
+      birthday: data.birthday || '',
+      visitedCities: Array.isArray(data.visited_cities) ? data.visited_cities : [],
+      completedTours: Array.isArray(data.completed_tours) ? data.completed_tours : [],
+      savedIntel: Array.isArray(data.saved_intel) ? data.saved_intel : [],
+      stats: data.stats || { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 },
+      badges: Array.isArray(data.badges) ? data.badges : [],
+      joinDate: data.join_date || data.created_at || new Date().toLocaleDateString(),
+      passportNumber: data.passport_number || `XP-${data.id.substring(0,4).toUpperCase()}-BDAI`,
+      isLoggedIn: true
     } as UserProfile;
   } catch (e) { return null; }
 };
 
 export const syncUserProfile = async (user: UserProfile) => {
   if (!user || !user.isLoggedIn || user.id === 'guest') return;
+  
+  // Mapeo riguroso de camelCase a snake_case según el esquema de Supabase
   const payload: any = {
     id: user.id,
+    email: user.email.toLowerCase().trim(),
+    name: user.name || `${user.firstName} ${user.lastName}`.trim(),
     first_name: user.firstName,
     last_name: user.lastName,
-    email: user.email.toLowerCase().trim(),
     username: user.username,
+    avatar: user.avatar,
+    language: user.language || 'es',
     miles: user.miles || 0,
     rank: user.rank || 'Turist',
-    language: user.language || 'es',
-    join_date: user.joinDate || new Date().toLocaleDateString(),
+    culture_points: user.culturePoints || 0,
+    food_points: user.foodPoints || 0,
+    photo_points: user.photoPoints || 0,
+    interests: user.interests || [],
+    accessibility: user.accessibility || 'standard',
+    is_public: user.isPublic,
+    bio: user.bio,
+    age: user.age,
+    birthday: user.birthday,
+    visited_cities: user.visitedCities || [],
+    completed_tours: user.completedTours || [],
     saved_intel: user.savedIntel || [],
+    stats: user.stats,
+    badges: user.badges || [],
+    join_date: user.joinDate,
+    passport_number: user.passportNumber,
     updated_at: new Date().toISOString()
   };
+
   try {
-    await supabase.from('profiles').upsert(payload, { onConflict: 'email' });
-  } catch (e) { }
+    const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+    if (error) {
+        console.group("🛑 Supabase Sync Error");
+        console.error("Mensaje:", error.message);
+        console.error("Detalle:", error.details);
+        console.warn("SOLUCIÓN: Asegúrate de haber ejecutado el script SQL para actualizar la tabla 'profiles'.");
+        console.groupEnd();
+    }
+  } catch (e) { 
+    console.error("Error crítico en la sincronización:", e);
+  }
 };
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
     try {
-        const { data, error } = await supabase.from('profiles').select('id, first_name, last_name, username, miles, rank').order('miles', { ascending: false }).limit(10);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, username, miles, rank, avatar, name')
+          .order('miles', { ascending: false })
+          .limit(10);
+        
         if (error) return [];
         return data.map((d, index) => ({
-            id: d.id, name: `${d.first_name || ''} ${d.last_name || ''}`, username: d.username,
-            avatar: '', miles: d.miles || 0, rank: index + 1, isPublic: true
+            id: d.id, 
+            name: d.name || `${d.first_name || ''} ${d.last_name || ''}`.trim() || d.username, 
+            username: d.username,
+            avatar: d.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.username}`, 
+            miles: d.miles || 0, 
+            rank: index + 1, 
+            isPublic: true
         }));
     } catch (e) { return []; }
 };
