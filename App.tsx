@@ -13,7 +13,7 @@ import { HubDetailModal } from './components/HubDetailModal';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, supabase, getCachedTours, syncUserProfile } from './services/supabaseClient';
 
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371e3; // Radio de la Tierra en metros
+  const R = 6371e3;
   const φ1 = lat1 * Math.PI / 180;
   const φ2 = lat2 * Math.PI / 180;
   const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -68,10 +68,10 @@ const TRANSLATIONS: any = {
 const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Explorer', 
-  email: '', language: 'es', miles: 1250, rank: 'Explorer', culturePoints: 10, foodPoints: 5, photoPoints: 15, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, birthday: '1998-05-12', 
-  visitedCities: ['Madrid', 'Tokio', 'Sevilla'], 
-  completedTours: [], savedIntel: [], stats: { photosTaken: 12, guidesBought: 1, sessionsStarted: 5, referralsCount: 0 }, 
-  badges: [], joinDate: '21/05/2025', passportNumber: 'XP-8821-BDAI', city: 'Madrid', country: 'España'
+  email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, birthday: '2000-01-01', 
+  visitedCities: [], 
+  completedTours: [], savedIntel: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, 
+  badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: 'XP-TEMP-BDAI', city: '', country: ''
 };
 
 export default function App() {
@@ -137,30 +137,40 @@ export default function App() {
     if (updatedUser.isLoggedIn) syncUserProfile(updatedUser);
   };
 
+  const handleSendOtp = async () => {
+    if (!email || !email.includes('@')) {
+      setAuthError("Introduce un email válido");
+      return;
+    }
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      const { error } = await sendOtpEmail(email);
+      if (error) {
+        setAuthError(error.message === "Email rate limit exceeded" ? "Demasiados intentos. Espera 1 minuto." : "Error al enviar el código. Revisa el correo.");
+      } else {
+        setLoginStep('VERIFY');
+      }
+    } catch (e) {
+      setAuthError("Error de conexión con el servidor.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSaveHubIntel = () => {
     if (!selectedHubIntel) return;
-    
-    // Clonamos el array de intel para evitar mutaciones directas
     const currentSaved = Array.isArray(user.savedIntel) ? [...user.savedIntel] : [];
     const isAlreadySaved = currentSaved.some(i => i.id === selectedHubIntel.id);
-    
     let updatedUser;
     if (isAlreadySaved) {
-        updatedUser = { 
-          ...user, 
-          savedIntel: currentSaved.filter(i => i.id !== selectedHubIntel.id) 
-        };
+        updatedUser = { ...user, savedIntel: currentSaved.filter(i => i.id !== selectedHubIntel.id) };
     } else {
         const newIntelItem = { ...selectedHubIntel, savedAt: new Date().toISOString() };
-        updatedUser = { 
-            ...user, 
-            savedIntel: [...currentSaved, newIntelItem],
-            miles: user.miles + 10 
-        };
+        updatedUser = { ...user, savedIntel: [...currentSaved, newIntelItem], miles: (user.miles || 0) + 10 };
         setMilesToast({show: true, amount: 10, text: "Intel Archivado"});
         setTimeout(() => setMilesToast({show: false, amount: 0}), 2000);
     }
-    
     handleUpdateProfile(updatedUser);
   };
 
@@ -190,18 +200,15 @@ export default function App() {
     if (!stop || stop.visited) return;
     const dist = getDistance(userLocation.lat, userLocation.lng, stop.latitude, stop.longitude);
     if (dist > 150) {
-        alert(`Distancia: ${Math.round(dist)}m. Estás fuera del radio de verificación (150m). ¡Acércate al monumento para reclamar tus millas!`);
+        alert(`Distancia: ${Math.round(dist)}m. Acércate al monumento para reclamar millas.`);
         return;
     }
     const totalReward = 50 + (stop.photoSpot?.milesReward || 0);
-    const updatedTour = {
-        ...activeTour,
-        stops: activeTour.stops.map(s => s.id === stopId ? {...s, visited: true} : s)
-    };
+    const updatedTour = { ...activeTour, stops: activeTour.stops.map(s => s.id === stopId ? {...s, visited: true} : s) };
     setActiveTour(updatedTour);
     handleUpdateProfile({
         ...user,
-        miles: user.miles + totalReward,
+        miles: (user.miles || 0) + totalReward,
         visitedCities: user.visitedCities.includes(activeTour.city) ? user.visitedCities : [...user.visitedCities, activeTour.city]
     });
     setMilesToast({show: true, amount: totalReward});
@@ -210,14 +217,16 @@ export default function App() {
 
   const handleVerifyOtp = async () => {
       setAuthError(null);
+      setIsLoading(true);
       const { data, error } = await verifyOtpCode(email, otpCode);
-      if (error) { setAuthError("Código incorrecto."); return; }
+      if (error) { setAuthError("Código incorrecto o caducado."); setIsLoading(false); return; }
       if (data.user || data.session) {
           const profile = await getUserProfileByEmail(email);
           const newUser = profile ? { ...profile, isLoggedIn: true } : { ...GUEST_PROFILE, id: data.user?.id || 'new', email: email, isLoggedIn: true };
           setUser(newUser);
           localStorage.setItem('bdai_profile', JSON.stringify(newUser));
           await syncUserProfile(newUser);
+          setIsLoading(false);
           setView(AppView.HOME);
       }
   };
@@ -276,7 +285,6 @@ export default function App() {
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-center p-10 bg-[#020617]">
-              {/* Traducción Flags Restore */}
               <div className="absolute top-12 flex gap-4 bg-white/5 backdrop-blur-xl p-2 rounded-full border border-white/10">
                   {LANGUAGES.map(l => (
                       <button key={l.code} onClick={() => setUser(p => ({...p, language: l.code}))} className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all ${user.language === l.code ? 'border-purple-500 scale-110' : 'border-transparent opacity-30 grayscale'}`}>
@@ -286,20 +294,28 @@ export default function App() {
               </div>
 
               <div className="text-center mb-12 animate-fade-in flex flex-col items-center">
-                  <BdaiLogo className="w-56 h-56 mb-6 drop-shadow-[0_0_40px_rgba(168,85,247,0.3)]" />
-                  <h1 className="text-4xl font-black lowercase tracking-tighter text-white">bdai</h1>
-                  <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.35em] opacity-80">{t('tagline')}</p>
+                  <BdaiLogo className="w-44 h-44 mb-6 drop-shadow-[0_0_40px_rgba(168,85,247,0.3)]" />
+                  <h1 className="text-4xl font-black lowercase tracking-[-0.05em] text-white">bdai</h1>
+                  <p className="text-purple-400 text-[8px] font-black uppercase tracking-[0.3em] opacity-60 mt-2">{t('tagline')}</p>
               </div>
+              
               <div className="w-full space-y-4 max-w-xs z-10">
+                  {authError && <p className="text-red-500 text-[10px] font-black uppercase mb-4 text-center animate-pulse">{authError}</p>}
+                  
                   {loginStep === 'FORM' ? (
                       <>
-                          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none text-center text-sm text-white" />
-                          <button onClick={async () => { if(email) { await sendOtpEmail(email); setLoginStep('VERIFY'); } }} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px]">{t('login')}</button>
+                          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none text-center text-sm text-white focus:border-purple-500/50 transition-colors" />
+                          <button disabled={isLoading} onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all disabled:opacity-50">
+                            {isLoading ? <i className="fas fa-spinner fa-spin mr-2"></i> : t('login')}
+                          </button>
                       </>
                   ) : (
                       <>
-                          <input type="text" maxLength={8} placeholder="Código" value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none text-center font-black text-sm text-purple-400" />
-                          <button onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-widest text-[11px]">{t('verify')}</button>
+                          <input type="text" maxLength={8} placeholder="Código" value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none text-center font-black text-sm text-purple-400 focus:border-purple-500" />
+                          <button disabled={isLoading} onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] active:scale-95 transition-all disabled:opacity-50">
+                            {isLoading ? <i className="fas fa-spinner fa-spin mr-2"></i> : t('verify')}
+                          </button>
+                          <button onClick={() => setLoginStep('FORM')} className="w-full text-[9px] font-black text-slate-500 uppercase tracking-widest mt-4">Cambiar email</button>
                       </>
                   )}
               </div>
@@ -310,13 +326,16 @@ export default function App() {
                 {view === AppView.HOME && (
                   <div className="space-y-4 pt-safe animate-fade-in">
                       <header className="flex justify-between items-center pt-8 px-8">
-                          <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl lowercase tracking-tighter text-white">bdai</span></div>
+                          <div className="flex items-center gap-3">
+                            <BdaiLogo className="w-10 h-10"/>
+                            <span className="font-black text-2xl lowercase tracking-[-0.05em] text-white">bdai</span>
+                          </div>
                           <div className="flex items-center gap-4">
                             <div className="bg-white/10 px-4 py-2 rounded-xl flex items-center gap-2 border border-white/10">
                                 <i className="fas fa-coins text-yellow-500 text-xs"></i>
                                 <span className="text-xs font-black text-white">{user.miles.toLocaleString()}</span>
                             </div>
-                            <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-2xl border-2 border-purple-500/50 overflow-hidden bg-slate-900 shadow-xl">
+                            <button onClick={() => setView(AppView.PROFILE)} className="w-12 h-12 rounded-2xl border-2 border-purple-500/50 overflow-hidden bg-slate-900 shadow-xl active:scale-90 transition-transform">
                                 <img src={user.avatar} className="w-full h-full object-cover" />
                             </button>
                           </div>
@@ -328,7 +347,7 @@ export default function App() {
                           </h1>
                           <div className="relative">
                             <i className="fas fa-search absolute left-6 top-6 text-slate-500"></i>
-                            <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-6 pl-16 pr-8 outline-none text-white shadow-2xl transition-all" />
+                            <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-[2rem] py-6 pl-16 pr-8 outline-none text-white shadow-2xl focus:border-purple-500/50 transition-all" />
                           </div>
                       </div>
                       <TravelServices mode="HOME" language={user.language} onCitySelect={handleCitySelect} />

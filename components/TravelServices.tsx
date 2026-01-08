@@ -11,17 +11,24 @@ const CATEGORIES = [
 ];
 
 const EXPLORE_GRID = [
+    { name: 'Madrid', theme: 'Kilómetro Cero', cat: 'cities', color: 'from-blue-700 to-indigo-950', icon: 'fa-bear-combined' },
+    { name: 'Barcelona', theme: 'Modernismo', cat: 'cities', color: 'from-red-600 to-amber-900', icon: 'fa-monument' },
+    { name: 'Sevilla', theme: 'Duende y Arte', cat: 'cities', color: 'from-orange-500 to-red-800', icon: 'fa-fan' },
+    { name: 'Valencia', theme: 'Fuego y Mar', cat: 'cities', color: 'from-amber-400 to-orange-700', icon: 'fa-fire' },
+    { name: 'Málaga', theme: 'Costa del Sol', cat: 'cities', color: 'from-cyan-500 to-blue-800', icon: 'fa-umbrella-beach' },
+    { name: 'Logroño', theme: 'Tierra de Vino', cat: 'cities', color: 'from-purple-700 to-rose-950', icon: 'fa-grapes' },
     { name: 'Albarracín', theme: 'Pueblo Mágico', cat: 'villages', color: 'from-orange-600 to-amber-900', icon: 'fa-chess-rook' },
-    { name: 'Cudillero', theme: 'Hidden Gem', cat: 'villages', color: 'from-teal-600 to-emerald-900', icon: 'fa-anchor' },
-    { name: 'Ronda', theme: 'Vistas de Élite', cat: 'villages', color: 'from-rose-600 to-pink-900', icon: 'fa-bridge' },
-    { name: 'Girona', theme: 'History Hub', cat: 'cities', color: 'from-amber-700 to-yellow-900', icon: 'fa-fort-awesome' },
-    { name: 'Zaragoza', theme: 'Gastro Gems', cat: 'cities', color: 'from-red-600 to-orange-900', icon: 'fa-utensils' },
-    { name: 'Trujillo', theme: 'Pueblo Mágico', cat: 'villages', color: 'from-slate-600 to-zinc-900', icon: 'fa-horse-head' },
-    { name: 'Salamanca', theme: 'Art & Tech', cat: 'cities', color: 'from-blue-600 to-purple-900', icon: 'fa-university' },
-    { name: 'Besalú', theme: 'Hidden Gem', cat: 'villages', color: 'from-emerald-600 to-green-900', icon: 'fa-archway' }
+    { name: 'Girona', theme: 'History Hub', cat: 'cities', color: 'from-amber-700 to-yellow-900', icon: 'fa-fort-awesome' }
 ];
 
-// --- RICH HUB DATA ---
+const TRENDING_2026 = [
+    { name: 'Seúl', theme: 'K-Future', icon: 'fa-k' },
+    { name: 'Riad', theme: 'Visión 2030', icon: 'fa-palace' },
+    { name: 'CDMX', theme: 'Gastro Hub', icon: 'fa-pepper-hot' },
+    { name: 'Tokio', theme: 'Neo-Tradition', icon: 'fa-torii-gate' },
+    { name: 'Oslo', theme: 'Eco-Avant-Garde', icon: 'fa-leaf' }
+];
+
 const FIESTAS: HubIntel[] = [
     { 
         id: 'f1', 
@@ -30,28 +37,18 @@ const FIESTAS: HubIntel[] = [
         location: 'Guadix / Baza', 
         color: 'from-zinc-700 to-black', 
         icon: 'fa-paint-roller', 
-        description: 'Un ritual de barro y pintura que se remonta al siglo XV. El "Cascamorras" debe cruzar la ciudad de Baza sin ser manchado para recuperar una virgen sagrada. Sin embargo, miles de locales le esperan con aceite negro y hollín para impedirlo.',
-        details: 'Secreto de Dai: La pintura que se usa hoy es una mezcla ecológica de aceite vegetal y hollín, diseñada para ser visualmente impactante pero fácil de lavar del pavimento. El Cascamorras real tiene un entrenamiento físico de atleta de élite para aguantar las horas de asedio.'
+        description: 'Un ritual de barro y pintura que se remonta al siglo XV. El "Cascamorras" debe cruzar la ciudad de Baza sin ser manchado para recuperar una virgen sagrada.',
+        details: 'Secreto de Dai: La pintura que se usa hoy es una mezcla ecológica de aceite vegetal y hollín. El Cascamorras real tiene un entrenamiento físico de atleta de élite para aguantar las horas de asedio.'
     },
     { 
         id: 'f2', 
         type: 'festival', 
-        title: 'El Colacho', 
-        location: 'Castrillo de Murcia', 
-        color: 'from-yellow-600 to-amber-900', 
-        icon: 'fa-person-running', 
-        description: 'Desde 1621, el día del Corpus Christi, el "Colacho" (el diablo) recorre las calles saltando literalmente sobre colchones donde descansan bebés nacidos ese año. Se cree que el salto del diablo absorbe el mal y protege a los niños.',
-        details: 'Curiosidad Histórica: La tradición es tan fuerte que atrae a familias de toda la comarca de Burgos. El Papa Benedicto XVI pidió a los obispos españoles que se distanciaran del rito, pero el fervor local lo ha mantenido intacto durante siglos.'
-    },
-    { 
-        id: 'f3', 
-        type: 'festival', 
-        title: 'Jarramplas', 
-        location: 'Piornal', 
-        color: 'from-red-700 to-rose-950', 
-        icon: 'fa-drum', 
-        description: 'Un personaje con una máscara demoníaca y un traje de cintas multicolores recorre el pueblo más alto de Extremadura mientras los vecinos le lanzan toneladas de nabos reales para expulsar su mala suerte.',
-        details: 'Ingeniería Oculta: Bajo el traje de cintas, el Jarramplas lleva una armadura de fibra de carbono y neopreno diseñada por ingenieros locales para aguantar los impactos de los nabos, que llegan a alcanzar velocidades de 80 km/h.'
+        title: 'Fallas de Valencia', 
+        location: 'Valencia', 
+        color: 'from-orange-500 to-red-600', 
+        icon: 'fa-fire', 
+        description: 'Monumentos efímeros de madera y cartón que arden en la Nit de la Cremà. Un festival de pólvora (Mascletà) y arte satírico único en el mundo.',
+        details: 'Dato de Élite: Las figuras más altas pueden superar los 20 metros de altura y costar más de 200.000 euros, solo para ser reducidas a cenizas en cuestión de minutos.'
     }
 ];
 
@@ -63,64 +60,51 @@ const CURIOSIDADES: HubIntel[] = [
         location: 'Madrid', 
         icon: 'fa-utensils', 
         color: 'from-amber-700 to-orange-950',
-        description: 'Fundado en 1725, es el restaurante más antiguo del mundo que nunca ha cerrado sus puertas. Su horno de leña original nunca se ha apagado totalmente para mantener la temperatura y el alma de sus asados de cochinillo.',
-        details: 'Intel Exclusivo: Francisco de Goya trabajó aquí fregando platos antes de ser el pintor de cámara del Rey. Ernest Hemingway tenía su propia mesa reservada en la planta superior.'
+        description: 'Fundado en 1725, es el restaurante más antiguo del mundo según el Guinness. Su horno nunca se ha apagado totalmente para mantener el alma de sus asados.',
+        details: 'Intel Exclusivo: Francisco de Goya trabajó aquí fregando platos antes de ser el pintor de cámara del Rey.'
     },
     { 
-        id: 'c2', 
+        id: 'c3', 
         type: 'curiosity', 
-        title: 'Reloj de la Pasión', 
-        location: 'Sevilla', 
-        icon: 'fa-clock', 
-        color: 'from-indigo-700 to-blue-950',
-        description: 'En la fachada de la Iglesia de la Magdalena, un reloj solar único no marca las horas convencionales, sino las estaciones de la Pasión de Cristo según los ritos barrocos sevillanos.',
-        details: 'Detalle de Élite: Es casi invisible para el turista común. Su lectura requiere conocer la simbología de las hermandades de Sevilla. Es una pieza de arte y matemática sagrada oculta a plena vista en el centro.'
+        title: 'Calle del Laurel', 
+        location: 'Logroño', 
+        icon: 'fa-wine-glass', 
+        color: 'from-purple-600 to-indigo-900',
+        description: 'La zona de pinchos más famosa de La Rioja. Cada bar tiene su especialidad "estrella" que debes probar acompañada de un tinto local.',
+        details: 'Táctica de Dai: Pide el "Matrimonio" (anchoa y boquerón) o el "Champi" del Bar Soriano. Es el corazón gastro de la ciudad.'
     }
 ];
 
-const GASTRO_WORLD: HubIntel[] = [
-    {
-        id: 'gw1',
-        type: 'gastro',
-        title: 'Tsukiji Outer Market',
-        location: 'Tokio, Japón',
-        icon: 'fa-fish-fins',
-        color: 'from-blue-600 to-slate-900',
-        description: 'El corazón del sushi mundial. Traslado del mercado mayorista, pero el mercado exterior sigue siendo el lugar donde los mejores chefs de Tokio compran su producto diario.',
-        details: 'Consejo Pro: Busca el puesto de "Tamagoyaki" de Yamacho. Por menos de 1 euro tienes la tortilla japonesa más sedosa del mundo. El atún de calidad o-toro se vende aquí a una fracción del precio de los restaurantes de Ginza.'
+const GASTRO_ES: HubIntel[] = [
+    { 
+        id: 'g1', 
+        type: 'gastro', 
+        title: 'Tortilla de Patatas', 
+        location: 'Toda España', 
+        icon: 'fa-egg', 
+        color: 'from-yellow-400 to-amber-600',
+        description: 'El ADN de nuestra cocina. Patata, huevo, sal y (según los puristas de Dai) cebolla muy pochada.',
+        details: 'Dato de Élite: El primer documento que la menciona es de 1817, en las Cortes de Navarra. Se inventó como plato nutritivo y barato para las tropas.'
     },
-    {
-        id: 'gw2',
-        type: 'gastro',
-        title: 'Street Food Napolitano',
-        location: 'Nápoles, Italia',
-        icon: 'fa-pizza-slice',
-        color: 'from-red-600 to-yellow-600',
-        description: 'La cuna de la pizza. Pero el verdadero secreto es la "Pizza Fritta" y la "Frittatina di Pasta" que se vende en los callejones del Quartieri Spagnoli.',
-        details: 'Local Intel: Ve a Pizzeria di Matteo en Via Tribunali. Bill Clinton comió allí y cambió la percepción mundial de la pizza callejera. No pidas cubiertos, se come con las manos "a portafoglio".'
-    }
-];
-
-const WORLD_METROS: HubIntel[] = [
-    {
-        id: 'wm1',
-        type: 'expat',
-        title: 'Londres',
-        location: 'Reino Unido',
-        icon: 'fa-bridge-water',
-        color: 'from-blue-800 to-red-800',
-        description: 'La metrópolis global definitiva. Hogar de una de las comunidades de españoles más vibrantes fuera de la península.',
-        details: 'Guía Expat: El barrio de Portobello tiene la mayor concentración de productos españoles auténticos de la ciudad. Si buscas el "sentimiento de casa", visita García & Sons.'
+    { 
+        id: 'g2', 
+        type: 'gastro', 
+        title: 'Cocido Madrileño', 
+        location: 'Madrid', 
+        icon: 'fa-bowl-food', 
+        color: 'from-orange-400 to-red-800',
+        description: 'Un ritual en tres vuelcos: sopa, legumbres y carnes. Es el corazón del invierno en la capital.',
+        details: 'Regla de Oro: Se debe comer sin prisa. Los mejores se cocinan en ollas de barro individuales sobre fuego de encina durante más de 6 horas.'
     },
-    {
-        id: 'wm2',
-        type: 'expat',
-        title: 'Nueva York',
-        location: 'EE.UU.',
-        icon: 'fa-statue-of-liberty',
-        color: 'from-sky-700 to-indigo-900',
-        description: 'La ciudad que nunca duerme. Un crisol de culturas donde cada bloque cuenta una historia diferente del mundo.',
-        details: 'Secret Spot: La pequeña España (Little Spain) en Hudson Yards es un mercado gastronómico curado por el Chef José Andrés que trae lo mejor de nuestra tierra al corazón de Manhattan.'
+    { 
+        id: 'g3', 
+        type: 'gastro', 
+        title: 'Pulpo a la Gallega', 
+        location: 'Galicia', 
+        icon: 'fa-fish-fins', 
+        color: 'from-red-500 to-rose-900',
+        description: 'Servido sobre plato de madera con aceite de oliva, sal gorda y pimentón de la Vera.',
+        details: 'Táctica de Dai: Para que no quede duro, el pulpo se debe "asustar" tres veces metiéndolo y sacándolo del agua hirviendo antes de la cocción definitiva.'
     }
 ];
 
@@ -145,11 +129,7 @@ export const TravelServices: React.FC<{
                     </div>
                     <div className="space-y-4">
                         {FIESTAS.map(f => (
-                            <div 
-                                key={f.id} 
-                                onClick={() => onHubItemSelect?.(f)}
-                                className={`bg-gradient-to-r ${f.color} rounded-[2rem] p-6 border border-white/10 flex items-center gap-6 shadow-xl cursor-pointer hover:scale-[1.02] transition-transform`}
-                            >
+                            <div key={f.id} onClick={() => onHubItemSelect?.(f)} className={`bg-gradient-to-r ${f.color} rounded-[2rem] p-6 border border-white/10 flex items-center gap-6 shadow-xl cursor-pointer hover:scale-[1.02] transition-transform`}>
                                 <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl text-white">
                                     <i className={`fas ${f.icon}`}></i>
                                 </div>
@@ -173,11 +153,7 @@ export const TravelServices: React.FC<{
                     </div>
                     <div className="grid grid-cols-1 gap-4">
                         {CURIOSIDADES.map(c => (
-                            <div 
-                                key={c.id} 
-                                onClick={() => onHubItemSelect?.(c)}
-                                className="bg-white/5 border border-white/10 rounded-[2rem] p-5 flex items-start gap-5 backdrop-blur-sm cursor-pointer hover:bg-white/10 transition-colors"
-                            >
+                            <div key={c.id} onClick={() => onHubItemSelect?.(c)} className="bg-white/5 border border-white/10 rounded-[2rem] p-5 flex items-start gap-5 backdrop-blur-sm cursor-pointer hover:bg-white/10 transition-colors">
                                 <i className={`fas ${c.icon} text-amber-500 mt-1`}></i>
                                 <div>
                                     <h4 className="text-sm font-black text-white uppercase tracking-tight">{c.title} <span className="text-white/20 ml-2">[{c.location}]</span></h4>
@@ -191,53 +167,21 @@ export const TravelServices: React.FC<{
                 <section>
                     <div className="flex justify-between items-end mb-6">
                         <div>
-                            <h3 className="text-xs font-black text-white uppercase tracking-[0.4em]">Gastro World</h3>
-                            <p className="text-[8px] text-red-500 uppercase tracking-widest mt-1">Joyas culinarias globales</p>
+                            <h3 className="text-xs font-black text-white uppercase tracking-[0.4em]">Gastro Tech</h3>
+                            <p className="text-[8px] text-red-500 uppercase tracking-widest mt-1">ADN culinario regional</p>
                         </div>
-                        <i className="fas fa-utensils text-red-500"></i>
+                        <i className="fas fa-fire text-red-500"></i>
                     </div>
-                    <div className="space-y-4">
-                        {GASTRO_WORLD.map(g => (
-                            <div 
-                                key={g.id} 
-                                onClick={() => onHubItemSelect?.(g)}
-                                className={`bg-gradient-to-br ${g.color} rounded-[2rem] p-6 border border-white/10 flex items-center gap-6 shadow-xl cursor-pointer hover:scale-[1.02] transition-transform`}
-                            >
-                                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-xl text-white">
+                    <div className="flex gap-4 overflow-x-auto no-scrollbar">
+                        {GASTRO_ES.map(g => (
+                            <div key={g.id} onClick={() => onHubItemSelect?.(g)} className="min-w-[180px] aspect-square rounded-[2.5rem] bg-slate-900 border border-white/10 p-6 flex flex-col justify-between group cursor-pointer hover:border-red-500/50 transition-all">
+                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${g.color} flex items-center justify-center text-white shadow-lg`}>
                                     <i className={`fas ${g.icon}`}></i>
                                 </div>
                                 <div>
-                                    <p className="text-[8px] font-black text-white/60 uppercase tracking-widest">{g.location}</p>
-                                    <h4 className="text-md font-black text-white uppercase tracking-tighter">{g.title}</h4>
+                                    <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">{g.location}</p>
+                                    <p className="text-xs font-black text-white uppercase leading-none">{g.title}</p>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                <section>
-                    <div className="flex justify-between items-end mb-6">
-                        <div>
-                            <h3 className="text-xs font-black text-white uppercase tracking-[0.4em]">Metrópolis</h3>
-                            <p className="text-[8px] text-blue-400 uppercase tracking-widest mt-1">Los favoritos del mundo</p>
-                        </div>
-                        <i className="fas fa-city text-blue-500"></i>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {WORLD_METROS.map(m => (
-                            <div 
-                                key={m.id} 
-                                onClick={() => onHubItemSelect?.(m)}
-                                className={`h-40 bg-gradient-to-br ${m.color} rounded-[2.5rem] p-6 border border-white/10 flex flex-col justify-between group cursor-pointer active:scale-95 transition-all shadow-2xl relative overflow-hidden`}
-                            >
-                                <div className="absolute top-2 right-4 text-white/10 text-6xl group-hover:rotate-12 transition-transform">
-                                    <i className={`fas ${m.icon}`}></i>
-                                </div>
-                                <div className="relative z-10">
-                                    <p className="text-[7px] font-black text-white/50 uppercase tracking-widest mb-1">{m.location}</p>
-                                    <h4 className="text-lg font-black text-white uppercase tracking-tighter leading-none">{m.title}</h4>
-                                </div>
-                                <i className="fas fa-chevron-right text-white/20 text-xs self-end relative z-10"></i>
                             </div>
                         ))}
                     </div>
@@ -261,9 +205,13 @@ export const TravelServices: React.FC<{
                             <h3 className="text-3xl font-black text-white uppercase tracking-tighter leading-none">Descubre el<br/><span className="text-purple-400">Próximo Mundo</span></h3>
                         </div>
                         <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                            {['Tromsø', 'Al-Ula', 'Ljubljana'].map(name => (
-                                <div key={name} onClick={() => onCitySelect(name)} className="min-w-[120px] h-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-3 flex flex-col justify-end group/item cursor-pointer hover:bg-white/10 transition-all">
-                                    <p className="text-xs font-black text-white uppercase">{name}</p>
+                            {TRENDING_2026.map(city => (
+                                <div key={city.name} onClick={() => onCitySelect(city.name)} className="min-w-[130px] h-24 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-4 flex flex-col justify-between group/item cursor-pointer hover:bg-white/10 transition-all border-l-purple-500/50">
+                                    <i className={`fas ${city.icon} text-[10px] text-purple-400`}></i>
+                                    <div>
+                                        <p className="text-[7px] font-black text-white/40 uppercase tracking-widest mb-0.5">{city.theme}</p>
+                                        <p className="text-xs font-black text-white uppercase">{city.name}</p>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -296,9 +244,9 @@ export const TravelServices: React.FC<{
                             <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
                                 <div>
                                     <h4 className="font-black text-white text-xl tracking-tighter uppercase leading-none mb-1">{city.name}</h4>
-                                    <p className="text-[7px] font-black text-purple-400 uppercase tracking-widest">Ver Rutas</p>
+                                    <p className="text-[7px] font-black text-purple-400 uppercase tracking-widest">Rutas Inteligentes</p>
                                 </div>
-                                <i className={`fas ${city.icon} text-white/10 text-4xl group-hover:scale-110 transition-transform`}></i>
+                                <i className={`fas ${city.icon} text-white/20 text-4xl group-hover:scale-110 transition-transform`}></i>
                             </div>
                         </div>
                     ))}

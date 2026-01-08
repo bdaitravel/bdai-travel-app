@@ -24,7 +24,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       country: user.country || 'España',
       bio: user.bio || '',
       avatar: user.avatar || AVATARS[0],
-      birthday: user.birthday || '2000-01-01',
+      birthday: user.birthday || '1995-01-01',
       language: user.language || 'es'
   });
 
@@ -32,11 +32,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       if (onUpdateUser) onUpdateUser({ 
           ...user, 
           ...formData, 
+          name: `${formData.firstName} ${formData.lastName}`,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          name: `${formData.firstName} ${formData.lastName}`,
-          language: formData.language,
           username: formData.username,
+          language: formData.language,
           birthday: formData.birthday
       });
       setIsEditing(false);
@@ -56,7 +56,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
   const getStampRotation = (city: string) => {
       let hash = 0;
       for (let i = 0; i < city.length; i++) hash = city.charCodeAt(i) + ((hash << 5) - hash);
-      return (hash % 20); 
+      return (hash % 25) - 12; 
   };
 
   return (
@@ -80,11 +80,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                 </div>
                 <div className="flex gap-2">
                     {isOwnProfile && (
-                        <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center transition-all active:scale-90">
-                            <i className={`fas ${isEditing ? 'fa-save text-green-400' : 'fa-edit'}`}></i>
-                        </button>
+                        <>
+                            <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${isEditing ? 'bg-green-600 text-white shadow-lg' : 'bg-white/10 text-white'}`}>
+                                <i className={`fas ${isEditing ? 'fa-save' : 'fa-edit'}`}></i>
+                            </button>
+                            <button onClick={onLogout} title="Cerrar Sesión" className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center transition-all active:scale-90 shadow-lg">
+                                <i className="fas fa-sign-out-alt"></i>
+                            </button>
+                        </>
                     )}
-                    <button onClick={onClose} className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center"><i className="fas fa-times"></i></button>
+                    <button onClick={onClose} className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-times"></i></button>
                 </div>
             </div>
         </div>
@@ -102,45 +107,45 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                         )}
                     </div>
                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-                    <div className="mt-3 text-[8px] font-black text-slate-400 uppercase tracking-tighter text-center bg-slate-200/50 py-1 rounded">ID: {user.passportNumber}</div>
+                    <div className="mt-3 text-[8px] font-black text-slate-400 uppercase tracking-tighter text-center bg-slate-200/50 py-1 rounded">PASSPORT NO: {user.passportNumber}</div>
                 </div>
 
                 <div className="flex-1 space-y-4 font-mono text-[10px]">
                     <div className="border-b border-slate-300 pb-1">
                         <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Surname / Apellidos</p>
                         {isEditing ? (
-                             <input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black" />
+                            <input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full bg-slate-100 px-1 border-none font-black uppercase" />
                         ) : (
-                             <p className="font-black text-slate-800 uppercase">{(formData.lastName || 'EXPLORADOR').toUpperCase()}</p>
+                            <p className="font-black text-slate-800 uppercase">{(formData.lastName || 'EXPLORADOR').toUpperCase()}</p>
                         )}
                     </div>
                     <div className="border-b border-slate-300 pb-1">
                         <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Given Names / Nombres</p>
                         {isEditing ? (
-                             <input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black" />
+                            <input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full bg-slate-100 px-1 border-none font-black uppercase" />
                         ) : (
-                             <p className="font-black text-slate-800 uppercase">{(formData.firstName || 'USUARIO').toUpperCase()}</p>
+                            <p className="font-black text-slate-800 uppercase">{(formData.firstName || 'USUARIO').toUpperCase()}</p>
                         )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="border-b border-slate-300 pb-1">
                             <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Birthday / Nacimiento</p>
                             {isEditing ? (
-                                <input type="date" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black" />
+                                <input type="date" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} className="w-full bg-slate-100 px-1 border-none font-black" />
                             ) : (
                                 <p className="font-black text-slate-800 uppercase">{formData.birthday}</p>
                             )}
                         </div>
                         <div className="border-b border-slate-300 pb-1">
                             <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Issued / Expedición</p>
-                            <p className="font-black text-slate-800 uppercase">{user.joinDate || '20/05/2025'}</p>
+                            <p className="font-black text-slate-800 uppercase">{user.joinDate || '21/05/2025'}</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="border-b border-slate-300 pb-1">
                             <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">User / Usuario</p>
                             {isEditing ? (
-                                <input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black" />
+                                <input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full bg-slate-100 px-1 border-none font-black" />
                             ) : (
                                 <p className="font-black text-slate-800 uppercase">@{formData.username}</p>
                             )}
@@ -148,7 +153,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                         <div className="border-b border-slate-300 pb-1">
                             <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest">Lang / Idioma</p>
                             {isEditing ? (
-                                <select value={formData.language} onChange={e => setFormData({...formData, language: e.target.value})} className="w-full bg-slate-200/50 rounded px-1 outline-none font-black appearance-none">
+                                <select value={formData.language} onChange={e => setFormData({...formData, language: e.target.value})} className="w-full bg-slate-100 px-1 border-none font-black appearance-none">
                                     {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
                                 </select>
                             ) : (
@@ -168,7 +173,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                 <div className="relative z-10 flex items-center justify-between">
                     <div>
                         <p className="text-[9px] font-black text-purple-400 uppercase tracking-[0.4em] mb-1">Millas Totales</p>
-                        <h3 className="text-4xl font-black text-white tracking-tighter">{user.miles.toLocaleString()} <span className="text-xs">m</span></h3>
+                        <h3 className="text-4xl font-black text-white tracking-tighter">{(user.miles || 0).toLocaleString()} <span className="text-xs">m</span></h3>
                     </div>
                     <div className="text-right">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">Estatus</p>
@@ -195,7 +200,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                                 </div>
                                 <p className="text-sm font-black text-slate-800 uppercase tracking-tight truncate">{intel.title}</p>
                                 <p className="text-[9px] text-slate-500 italic mt-1 line-clamp-2 leading-relaxed">{intel.description}</p>
-                                {intel.details && <div className="mt-2 text-[8px] font-black text-purple-600 uppercase border-t border-slate-100 pt-2 flex items-center gap-2 animate-pulse"><i className="fas fa-eye"></i> Secreto Revelado</div>}
                             </div>
                         </div>
                     )) : (
@@ -207,24 +211,52 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                 </div>
             </div>
 
-            {/* Sellos de Ciudad */}
-            <div className="space-y-6">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-1">Visados Verificados</h4>
-                <div className="grid grid-cols-4 gap-6">
-                    {user.visitedCities && user.visitedCities.length > 0 ? user.visitedCities.map((city) => (
-                        <div key={city} style={{ transform: `rotate(${getStampRotation(city)}deg)` }} className="aspect-square rounded-full border-[3px] border-red-800/40 flex items-center justify-center p-1.5 opacity-80 mix-blend-multiply hover:scale-110 transition-transform">
-                            <div className="w-full h-full rounded-full border-2 border-red-800/30 flex flex-col items-center justify-center text-red-800/60 font-black text-center leading-tight">
-                                <span className="text-[8px] uppercase tracking-tighter">{city.substring(0,8)}</span>
-                                <span className="text-[5px] tracking-widest">VERIFIED</span>
-                            </div>
+            {/* SECCIÓN: VISADOS VERIFICADOS (VISA STAMPS) */}
+            <div className="space-y-6 pb-8">
+                <div className="flex justify-between items-center px-1">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Visados Verificados</h4>
+                    <span className="text-[8px] font-bold text-slate-300 uppercase">Pág. 12 / 48</span>
+                </div>
+                
+                <div className="bg-[#e9e6d8] rounded-[2rem] p-10 border-2 border-[#d4cfbd] shadow-inner relative overflow-hidden min-h-[300px]">
+                    {/* Watermark de pasaporte */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-12">
+                        <i className="fas fa-earth-europe text-[20rem]"></i>
+                    </div>
+                    
+                    {user.visitedCities && user.visitedCities.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-y-10 gap-x-6 relative z-10">
+                            {user.visitedCities.map((city) => (
+                                <div 
+                                    key={city} 
+                                    style={{ transform: `rotate(${getStampRotation(city)}deg)` }} 
+                                    className="aspect-square flex items-center justify-center relative group"
+                                >
+                                    {/* Sello realista de tinta */}
+                                    <div className="w-full h-full rounded-full border-[3px] border-red-900/40 flex items-center justify-center p-1 opacity-70 mix-blend-multiply hover:scale-110 transition-transform duration-500 cursor-help">
+                                        <div className="w-full h-full rounded-full border-2 border-red-900/30 flex flex-col items-center justify-center text-red-900/70 font-black text-center leading-none">
+                                            <span className="text-[5px] tracking-[0.2em] mb-1">ENTRY</span>
+                                            <span className="text-[10px] uppercase tracking-tighter font-serif">{city.substring(0,8)}</span>
+                                            <div className="w-10 h-[1px] bg-red-900/30 my-1"></div>
+                                            <span className="text-[6px] tracking-widest uppercase">VERIFIED</span>
+                                            <span className="text-[4px] mt-1 opacity-50 uppercase">BDAI-GLOBAL</span>
+                                        </div>
+                                    </div>
+                                    {/* Tooltip con fecha ficticia */}
+                                    <div className="absolute -bottom-4 bg-slate-800 text-white text-[6px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                        VALIDATED
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    )) : (
-                        <div className="col-span-4 py-16 bg-slate-300/20 rounded-[2.5rem] border-2 border-dashed border-slate-400/50 text-center text-[9px] font-black text-slate-500 uppercase">Explora para recibir sellos</div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full opacity-20 py-12">
+                            <i className="fas fa-stamp text-6xl mb-4"></i>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-center max-w-[150px]">Página lista para visados. Explora el mundo para recibir sellos.</p>
+                        </div>
                     )}
                 </div>
             </div>
-
-            <button onClick={onLogout} className="w-full py-4 text-slate-400 font-black text-[9px] uppercase tracking-widest hover:text-red-600 transition-colors">Cerrar Sesión</button>
         </div>
       </div>
     </div>
