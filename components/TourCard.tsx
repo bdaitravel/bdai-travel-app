@@ -1,15 +1,15 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Tour, Stop } from '../types';
 import { SchematicMap } from './SchematicMap';
 import { cleanDescriptionText } from '../services/geminiService';
 
 const UI_TEXT: any = {
-    en: { start: "Start", stopTag: "Stop", next: "Next", prev: "Back", nearby: "Nearby", navigate: "Navigate", claim: "Claim", tooFar: "Too far", claimed: "Verified", photoSpot: "Epic Photo Spot", capture: "Snap & Earn", bestAngle: "Best Angle", instagram: "Insta Hook", distance: "Distance" },
-    es: { start: "Empezar", stopTag: "Parada", next: "Sig.", prev: "Ant.", nearby: "Cerca", navigate: "Cómo llegar", claim: "Verificar", tooFar: "Fuera de rango", claimed: "Visitado", photoSpot: "Punto Instagrameable", capture: "Capturar Foto", bestAngle: "Ángulo Pro", instagram: "Texto Post", distance: "Distancia" },
-    ca: { start: "Començar", stopTag: "Parada", next: "Seg.", prev: "Ant.", nearby: "A prop", navigate: "Com arribar", claim: "Verificar", tooFar: "Fora de rang", claimed: "Visitat", photoSpot: "Punt Instagram", capture: "Capturar Foto", bestAngle: "Angle Pro", instagram: "Text Post", distance: "Distància" },
-    eu: { start: "Hasi", stopTag: "Geltokia", next: "Hur.", prev: "Aur.", nearby: "Gertu", navigate: "Nola iritsi", claim: "Egiaztatu", claimed: "Bisitatua", photoSpot: "Instagram Gunea", capture: "Argazkia Atera", bestAngle: "Angelu Pro", instagram: "Post Testua", distance: "Distantzia" },
-    fr: { start: "Démarrer", stopTag: "Étape", next: "Suiv.", prev: "Préc.", nearby: "Proche", navigate: "Naviguer", claim: "Vérifier", tooFar: "Trop loin", claimed: "Visité", photoSpot: "Spot Instagram", capture: "Capturer", bestAngle: "Meilleur Angle", instagram: "Post Hook", distance: "Distance" }
+    en: { start: "Start", stopTag: "Stop", next: "Next", prev: "Back", nearby: "Nearby", navigate: "Navigate", claim: "Claim", tooFar: "Too far", claimed: "Verified", photoSpot: "Epic Photo Spot", capture: "Snap & Earn", bestAngle: "Best Angle", instagram: "Insta Hook", distance: "Distance", secretTitle: "Dai's Secret" },
+    es: { start: "Empezar", stopTag: "Parada", next: "Sig.", prev: "Ant.", nearby: "Cerca", navigate: "Cómo llegar", claim: "Verificar", tooFar: "Fuera de rango", claimed: "Visitado", photoSpot: "Punto Instagrameable", capture: "Capturar Foto", bestAngle: "Ángulo Pro", instagram: "Texto Post", distance: "Distancia", secretTitle: "Secreto de Dai" },
+    ca: { start: "Començar", stopTag: "Parada", next: "Seg.", prev: "Ant.", nearby: "A prop", navigate: "Com arribar", claim: "Verificar", tooFar: "Fora de rang", claimed: "Visitat", photoSpot: "Punt Instagram", capture: "Capturar Foto", bestAngle: "Angle Pro", instagram: "Text Post", distance: "Distància", secretTitle: "Secreto de Dai" },
+    eu: { start: "Hasi", stopTag: "Geltokia", next: "Hur.", prev: "Aur.", nearby: "Gertu", navigate: "Nola iritsi", claim: "Egiaztatu", claimed: "Bisitatua", photoSpot: "Instagram Gunea", capture: "Argazkia Atera", bestAngle: "Angelu Pro", instagram: "Post Testua", distance: "Distantzia", secretTitle: "Secreto de Dai" },
+    fr: { start: "Démarrer", stopTag: "Étape", next: "Suiv.", prev: "Préc.", nearby: "Proche", navigate: "Naviguer", claim: "Vérifier", tooFar: "Trop loin", claimed: "Visité", photoSpot: "Spot Instagram", capture: "Capturer", bestAngle: "Meilleur Angle", instagram: "Post Hook", distance: "Distance", secretTitle: "Secret de Dai" }
 };
 
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -59,7 +59,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
         return getDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
     }, [userLocation, currentStop]);
 
-    // Límite de 150 metros para considerar que el usuario está físicamente allí
     const isNearEnough = distanceToStop !== null && distanceToStop <= 150;
 
     const handlePhotoCapture = () => {
@@ -71,27 +70,16 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
         }, 1500);
     };
 
-    const formatDistance = (m: number) => {
-        if (m < 1000) return `${Math.round(m)}m`;
-        return `${(m / 1000).toFixed(1)}km`;
-    };
-
     return (
         <div className="h-full flex flex-col bg-[#fcfcfc] overflow-hidden">
-             {/* Map Area */}
              <div className="h-[32vh] w-full relative flex-shrink-0">
-                <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} userLocation={userLocation} />
+                <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} userLocation={userLocation} onPlayAudio={onPlayAudio} />
                 <button onClick={onBack} className="absolute top-6 left-6 z-[500] w-10 h-10 rounded-xl bg-white shadow-xl flex items-center justify-center text-slate-900 active:scale-90 transition-transform"><i className="fas fa-arrow-left"></i></button>
              </div>
 
-             {/* Navigation Controls */}
              <div className="flex items-center px-4 py-4 bg-white border-b border-slate-100 shadow-sm z-[450] shrink-0">
                  <div className="flex-1 flex justify-start">
-                    <button 
-                        onClick={onPrev} 
-                        disabled={currentStopIndex === 0} 
-                        className="flex items-center gap-2 text-slate-400 disabled:opacity-5 font-black uppercase text-[9px] tracking-widest active:scale-90 transition-transform"
-                    >
+                    <button onClick={onPrev} disabled={currentStopIndex === 0} className="flex items-center gap-2 text-slate-400 disabled:opacity-5 font-black uppercase text-[9px] tracking-widest active:scale-90 transition-transform">
                         <div className="w-10 h-10 min-w-[40px] rounded-full border border-slate-200 flex items-center justify-center bg-slate-50"><i className="fas fa-chevron-left text-[8px]"></i></div>
                         <span className="hidden xs:inline">{t.prev}</span>
                     </button>
@@ -109,18 +97,13 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                  </div>
 
                  <div className="flex-1 flex justify-end">
-                    <button 
-                        onClick={onNext} 
-                        disabled={currentStopIndex === tour.stops.length - 1} 
-                        className="flex items-center gap-2 text-purple-600 disabled:opacity-5 font-black uppercase text-[9px] tracking-widest active:scale-90 transition-transform"
-                    >
+                    <button onClick={onNext} disabled={currentStopIndex === tour.stops.length - 1} className="flex items-center gap-2 text-purple-600 disabled:opacity-5 font-black uppercase text-[9px] tracking-widest active:scale-90 transition-transform">
                         <span className="hidden xs:inline">{t.next}</span>
                         <div className="w-10 h-10 min-w-[40px] rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg"><i className="fas fa-chevron-right text-[8px]"></i></div>
                     </button>
                  </div>
              </div>
 
-             {/* Content Area */}
              <div className="flex-1 overflow-y-auto no-scrollbar px-6 pt-6 pb-48">
                 <div className="flex items-start justify-between gap-4 mb-8">
                     <div className="flex-1 min-w-0">
@@ -128,60 +111,59 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                              {currentStop.visited ? (
                                  <span className="bg-green-100 text-green-700 text-[8px] font-black px-3 py-1 rounded-full border border-green-200 uppercase tracking-widest w-fit">{t.claimed}</span>
                              ) : (
-                                 <div className="flex flex-col gap-2">
-                                     <button 
-                                        onClick={() => isNearEnough && onVisit(currentStop.id, 50)}
-                                        className={`text-[8px] font-black px-4 py-2 rounded-full uppercase tracking-widest border transition-all w-fit ${isNearEnough ? 'bg-yellow-400 text-slate-900 border-yellow-500 shadow-md scale-105' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}
-                                     >
-                                         <i className={`fas ${isNearEnough ? 'fa-check' : 'fa-lock'} mr-1.5`}></i>
-                                         {isNearEnough ? t.claim : t.tooFar}
-                                     </button>
-                                     {distanceToStop !== null && (
-                                         <span className={`text-[8px] font-bold uppercase tracking-widest px-1 ${isNearEnough ? 'text-green-600' : 'text-slate-400'}`}>
-                                             {t.distance}: {formatDistance(distanceToStop)}
-                                         </span>
-                                     )}
-                                 </div>
+                                 <button 
+                                    onClick={() => isNearEnough && onVisit(currentStop.id, 50)}
+                                    className={`text-[8px] font-black px-4 py-2 rounded-full uppercase tracking-widest border transition-all w-fit ${isNearEnough ? 'bg-yellow-400 text-slate-900 border-yellow-500 shadow-md scale-105' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}
+                                 >
+                                     <i className={`fas ${isNearEnough ? 'fa-check' : 'fa-lock'} mr-1.5`}></i>
+                                     {isNearEnough ? t.claim : t.tooFar}
+                                 </button>
                              )}
                         </div>
                         <h1 className="text-2xl font-heading font-black text-slate-900 tracking-tighter uppercase leading-tight truncate">{currentStop.name}</h1>
                     </div>
+                    
                     <button 
                         onClick={() => onPlayAudio(currentStop.id, currentStop.description)} 
-                        className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0 transition-all active:scale-90 ${isPlaying ? 'bg-red-600' : 'bg-slate-900'} text-white`}
+                        disabled={isLoading}
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0 transition-all active:scale-90 ${isPlaying ? 'bg-red-600 scale-105' : 'bg-slate-900'} text-white`}
                     >
-                        {isLoading ? <i className="fas fa-spinner fa-spin text-lg"></i> : isPlaying ? <i className="fas fa-stop text-lg"></i> : <i className="fas fa-volume-up text-lg"></i>}
+                        {isLoading ? (
+                            <i className="fas fa-spinner fa-spin text-lg"></i>
+                        ) : isPlaying ? (
+                            <i className="fas fa-stop text-lg"></i>
+                        ) : (
+                            <i className="fas fa-play text-lg translate-x-0.5"></i>
+                        )}
                     </button>
                 </div>
 
-                {/* PHOTO SPOT SECTION */}
-                {currentStop.photoSpot && !currentStop.visited && (
+                {currentStop.photoSpot && (
                     <div className={`mb-8 rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden group border transition-all ${isNearEnough ? 'bg-gradient-to-br from-purple-700 to-indigo-900 border-white/10' : 'bg-slate-200 border-slate-300 opacity-80'}`}>
-                        {!isNearEnough && <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-[2px] z-20 flex items-center justify-center">
+                        {!isNearEnough && !currentStop.visited && <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-[2px] z-20 flex items-center justify-center">
                             <span className="bg-white/90 text-slate-900 px-4 py-2 rounded-full font-black text-[9px] uppercase tracking-widest shadow-xl">{t.tooFar}</span>
                         </div>}
-                        <div className="absolute -right-4 -top-4 text-white/10 text-8xl rotate-12 transition-transform group-hover:scale-110">
-                            <i className="fas fa-camera"></i>
-                        </div>
                         <div className="relative z-10">
                             <h4 className={`text-[10px] font-black uppercase tracking-[0.4em] mb-4 ${isNearEnough ? 'text-white/50' : 'text-slate-500'}`}>{t.photoSpot}</h4>
                             <div className="space-y-4 mb-6">
                                 <div>
+                                    <p className={`text-[8px] font-black uppercase mb-1 ${isNearEnough ? 'text-purple-200/60' : 'text-slate-400'}`}>{t.secretTitle}</p>
+                                    <p className={`text-xs font-bold leading-tight ${isNearEnough ? 'text-white' : 'text-slate-600'}`}>{currentStop.photoSpot.secretLocation}</p>
+                                </div>
+                                <div>
                                     <p className={`text-[8px] font-black uppercase mb-1 ${isNearEnough ? 'text-purple-200/60' : 'text-slate-400'}`}>{t.bestAngle}</p>
                                     <p className={`text-xs font-bold leading-tight ${isNearEnough ? 'text-white' : 'text-slate-600'}`}>{currentStop.photoSpot.angle}</p>
                                 </div>
-                                <div>
-                                    <p className={`text-[8px] font-black uppercase mb-1 ${isNearEnough ? 'text-purple-200/60' : 'text-slate-400'}`}>{t.instagram}</p>
-                                    <p className={`text-xs italic font-medium ${isNearEnough ? 'text-purple-100' : 'text-slate-500'}`}>"{currentStop.photoSpot.instagramHook}"</p>
-                                </div>
                             </div>
-                            <button 
-                                onClick={handlePhotoCapture}
-                                disabled={capturing || !isNearEnough}
-                                className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all ${isNearEnough ? 'bg-white text-slate-950' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
-                            >
-                                {capturing ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-camera-retro"></i> {t.capture} (+{currentStop.photoSpot.milesReward} MI)</>}
-                            </button>
+                            {!currentStop.visited && (
+                                <button 
+                                    onClick={handlePhotoCapture}
+                                    disabled={capturing || !isNearEnough}
+                                    className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all ${isNearEnough ? 'bg-white text-slate-950' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+                                >
+                                    {capturing ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-camera-retro"></i> {t.capture} (+{currentStop.photoSpot.milesReward} MI)</>}
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}

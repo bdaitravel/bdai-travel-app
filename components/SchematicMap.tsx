@@ -8,9 +8,10 @@ interface SchematicMapProps {
   stops: Stop[];
   currentStopIndex: number;
   userLocation?: { lat: number; lng: number } | null;
+  onPlayAudio?: (id: string, text: string) => void;
 }
 
-export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, currentStopIndex, userLocation }) => {
+export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, currentStopIndex, userLocation, onPlayAudio }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -77,7 +78,6 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, currentStopIn
 
     const activeStop = stops[currentStopIndex];
 
-    // Check-in validation circle (visual only)
     if (activeStop && !activeStop.visited) {
         checkInRangeRef.current = L.circle([activeStop.latitude, activeStop.longitude], {
             radius: 100,
@@ -112,6 +112,33 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, currentStopIn
         });
 
         const marker = L.marker([stop.latitude, stop.longitude], { icon }).addTo(map);
+        
+        // Popup personalizado con botón de audio
+        const popupDiv = document.createElement('div');
+        popupDiv.className = 'p-2 text-center';
+        popupDiv.innerHTML = `
+            <p class="font-black text-[11px] uppercase tracking-tighter mb-2 text-slate-900">${stop.name}</p>
+            <button class="bg-purple-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 mx-auto active:scale-95 transition-transform" id="popup-audio-${stop.id}">
+                <i class="fas fa-volume-up"></i> Escuchar
+            </button>
+        `;
+
+        marker.bindPopup(popupDiv, { 
+            closeButton: false, 
+            className: 'custom-leaflet-popup',
+            offset: [0, -10]
+        });
+
+        marker.on('popupopen', () => {
+            const btn = document.getElementById(`popup-audio-${stop.id}`);
+            if (btn && onPlayAudio) {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    onPlayAudio(stop.id, stop.description);
+                };
+            }
+        });
+
         markersRef.current.push(marker);
     });
 
@@ -152,6 +179,16 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, currentStopIn
                 {userLocation ? <><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>GPS Activo</> : 'Buscando GPS...'}
             </div>
         </div>
+        <style>{`
+            .custom-leaflet-popup .leaflet-popup-content-wrapper {
+                border-radius: 1.5rem;
+                padding: 0;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+            .custom-leaflet-popup .leaflet-popup-tip-container {
+                display: none;
+            }
+        `}</style>
     </div>
   );
 };

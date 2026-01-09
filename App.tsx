@@ -11,15 +11,14 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { FlagIcon } from './components/FlagIcon';
 import { Onboarding } from './components/Onboarding';
 import { CommunityBoard } from './components/CommunityBoard';
-import { PostcardModal } from './components/PostcardModal';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", login: "Start Journey", verify: "Verify Code", tagline: "better destinations by ai", loading: "Consulting archives...", postcard: "AI Postcard", install: "Install App", installDesc: "Add to home screen for full experience" },
-  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", login: "Empezar Viaje", verify: "Verificar Código", tagline: "better destinations by ai", loading: "Consultando archivos...", postcard: "Postal IA", install: "Instalar App", installDesc: "Añade bdai a tu pantalla de inicio" },
-  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Començar Viatge", verify: "Verificar Codi", tagline: "better destinations by ai", loading: "Consultant arxius...", postcard: "Postal IA", install: "Instal·lar App", installDesc: "Afegeix a la pantalla d'inici" },
-  eu: { welcome: "Ongi etorri,", explorer: "Esploratzaile", searchPlaceholder: "Bilatu edozein hiri...", login: "Bidaiari Ekin", verify: "Kodea Egiaztatu", tagline: "better destinations by ai", loading: "Artxiboak kontsultatzen...", postcard: "IA Postala", install: "Aplikazioa Instalatu", installDesc: "Gehitu hasierako pantailan" },
-  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", login: "Commencer le Voyage", verify: "Vérifier le Code", tagline: "better destinations by ai", loading: "Consultation des archives...", postcard: "Carte Postale IA", install: "Installer l'App", installDesc: "Ajouter à l'écran d'accueil" }
+  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", login: "Start Journey", verify: "Verify Code", tagline: "better destinations by ai", loading: "Consulting archives...", install: "Install App", installDesc: "Add to home screen for full experience" },
+  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", login: "Empezar Viaje", verify: "Verificar Código", tagline: "better destinations by ai", loading: "Consultando archivos...", install: "Instalar App", installDesc: "Añade bdai a tu pantalla de inicio" },
+  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Començar Viatge", verify: "Verificar Codi", tagline: "better destinations by ai", loading: "Consultant arxius...", install: "Instal·lar App", installDesc: "Afegeix a la pantalla d'inici" },
+  eu: { welcome: "Ongi etorri,", explorer: "Esploratzaile", searchPlaceholder: "Bilatu edozein hiri...", login: "Bidaiari Ekin", verify: "Kodea Egiaztatu", tagline: "better destinations by ai", loading: "Artxiboak kontsultatzen...", install: "Aplikazioa Instalatu", installDesc: "Gehitu hasierako pantailan" },
+  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", login: "Commencer le Voyage", verify: "Vérifier le Code", tagline: "better destinations by ai", loading: "Consultation des archives...", install: "Instalar l'App", installDesc: "Ajouter à l'écran d'accueil" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -41,7 +40,6 @@ export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [loginStep, setLoginStep] = useState<'FORM' | 'VERIFY'>('FORM');
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showPostcard, setShowPostcard] = useState(false);
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -62,11 +60,11 @@ export default function App() {
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
+  const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
   useEffect(() => {
-    // Detectar si la app es instalable
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -138,25 +136,56 @@ export default function App() {
     } finally { setIsLoading(false); }
   };
 
+  const stopCurrentAudio = () => {
+    if (audioSourceRef.current) {
+        try { audioSourceRef.current.stop(); } catch(e) {}
+        audioSourceRef.current = null;
+    }
+    setAudioPlayingId(null);
+    setAudioLoadingId(null);
+  };
+
   const handlePlayAudio = async (id: string, text: string) => {
-    if (audioPlayingId === id) { audioSourceRef.current?.stop(); setAudioPlayingId(null); return; }
-    const base64 = await generateAudio(text, user.language);
-    if (base64) {
-        if (!audioContextRef.current) audioContextRef.current = new AudioContext();
+    if (audioPlayingId === id) { 
+        stopCurrentAudio();
+        return; 
+    }
+    
+    stopCurrentAudio();
+    setAudioLoadingId(id);
+    
+    try {
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
         const ctx = audioContextRef.current;
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const dataInt16 = new Int16Array(bytes.buffer);
-        const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
-        const channelData = buffer.getChannelData(0);
-        for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-        audioSourceRef.current?.stop();
-        const source = ctx.createBufferSource();
-        source.buffer = buffer; source.connect(ctx.destination);
-        source.onended = () => setAudioPlayingId(null);
-        source.start(0); audioSourceRef.current = source;
-        setAudioPlayingId(id);
+        if (ctx.state === 'suspended') await ctx.resume();
+
+        const base64 = await generateAudio(text, user.language);
+        if (base64) {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            
+            const dataInt16 = new Int16Array(bytes.buffer);
+            const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
+            const channelData = buffer.getChannelData(0);
+            for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
+            
+            const source = ctx.createBufferSource();
+            source.buffer = buffer; 
+            source.connect(ctx.destination);
+            source.onended = () => {
+                if (audioPlayingId === id) setAudioPlayingId(null);
+            };
+            source.start(0); 
+            audioSourceRef.current = source;
+            setAudioPlayingId(id);
+        }
+    } catch(e) {
+        console.error("Audio error:", e);
+    } finally {
+        setAudioLoadingId(null);
     }
   };
 
@@ -166,10 +195,6 @@ export default function App() {
       {showOnboarding && <Onboarding language={user.language} onLanguageSelect={(l) => setUser({...user, language: l})} onComplete={(ints) => { 
           const updated = {...user, interests: ints}; setUser(updated); syncUserProfile(updated); setShowOnboarding(false); 
       }} />}
-
-      {showPostcard && selectedCity && (
-          <PostcardModal city={selectedCity} interests={user.interests} language={user.language} onClose={() => setShowPostcard(false)} />
-      )}
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-center p-10 bg-[#020617] animate-fade-in relative">
@@ -220,23 +245,6 @@ export default function App() {
                               <i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}
                           </div>
                       </header>
-                      
-                      {/* Banner de Instalación dinámico */}
-                      {deferredPrompt && (
-                          <div className="mx-8 mb-6 p-6 bg-gradient-to-r from-purple-600 to-indigo-700 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-                              <div className="absolute -right-4 -top-4 text-white/10 text-7xl rotate-12 transition-transform group-hover:scale-110">
-                                  <i className="fas fa-download"></i>
-                              </div>
-                              <div className="relative z-10">
-                                  <h4 className="text-white font-black text-lg leading-tight mb-1">{t('install')}</h4>
-                                  <p className="text-purple-100 text-[10px] font-bold opacity-80 mb-4">{t('installDesc')}</p>
-                                  <button onClick={handleInstall} className="bg-white text-slate-950 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-                                      {t('install')}
-                                  </button>
-                              </div>
-                          </div>
-                      )}
-
                       <div className="px-8 mb-4">
                           <h1 className="text-4xl font-black text-white uppercase tracking-tighter">
                             {t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span>
@@ -254,11 +262,8 @@ export default function App() {
                       <header className="flex items-center justify-between mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20">
                           <div className="flex items-center gap-4">
                             <button onClick={() => navigateTo(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
-                            <h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate max-w-[150px]">{selectedCity}</h2>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate max-w-[200px]">{selectedCity}</h2>
                           </div>
-                          <button onClick={() => setShowPostcard(true)} className="bg-purple-600/20 border border-purple-500/30 text-purple-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                            <i className="fas fa-magic"></i> {t('postcard')}
-                          </button>
                       </header>
                       {isLoading ? (
                           <div className="py-32 text-center text-slate-500 font-black uppercase text-[10px] tracking-[0.5em] animate-pulse">{t('loading')}</div>
@@ -273,7 +278,7 @@ export default function App() {
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(p => Math.min(activeTour.stops.length - 1, p + 1))} onPrev={() => setCurrentStopIndex(p => Math.max(0, p - 1))} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} language={user.language} onBack={() => navigateTo(AppView.CITY_DETAIL)} userLocation={userLocation} onVisit={() => {}} />
+                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(p => Math.min(activeTour.stops.length - 1, p + 1))} onPrev={() => setCurrentStopIndex(p => Math.max(0, p - 1))} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language} onBack={() => navigateTo(AppView.CITY_DETAIL)} userLocation={userLocation} onVisit={() => {}} />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={handleCitySelect} />}
