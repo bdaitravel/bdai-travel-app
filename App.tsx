@@ -14,11 +14,11 @@ import { CommunityBoard } from './components/CommunityBoard';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", login: "Start Journey", verify: "Verify Code", tagline: "better destinations by ai", loading: "Consulting archives...", install: "Install App", installDesc: "Add to home screen for full experience" },
-  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", login: "Empezar Viaje", verify: "Verificar Código", tagline: "better destinations by ai", loading: "Consultando archivos...", install: "Instalar App", installDesc: "Añade bdai a tu pantalla de inicio" },
-  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Començar Viatge", verify: "Verificar Codi", tagline: "better destinations by ai", loading: "Consultant arxius...", install: "Instal·lar App", installDesc: "Afegeix a la pantalla d'inici" },
-  eu: { welcome: "Ongi etorri,", explorer: "Esploratzaile", searchPlaceholder: "Bilatu edozein hiri...", login: "Bidaiari Ekin", verify: "Kodea Egiaztatu", tagline: "better destinations by ai", loading: "Artxiboak kontsultatzen...", install: "Aplikazioa Instalatu", installDesc: "Gehitu hasierako pantailan" },
-  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", login: "Commencer le Voyage", verify: "Vérifier le Code", tagline: "better destinations by ai", loading: "Consultation des archives...", install: "Instalar l'App", installDesc: "Ajouter à l'écran d'accueil" }
+  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", login: "Start Journey", verify: "Verify Code", tagline: "better destinations by ai", loading: "Consulting archives...", install: "Install App", installDesc: "Add to home screen", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", navHome: "Home" },
+  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", login: "Empezar Viaje", verify: "Verificar Código", tagline: "better destinations by ai", loading: "Consultando archivos...", install: "Instalar App", installDesc: "Añade a pantalla de inicio", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", navHome: "Inicio" },
+  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Començar Viatge", verify: "Verificar Codi", tagline: "better destinations by ai", loading: "Consultant arxius...", install: "Instal·lar App", installDesc: "Afegeix a la pantalla d'inici", navElite: "Elit", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", navHome: "Inici" },
+  eu: { welcome: "Ongi etorri,", explorer: "Esploratzaile", searchPlaceholder: "Bilatu edozein hiri...", login: "Bidaiari Ekin", verify: "Kodea Egiaztatu", tagline: "better destinations by ai", loading: "Artxiboak kontsultatzen...", install: "Aplikazioa Instalatu", installDesc: "Gehitu hasierako pantailan", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Denda", navHome: "Hasiera" },
+  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", login: "Commencer le Voyage", verify: "Vérifier le Code", tagline: "better destinations by ai", loading: "Consultation des archives...", install: "Instalar l'App", installDesc: "Ajouter à l'écran d'accueil", navElite: "Élite", navHub: "Hub", navVisa: "Visa", navStore: "Boutique", navHome: "Accueil" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -59,10 +59,14 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   
+  // Audio State & Refs
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioBufferRef = useRef<AudioBuffer | null>(null);
+  const audioStartOffsetRef = useRef<number>(0);
+  const audioStartTimeRef = useRef<number>(0);
 
   useEffect(() => {
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -70,14 +74,21 @@ export default function App() {
       setDeferredPrompt(e);
     });
 
+    let watchId: number;
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
+      watchId = navigator.geolocation.watchPosition(
+        pos => {
+          setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude});
+        },
         err => console.error("GPS Error:", err),
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     }
     getGlobalRanking().then(setLeaderboard);
+
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    }
   }, []);
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
@@ -136,62 +147,107 @@ export default function App() {
     } finally { setIsLoading(false); }
   };
 
+  const handleVisit = (stopId: string, milesReward: number) => {
+    if (!activeTour) return;
+    const stop = activeTour.stops.find(s => s.id === stopId);
+    if (stop?.visited) return;
+
+    const updatedMiles = user.miles + milesReward;
+    const updatedUser = { 
+      ...user, 
+      miles: updatedMiles,
+      stats: { ...user.stats, photosTaken: milesReward > 50 ? user.stats.photosTaken + 1 : user.stats.photosTaken }
+    };
+    setUser(updatedUser);
+    syncUserProfile(updatedUser);
+
+    const updatedStops = activeTour.stops.map(s => s.id === stopId ? { ...s, visited: true } : s);
+    const updatedTour = { ...activeTour, stops: updatedStops };
+    setActiveTour(updatedTour);
+    setTours(prev => prev.map(t => t.id === activeTour.id ? updatedTour : t));
+    
+    if (!user.visitedCities.includes(activeTour.city)) {
+        const updatedVisited = [...user.visitedCities, activeTour.city];
+        const userWithCity = { ...updatedUser, visitedCities: updatedVisited };
+        setUser(userWithCity);
+        syncUserProfile(userWithCity);
+    }
+  };
+
   const stopCurrentAudio = () => {
     if (audioSourceRef.current) {
-        try { audioSourceRef.current.stop(); } catch(e) {}
+        try { 
+          audioSourceRef.current.onended = null;
+          audioSourceRef.current.stop(); 
+        } catch(e) {}
         audioSourceRef.current = null;
     }
     setAudioPlayingId(null);
     setAudioLoadingId(null);
+    audioBufferRef.current = null;
+    audioStartOffsetRef.current = 0;
+  };
+
+  const playBuffer = (buffer: AudioBuffer, offset: number = 0, id: string) => {
+    if (!audioContextRef.current) return;
+    const ctx = audioContextRef.current;
+    if (audioSourceRef.current) { try { audioSourceRef.current.stop(); } catch(e) {} }
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    
+    source.onended = () => {
+        const playedTime = ctx.currentTime - audioStartTimeRef.current;
+        const totalExpected = buffer.duration - offset;
+        if (playedTime >= totalExpected - 0.1) {
+            setAudioPlayingId(null);
+            audioStartOffsetRef.current = 0;
+        }
+    };
+
+    audioStartTimeRef.current = ctx.currentTime;
+    audioStartOffsetRef.current = offset;
+    source.start(0, offset);
+    audioSourceRef.current = source;
+    setAudioPlayingId(id);
   };
 
   const handlePlayAudio = async (id: string, text: string) => {
-    if (audioPlayingId === id) { 
-        stopCurrentAudio();
-        return; 
-    }
-    
+    if (audioPlayingId === id) { stopCurrentAudio(); return; }
     stopCurrentAudio();
     setAudioLoadingId(id);
-    
     try {
-        if (!audioContextRef.current) {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
+        if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         const ctx = audioContextRef.current;
         if (ctx.state === 'suspended') await ctx.resume();
-
         const base64 = await generateAudio(text, user.language);
         if (base64) {
             const binary = atob(base64);
             const bytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            
             const dataInt16 = new Int16Array(bytes.buffer);
             const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
             const channelData = buffer.getChannelData(0);
             for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-            
-            const source = ctx.createBufferSource();
-            source.buffer = buffer; 
-            source.connect(ctx.destination);
-            source.onended = () => {
-                if (audioPlayingId === id) setAudioPlayingId(null);
-            };
-            source.start(0); 
-            audioSourceRef.current = source;
-            setAudioPlayingId(id);
+            audioBufferRef.current = buffer;
+            playBuffer(buffer, 0, id);
         }
-    } catch(e) {
-        console.error("Audio error:", e);
-    } finally {
-        setAudioLoadingId(null);
-    }
+    } catch(e) { console.error("Audio error:", e); } finally { setAudioLoadingId(null); }
+  };
+
+  const handleSkipAudio = (seconds: number) => {
+      if (!audioBufferRef.current || !audioContextRef.current || !audioPlayingId) return;
+      const ctx = audioContextRef.current;
+      const currentOffset = audioStartOffsetRef.current + (ctx.currentTime - audioStartTimeRef.current);
+      let newOffset = currentOffset + seconds;
+      if (newOffset < 0) newOffset = 0;
+      if (newOffset > audioBufferRef.current.duration) { stopCurrentAudio(); return; }
+      playBuffer(audioBufferRef.current, newOffset, audioPlayingId);
   };
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col relative overflow-hidden text-slate-100 h-screen w-screen font-sans">
-      
       {showOnboarding && <Onboarding language={user.language} onLanguageSelect={(l) => setUser({...user, language: l})} onComplete={(ints) => { 
           const updated = {...user, interests: ints}; setUser(updated); syncUserProfile(updated); setShowOnboarding(false); 
       }} />}
@@ -205,20 +261,18 @@ export default function App() {
                       </button>
                   ))}
               </div>
-
               <div className="text-center mb-12 flex flex-col items-center relative z-10">
                   <BdaiLogo className="w-40 h-40 mb-4 drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]" />
                   <h1 className="text-6xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mt-2">{t('tagline')}</p>
               </div>
-
               <div className="w-full space-y-4 max-w-xs z-10">
                   {authError && <p className="text-red-500 text-[10px] font-black uppercase text-center bg-red-500/10 p-3 rounded-2xl">{authError}</p>}
                   {loginStep === 'FORM' ? (
                       <>
                           <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none text-center text-white focus:border-purple-500/50" />
                           <button disabled={isLoading} onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
-                              {isLoading ? "Cargando..." : t('login')}
+                              {isLoading ? "..." : t('login')}
                           </button>
                       </>
                   ) : (
@@ -278,7 +332,20 @@ export default function App() {
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(p => Math.min(activeTour.stops.length - 1, p + 1))} onPrev={() => setCurrentStopIndex(p => Math.max(0, p - 1))} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language} onBack={() => navigateTo(AppView.CITY_DETAIL)} userLocation={userLocation} onVisit={() => {}} />
+                  <ActiveTourCard 
+                    tour={activeTour} 
+                    currentStopIndex={currentStopIndex} 
+                    onNext={() => setCurrentStopIndex(p => Math.min(activeTour.stops.length - 1, p + 1))} 
+                    onPrev={() => setCurrentStopIndex(p => Math.max(0, p - 1))} 
+                    onPlayAudio={handlePlayAudio} 
+                    onSkipAudio={handleSkipAudio}
+                    audioPlayingId={audioPlayingId} 
+                    audioLoadingId={audioLoadingId} 
+                    language={user.language} 
+                    onBack={() => { stopCurrentAudio(); navigateTo(AppView.CITY_DETAIL); }} 
+                    userLocation={userLocation} 
+                    onVisit={handleVisit} 
+                  />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={handleCitySelect} />}
@@ -288,13 +355,13 @@ export default function App() {
             
             <div className="fixed bottom-0 left-0 right-0 z-[100] px-8 pb-safe mb-4 pointer-events-none">
                 <nav className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 px-6 py-4 flex justify-between items-center w-full rounded-[3rem] pointer-events-auto shadow-2xl">
-                    <NavButton icon="fa-trophy" label="Elite" isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
-                    <NavButton icon="fa-compass" label="Hub" isActive={view === AppView.TOOLS} onClick={() => navigateTo(AppView.TOOLS)} />
+                    <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
+                    <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => navigateTo(AppView.TOOLS)} />
                     <button onClick={() => navigateTo(AppView.HOME)} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 shadow-lg rotate-45' : 'bg-white/5'}`}>
                         <div className={view === AppView.HOME ? '-rotate-45' : ''}><BdaiLogo className="w-7 h-7" /></div>
                     </button>
-                    <NavButton icon="fa-id-card" label="Visa" isActive={view === AppView.PROFILE} onClick={() => navigateTo(AppView.PROFILE)} />
-                    <NavButton icon="fa-shopping-bag" label="Store" isActive={view === AppView.SHOP} onClick={() => navigateTo(AppView.SHOP)} />
+                    <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => navigateTo(AppView.PROFILE)} />
+                    <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => navigateTo(AppView.SHOP)} />
                 </nav>
             </div>
           </>

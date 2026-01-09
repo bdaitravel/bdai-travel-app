@@ -75,19 +75,19 @@ export const saveToursToCache = async (city: string, language: string, tours: To
   } catch (e) { console.error("Cache Save Error:", e); }
 };
 
-// Hash robusto para evitar colisiones en caché de audio
+// Hash único para el audio de Dai
 const generateSecureHash = (text: string, lang: string) => {
     const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
     const len = clean.length;
-    // Usamos inicio, fin y longitud para crear un identificador único
-    return `${lang}_L${len}_S${clean.substring(0, 30)}_E${clean.substring(len - 30)}`;
+    return `dai_${lang}_L${len}_S${clean.substring(0, 20)}_E${clean.substring(len - 20)}`;
 };
 
 export const getCachedAudio = async (text: string, language: string): Promise<string | null> => {
   const hash = generateSecureHash(text, language);
   try {
     const { data, error } = await supabase.from('audio_cache').select('base64').eq('text_hash', hash).eq('language', language).maybeSingle();
-    return (error || !data) ? null : data.base64;
+    if (error || !data) return null;
+    return data.base64;
   } catch (e) { return null; }
 };
 
@@ -95,10 +95,13 @@ export const saveAudioToCache = async (text: string, language: string, base64: s
   const hash = generateSecureHash(text, language);
   try {
     const { error } = await supabase.from('audio_cache').upsert({
-      text_hash: hash, language, base64, created_at: new Date().toISOString()
+      text_hash: hash, 
+      language, 
+      base64, 
+      created_at: new Date().toISOString()
     }, { onConflict: 'text_hash,language' });
-    if (error) console.warn("Supabase Audio Cache Error:", error);
-  } catch (e) { console.error("Audio Cache Save Error:", e); }
+    if (error) console.warn("Supabase Sync Error:", error);
+  } catch (e) { console.error("Supabase Save Error:", e); }
 };
 
 export const getCommunityPosts = async (city: string) => {
