@@ -299,6 +299,25 @@ export default function App() {
                               <i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}
                           </div>
                       </header>
+                      
+                      {/* BANNER DE INSTALACIÓN PWA */}
+                      {deferredPrompt && (
+                        <div className="mx-8 mb-6 p-6 bg-gradient-to-r from-purple-600 to-indigo-700 rounded-[2rem] shadow-2xl flex items-center justify-between border border-white/10 animate-bounce-subtle">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-950 shadow-lg">
+                               <i className="fas fa-download text-xl"></i>
+                            </div>
+                            <div>
+                              <h4 className="text-white font-black text-xs uppercase tracking-tighter">{t('install')}</h4>
+                              <p className="text-white/60 text-[8px] font-bold uppercase tracking-widest">{t('installDesc')}</p>
+                            </div>
+                          </div>
+                          <button onClick={handleInstall} className="bg-white text-slate-950 px-5 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest active:scale-90 transition-all shadow-xl">
+                            {t('start')}
+                          </button>
+                        </div>
+                      )}
+
                       <div className="px-8 mb-4">
                           <h1 className="text-4xl font-black text-white uppercase tracking-tighter">
                             {t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span>
@@ -366,6 +385,14 @@ export default function App() {
             </div>
           </>
       )}
+
+      <style>{`
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-subtle { animation: bounce-subtle 3s ease-in-out infinite; }
+      `}</style>
     </div>
   );
 }

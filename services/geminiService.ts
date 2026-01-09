@@ -4,16 +4,26 @@ import { Tour, Stop, UserProfile } from '../types';
 import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const LANGUAGE_RULES: Record<string, string> = {
-    es: "PERSONALIDAD: Eres Dai, una guía local experta de España, apasionada y culta. IDIOMA: Español de España (Castellano). REGLA CRÍTICA: Usa vocabulario de España (ej: 'coche' no 'carro', 'aparcar' no 'estacionar', 'ordenador' no 'computadora'). Prohibido usar palabras técnicas de estructura como 'CAPA', 'LAYER', 'NIVEL'. Habla de forma fluida, literaria y natural.",
-    en: "PERSONALITY: You are Dai, an expert local guide. LANGUAGE: English. CRITICAL RULE: Never mention structural metadata like 'LAYER' or 'SECTION'. Write in a fluid, narrative style.",
+    es: "PERSONALIDAD: Eres Dai, una guía local experta de España, apasionada y culta. IDIOMA: Español de España (Castellano). REGLA CRÍTICA: Usa vocabulario de España (ej: 'coche' no 'carro'). Habla de forma fluida, literaria y natural.",
+    en: "PERSONALITY: You are Dai, an expert local guide. LANGUAGE: English. Write in a fluid, narrative style.",
+    ca: "PERSONALITAT: Ets la Dai, una guia local experta, apassionada i culta. IDIOMA: Català. Escriu de forma fluida, literària i natural.",
+    eu: "NORTASUNA: Dai zara, tokiko gida aditua, sutsua eta jantzia. HIZKUNTZA: Euskara. Idatzi modu fluidoan, literarioan eta naturalean.",
+    fr: "PERSONNALITÉ: Vous êtes Dai, une guide locale experte, passionnée et cultivée. LANGUE: Français. Écrivez dans un style fluide, narratif et naturel."
+};
+
+const AUDIO_PROMPTS: Record<string, string> = {
+    es: "Léeme este texto con un acento español de España (peninsular) claro y natural: ",
+    en: "Read this text with a professional and clear English accent: ",
+    ca: "Llegeix aquest text amb un accent català natural i clar: ",
+    eu: "Irakurri testu hau euskarazko ahoskera argi eta naturalarekin: ",
+    fr: "Lisez ce texte avec un accent français clair et naturel : "
 };
 
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
-    // Filtro avanzado para eliminar cualquier residuo de estructuración de IA
     return text
         .replace(/(CAPA|LAYER|NIVEL|ETAPA|SECCIÓN|PUNTO|STEP|FASE|ESTADIO)\s*\d+[:.-]?/gi, '')
-        .replace(/^\d+\.\s*/gm, '') // Elimina números al inicio de línea
+        .replace(/^\d+\.\s*/gm, '')
         .replace(/\*\*/g, '')
         .replace(/###/g, '')
         .replace(/#/g, '')
@@ -26,11 +36,11 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const prompt = `${langRule}
   CIUDAD: ${cityInput}. 
   OBJETIVO: Crea un tour de 12 a 15 paradas que formen una RUTA PEATONAL LINEAL Y NO CIRCULAR.
-  REGLA DE RUTA: El punto de inicio y el punto final deben estar geográficamente alejados. La ruta debe atravesar la ciudad en una dirección lógica (ej: de Norte a Sur o de Este a Oeste). NO vuelvas al punto de partida.
-  CONTENIDO: Cada parada debe ser EXTENSA (mínimo 350 palabras) y detallada. Incluye: 
-  - Análisis arquitectónico profundo (estilo, materiales, anécdotas del constructor).
+  REGLA DE RUTA: El punto de inicio y el punto final deben estar geográficamente alejados.
+  CONTENIDO: Cada parada debe ser EXTENSA (mínimo 350 palabras) y detallada en el IDIOMA especificado arriba. Incluye: 
+  - Análisis arquitectónico profundo.
   - Contexto histórico político y social del lugar.
-  - Curiosidades ocultas o leyendas que no aparecen en las guías estándar.
+  - Curiosidades ocultas.
   INSTRUCCIONES: Las coordenadas GPS deben ser extremadamente precisas.
   PHOTO SPOT: Define un ángulo 'instagrameable' poético para cada lugar.`;
 
@@ -94,11 +104,8 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    // Instrucción específica para forzar el acento de España
-    const audioPrompt = language === 'es' 
-        ? `Léeme este texto con un acento español de España (peninsular) claro, natural y profesional: ${cleanText}`
-        : cleanText;
+    const instruction = AUDIO_PROMPTS[language] || AUDIO_PROMPTS.es;
+    const audioPrompt = `${instruction}${cleanText}`;
 
     const response = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
