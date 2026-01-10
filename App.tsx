@@ -51,7 +51,7 @@ export default function App() {
     try {
         const saved = localStorage.getItem('bdai_profile');
         if (saved) return { ...GUEST_PROFILE, ...JSON.parse(saved) };
-    } catch (e) { console.warn("LocalStorage access failed"); }
+    } catch (e) {}
     return GUEST_PROFILE;
   });
 
@@ -70,9 +70,7 @@ export default function App() {
     let watchId: number;
     if (navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
-        pos => {
-          setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude});
-        },
+        pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
         err => console.error("GPS Error:", err),
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
@@ -105,21 +103,32 @@ export default function App() {
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       setAuthError(null);
       setIsLoading(true);
+      
       try {
           const { data, error } = await verifyOtpCode(email, otpCode);
-          if (error || !data?.user) { setAuthError(t('codeError')); setIsLoading(false); return; }
+          if (error || !data?.user) { 
+            setAuthError(t('codeError')); 
+            setIsLoading(false); 
+            return; 
+          }
           const profile = await getUserProfileByEmail(email);
           const newUser: UserProfile = profile ? 
             { ...profile, isLoggedIn: true } : 
             { ...user, id: data.user.id, email: email, isLoggedIn: true, language: user.language || 'es' };
+          
           setUser(newUser);
           try { localStorage.setItem('bdai_profile', JSON.stringify(newUser)); } catch (e) {}
+
+          // Retraso mayor para iOS Safari
           setTimeout(() => {
-              navigateTo(AppView.HOME);
+              setView(AppView.HOME);
               if (!newUser.interests?.length) setShowOnboarding(true);
               setIsLoading(false);
-          }, 400);
-      } catch (e) { setAuthError(t('authError')); setIsLoading(false); }
+          }, 600);
+      } catch (e) { 
+        setAuthError(t('authError')); 
+        setIsLoading(false); 
+      }
   };
 
   const handleCitySelect = async (cityInput: string) => {
@@ -136,19 +145,6 @@ export default function App() {
             await saveToursToCache(cityInput.trim(), user.language, res);
         }
     } finally { setIsLoading(false); }
-  };
-
-  const handleVisit = (stopId: string, milesReward: number) => {
-    if (!activeTour) return;
-    const stop = activeTour.stops.find(s => s.id === stopId);
-    if (stop?.visited) return;
-    const updatedMiles = user.miles + milesReward;
-    const updatedUser = { ...user, miles: updatedMiles };
-    setUser(updatedUser);
-    syncUserProfile(updatedUser);
-    const updatedStops = activeTour.stops.map(s => s.id === stopId ? { ...s, visited: true } : s);
-    const updatedTour = { ...activeTour, stops: updatedStops };
-    setActiveTour(updatedTour);
   };
 
   const stopCurrentAudio = () => {
@@ -218,7 +214,7 @@ export default function App() {
                       <div className="animate-fade-in space-y-4">
                           <input type="text" inputMode="numeric" maxLength={8} placeholder="CÓDIGO" value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none text-center font-black text-2xl text-purple-400 tracking-widest" />
                           <button disabled={isLoading} onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
-                              {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('verify')}
+                              {isLoading ? <i className="fas fa-spinner fa-spin text-xl"></i> : t('verify')}
                           </button>
                       </div>
                   )}
@@ -254,7 +250,7 @@ export default function App() {
                   <div className="pt-safe px-6 animate-fade-in">
                       <header className="flex items-center justify-between mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20">
                           <div className="flex items-center gap-4">
-                            <button onClick={() => navigateTo(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
+                            <button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
                             <h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate max-w-[200px]">{selectedCity}</h2>
                           </div>
                       </header>
@@ -280,27 +276,34 @@ export default function App() {
                     audioPlayingId={audioPlayingId} 
                     audioLoadingId={audioLoadingId} 
                     language={user.language} 
-                    onBack={() => { stopCurrentAudio(); navigateTo(AppView.CITY_DETAIL); }} 
+                    onBack={() => { stopCurrentAudio(); setView(AppView.CITY_DETAIL); }} 
                     userLocation={userLocation} 
-                    onVisit={handleVisit} 
+                    onVisit={(id: string, miles: number) => {
+                      const stop = activeTour.stops.find(s => s.id === id);
+                      if (stop?.visited) return;
+                      const updated = { ...user, miles: user.miles + miles };
+                      setUser(updated);
+                      syncUserProfile(updated);
+                      setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) });
+                    }} 
                   />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={handleCitySelect} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => setUser({...user, miles: user.miles + reward})} />}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} onLogout={() => { localStorage.removeItem('bdai_profile'); navigateTo(AppView.LOGIN); }} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} />}
             </div>
             
             {view !== AppView.TOUR_ACTIVE && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-8 pb-safe mb-4 pointer-events-none">
                   <nav className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 px-6 py-4 flex justify-between items-center w-full rounded-[3rem] pointer-events-auto shadow-2xl">
-                      <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
-                      <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => navigateTo(AppView.TOOLS)} />
-                      <button onClick={() => navigateTo(AppView.HOME)} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 shadow-lg rotate-45' : 'bg-white/5'}`}>
+                      <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
+                      <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
+                      <button onClick={() => setView(AppView.HOME)} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 shadow-lg rotate-45' : 'bg-white/5'}`}>
                           <div className={view === AppView.HOME ? '-rotate-45' : ''}><BdaiLogo className="w-7 h-7" /></div>
                       </button>
-                      <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => navigateTo(AppView.PROFILE)} />
-                      <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => navigateTo(AppView.SHOP)} />
+                      <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
+                      <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
                   </nav>
               </div>
             )}

@@ -36,9 +36,6 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
     stops, 
     currentStopIndex, 
     userLocation, 
-    onPlayAudio, 
-    audioPlayingId,
-    audioLoadingId,
     language = 'es'
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -59,10 +56,11 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
 
   useEffect(() => {
     if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
+    
     const map = L.map(mapContainerRef.current, {
         zoomControl: false,
         attributionControl: false,
-        tap: false // Desactivar tap nativo de Leaflet para mejorar compatibilidad con gestos de Safari
+        tap: false
     }).setView([0, 0], 15);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -70,6 +68,12 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
     }).addTo(map);
 
     mapInstanceRef.current = map;
+    
+    // Forzar actualización de tamaño para evitar cortes en iOS
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 200);
+
     map.on('dragstart', () => setIsAutoFollowing(false));
     return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
   }, []);
@@ -101,7 +105,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         }).addTo(map);
         if (isAutoFollowing) {
             const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [activeStop.latitude, activeStop.longitude]]);
-            map.fitBounds(bounds, { padding: [80, 80], maxZoom: 18 });
+            map.fitBounds(bounds, { padding: [100, 100], maxZoom: 17 });
         }
     }
 
@@ -109,16 +113,16 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         const isActive = idx === currentStopIndex;
         const typeIcon = STOP_TYPE_ICONS[stop.type] || 'fa-location-dot';
         const iconHtml = `
-            <div class="relative flex items-center justify-center pointer-events-auto">
-                <div class="w-10 h-10 rounded-full border-4 border-white shadow-2xl flex items-center justify-center text-[11px] font-black
-                    ${isActive ? 'bg-purple-600 text-white scale-125 z-[500] ring-4 ring-purple-600/20' : 'bg-slate-900 text-white opacity-40'}
+            <div class="relative flex items-center justify-center">
+                <div class="w-12 h-12 rounded-full border-[6px] border-white shadow-2xl flex items-center justify-center text-[13px] font-black
+                    ${isActive ? 'bg-purple-600 text-white scale-125 z-[5000] ring-8 ring-purple-600/20' : 'bg-slate-900 text-white opacity-50'}
                 ">
                     <i class="fas ${typeIcon}"></i>
                 </div>
             </div>
         `;
         const marker = L.marker([stop.latitude, stop.longitude], { 
-            icon: L.divIcon({ className: '', html: iconHtml, iconSize: [40, 40], iconAnchor: [20, 20] }) 
+            icon: L.divIcon({ className: '', html: iconHtml, iconSize: [48, 48], iconAnchor: [24, 24] }) 
         }).addTo(map);
         markersRef.current.push(marker);
     });
@@ -127,32 +131,40 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], {
             icon: L.divIcon({
                 className: '',
-                html: '<div class="w-8 h-8 bg-blue-600 rounded-full border-4 border-white shadow-2xl relative"><div class="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-50"></div></div>',
-                iconSize: [32, 32], iconAnchor: [16, 16]
+                html: '<div class="w-10 h-10 bg-blue-600 rounded-full border-4 border-white shadow-2xl relative"><div class="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-60"></div></div>',
+                iconSize: [40, 40], iconAnchor: [20, 20]
             }),
-            zIndexOffset: 1000
+            zIndexOffset: 10000
         }).addTo(map);
     }
   }, [stops, currentStopIndex, userLocation, isAutoFollowing]);
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-slate-200 pointer-events-auto">
+    <div className="w-full h-full relative overflow-hidden bg-slate-200">
         <div ref={mapContainerRef} className="w-full h-full pointer-events-auto" />
         {userLocation && stops[currentStopIndex] && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[450] w-[90%] pointer-events-none">
-                <div className="bg-slate-900/98 backdrop-blur-3xl border border-white/10 p-3 rounded-3xl shadow-2xl flex items-center gap-4 pointer-events-auto">
-                    <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white shrink-0">
-                        <i className={`fas ${STOP_TYPE_ICONS[stops[currentStopIndex].type] || 'fa-location-arrow'}`}></i>
+            <div className="absolute top-10 left-1/2 -translate-x-1/2 z-[450] w-[90%] max-w-[400px] pointer-events-none">
+                <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/20 p-4 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex items-center gap-5 pointer-events-auto">
+                    <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-purple-500/20">
+                        <i className={`fas ${STOP_TYPE_ICONS[stops[currentStopIndex].type] || 'fa-location-arrow'} text-lg`}></i>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[7px] font-black text-purple-400 uppercase mb-0.5">{tl.guide}</p>
-                        <h4 className="text-white font-black text-[10px] truncate uppercase">{stops[currentStopIndex].name}</h4>
+                        <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mb-1">{tl.guide}</p>
+                        <h4 className="text-white font-black text-xs truncate uppercase tracking-tighter">{stops[currentStopIndex].name}</h4>
                     </div>
-                    <button onClick={openInExternalMaps} className="bg-blue-600 text-white h-10 px-4 rounded-xl text-[8px] font-black uppercase tracking-widest flex items-center gap-2">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); openInExternalMaps(); }} 
+                        className="bg-blue-600 text-white h-12 px-5 rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
+                    >
                         <i className="fas fa-map-location-dot"></i> {tl.openInMaps}
                     </button>
                     {!isAutoFollowing && (
-                        <button onClick={() => setIsAutoFollowing(true)} className="bg-white/10 text-white w-10 h-10 rounded-xl flex items-center justify-center"><i className="fas fa-crosshairs"></i></button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setIsAutoFollowing(true); }} 
+                            className="bg-white/10 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                        >
+                            <i className="fas fa-crosshairs"></i>
+                        </button>
                     )}
                 </div>
             </div>
