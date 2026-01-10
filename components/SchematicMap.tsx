@@ -26,9 +26,6 @@ interface SchematicMapProps {
   stops: Stop[];
   currentStopIndex: number;
   userLocation?: { lat: number; lng: number } | null;
-  onPlayAudio?: (id: string, text: string) => void;
-  audioPlayingId?: string | null;
-  audioLoadingId?: string | null;
   language?: string;
 }
 
@@ -47,7 +44,9 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
   const [isAutoFollowing, setIsAutoFollowing] = useState(true);
   const tl = TEXTS[language] || TEXTS.es;
 
-  const openInExternalMaps = () => {
+  const openInExternalMaps = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
       const stop = stops[currentStopIndex];
       if (!stop) return;
       const url = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}&travelmode=walking`;
@@ -69,10 +68,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
 
     mapInstanceRef.current = map;
     
-    // Forzar actualización de tamaño para evitar cortes en iOS
-    setTimeout(() => {
-        map.invalidateSize();
-    }, 200);
+    setTimeout(() => { map.invalidateSize(); }, 300);
 
     map.on('dragstart', () => setIsAutoFollowing(false));
     return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
@@ -105,7 +101,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         }).addTo(map);
         if (isAutoFollowing) {
             const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [activeStop.latitude, activeStop.longitude]]);
-            map.fitBounds(bounds, { padding: [100, 100], maxZoom: 17 });
+            map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
         }
     }
 
@@ -114,15 +110,15 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         const typeIcon = STOP_TYPE_ICONS[stop.type] || 'fa-location-dot';
         const iconHtml = `
             <div class="relative flex items-center justify-center">
-                <div class="w-12 h-12 rounded-full border-[6px] border-white shadow-2xl flex items-center justify-center text-[13px] font-black
-                    ${isActive ? 'bg-purple-600 text-white scale-125 z-[5000] ring-8 ring-purple-600/20' : 'bg-slate-900 text-white opacity-50'}
+                <div class="w-10 h-10 rounded-full border-4 border-white shadow-2xl flex items-center justify-center text-[11px] font-black
+                    ${isActive ? 'bg-purple-600 text-white scale-125 z-[5000]' : 'bg-slate-900 text-white opacity-50'}
                 ">
                     <i class="fas ${typeIcon}"></i>
                 </div>
             </div>
         `;
         const marker = L.marker([stop.latitude, stop.longitude], { 
-            icon: L.divIcon({ className: '', html: iconHtml, iconSize: [48, 48], iconAnchor: [24, 24] }) 
+            icon: L.divIcon({ className: '', html: iconHtml, iconSize: [40, 40], iconAnchor: [20, 20] }) 
         }).addTo(map);
         markersRef.current.push(marker);
     });
@@ -131,10 +127,9 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], {
             icon: L.divIcon({
                 className: '',
-                html: '<div class="w-10 h-10 bg-blue-600 rounded-full border-4 border-white shadow-2xl relative"><div class="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-60"></div></div>',
-                iconSize: [40, 40], iconAnchor: [20, 20]
-            }),
-            zIndexOffset: 10000
+                html: '<div class="w-8 h-8 bg-blue-600 rounded-full border-4 border-white shadow-xl"></div>',
+                iconSize: [32, 32], iconAnchor: [16, 16]
+            })
         }).addTo(map);
     }
   }, [stops, currentStopIndex, userLocation, isAutoFollowing]);
@@ -142,28 +137,30 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-200">
         <div ref={mapContainerRef} className="w-full h-full pointer-events-auto" />
+        
+        {/* Capa de Control GPS - Siempre arriba del mapa */}
         {userLocation && stops[currentStopIndex] && (
-            <div className="absolute top-10 left-1/2 -translate-x-1/2 z-[450] w-[90%] max-w-[400px] pointer-events-none">
-                <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/20 p-4 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.4)] flex items-center gap-5 pointer-events-auto">
-                    <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-purple-500/20">
-                        <i className={`fas ${STOP_TYPE_ICONS[stops[currentStopIndex].type] || 'fa-location-arrow'} text-lg`}></i>
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[450] w-[90%] pointer-events-none">
+                <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto">
+                    <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white shrink-0">
+                        <i className={`fas ${STOP_TYPE_ICONS[stops[currentStopIndex].type] || 'fa-location-arrow'} text-xs`}></i>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mb-1">{tl.guide}</p>
-                        <h4 className="text-white font-black text-xs truncate uppercase tracking-tighter">{stops[currentStopIndex].name}</h4>
+                        <p className="text-[7px] font-black text-purple-400 uppercase mb-0.5">{tl.guide}</p>
+                        <h4 className="text-white font-black text-[10px] truncate uppercase">{stops[currentStopIndex].name}</h4>
                     </div>
                     <button 
-                        onClick={(e) => { e.stopPropagation(); openInExternalMaps(); }} 
-                        className="bg-blue-600 text-white h-12 px-5 rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
+                        onClick={openInExternalMaps} 
+                        className="bg-blue-600 text-white h-8 px-3 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
                     >
                         <i className="fas fa-map-location-dot"></i> {tl.openInMaps}
                     </button>
                     {!isAutoFollowing && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); setIsAutoFollowing(true); }} 
-                            className="bg-white/10 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                            className="bg-white/10 text-white w-8 h-8 rounded-lg flex items-center justify-center shadow-lg"
                         >
-                            <i className="fas fa-crosshairs"></i>
+                            <i className="fas fa-crosshairs text-xs"></i>
                         </button>
                     )}
                 </div>

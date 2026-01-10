@@ -23,7 +23,7 @@ const TRANSLATIONS: any = {
 
 const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Explorer', 
+  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', 
   email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, birthday: '2000-01-01', 
   visitedCities: [], completedTours: [], savedIntel: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, 
   badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: 'XP-TEMP-BDAI', city: '', country: ''
@@ -81,21 +81,23 @@ export default function App() {
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
-  const navigateTo = (newView: AppView) => {
-    setView(newView);
-    window.scrollTo(0, 0);
-  };
-
+  // Added handleSendOtp to handle sending the OTP email
   const handleSendOtp = async () => {
-    if (!email || !email.includes('@')) { setAuthError("Email inválido"); return; }
+    if (!email || isLoading) return;
     setAuthError(null);
     setIsLoading(true);
     try {
-        const { error } = await sendOtpEmail(email);
-        if (error) setAuthError(t('authError'));
-        else setLoginStep('VERIFY');
-    } catch(e) { setAuthError(t('authError')); }
-    finally { setIsLoading(false); }
+      const { error } = await sendOtpEmail(email);
+      if (error) {
+        setAuthError(t('authError'));
+      } else {
+        setLoginStep('VERIFY');
+      }
+    } catch (e) {
+      setAuthError(t('authError'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyOtp = async () => {
@@ -119,12 +121,12 @@ export default function App() {
           setUser(newUser);
           try { localStorage.setItem('bdai_profile', JSON.stringify(newUser)); } catch (e) {}
 
-          // Retraso mayor para iOS Safari
+          // Forzamos un micro-retraso para asegurar que el teclado se ha ido del todo antes de renderizar la Home
           setTimeout(() => {
               setView(AppView.HOME);
               if (!newUser.interests?.length) setShowOnboarding(true);
               setIsLoading(false);
-          }, 600);
+          }, 800);
       } catch (e) { 
         setAuthError(t('authError')); 
         setIsLoading(false); 
@@ -259,7 +261,7 @@ export default function App() {
                       ) : (
                           <div className="space-y-12 pb-24">
                             <div className="space-y-6">
-                                {tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); navigateTo(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language} />)}
+                                {tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language} />)}
                             </div>
                             {selectedCity && <CommunityBoard city={selectedCity} language={user.language} user={user} />}
                           </div>

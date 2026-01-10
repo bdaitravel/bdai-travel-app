@@ -74,98 +74,103 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
     };
 
     return (
-        <div className="fixed inset-0 bg-[#fcfcfc] flex flex-col z-[5000] overflow-hidden">
-             {/* Botón Volver - Prioridad Máxima */}
-             <button 
-                onClick={(e) => { e.stopPropagation(); onBack(); }} 
-                className="absolute top-8 left-8 z-[9999] w-14 h-14 rounded-2xl bg-white shadow-2xl flex items-center justify-center text-slate-950 active:scale-90 transition-transform border border-slate-100 pointer-events-auto"
-             >
-                <i className="fas fa-arrow-left text-lg"></i>
-             </button>
-
-             {/* Mapa */}
-             <div className="h-[45vh] w-full relative shrink-0 z-[100]">
-                <SchematicMap 
-                    stops={tour.stops} 
-                    currentStopIndex={currentStopIndex} 
-                    userLocation={userLocation} 
-                    onPlayAudio={onPlayAudio} 
-                    audioPlayingId={audioPlayingId} 
-                    audioLoadingId={audioLoadingId}
-                    language={language}
-                />
+        <div className="fixed inset-0 bg-slate-50 flex flex-col z-[5000] overflow-hidden">
+             {/* 1. Header Fijo Superior (Back button) */}
+             <div className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-[6000] shrink-0 pt-safe">
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onBack(); }} 
+                    className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950 active:scale-90 transition-transform pointer-events-auto"
+                >
+                    <i className="fas fa-arrow-left"></i>
+                </button>
+                <div className="text-center">
+                    <p className="text-[8px] font-black text-purple-600 uppercase tracking-widest">{tl.stop} {currentStopIndex + 1} {tl.of} {tour.stops.length}</p>
+                    <h2 className="text-sm font-black text-slate-900 uppercase truncate max-w-[180px]">{currentStop.name}</h2>
+                </div>
+                <div className="w-12 h-12"></div> {/* Spacer */}
              </div>
 
-             {/* Contenido */}
-             <div className="flex-1 overflow-y-auto px-8 pt-10 pb-40 no-scrollbar bg-white rounded-t-[3.5rem] -mt-10 relative z-[200] shadow-[0_-30px_60px_rgba(0,0,0,0.08)] pointer-events-auto">
-                <div className="flex justify-between items-start gap-4 mb-8">
-                    <div className="flex-1">
-                        <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-2 flex items-center gap-2">
-                           <span className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></span> {tl.stop} {currentStopIndex + 1} {tl.of} {tour.stops.length}
-                        </p>
-                        <h1 className="text-3xl font-black text-slate-950 tracking-tighter uppercase leading-tight mb-3">{currentStop.name}</h1>
-                        {distanceToStop !== null && (
-                            <span className={`text-[11px] font-black uppercase px-5 py-2 rounded-full inline-block ${isNearEnough ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                                <i className="fas fa-person-walking mr-2"></i> {distanceToStop} {tl.meters}
-                            </span>
-                        )}
-                    </div>
-                    
-                    <button 
-                        onClick={() => onPlayAudio(currentStop.id, currentStop.description)} 
-                        disabled={isLoading} 
-                        className={`w-18 h-18 rounded-3xl flex items-center justify-center shadow-2xl transition-all active:scale-95 shrink-0 ${isPlaying ? 'bg-red-600' : 'bg-slate-950'} text-white`}
-                    >
-                        {isLoading ? <i className="fas fa-spinner fa-spin text-2xl"></i> : isPlaying ? <i className="fas fa-stop text-2xl"></i> : <i className="fas fa-play text-2xl"></i>}
-                    </button>
+             {/* 2. Área Central Scrollable */}
+             <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col">
+                
+                {/* Mapa con altura fija */}
+                <div className="h-[35vh] w-full relative z-[100] shrink-0 border-b border-slate-100">
+                    <SchematicMap 
+                        stops={tour.stops} 
+                        currentStopIndex={currentStopIndex} 
+                        userLocation={userLocation} 
+                        language={language}
+                    />
                 </div>
 
-                {currentStop.photoSpot && (
-                    <div className={`mb-10 p-7 rounded-[2.5rem] border-2 transition-all ${isNearEnough ? 'bg-purple-600 border-purple-400 text-white shadow-2xl' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-80'}`}>
-                        <div className="flex items-center justify-between mb-5">
-                            <h4 className="text-[11px] font-black uppercase tracking-widest flex items-center gap-3">
-                                <i className="fas fa-camera-retro text-lg"></i> {tl.photoSpot}
-                            </h4>
-                            <span className="text-[10px] font-black bg-white/20 px-4 py-1.5 rounded-xl">+{currentStop.photoSpot.milesReward} MI</span>
+                {/* Contenido Descriptivo */}
+                <div className="px-8 pt-8 pb-40 space-y-8 bg-white rounded-t-[3rem] -mt-6 shadow-[0_-20px_40px_rgba(0,0,0,0.03)] z-[200]">
+                    <div className="flex justify-between items-center gap-4">
+                        <div className="flex-1">
+                            {distanceToStop !== null && (
+                                <span className={`text-[10px] font-black uppercase px-4 py-2 rounded-full inline-block ${isNearEnough ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    <i className="fas fa-person-walking mr-2"></i> {distanceToStop} {tl.meters}
+                                </span>
+                            )}
                         </div>
-                        <p className="text-sm font-bold italic mb-6 opacity-95 leading-relaxed">"{currentStop.photoSpot.angle}"</p>
-                        {!currentStop.visited ? (
-                            <button 
-                                onClick={handlePhotoReward} 
-                                disabled={!isNearEnough || isCapturing} 
-                                className={`w-full py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all ${isNearEnough ? 'bg-white text-slate-950 shadow-xl' : 'bg-slate-200 text-slate-400'}`}
-                            >
-                                {isCapturing ? <i className="fas fa-spinner fa-spin"></i> : isNearEnough ? tl.capture : tl.approach}
-                            </button>
-                        ) : (
-                            <div className="bg-white/15 py-4 rounded-2xl text-center border border-white/25 text-[11px] font-black uppercase tracking-widest text-white">
-                                <i className="fas fa-check-circle mr-2 text-lg"></i> {tl.rewardReceived}
-                            </div>
-                        )}
+                        
+                        {/* Botón de Play - Grande y Flotante */}
+                        <button 
+                            onClick={() => onPlayAudio(currentStop.id, currentStop.description)} 
+                            disabled={isLoading} 
+                            className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all active:scale-95 shrink-0 pointer-events-auto ${isPlaying ? 'bg-red-600' : 'bg-slate-950'} text-white`}
+                        >
+                            {isLoading ? <i className="fas fa-spinner fa-spin text-xl"></i> : isPlaying ? <i className="fas fa-stop text-xl"></i> : <i className="fas fa-play text-xl ml-1"></i>}
+                        </button>
                     </div>
-                )}
 
-                <div className="space-y-8 text-slate-700 text-lg leading-relaxed font-medium pb-12">
-                    {currentStop.description.split('\n').map((line, idx) => {
-                        const clean = cleanDescriptionText(line);
-                        return clean ? <p key={idx} className="animate-fade-in">{clean}</p> : null;
-                    })}
+                    {currentStop.photoSpot && (
+                        <div className={`p-6 rounded-3xl border-2 transition-all ${isNearEnough ? 'bg-purple-600 border-purple-400 text-white shadow-xl' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-80'}`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                    <i className="fas fa-camera-retro"></i> {tl.photoSpot}
+                                </h4>
+                                <span className="text-[9px] font-black bg-white/20 px-3 py-1 rounded-lg">+{currentStop.photoSpot.milesReward} MI</span>
+                            </div>
+                            <p className="text-xs font-bold italic mb-4 opacity-95">"{currentStop.photoSpot.angle}"</p>
+                            {!currentStop.visited ? (
+                                <button 
+                                    onClick={handlePhotoReward} 
+                                    disabled={!isNearEnough || isCapturing} 
+                                    className={`w-full py-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${isNearEnough ? 'bg-white text-slate-950 shadow-lg' : 'bg-slate-200 text-slate-400'}`}
+                                >
+                                    {isCapturing ? <i className="fas fa-spinner fa-spin"></i> : isNearEnough ? tl.capture : tl.approach}
+                                </button>
+                            ) : (
+                                <div className="bg-white/20 py-3 rounded-xl text-center border border-white/30 text-[10px] font-black uppercase tracking-widest text-white">
+                                    <i className="fas fa-check-circle mr-2"></i> {tl.rewardReceived}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="space-y-6 text-slate-700 text-base leading-relaxed font-medium pb-12">
+                        {currentStop.description.split('\n').map((line, idx) => {
+                            const clean = cleanDescriptionText(line);
+                            return clean ? <p key={idx} className="animate-fade-in">{clean}</p> : null;
+                        })}
+                    </div>
                 </div>
              </div>
 
-             {/* Footer Nav */}
-             <div className="absolute bottom-0 left-0 right-0 p-8 bg-white/90 backdrop-blur-2xl border-t border-slate-100 flex gap-4 z-[999] pointer-events-auto">
+             {/* 3. Footer Fijo Inferior (Navegación) */}
+             <div className="bg-white/80 backdrop-blur-xl border-t border-slate-100 p-6 flex gap-3 z-[6000] shrink-0 pb-safe">
                 <button 
                     onClick={(e) => { e.stopPropagation(); onPrev(); }} 
                     disabled={currentStopIndex === 0} 
-                    className="flex-1 py-6 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[11px] tracking-widest disabled:opacity-0 active:scale-95 transition-all"
+                    className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0 active:scale-95 transition-all pointer-events-auto"
                 >
                     {tl.prev}
                 </button>
                 <button 
                     onClick={(e) => { e.stopPropagation(); onNext(); }} 
                     disabled={currentStopIndex === tour.stops.length - 1} 
-                    className="flex-[2] py-6 bg-purple-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-2xl active:scale-95 transition-all"
+                    className="flex-[2] py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all pointer-events-auto"
                 >
                     {tl.next}
                 </button>
