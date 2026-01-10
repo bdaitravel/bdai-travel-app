@@ -132,8 +132,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       <div className="absolute inset-0 bg-slate-950/98 backdrop-blur-xl" onClick={onClose}></div>
       <div className="bg-[#f2efe4] w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] relative z-10 border-[6px] border-[#d4cfbd] flex flex-col max-h-[92vh] text-slate-900 font-sans">
         
-        {/* Header - Reforzado para iPhone */}
-        <div className="bg-[#7b1b1b] p-6 pb-8 flex flex-col gap-1 border-b-[6px] border-[#d4cfbd] shrink-0">
+        {/* Header - Reforzado para iPhone con pt-safe adicional */}
+        <div className="bg-[#7b1b1b] p-6 pb-8 flex flex-col gap-1 border-b-[6px] border-[#d4cfbd] shrink-0 pt-safe mt-2">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center text-slate-900 shadow-lg"><i className="fas fa-id-badge text-xl"></i></div>
@@ -192,7 +192,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                 </div>
             </div>
 
-            {/* Social Matrix - Reforzada con enlaces directos */}
+            {/* Social Matrix */}
             <div className="space-y-4">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3 px-1"><i className="fas fa-network-wired text-slate-800"></i> {pt('social')}</h4>
                 <div className="grid grid-cols-2 gap-3">
@@ -247,19 +247,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                             </div>
                         );
                     }) : <div className="col-span-2 py-8 bg-slate-200/50 rounded-2xl border-2 border-dashed border-slate-300 text-center"><p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{pt('noVisas')}</p></div>}
-                </div>
-            </div>
-
-            {/* Achievements */}
-            <div className="space-y-4">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3 px-1"><i className="fas fa-award text-slate-800"></i> {pt('achievements')}</h4>
-                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
-                    {user.badges && user.badges.length > 0 ? user.badges.map(b => (
-                        <div key={b.id} className="min-w-[100px] flex flex-col items-center gap-2">
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 border-4 border-white shadow-lg flex items-center justify-center text-slate-900 text-xl"><i className={`fas ${b.icon}`}></i></div>
-                            <p className="text-[8px] font-black uppercase text-slate-800 text-center leading-tight">{b.name}</p>
-                        </div>
-                    )) : <div className="w-full py-6 bg-slate-200/50 rounded-2xl border-2 border-dashed border-slate-300 text-center"><p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{pt('noBadges')}</p></div>}
                 </div>
             </div>
         </div>

@@ -72,7 +72,19 @@ export default function App() {
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
 
+  // Auto-login Effect
   useEffect(() => {
+    const saved = localStorage.getItem('bdai_profile');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.isLoggedIn && parsed.id !== 'guest') {
+          setUser(parsed);
+          setView(AppView.HOME);
+        }
+      } catch (e) {}
+    }
+
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (!isStandalone) {
       setTimeout(() => setShowPwaPrompt(true), 3000);
@@ -193,19 +205,25 @@ export default function App() {
       setCurrentStopIndex(idx);
   };
 
+  const handleUpdateUser = (updated: UserProfile) => {
+    setUser(updated);
+    localStorage.setItem('bdai_profile', JSON.stringify(updated));
+    syncUserProfile(updated);
+  };
+
   return (
     <div className="flex-1 bg-[#020617] flex flex-col relative overflow-hidden text-slate-100 h-[100dvh] w-full font-sans">
       {showOnboarding && <Onboarding language={user.language} onLanguageSelect={(l) => setUser({...user, language: l})} onComplete={(ints) => { 
           const updated = {...user, interests: ints}; setUser(updated); syncUserProfile(updated); setShowOnboarding(false); 
       }} />}
 
-      {/* BANNER INFERIOR DE INSTALACIÓN PWA */}
+      {/* BANNER INFERIOR DE INSTALACIÓN PWA - Rediseño con logo solicitado */}
       {showPwaPrompt && (
         <div className="fixed bottom-0 left-0 right-0 z-[10000] p-4 pb-safe animate-slide-up-banner">
           <div className="bg-slate-900/95 backdrop-blur-xl border border-purple-500/30 rounded-[2rem] p-4 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white text-lg shrink-0">
-                  <i className="fas fa-cloud-arrow-down"></i>
+                <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center text-slate-950 font-black text-xl shrink-0 shadow-lg">
+                  b
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-white font-black text-[10px] uppercase tracking-widest truncate">{t('pwaTitle')}</h4>
@@ -260,7 +278,7 @@ export default function App() {
             <div className={`flex-1 overflow-y-auto no-scrollbar relative bg-[#020617] ${view === AppView.TOUR_ACTIVE ? 'pb-0' : 'pb-40'}`}>
                 {view === AppView.HOME && (
                   <div className="space-y-4 pt-safe animate-fade-in">
-                      <header className="flex justify-between items-center px-8 py-6 pt-safe">
+                      <header className="flex justify-between items-center px-8 py-6 pt-safe mt-4">
                           <div className="flex items-center gap-3">
                               <BdaiLogo className="w-10 h-10"/>
                               <span className="font-black text-2xl tracking-tighter">bdai</span>
@@ -283,7 +301,7 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe px-6 animate-fade-in">
-                      <header className="flex items-center justify-between mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20 pt-safe">
+                      <header className="flex items-center justify-between mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20 pt-safe mt-4">
                           <div className="flex items-center gap-4">
                             <button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
                             <h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate max-w-[200px]">{selectedCity}</h2>
@@ -318,16 +336,15 @@ export default function App() {
                       const stop = activeTour.stops.find(s => s.id === id);
                       if (stop?.visited) return;
                       const updated = { ...user, miles: user.miles + miles };
-                      setUser(updated);
-                      syncUserProfile(updated);
+                      handleUpdateUser(updated);
                       setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) });
                     }} 
                   />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={handleCitySelect} />}
-                {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => setUser({...user, miles: user.miles + reward})} />}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={setUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} />}
+                {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => handleUpdateUser({...user, miles: user.miles + reward})} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={handleUpdateUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} />}
             </div>
             
             {view !== AppView.TOUR_ACTIVE && (
