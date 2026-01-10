@@ -56,26 +56,25 @@ const HUB_CATEGORIES: any = {
     ]
 };
 
+const CityItem: React.FC<{ city: any, onSelect: (name: string) => void }> = ({ city, onSelect }) => (
+    <div 
+        onClick={() => onSelect(city.name)}
+        className="h-44 bg-slate-900 border border-white/10 rounded-[2.5rem] overflow-hidden relative group cursor-pointer shadow-2xl transition-all hover:scale-[1.02] hover:border-purple-500/40"
+    >
+        <div className={`absolute inset-0 bg-gradient-to-br ${city.color} opacity-40 group-hover:opacity-60 transition-opacity`}></div>
+        <div className="absolute top-6 right-8 text-white/5 text-7xl group-hover:scale-110 group-hover:rotate-6 transition-transform">
+            <i className={`fas ${city.icon}`}></i>
+        </div>
+        <div className="absolute bottom-8 left-8 right-8">
+            <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mb-1">{city.theme}</p>
+            <h4 className="font-black text-white text-3xl tracking-tighter uppercase leading-none">{city.name}</h4>
+        </div>
+    </div>
+);
+
 export const TravelServices: React.FC<{ mode: 'HOME' | 'HUB', language?: string, onCitySelect: (city: string) => void }> = ({ mode, language = 'es', onCitySelect }) => {
     const l = UI_LABELS[language] || UI_LABELS.es;
     const [activeHubCat, setActiveHubCat] = useState<'visited' | 'growth' | 'exotic'>('visited');
-
-    // Fix: Use React.FC type for the internal CityCard component so that TypeScript correctly handles the 'key' prop in JSX.
-    const CityCard: React.FC<{ city: any }> = ({ city }) => (
-        <div 
-            onClick={() => onCitySelect(city.name)}
-            className="h-44 bg-slate-900 border border-white/10 rounded-[2.5rem] overflow-hidden relative group cursor-pointer shadow-2xl transition-all hover:scale-[1.02] hover:border-purple-500/40"
-        >
-            <div className={`absolute inset-0 bg-gradient-to-br ${city.color} opacity-40 group-hover:opacity-60 transition-opacity`}></div>
-            <div className="absolute top-6 right-8 text-white/5 text-7xl group-hover:scale-110 group-hover:rotate-6 transition-transform">
-                <i className={`fas ${city.icon}`}></i>
-            </div>
-            <div className="absolute bottom-8 left-8 right-8">
-                <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mb-1">{city.theme}</p>
-                <h4 className="font-black text-white text-3xl tracking-tighter uppercase leading-none">{city.name}</h4>
-            </div>
-        </div>
-    );
 
     if (mode === 'HUB') {
         return (
@@ -99,7 +98,7 @@ export const TravelServices: React.FC<{ mode: 'HOME' | 'HUB', language?: string,
 
                 <section className="px-8 space-y-5">
                     {HUB_CATEGORIES[activeHubCat].map((city: any) => (
-                        <CityCard key={city.name} city={city} />
+                        <CityItem key={city.name} city={city} onSelect={onCitySelect} />
                     ))}
                 </section>
             </div>
@@ -108,7 +107,6 @@ export const TravelServices: React.FC<{ mode: 'HOME' | 'HUB', language?: string,
 
     return (
         <div className="space-y-12 pb-32 animate-fade-in">
-            {/* Sección Ciudades */}
             <div className="space-y-6">
                 <header className="px-8">
                     <h3 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">{l.homeTitle}</h3>
@@ -116,12 +114,11 @@ export const TravelServices: React.FC<{ mode: 'HOME' | 'HUB', language?: string,
                 </header>
                 <section className="px-8 space-y-5">
                     {SPAIN_CITIES.map(city => (
-                        <CityCard key={city.name} city={city} />
+                        <CityItem key={city.name} city={city} onSelect={onCitySelect} />
                     ))}
                 </section>
             </div>
 
-            {/* Sección Pueblos */}
             <div className="space-y-6">
                 <header className="px-8">
                     <h3 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">{l.villagesTitle}</h3>
@@ -129,7 +126,7 @@ export const TravelServices: React.FC<{ mode: 'HOME' | 'HUB', language?: string,
                 </header>
                 <section className="px-8 space-y-5">
                     {SPAIN_VILLAGES.map(village => (
-                        <CityCard key={village.name} city={village} />
+                        <CityItem key={village.name} city={village} onSelect={onCitySelect} />
                     ))}
                 </section>
             </div>
