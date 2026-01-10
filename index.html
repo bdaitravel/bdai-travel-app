@@ -10,13 +10,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#020617">
     
-    <title>bdai | better destinations by ai</title>
+    <title>bdai | better destinations</title>
     
-    <!-- Favicon Principal (Logo exacto del usuario) -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMzc1IDM3NSI+PHJlY3Qgd2lkdGg9IjM3NSIgaGVpZ2h0PSIzNzUiIGZpbGw9IiMwMjA2MTciLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48ZGVmcz48Y2xpcFBhdGggaWQ9ImExIj48cGF0aCBkPSJNIDkzLjYyMSAxMTcuNjUyIEwgMjgxLjM3OSAxMTcuNjUyIEwgMjgxLjM3OSAzMDUuNDA2IEwgOTMuNjIxIDMwNS40MDYgWiIvPjwvY2xpcFBhdGg+PC9kZWZzPjxwYXRoIGZpbGw9IiNmNmM2MDQiIGQ9Ik0gOTMuNjI1IDY5LjY5MSBMIDkzLjYyNSAyMDEuNTA4IEMgOTMuNjI1IDIzNy42MTMgMTIyLjg5NSAyNjYuODgzIDE1OS4wMDQgMjY2Ljg4MyBMIDE1OS4wMDQgMTM1LjA3IEMgMTU5LjAwNCA5OC45NjEgMTI5LjczIDY5LjY5MSA5My42MjUgNjkuNjkxIFoiLz48cGF0aCBmaWxsPSIjNWUxN2ViIiBkPSJNIDE4Ni44NzEgMjc3LjUzNSBDIDE4MS4xOTkgMjc1LjA0MyAxNTIuOTY5IDIzOC41MTEgMTUyLjk2OSAyMTkuNjk1IEMgMTUyLjk2OSAyMDAuNzM0IDE2Ny45MTQgMTg1Ljc5MyAxODYuODcxIDE4NS43OTMgQyAyMDUuODI4IDE4NS43OTMgMjIwLjc3MyAyMDEuMDExIDIyMC43NzMgMjIwLjI0NiBDIDIyMC43NzMgMjM4LjkzIDE5Mi41NDcgMjc3LjUzNSAxODYuODcxIDI3Ny41MzUgWiIvPjxwYXRoIHN0cm9rZT0iIzVlMTdlYiIgc3Ryb2tlLXdpZHRoPSIxIiBkPSJNIDE4NyAyODAgTCAxODcgMTgzIi8+PC9nPjwvc3dmPg==">
-
-    <!-- Apple Touch Icon (Logo exacto del usuario para iOS) -->
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMzc1IDM3NSI+PHJlY3Qgd2lkdGg9IjM3NSIgaGVpZ2h0PSIzNzUiIGZpbGw9IiMwMjA2MTciLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48cGF0aCBmaWxsPSIjZjZjNjA0IiBkPSJNIDkzLjYyNSA2OS42OTEgTCA5My42MjUgMjAxLjUwOCBDIDkzLjYyNSAyMzcuNjEzIDEyMi44OTUgMjY2Ljg4MyAxNTkuMDA0IDI2Ni44ODMgTIDE1OS4wMDQgMTM1LjA3IEMgMTU5LjAwNCA5OC45NjEgMTI5LjczIDY5LjY5MSA5My42MjUgNjkuNjkxIFoiLz48cGF0aCBmaWxsPSIjNWUxN2ViIiBkPSJNIDE4Ni44NzEgMjc3LjUzNSBDIDE4MS4xOTkgMjc1LjA0MyAxNTIuOTY5IDIzOC41MTEgMTUyLjk2OSAyMTkuNjk1IEMgMTUyLjk2OSAyMDAuNzM0IDE2Ny45MTQgMTg1Ljc5MyAxODYuODcxIDE4NS43OTMgQyAyMDUuODI4IDE4NS43OTMgMjIwLjc3MyAyMDEuMDExIDIyMC43NzMgMjIwLjI0NiBDIDIyMC43NzMgMjM4LjkzIDE5Mi41NDcgMjc3LjUzNSAxODYuODcxIDI3Ny41MzUgWiIvPjwvZz48L3N2Zz4=">
+    <!-- Iconos para PWA -->
+    <link rel="icon" type="image/png" href="https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb">
+    <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb">
 
     <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -39,17 +37,26 @@
         -webkit-tap-highlight-color: transparent;
         margin: 0;
         padding: 0;
-        height: 100vh;
+        height: 100dvh;
         width: 100vw;
         overflow: hidden;
       }
       #root { height: 100%; display: flex; flex-direction: column; }
-      .pt-safe { padding-top: calc(1.5rem + var(--sat)); }
-      .pb-safe { padding-bottom: calc(1.5rem + var(--sab)); }
+      .pt-safe { padding-top: calc(1rem + var(--sat)); }
+      .pb-safe { padding-bottom: calc(1rem + var(--sab)); }
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       input, textarea { font-size: 16px !important; }
+
+      /* Animación para el banner de instalación */
+      @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .animate-slide-up-banner {
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
     </style>
   <script type="importmap">
 {
