@@ -27,13 +27,15 @@ interface SchematicMapProps {
   currentStopIndex: number;
   userLocation?: { lat: number; lng: number } | null;
   language?: string;
+  onStopSelect?: (index: number) => void;
 }
 
 export const SchematicMap: React.FC<SchematicMapProps> = ({ 
     stops, 
     currentStopIndex, 
     userLocation, 
-    language = 'es'
+    language = 'es',
+    onStopSelect
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -109,7 +111,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         const isActive = idx === currentStopIndex;
         const typeIcon = STOP_TYPE_ICONS[stop.type] || 'fa-location-dot';
         const iconHtml = `
-            <div class="relative flex items-center justify-center">
+            <div class="relative flex items-center justify-center cursor-pointer">
                 <div class="w-10 h-10 rounded-full border-4 border-white shadow-2xl flex items-center justify-center text-[11px] font-black
                     ${isActive ? 'bg-purple-600 text-white scale-125 z-[5000]' : 'bg-slate-900 text-white opacity-50'}
                 ">
@@ -120,6 +122,11 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         const marker = L.marker([stop.latitude, stop.longitude], { 
             icon: L.divIcon({ className: '', html: iconHtml, iconSize: [40, 40], iconAnchor: [20, 20] }) 
         }).addTo(map);
+
+        marker.on('click', () => {
+            if (onStopSelect) onStopSelect(idx);
+        });
+
         markersRef.current.push(marker);
     });
 

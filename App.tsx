@@ -187,6 +187,12 @@ export default function App() {
     } catch(e) { console.error("Audio error:", e); } finally { setAudioLoadingId(null); }
   };
 
+  const handleStopSwitch = (idx: number) => {
+      if (audioSourceRef.current) audioSourceRef.current.stop();
+      setAudioPlayingId(null);
+      setCurrentStopIndex(idx);
+  };
+
   return (
     <div className="flex-1 bg-[#020617] flex flex-col relative overflow-hidden text-slate-100 h-[100dvh] w-full font-sans">
       {showOnboarding && <Onboarding language={user.language} onLanguageSelect={(l) => setUser({...user, language: l})} onComplete={(ints) => { 
@@ -299,8 +305,9 @@ export default function App() {
                   <ActiveTourCard 
                     tour={activeTour} 
                     currentStopIndex={currentStopIndex} 
-                    onNext={() => setCurrentStopIndex(p => Math.min(activeTour.stops.length - 1, p + 1))} 
-                    onPrev={() => setCurrentStopIndex(p => Math.max(0, p - 1))} 
+                    onNext={() => handleStopSwitch(Math.min(activeTour.stops.length - 1, currentStopIndex + 1))} 
+                    onPrev={() => handleStopSwitch(Math.max(0, currentStopIndex - 1))} 
+                    onJumpTo={handleStopSwitch}
                     onPlayAudio={handlePlayAudio} 
                     audioPlayingId={audioPlayingId} 
                     audioLoadingId={audioLoadingId} 
