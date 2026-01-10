@@ -65,8 +65,6 @@ export default function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
-  const audioStartOffsetRef = useRef<number>(0);
-  const audioStartTimeRef = useRef<number>(0);
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
 
@@ -114,6 +112,12 @@ export default function App() {
 
   const handleVerifyOtp = async () => {
       if (!otpCode || isLoading) return;
+      
+      // Cerrar teclado forzadamente para evitar bloqueos de renderizado en móviles
+      if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+      }
+
       setAuthError(null);
       setIsLoading(true);
       
@@ -126,31 +130,30 @@ export default function App() {
           }
 
           const profile = await getUserProfileByEmail(email);
-          const newUser = profile ? 
+          const newUser: UserProfile = profile ? 
             { ...profile, isLoggedIn: true } : 
-            { ...user, id: data.user.id, email: email, isLoggedIn: true };
+            { ...user, id: data.user.id, email: email, isLoggedIn: true, language: user.language || 'es' };
 
           setUser(newUser);
           
           try {
               localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-          } catch (e) { console.warn("Could not save to localStorage"); }
+          } catch (e) { console.warn("Persistence failed"); }
 
-          // Pequeño retraso para asegurar que los estados de React y Storage se sincronicen en iOS
+          // Navegación con retraso controlado para permitir que el estado de React se asiente
           setTimeout(() => {
               navigateTo(AppView.HOME);
               if (!newUser.interests?.length) setShowOnboarding(true);
               setIsLoading(false);
-          }, 300);
+          }, 400);
 
       } catch (e) {
-          console.error("Auth Exception:", e);
+          console.error("Critical Auth Error:", e);
           setAuthError(t('authError'));
           setIsLoading(false);
       }
   };
 
-  // Resto de lógica de tours, audio, etc...
   const handleCitySelect = async (cityInput: string) => {
     if (!cityInput.trim()) return;
     setSelectedCity(cityInput.trim());
@@ -214,7 +217,7 @@ export default function App() {
     } catch(e) { console.error("Audio error:", e); } finally { setAudioLoadingId(null); }
   };
 
-  const handleSkipAudio = (seconds: number) => { /* Implementar si se desea saltar segundos */ };
+  const handleSkipAudio = (seconds: number) => { /* Logic */ };
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col relative overflow-hidden text-slate-100 h-screen w-screen font-sans">
