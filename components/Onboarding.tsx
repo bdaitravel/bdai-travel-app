@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { LANGUAGES } from '../types';
+import { LANGUAGES, INTEREST_OPTIONS } from '../types';
 import { FlagIcon } from './FlagIcon';
 import { BdaiLogo } from './BdaiLogo';
 
@@ -9,15 +9,6 @@ interface OnboardingProps {
     language: string;
     onLanguageSelect: (lang: string) => void;
 }
-
-const INTERESTS = [
-    { id: 'history', icon: '🏛️', label: { es: 'Historia', en: 'History', fr: 'Histoire', ca: 'Història', eu: 'Historia' } },
-    { id: 'food', icon: '🍷', label: { es: 'Gastro', en: 'Foodie', fr: 'Gastro', ca: 'Gastro', eu: 'Gastro' } },
-    { id: 'art', icon: '🎨', label: { es: 'Arte', en: 'Art', fr: 'Art', ca: 'Art', eu: 'Artea' } },
-    { id: 'photo', icon: '📸', label: { es: 'Foto', en: 'Photo', fr: 'Photo', ca: 'Foto', eu: 'Argazki' } },
-    { id: 'nature', icon: '🌿', label: { es: 'Naturaleza', en: 'Nature', fr: 'Nature', ca: 'Natura', eu: 'Natura' } },
-    { id: 'night', icon: '🌙', label: { es: 'Noche', en: 'Nightlife', fr: 'Nuit', ca: 'Nit', eu: 'Gaua' } },
-];
 
 const ONBOARDING_TEXT: any = {
     en: {
@@ -123,10 +114,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
                     <div className="animate-slide-up">
                         <h2 className="text-2xl font-black text-white mb-6 text-center uppercase tracking-tighter">{t.selectInt}</h2>
                         <div className="grid grid-cols-2 gap-3 mb-8">
-                            {INTERESTS.map(int => (
-                                <button key={int.id} onClick={() => toggleInterest(int.id)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all ${selectedInterests.includes(int.id) ? 'bg-purple-600 border-purple-500 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'}`}>
-                                    <span className="text-2xl">{int.icon}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{(int.label as any)[language] || (int.label as any)['es']}</span>
+                            {INTEREST_OPTIONS.map(opt => (
+                                <button key={opt.id} onClick={() => toggleInterest(opt.id)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all ${selectedInterests.includes(opt.id) ? 'bg-purple-600 border-purple-600 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'}`}>
+                                    <span className="text-2xl">{opt.icon}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{(opt.label as any)[language] || (opt.label as any)['es']}</span>
                                 </button>
                             ))}
                         </div>

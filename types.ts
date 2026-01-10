@@ -19,8 +19,8 @@ export interface UserStats {
 export interface SocialLinks {
   instagram?: string;
   tiktok?: string;
-  twitter?: string;
-  linkedin?: string;
+  x?: string;
+  facebook?: string;
   website?: string;
 }
 
@@ -130,12 +130,12 @@ export const LANGUAGES = [
 ];
 
 export const INTEREST_OPTIONS = [
-  { id: 'history', label: 'Historia', icon: '🏛️' },
-  { id: 'food', label: 'Gastro', icon: '🍷' },
-  { id: 'art', label: 'Arte', icon: '🎨' },
-  { id: 'photo', label: 'Foto', icon: '📸' },
-  { id: 'nature', label: 'Naturaleza', icon: '🌿' },
-  { id: 'night', label: 'Ocio Nocturno', icon: '🌙' }
+  { id: 'history', label: { es: 'Historia', en: 'History', ca: 'Història', eu: 'Historia', fr: 'Histoire' }, icon: '🏛️' },
+  { id: 'food', label: { es: 'Gastro', en: 'Food', ca: 'Gastro', eu: 'Gastro', fr: 'Gastro' }, icon: '🍷' },
+  { id: 'art', label: { es: 'Arte', en: 'Art', ca: 'Art', eu: 'Artea', fr: 'Art' }, icon: '🎨' },
+  { id: 'photo', label: { es: 'Foto', en: 'Photo', ca: 'Foto', eu: 'Argazki', fr: 'Photo' }, icon: '📸' },
+  { id: 'nature', label: { es: 'Naturaleza', en: 'Nature', ca: 'Natura', eu: 'Natura', fr: 'Nature' }, icon: '🌿' },
+  { id: 'night', label: { es: 'Ocio Nocturno', en: 'Nightlife', ca: 'Nit', eu: 'Gaua', fr: 'Nuit' }, icon: '🌙' }
 ];
 
 export const AVATARS = [

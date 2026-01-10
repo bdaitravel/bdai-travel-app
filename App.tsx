@@ -14,9 +14,16 @@ import { CommunityBoard } from './components/CommunityBoard';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", login: "Start Journey", verify: "Verify Code", tagline: "better destinations by ai", loading: "Consulting archives...", install: "Install App", installDesc: "Add to home screen", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", navHome: "Home", authError: "Connection error", codeError: "Incorrect code", pwaTitle: "Install bdai", pwaDesc: "Add to home screen for the full experience", pwaStep: "Tap Share and then 'Add to Home Screen'", close: "Close" },
-  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", login: "Empezar Viaje", verify: "Verificar Código", tagline: "better destinations by ai", loading: "Consultando archivos...", install: "Instalar App", installDesc: "Añade a pantalla de inicio", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", navHome: "Inicio", authError: "Error de conexión", codeError: "Código incorrecto", pwaTitle: "Instalar bdai", pwaDesc: "Añade a inicio para la experiencia completa", pwaStep: "Pulsa Compartir y luego 'Añadir a pantalla de inicio'", close: "Cerrar" },
-  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", login: "Començar Viatge", verify: "Verificar Codi", tagline: "better destinations by ai", loading: "Consultant arxius...", install: "Instal·lar App", installDesc: "Afegeix a la pantalla d'inici", navElite: "Elit", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", navHome: "Inici", authError: "Error de conexió", codeError: "Codi incorrecte", pwaTitle: "Instal·lar bdai", pwaDesc: "Afegeix a l'inici per l'experiència completa", pwaStep: "Prem Compartir i després 'Afegir a la pantalla d'inici'", close: "Tancar" }
+  en: { 
+    welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", login: "Start Journey", verify: "Verify Code", tagline: "better destinations by ai", 
+    loading: "Consulting archives...", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", navHome: "Home", authError: "Connection error", 
+    codeError: "Incorrect code", pwaTitle: "Install bdai", pwaDesc: "For a better experience and to save space:", pwaStep: "Tap Share and 'Add to Home Screen'", pwaClose: "OK" 
+  },
+  es: { 
+    welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", login: "Empezar Viaje", verify: "Verificar Código", tagline: "better destinations by ai", 
+    loading: "Consultando archivos...", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", navHome: "Inicio", authError: "Error de conexión", 
+    codeError: "Código incorrecto", pwaTitle: "Instalar bdai", pwaDesc: "Para una mejor experiencia y no consumir espacio:", pwaStep: "Pulsa Compartir y 'Añadir a pantalla de inicio'", pwaClose: "Vale" 
+  }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -66,10 +73,8 @@ export default function App() {
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Detectar si la app ya está instalada o es standalone
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (!isStandalone) {
-      // Mostrar prompt de instalación después de 3 segundos
       setTimeout(() => setShowPwaPrompt(true), 3000);
     }
 
@@ -150,15 +155,13 @@ export default function App() {
     } finally { setIsLoading(false); }
   };
 
-  const stopCurrentAudio = () => {
-    if (audioSourceRef.current) { try { audioSourceRef.current.stop(); } catch(e) {} }
-    setAudioPlayingId(null);
-    setAudioLoadingId(null);
-  };
-
   const handlePlayAudio = async (id: string, text: string) => {
-    if (audioPlayingId === id) { stopCurrentAudio(); return; }
-    stopCurrentAudio();
+    if (audioPlayingId === id) { 
+      if (audioSourceRef.current) audioSourceRef.current.stop();
+      setAudioPlayingId(null);
+      return; 
+    }
+    if (audioSourceRef.current) audioSourceRef.current.stop();
     setAudioLoadingId(id);
     try {
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -190,34 +193,30 @@ export default function App() {
           const updated = {...user, interests: ints}; setUser(updated); syncUserProfile(updated); setShowOnboarding(false); 
       }} />}
 
-      {/* Banner de Instalación PWA (iOS/Android) */}
+      {/* BANNER INFERIOR DE INSTALACIÓN PWA */}
       {showPwaPrompt && (
-        <div className="fixed bottom-0 left-0 right-0 z-[10000] p-6 animate-slide-up-banner">
-          <div className="bg-slate-900 border border-purple-500/30 rounded-[2.5rem] p-6 shadow-[0_-20px_50px_rgba(147,51,234,0.3)] flex flex-col gap-4">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white text-xl">
+        <div className="fixed bottom-0 left-0 right-0 z-[10000] p-4 pb-safe animate-slide-up-banner">
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-purple-500/30 rounded-[2rem] p-4 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white text-lg shrink-0">
                   <i className="fas fa-cloud-arrow-down"></i>
                 </div>
-                <div>
-                  <h4 className="font-black text-white text-sm uppercase">{t('pwaTitle')}</h4>
-                  <p className="text-[9px] text-slate-400 uppercase tracking-widest">{t('pwaDesc')}</p>
+                <div className="min-w-0">
+                  <h4 className="text-white font-black text-[10px] uppercase tracking-widest truncate">{t('pwaTitle')}</h4>
+                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">{t('pwaDesc')}</p>
+                  <p className="text-[7px] text-purple-400 font-black uppercase mt-1.5 flex items-center gap-1">
+                    <i className="fas fa-arrow-up-from-bracket text-[9px]"></i> {t('pwaStep')}
+                  </p>
                 </div>
-              </div>
-              <button onClick={() => setShowPwaPrompt(false)} className="text-slate-500 p-2"><i className="fas fa-times"></i></button>
             </div>
-            <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-3">
-              <i className="fas fa-arrow-up-from-bracket text-blue-400"></i>
-              <p className="text-[10px] font-bold text-white leading-tight">{t('pwaStep')}</p>
-            </div>
-            <button onClick={() => setShowPwaPrompt(false)} className="w-full py-4 bg-white text-slate-950 rounded-xl font-black uppercase text-[10px] tracking-widest">{t('close')}</button>
+            <button onClick={() => setShowPwaPrompt(false)} className="bg-white/10 text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all">{t('pwaClose')}</button>
           </div>
         </div>
       )}
 
       {view === AppView.LOGIN ? (
-          <div className="h-full w-full flex flex-col items-center justify-center p-10 bg-[#020617] animate-fade-in relative">
-              <div className="absolute top-12 flex gap-4 animate-fade-in z-20">
+          <div className="h-full w-full flex flex-col items-center justify-center p-10 bg-[#020617] animate-fade-in relative pt-safe">
+              <div className="absolute top-12 flex gap-4 animate-fade-in z-20 pt-safe">
                   {LANGUAGES.map(l => (
                       <button key={l.code} onClick={() => setUser({...user, language: l.code})} className={`w-10 h-10 rounded-full border-2 transition-all ${user.language === l.code ? 'border-purple-500 scale-125 shadow-lg shadow-purple-500/30' : 'border-white/10 opacity-40'}`}>
                           <FlagIcon code={l.code} className="w-full h-full object-cover rounded-full" />
@@ -225,7 +224,9 @@ export default function App() {
                   ))}
               </div>
               <div className="text-center mb-12 flex flex-col items-center relative z-10">
-                  <BdaiLogo className="w-40 h-40 mb-4 drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]" />
+                  <div className="w-40 h-40 mb-4 bg-purple-600/10 rounded-full flex items-center justify-center border border-purple-500/20 shadow-2xl">
+                     <BdaiLogo className="w-24 h-24 drop-shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
+                  </div>
                   <h1 className="text-6xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mt-2">{t('tagline')}</p>
               </div>
@@ -253,8 +254,8 @@ export default function App() {
             <div className={`flex-1 overflow-y-auto no-scrollbar relative bg-[#020617] ${view === AppView.TOUR_ACTIVE ? 'pb-0' : 'pb-40'}`}>
                 {view === AppView.HOME && (
                   <div className="space-y-4 pt-safe animate-fade-in">
-                      <header className="flex justify-between items-center px-8 py-6">
-                          <div className="flex items-center gap-2">
+                      <header className="flex justify-between items-center px-8 py-6 pt-safe">
+                          <div className="flex items-center gap-3">
                               <BdaiLogo className="w-10 h-10"/>
                               <span className="font-black text-2xl tracking-tighter">bdai</span>
                           </div>
@@ -263,7 +264,7 @@ export default function App() {
                           </div>
                       </header>
                       <div className="px-8 mb-4">
-                          <h1 className="text-4xl font-black text-white uppercase tracking-tighter">
+                          <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">
                             {t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span>
                           </h1>
                           <div className="relative mt-8">
@@ -276,7 +277,7 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe px-6 animate-fade-in">
-                      <header className="flex items-center justify-between mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20">
+                      <header className="flex items-center justify-between mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20 pt-safe">
                           <div className="flex items-center gap-4">
                             <button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
                             <h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate max-w-[200px]">{selectedCity}</h2>
@@ -304,7 +305,7 @@ export default function App() {
                     audioPlayingId={audioPlayingId} 
                     audioLoadingId={audioLoadingId} 
                     language={user.language} 
-                    onBack={() => { stopCurrentAudio(); setView(AppView.CITY_DETAIL); }} 
+                    onBack={() => { if(audioSourceRef.current) audioSourceRef.current.stop(); setAudioPlayingId(null); setView(AppView.CITY_DETAIL); }} 
                     userLocation={userLocation} 
                     onVisit={(id: string, miles: number) => {
                       const stop = activeTour.stops.find(s => s.id === id);

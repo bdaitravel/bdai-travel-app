@@ -42,20 +42,25 @@
         overflow: hidden;
       }
       #root { height: 100%; display: flex; flex-direction: column; }
-      .pt-safe { padding-top: calc(1rem + var(--sat)); }
-      .pb-safe { padding-bottom: calc(1rem + var(--sab)); }
+      
+      /* Ajuste dinámico para el Notch de iPhone */
+      .pt-safe { 
+        padding-top: calc(1.2rem + var(--sat, 20px)); 
+      }
+      .pb-safe { 
+        padding-bottom: calc(1rem + var(--sab, 20px)); 
+      }
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       input, textarea { font-size: 16px !important; }
 
-      /* Animación para el banner de instalación */
       @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
       }
       .animate-slide-up-banner {
-        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
       }
     </style>
   <script type="importmap">
