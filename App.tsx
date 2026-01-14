@@ -8,15 +8,14 @@ import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
-import { FlagIcon } from './components/FlagIcon';
 import { Onboarding } from './components/Onboarding';
 import { CommunityBoard } from './components/CommunityBoard';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Email", codePlaceholder: "8 digits code", login: "Start Journey", verify: "Verify", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", authError: "Error", codeError: "Invalid", selectLang: "Language", resend: "Resend", installTitle: "Install bdai", installDesc: "Use it as a real app", installBtn: "Install", installIosStep1: "1. Tap the 'Share' icon below", installIosStep2: "2. Scroll down and tap 'Add to Home Screen'", installIosStep3: "Note: If you don't see it, tap 'Open in Safari' first.", close: "Close" },
-  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Email", codePlaceholder: "código 8 dígitos", login: "Empezar Viaje", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", authError: "Error", codeError: "Inválido", selectLang: "Idioma", resend: "Reenviar", installTitle: "Instalar bdai", installDesc: "Usa bdai como una app real", installBtn: "Instalar", installIosStep1: "1. Pulsa el icono 'Compartir' de abajo", installIosStep2: "2. Busca 'Añadir a pantalla de inicio'", installIosStep3: "Nota: Si no lo ves, pulsa primero 'Abrir en Safari'.", close: "Cerrar" },
-  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "Email", codePlaceholder: "codi 8 dígits", login: "Començar", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", selectLang: "Idioma", resend: "Tornar a enviar", installTitle: "Instal·lar bdai", installDesc: "Com una app real", installBtn: "Instal·lar", installIosStep1: "1. Prem el botó 'Compartir'", installIosStep2: "2. Cerca 'Afegir a pantalla d'inici'", installIosStep3: "Nota: Si no ho veus, prem 'Obrir a Safari' primer.", close: "Tancar" }
+  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Email", codeLabel: "8 digits code", login: "Start Journey", verify: "Verify", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", authError: "Error", codeError: "Invalid", selectLang: "Language", resend: "Resend", installTitle: "Install App", installDesc: "Use it as a real app", installBtn: "Install", installIosStep1: "1. Open the 'Share' menu in Safari", installIosStep2: "2. Select 'Add to Home Screen'", installIosStep3: "Note: If you don't see it, choose 'Open in Safari' first.", close: "Close" },
+  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Email", codeLabel: "código 8 dígitos", login: "Empezar Viaje", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", authError: "Error", codeError: "Inválido", selectLang: "Idioma", resend: "Reenviar", installTitle: "Instalar bdai", installDesc: "Usa bdai como una app real", installBtn: "Instalar", installIosStep1: "1. Abre el menú de 'Compartir' de Safari", installIosStep2: "2. Selecciona 'Añadir a pantalla de inicio'", installIosStep3: "Nota: Si no lo ves, pulsa primero 'Abrir en Safari'.", close: "Cerrar" },
+  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "Email", codeLabel: "codi 8 dígits", login: "Començar", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", selectLang: "Idioma", resend: "Tornar a enviar", installTitle: "Instal·lar bdai", installDesc: "Com una app real", installBtn: "Instal·lar", installIosStep1: "1. Obre el menú 'Compartir' de Safari", installIosStep2: "2. Selecciona 'Afegir a pantalla d'inici'", installIosStep3: "Nota: Si no ho veus, prem 'Obrir a Safari' primer.", close: "Tancar" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -45,7 +44,6 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
   
-  // PWA States
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
@@ -82,7 +80,6 @@ export default function App() {
       } catch (e) {}
     }
 
-    // PWA Logic
     const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     setIsStandalone(!!checkStandalone);
 
@@ -92,7 +89,6 @@ export default function App() {
       if (!checkStandalone) setShowInstallBanner(true);
     });
 
-    // Detect iOS and suggest install
     if (!checkStandalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
       setTimeout(() => setShowInstallBanner(true), 2000);
     }
@@ -113,14 +109,15 @@ export default function App() {
       if (outcome === 'accepted') setShowInstallBanner(false);
       setDeferredPrompt(null);
     } else {
-      // It's iOS or browser without prompt support
       setShowIosGuide(true);
     }
   };
 
   const unlockAudio = async () => {
     if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    if (audioContextRef.current.state === 'suspended') await audioContextRef.current.resume();
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
   };
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
@@ -204,10 +201,15 @@ export default function App() {
             const binary = atob(base64);
             const bytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            const dataInt16 = new Int16Array(bytes.buffer);
+            
+            // CORRECCIÓN CRÍTICA: Asegurar alineación de bytes para Int16Array
+            const validLength = Math.floor(bytes.byteLength / 2);
+            const dataInt16 = new Int16Array(bytes.buffer, 0, validLength);
+            
             const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
             const channelData = buffer.getChannelData(0);
             for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
+            
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
@@ -216,7 +218,8 @@ export default function App() {
             audioSourceRef.current = source;
             setAudioPlayingId(id);
         }
-    } catch(e) { console.error(e); } finally { setAudioLoadingId(null); }
+    } catch(e) { console.error("Audio Play Error:", e); } 
+    finally { setAudioLoadingId(null); }
   };
 
   const handleUpdateUser = (updated: UserProfile) => {
@@ -229,7 +232,6 @@ export default function App() {
     <div className="flex-1 bg-[#020617] flex flex-col relative overflow-hidden text-slate-100 h-[100dvh] w-full font-sans">
       {showOnboarding && <Onboarding language={user.language} onLanguageSelect={handleLanguageSelect} onComplete={(ints) => { const updated = {...user, interests: ints}; handleUpdateUser(updated); setShowOnboarding(false); }} />}
 
-      {/* Guía Visual para iOS */}
       {showIosGuide && (
           <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl animate-fade-in">
               <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 text-slate-900 shadow-2xl space-y-6">
@@ -240,11 +242,11 @@ export default function App() {
                   <div className="space-y-6">
                       <div className="flex items-start gap-4">
                           <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 font-black">1</div>
-                          <p className="text-sm font-medium">{t('installIosStep1')}</p>
+                          <p className="text-sm font-medium leading-tight">{t('installIosStep1')}</p>
                       </div>
                       <div className="flex items-start gap-4">
                           <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 font-black">2</div>
-                          <p className="text-sm font-medium">{t('installIosStep2')}</p>
+                          <p className="text-sm font-medium leading-tight">{t('installIosStep2')}</p>
                       </div>
                       <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
                           <p className="text-[11px] font-black text-amber-700 leading-tight">
@@ -261,11 +263,17 @@ export default function App() {
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-between p-10 bg-[#020617] py-safe-iphone">
               <div className="w-full flex flex-col items-center gap-3 animate-fade-in">
-                  <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">{t('selectLang')}</p>
-                  <div className="flex gap-3">
+                  <p className="text-[7px] font-black text-white/20 uppercase tracking-[0.3em]">{t('selectLang')}</p>
+                  <div className="flex gap-2">
                       {LANGUAGES.map(lang => (
-                          <button key={lang.code} onClick={() => handleLanguageSelect(lang.code)} className={`w-8 h-8 rounded-full overflow-hidden border transition-all active:scale-90 ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-lg shadow-purple-500/20' : 'border-white/10 opacity-30'}`}>
-                              <FlagIcon code={lang.code} className="w-full h-full object-cover scale-150" />
+                          <button 
+                            key={lang.code} 
+                            onClick={() => handleLanguageSelect(lang.code)} 
+                            className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all active:scale-90 ${user.language === lang.code ? 'border-purple-500 bg-purple-600/10 text-white shadow-lg shadow-purple-500/20' : 'border-white/10 text-white/30'}`}
+                          >
+                            <span className="text-[8px] font-black tracking-tighter">
+                                {lang.code === 'ca' ? 'CAT' : lang.code === 'eu' ? 'EUS' : lang.code.toUpperCase()}
+                            </span>
                           </button>
                       ))}
                   </div>
@@ -291,8 +299,11 @@ export default function App() {
                       </div>
                   ) : (
                       <div className="animate-fade-in space-y-4">
-                          <input type="text" inputMode="numeric" maxLength={8} placeholder={t('codePlaceholder')} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none text-center font-black text-xl text-purple-400 tracking-[0.2em] focus:border-purple-500/50" />
-                          <div className="space-y-3">
+                          <div className="text-center">
+                              <span className="text-[9px] font-black text-purple-400/50 uppercase tracking-widest mb-2 block">{t('codeLabel')}</span>
+                              <input type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none text-center font-black text-lg text-white tracking-[0.3em] focus:border-purple-500/50" />
+                          </div>
+                          <div className="space-y-3 pt-2">
                             <button disabled={isLoading} onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
                                 {isLoading ? <i className="fas fa-spinner fa-spin text-lg"></i> : t('verify')}
                             </button>

@@ -114,16 +114,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       try {
           if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
           const ctx = audioContextRef.current;
+          if (ctx.state === 'suspended') await ctx.resume();
+
           const text = user.language === 'es' ? `Bienvenido de nuevo a ${city}, explorador. Es un placer volver a ver tu sello en este pasaporte.` : `Welcome back to ${city}, explorer. It is a pleasure to see your stamp in this passport again.`;
           const base64 = await generateAudio(text, user.language);
           if (base64) {
               const binary = atob(base64);
               const bytes = new Uint8Array(binary.length);
               for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-              const dataInt16 = new Int16Array(bytes.buffer);
+              
+              // CORRECCIÓN CRÍTICA: Alineación de bytes
+              const validLength = Math.floor(bytes.byteLength / 2);
+              const dataInt16 = new Int16Array(bytes.buffer, 0, validLength);
+              
               const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
               const channelData = buffer.getChannelData(0);
               for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
+              
               const source = ctx.createBufferSource();
               source.buffer = buffer;
               source.connect(ctx.destination);
@@ -132,7 +139,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
               audioSourceRef.current = source;
               setPlayingCityAudio(city);
           }
-      } catch (e) { setPlayingCityAudio(null); } finally { setLoadingAudio(null); }
+      } catch (e) { 
+        console.error("Profile Audio Error:", e);
+        setPlayingCityAudio(null); 
+      } finally { 
+        setLoadingAudio(null); 
+      }
   };
 
   const getStampStyle = (city: string) => {
@@ -237,7 +249,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                             onClick={() => handleLanguageChange(lang.code)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${formData.language === lang.code ? 'bg-white border-purple-600 shadow-md scale-105' : 'bg-slate-200/50 border-transparent opacity-60'}`}
                         >
-                            <FlagIcon code={lang.code} className="w-5 h-5 rounded-full object-cover" />
                             <span className="text-[10px] font-black uppercase text-slate-700">{lang.name}</span>
                         </button>
                     ))}
