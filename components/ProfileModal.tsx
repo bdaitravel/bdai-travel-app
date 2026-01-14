@@ -32,6 +32,24 @@ const MODAL_TEXTS: any = {
         username: "Usuario", audioMemory: "Escuchar Recuerdo", linked: "Vinculado",
         language: "Idioma Actual", rank: "Rango del Viajero", miles: "Millas Totales"
     },
+    ca: {
+        title: "Passaport Global bdai", subtitle: "Credencial Nòmada Digital",
+        surname: "Cognoms", givenNames: "Noms", city: "Ciutat Origen", country: "País",
+        birthday: "F. Naixement", age: "Edat", social: "Social Matrix", interests: "Perfil d'Interessos",
+        visas: "Visats Verificats", entry: "ENTRADA", verified: "VERIFICAT", noVisas: "Llest per a segells",
+        save: "Desar Passaport", edit: "Editar Identitat", logout: "Tancar Sessió",
+        username: "Usuari", audioMemory: "Escolta el Record", linked: "Vinculat",
+        language: "Idioma Actual", rank: "Rang del Viatger", miles: "Milles Totals"
+    },
+    eu: {
+        title: "Pasaporte Global bdai", subtitle: "Nomada Digital Agiria",
+        surname: "Abizenak", givenNames: "Izenak", city: "Jatorrizko Hiria", country: "Herrialdea",
+        birthday: "Jaiotze-data", age: "Adina", social: "Social Matrix", interests: "Interesen Profila",
+        visas: "Egiaztatutako Visatuak", entry: "SARRERA", verified: "EGIAZTATUA", noVisas: "Zigiluak jasotzeko prest",
+        save: "Pasaportea Gorde", edit: "Nortasuna Editatu", logout: "Saioa Itxi",
+        username: "Erabiltzailea", audioMemory: "Oroitzapena Entzun", linked: "Lotuta",
+        language: "Hizkuntza", rank: "Bidaiari Maila", miles: "Milia Guztiak"
+    },
     fr: {
         title: "Passeport Global bdai", subtitle: "Identifiant Nomade Numérique",
         surname: "Nom", givenNames: "Prénoms", city: "Ville d'Origine", country: "Pays",
@@ -123,7 +141,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
               const bytes = new Uint8Array(binary.length);
               for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
               
-              // CORRECCIÓN CRÍTICA: Alineación de bytes
               const validLength = Math.floor(bytes.byteLength / 2);
               const dataInt16 = new Int16Array(bytes.buffer, 0, validLength);
               

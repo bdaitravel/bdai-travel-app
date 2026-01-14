@@ -22,6 +22,20 @@ const UI_LABELS: any = {
         villagesTitle: "Pobles amb Encant", villagesSub: "Joies Rurals d'Espanya",
         catVisited: "Icones Mundials", catGrowth: "Joies en Auge", catExotic: "Destins Exòtics",
         loading: "Sincronitzant..." 
+    },
+    eu: { 
+        hubTitle: "Mundua Esploratu", hubSub: "Nazioarteko Helmuga Adimentsuak", 
+        homeTitle: "Espainia Esploratu", homeSub: "Hiriburu Handiak",
+        villagesTitle: "Herri Xarmangarriak", villagesSub: "Espainiako Landa Bitxiak",
+        catVisited: "Ikonikoak", catGrowth: "Goraka Doazenak", catExotic: " Helmuga Exotikoak",
+        loading: "Sateliteekin sinkronizatzen..." 
+    },
+    fr: { 
+        hubTitle: "Explorer le Monde", hubSub: "Destinations Globales Intelligentes", 
+        homeTitle: "Explorer l'Espagne", homeSub: "Grandes Capitales",
+        villagesTitle: "Villages de Charme", villagesSub: "Joyaux Ruraux d'Espagne",
+        catVisited: "Icônes Mondiales", catGrowth: "Destinations en Vogue", catExotic: "Destinations Exotiques",
+        loading: "Synchronisation..." 
     }
 };
 
