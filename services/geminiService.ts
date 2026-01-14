@@ -4,7 +4,7 @@ import { Tour, Stop, UserProfile } from '../types';
 import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const LANGUAGE_RULES: Record<string, string> = {
-    es: "PERSONALIDAD: Eres Dai, guía local experta. Estilo fluido, profesional y cercano. IDIOMA: Español.",
+    es: "PERSONALIDAD: Eres Dai, guía local experta de España. Tu estilo es profesional, culto y cercano. IDIOMA: Español de España (Castellano).",
     en: "PERSONALITY: You are Dai, an expert local guide. Narrative and professional style. LANGUAGE: English.",
     ca: "PERSONALITAT: Ets la Dai, guia local experta. Estil fluid i professional. IDIOMA: Català.",
     eu: "NORTASUNA: Dai zara, tokiko gida aditua. Estilo profesionala. HIZKUNTZA: Euskara.",
@@ -110,20 +110,32 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   } catch (error) { return []; }
 };
 
-export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
+export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
-  const cached = await getCachedAudio(cleanText, language);
+  const cached = await getCachedAudio(cleanText, language, city);
   if (cached) return cached;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Instrucción estricta para forzar acento de España (Castellano)
+    const ttsPrompt = language === 'es' 
+        ? `Actúa como Dai, guía oficial de España. Lee este texto con un acento castellano impecable (de Madrid o Valladolid): ${cleanText}` 
+        : `Read this text as a professional local tour guide from the city: ${cleanText}`;
+
     const response = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: `Read as a guide: ${cleanText}` }] }], 
-      config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } } }
+      contents: [{ parts: [{ text: ttsPrompt }] }], 
+      config: { 
+        responseModalities: [Modality.AUDIO], 
+        speechConfig: { 
+            voiceConfig: { 
+                prebuiltVoiceConfig: { voiceName: 'Kore' } 
+            } 
+        } 
+      }
     });
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (audioData) saveAudioToCache(cleanText, language, audioData);
+    if (audioData) saveAudioToCache(cleanText, language, city, audioData);
     return audioData;
   } catch (e) { return ""; }
 };

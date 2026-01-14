@@ -135,7 +135,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
           if (ctx.state === 'suspended') await ctx.resume();
 
           const text = user.language === 'es' ? `Bienvenido de nuevo a ${city}, explorador. Es un placer volver a ver tu sello en este pasaporte.` : `Welcome back to ${city}, explorer. It is a pleasure to see your stamp in this passport again.`;
-          const base64 = await generateAudio(text, user.language);
+          
+          // PASAMOS LA CIUDAD ESPECÍFICA PARA EL CACHÉ ETIQUETADO
+          const base64 = await generateAudio(text, user.language, city);
+          
           if (base64) {
               const binary = atob(base64);
               const bytes = new Uint8Array(binary.length);

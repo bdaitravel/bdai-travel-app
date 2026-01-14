@@ -12,6 +12,19 @@ export const normalizeKey = (text: string) => {
     return text.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");     
 };
 
+/**
+ * Genera un hash único incluyendo la ciudad y el idioma para evitar regresiones y colisiones.
+ */
+const generateTextHash = (text: string, language: string, city: string) => {
+    const cleanText = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+    const normCity = normalizeKey(city) || "global";
+    if (cleanText.length === 0) return `${normCity}_${language}_empty`;
+    
+    // Llave sólida: ciudad_idioma_longitud_inicio_fin
+    const textPart = `len${cleanText.length}_${cleanText.substring(0, 15)}_${cleanText.slice(-15)}`;
+    return `${normCity}_${language}_${textPart}`;
+};
+
 export const sendOtpEmail = async (email: string) => {
     const emailClean = email.toLowerCase().trim();
     return await supabase.auth.signInWithOtp({
@@ -27,14 +40,12 @@ export const verifyOtpCode = async (email: string, token: string) => {
     const emailClean = email.toLowerCase().trim();
     const tokenClean = token.trim();
     
-    // El tipo 'magiclink' es el correcto para signInWithOtp en Supabase
     let result = await supabase.auth.verifyOtp({
         email: emailClean, 
         token: tokenClean, 
         type: 'magiclink'
     });
 
-    // Fallbacks por si la configuración de Supabase varía
     if (result.error) {
         result = await supabase.auth.verifyOtp({
             email: emailClean, token: tokenClean, type: 'email'
@@ -98,18 +109,16 @@ export const saveToursToCache = async (city: string, language: string, tours: To
   } catch (e) { console.error("Cache Save Error:", e); }
 };
 
-export const getCachedAudio = async (text: string, language: string): Promise<string | null> => {
-  const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-  const hash = `dai_${language}_${clean.substring(0, 30)}`;
+export const getCachedAudio = async (text: string, language: string, city: string): Promise<string | null> => {
+  const hash = generateTextHash(text, language, city);
   try {
     const { data } = await supabase.from('audio_cache').select('base64').eq('text_hash', hash).eq('language', language).maybeSingle();
     return data?.base64 || null;
   } catch (e) { return null; }
 };
 
-export const saveAudioToCache = async (text: string, language: string, base64: string) => {
-  const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-  const hash = `dai_${language}_${clean.substring(0, 30)}`;
+export const saveAudioToCache = async (text: string, language: string, city: string, base64: string) => {
+  const hash = generateTextHash(text, language, city);
   try {
     await supabase.from('audio_cache').upsert({ text_hash: hash, language, base64, created_at: new Date().toISOString() }, { onConflict: 'text_hash,language' });
   } catch (e) { console.error("Audio Save Error:", e); }
