@@ -4,7 +4,10 @@ import { generateCityPostcard } from '../services/geminiService';
 
 const TEXTS: any = {
     es: { title: "Tu Postal IA", desc: "Generada especialmente para ti", share: "Compartir con el mundo", close: "Cerrar", loading: "Pintando tu postal...", error: "No se pudo generar la imagen." },
-    en: { title: "Your AI Postcard", desc: "Specially generated for you", share: "Share with the world", close: "Close", loading: "Painting your postcard...", error: "Could not generate image." }
+    en: { title: "Your AI Postcard", desc: "Specially generated for you", share: "Share with the world", close: "Close", loading: "Painting your postcard...", error: "Could not generate image." },
+    ca: { title: "La teva Postal IA", desc: "Generada especialment per a tu", share: "Compartir amb el món", close: "Tancar", loading: "Pintant la teva postal...", error: "No s'ha pogut generar la imatge." },
+    eu: { title: "Zure AI Postala", desc: "Zuretzat bereziki sortua", share: "Munduarekin partekatu", close: "Itxi", loading: "Zure postala margotzen...", error: "Ezin izan da irudia sortu." },
+    fr: { title: "Votre Carte IA", desc: "Générée spécialement pour vous", share: "Partager avec le monde", close: "Fermer", loading: "Peinture de votre carte...", error: "Impossible de générer l'image." }
 };
 
 export const PostcardModal: React.FC<{ city: string, interests: string[], language: string, onClose: () => void }> = ({ city, interests, language, onClose }) => {

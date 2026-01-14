@@ -5,6 +5,9 @@ import { UserProfile } from '../types';
 const SHOP_TEXTS: any = {
     en: { title: "bdai market", subtitle: "Traveler Gear & Digital Assets", buy: "Buy on Etsy", download: "Get on Hotmart", official: "Our Official Stores", cats: { 'Digital': 'Digital Goods', 'Merch': 'Physical Gear' } },
     es: { title: "mercado bdai", subtitle: "Equipo para Viajeros y Activos", buy: "Comprar en Etsy", download: "Bajar en Hotmart", official: "Nuestras Tiendas Oficiales", cats: { 'Digital': 'Productos Digitales', 'Merch': 'Ropa y Accesorios' } },
+    ca: { title: "mercat bdai", subtitle: "Equip per a Viatgers i Actius", buy: "Comprar a Etsy", download: "Baixar a Hotmart", official: "Botigues Oficials", cats: { 'Digital': 'Productes Digitals', 'Merch': 'Roba i Complements' } },
+    eu: { title: "bdai merkatua", subtitle: "Bidaiarientzako Ekipoa", buy: "Etsy-n erosi", download: "Hotmart-en deskargatu", official: "Denda Ofizialak", cats: { 'Digital': 'Produktu Digitalak', 'Merch': 'Arropa eta Osagarriak' } },
+    fr: { title: "marché bdai", subtitle: "Équipement pour Voyageurs", buy: "Acheter sur Etsy", download: "Sur Hotmart", official: "Boutiques Officielles", cats: { 'Digital': 'Produits Numériques', 'Merch': 'Vêtements et Accessoires' } },
 };
 
 const EXTERNAL_STORES = [

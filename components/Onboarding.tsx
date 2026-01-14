@@ -28,6 +28,33 @@ const ONBOARDING_TEXT: any = {
         step3Title: "Prueba de Visita", step3Desc: "Para ganar millas debes estar físicamente en el sitio. El GPS verifica tu hazaña.",
         step4Title: "Pasaporte Digital", step4Desc: "Colecciona sellos reales y sube en el ranking global de exploradores.",
         skip: "Saltar", next: "Siguiente", start: "Empezar", selectInt: "Tus Intereses"
+    },
+    ca: {
+        step0Title: "Tria Idioma",
+        stepDaiTitle: "Hola, sóc la Dai", stepDaiDesc: "Sóc la intel·ligència que viu a bdai. Seré la teva guia personal, experta i companya en cada aventura.",
+        step1Title: "La teva Guia IA", step1Desc: "Creo rutes úniques basades en qui ets i què t'agrada, sense guions avorrits.",
+        step2Title: "Explora el Món", step2Desc: "Totes les ciutats del món al teu abast. Tradueixo la cultura local per a tu.",
+        step3Title: "Prova de Visita", step3Desc: "Per guanyar milles has d'estar físicament al lloc. El GPS verifica la teva gesta.",
+        step4Title: "Passaport Digital", step4Desc: "Col·lecciona segells reals i puja en el rànquing global d'exploradors.",
+        skip: "Saltar", next: "Següent", start: "Començar", selectInt: "Els teus Interessos"
+    },
+    eu: {
+        step0Title: "Hizkuntza Aukeratu",
+        stepDaiTitle: "Kaixo, Dai naiz", stepDaiDesc: "bdai-n bizi den adimena naiz. Zure gida pertsonala, aditua eta laguna izango naiz abentura bakoitzean.",
+        step1Title: "Zure AI Gida", step1Desc: "Ibilbide bereziak sortzen ditut nor zaren eta zer gustatzen zaizun kontuan hartuta.",
+        step2Title: "Mundua Esploratu", step2Desc: "Munduko hiri guztiak zure esku. Tokiko kultura itzultzen dut zuretzat.",
+        step3Title: "Bisita Egiaztagiria", step3Desc: "Miliak irabazteko gunean egon behar duzu fisikoki. GPSak zure ekintza egiaztatzen du.",
+        step4Title: "Pasaporte Digitala", step4Desc: "Bildu benetako zigiluak eta igo esploratzaileen munduko sailkapenean.",
+        skip: "Saltatu", next: "Hurrengoa", start: "Hasi", selectInt: "Zure Interesak"
+    },
+    fr: {
+        step0Title: "Choisir la Langue",
+        stepDaiTitle: "Bonjour, je suis Dai", stepDaiDesc: "Je suis l'intelligence qui vit dans bdai. Je serai votre guide personnel, experte et compagne dans chaque aventure.",
+        step1Title: "Votre Guide IA", step1Desc: "Je crée des itinéraires uniques basés sur qui vous êtes et ce que vous aimez.",
+        step2Title: "Explorez le Monde", step2Desc: "Toutes les villes du monde à votre portée. Je traduis la culture locale pour vous.",
+        step3Title: "Preuve de Visite", step3Desc: "Pour gagner des miles, vous devez être physiquement sur place. Le GPS vérifie votre exploit.",
+        step4Title: "Passeport Numérique", step4Desc: "Collectionnez de vrais tampons et grimpez dans le classement mondial des explorateurs.",
+        skip: "Passer", next: "Suivant", start: "Commencer", selectInt: "Vos Intérêts"
     }
 };
 

@@ -1,16 +1,9 @@
 {
   "name": "bdai",
-  "description": "Better Destinations AI - Tu guía de viajes inteligente con IA para todo el mundo.",
+  "description": "bdai- La Masterclass Global de Viajes. Tours de alta densidad informativa con ingeniería, historia y anécdotas reales.",
   "requestFramePermissions": [
     "geolocation",
     "camera",
     "microphone"
-  ],
-  "nativePermissions": {
-    "NSLocationWhenInUseUsageDescription": "bdai utiliza tu ubicación para guiarte por los puntos del tour y permitirte canjear millas cuando llegas a un destino.",
-    "NSCameraUsageDescription": "Necesitamos acceso a tu cámara para que puedas capturar los Photo Spots y verificar tus visitas a monumentos.",
-    "NSMicrophoneUsageDescription": "El micrófono se utiliza para la interacción por voz con tu guía turístico IA.",
-    "NSPhotoLibraryUsageDescription": "Permítenos guardar las postales generadas por IA y tus fotos de viaje en tu galería.",
-    "NSPhotoLibraryAddUsageDescription": "Guardaremos las fotos de tus tours en tu dispositivo."
-  }
+  ]
 }

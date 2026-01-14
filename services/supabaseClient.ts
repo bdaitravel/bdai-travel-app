@@ -7,7 +7,19 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const normalizeKey = (text: string) => text ? text.toLowerCase().trim() : "";
+/**
+ * Normaliza la ciudad para que sea una clave de búsqueda consistente.
+ * Elimina espacios, acentos y caracteres especiales.
+ */
+export const normalizeKey = (text: string) => {
+    if (!text) return "";
+    return text
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/[^a-z0-9]/g, "");     
+};
 
 export const sendOtpEmail = async (email: string) => {
     return await supabase.auth.signInWithOtp({
@@ -62,20 +74,42 @@ export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
 
 export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
   try {
-    const { data, error } = await supabase.from('tours_cache').select('data').ilike('city', normalizeKey(city)).eq('language', language).maybeSingle();
-    return (error || !data) ? null : data.data as Tour[];
-  } catch (e) { return null; }
+    const normCity = normalizeKey(city);
+    const { data, error } = await supabase
+        .from('tours_cache')
+        .select('data')
+        .eq('city', normCity)
+        .eq('language', language)
+        .maybeSingle();
+    
+    if (error) {
+        console.error("Supabase fetch error:", error);
+        return null;
+    }
+    return data ? (data.data as Tour[]) : null;
+  } catch (e) { 
+    console.error("Cache Read Exception:", e);
+    return null; 
+  }
 };
 
 export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
+  if (!tours || tours.length === 0) return;
   try {
-    await supabase.from('tours_cache').upsert({
-      city: normalizeKey(city), language, data: tours, created_at: new Date().toISOString()
+    const normCity = normalizeKey(city);
+    const { error } = await supabase.from('tours_cache').upsert({
+      city: normCity, 
+      language: language, 
+      data: tours, 
+      created_at: new Date().toISOString()
     }, { onConflict: 'city,language' });
-  } catch (e) { console.error("Cache Save Error:", e); }
+    
+    if (error) console.error("Supabase Upsert Error:", error);
+  } catch (e) { 
+    console.error("Cache Save Exception:", e); 
+  }
 };
 
-// Hash único para el audio de Dai
 const generateSecureHash = (text: string, lang: string) => {
     const clean = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
     const len = clean.length;
@@ -94,27 +128,28 @@ export const getCachedAudio = async (text: string, language: string): Promise<st
 export const saveAudioToCache = async (text: string, language: string, base64: string) => {
   const hash = generateSecureHash(text, language);
   try {
-    const { error } = await supabase.from('audio_cache').upsert({
+    await supabase.from('audio_cache').upsert({
       text_hash: hash, 
       language, 
       base64, 
       created_at: new Date().toISOString()
     }, { onConflict: 'text_hash,language' });
-    if (error) console.warn("Supabase Sync Error:", error);
-  } catch (e) { console.error("Supabase Save Error:", e); }
+  } catch (e) { console.error("Audio Save Error:", e); }
 };
 
 export const getCommunityPosts = async (city: string) => {
   try {
-    const { data, error } = await supabase.from('community_posts').select('*').ilike('city', normalizeKey(city)).order('created_at', { ascending: false });
+    const normCity = normalizeKey(city);
+    const { data, error } = await supabase.from('community_posts').select('*').eq('city', normCity).order('created_at', { ascending: false });
     return error ? [] : data.map(p => ({ ...p, time: new Date(p.created_at).toLocaleTimeString() }));
   } catch (e) { return []; }
 };
 
 export const addCommunityPost = async (postData: any) => {
   try {
+    const normCity = normalizeKey(postData.city);
     return await supabase.from('community_posts').insert({
-      city: normalizeKey(postData.city), user_id: postData.userId, user: postData.user, avatar: postData.avatar, content: postData.content, created_at: new Date().toISOString()
+      city: normCity, user_id: postData.userId, user: postData.user, avatar: postData.avatar, content: postData.content, created_at: new Date().toISOString()
     });
   } catch (e) { return { error: e }; }
 };

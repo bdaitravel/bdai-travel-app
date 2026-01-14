@@ -86,12 +86,14 @@ export interface Stop {
   description: string;
   latitude: number;
   longitude: number;
-  type: 'historical' | 'food' | 'art' | 'nature' | 'photo' | 'culture';
+  // Added 'architecture' to the allowed types to support specific tour stops in toursData.ts
+  type: 'historical' | 'food' | 'art' | 'nature' | 'photo' | 'culture' | 'architecture';
   visited: boolean;
   photoSpot?: {
     angle: string;
-    bestTime: string;
-    instagramHook: string;
+    // Fix: Made bestTime and instagramHook optional to reconcile Stop type with static tours data
+    bestTime?: string;
+    instagramHook?: string;
     milesReward: number;
     secretLocation: string;
   };

@@ -57,21 +57,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
 
     const isNearEnough = distanceToStop !== null && distanceToStop <= 100;
 
-    const handleShare = async () => {
-        if (navigator.share) {
-            try {
-                const text = language === 'es' 
-                    ? `¡Explorando ${currentStop.name} en ${tour.city} con mi guía bdai! 🌍📍` 
-                    : `Exploring ${currentStop.name} in ${tour.city} with my bdai guide! 🌍📍`;
-                await navigator.share({
-                    title: `bdai | ${currentStop.name}`,
-                    text: text,
-                    url: window.location.origin
-                });
-            } catch (err) { console.error("Error sharing:", err); }
-        }
-    };
-
     const handlePhotoReward = async () => {
         setIsCapturing(true);
         await new Promise(r => setTimeout(r, 1500)); 
@@ -81,8 +66,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
 
     return (
         <div className="fixed inset-0 bg-slate-50 flex flex-col z-[5000] overflow-hidden">
-             {/* 1. Header Fijo Superior */}
-             <div className="bg-white border-b border-slate-100 px-6 py-6 flex items-center justify-between z-[6000] shrink-0 pt-safe shadow-sm">
+             {/* Header Super-Adaptativo */}
+             <div className="bg-white border-b border-slate-100 px-6 py-6 flex items-center justify-between z-[6000] shrink-0 pt-safe-iphone shadow-sm">
                 <button 
                     onClick={(e) => { e.stopPropagation(); onBack(); }} 
                     className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950 active:scale-90 transition-transform"
@@ -93,70 +78,56 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                     <p className="text-[8px] font-black text-purple-600 uppercase tracking-widest">{tl.stop} {currentStopIndex + 1} {tl.of} {tour.stops.length}</p>
                     <h2 className="text-sm font-black text-slate-900 uppercase truncate max-w-[150px]">{currentStop.name}</h2>
                 </div>
-                <div className="flex gap-2">
-                    <button 
-                        onClick={() => setShowItinerary(!showItinerary)}
-                        className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all ${showItinerary ? 'bg-purple-600 border-purple-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-950'}`}
-                    >
-                        <i className="fas fa-list-ul"></i>
-                    </button>
-                    <button 
-                        onClick={handleShare}
-                        className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950 active:scale-90 transition-transform"
-                    >
-                        <i className="fas fa-share-nodes"></i>
-                    </button>
-                </div>
+                <button 
+                    onClick={() => setShowItinerary(!showItinerary)}
+                    className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all ${showItinerary ? 'bg-purple-600 border-purple-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-950'}`}
+                >
+                    <i className="fas fa-list-ul"></i>
+                </button>
              </div>
 
              {/* Modal Itinerario */}
              {showItinerary && (
                  <div className="absolute inset-0 z-[7000] flex flex-col animate-fade-in">
                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setShowItinerary(false)}></div>
-                     <div className="mt-auto bg-white rounded-t-[3rem] p-8 max-h-[70vh] overflow-y-auto no-scrollbar relative z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.2)] animate-slide-up">
+                     <div className="mt-auto bg-white rounded-t-[3rem] p-8 max-h-[70vh] overflow-y-auto no-scrollbar relative z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.2)] animate-slide-up pb-safe-iphone">
                         <div className="flex justify-between items-center mb-8">
                             <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900">{tl.itinerary}</h3>
                             <button onClick={() => setShowItinerary(false)} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i className="fas fa-times"></i></button>
                         </div>
                         <div className="space-y-4">
-                            {tour.stops.map((stop: Stop, idx: number) => {
-                                const dist = userLocation ? getDistance(userLocation.lat, userLocation.lng, stop.latitude, stop.longitude) : null;
-                                return (
-                                    <div 
-                                        key={stop.id} 
-                                        onClick={() => { onJumpTo(idx); setShowItinerary(false); }}
-                                        className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${idx === currentStopIndex ? 'bg-purple-50 border-purple-200 ring-2 ring-purple-600/20' : 'bg-white border-slate-100'}`}
-                                    >
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === currentStopIndex ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                            {idx + 1}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`text-[11px] font-black uppercase truncate ${idx === currentStopIndex ? 'text-purple-700' : 'text-slate-900'}`}>{stop.name}</p>
-                                            {dist !== null && <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{dist} {tl.meters}</p>}
-                                        </div>
-                                        {stop.visited && <i className="fas fa-check-circle text-green-500 text-sm"></i>}
+                            {tour.stops.map((stop: Stop, idx: number) => (
+                                <div 
+                                    key={stop.id} 
+                                    onClick={() => { onJumpTo(idx); setShowItinerary(false); }}
+                                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${idx === currentStopIndex ? 'bg-purple-50 border-purple-200 ring-2 ring-purple-600/20' : 'bg-white border-slate-100'}`}
+                                >
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === currentStopIndex ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                        {idx + 1}
                                     </div>
-                                );
-                            })}
+                                    <p className={`text-[11px] font-black uppercase truncate flex-1 ${idx === currentStopIndex ? 'text-purple-700' : 'text-slate-900'}`}>{stop.name}</p>
+                                    {stop.visited && <i className="fas fa-check-circle text-green-500 text-sm"></i>}
+                                </div>
+                            ))}
                         </div>
                      </div>
                  </div>
              )}
 
-             {/* 2. Área Central Scrollable */}
-             <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col">
-                {/* Mapa */}
-                <div className="h-[35vh] w-full relative z-[100] shrink-0 border-b border-slate-100">
+             <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col relative">
+                <div className="h-[40vh] w-full relative z-[100] shrink-0 border-b border-slate-100">
                     <SchematicMap 
                         stops={tour.stops} 
                         currentStopIndex={currentStopIndex} 
                         userLocation={userLocation} 
                         language={language}
                         onStopSelect={(idx) => onJumpTo(idx)}
+                        onPlayAudio={onPlayAudio}
+                        audioPlayingId={audioPlayingId}
+                        audioLoadingId={audioLoadingId}
                     />
                 </div>
 
-                {/* Contenido */}
                 <div className="px-8 pt-8 pb-40 space-y-8 bg-white rounded-t-[3rem] -mt-6 shadow-[0_-20px_40px_rgba(0,0,0,0.03)] z-[200]">
                     <div className="flex justify-between items-center gap-4">
                         <div className="flex-1">
@@ -166,11 +137,10 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                                 </span>
                             )}
                         </div>
-                        
                         <button 
                             onClick={() => onPlayAudio(currentStop.id, currentStop.description)} 
                             disabled={isLoading} 
-                            className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all active:scale-95 shrink-0 pointer-events-auto ${isPlaying ? 'bg-red-600' : 'bg-slate-950'} text-white`}
+                            className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all active:scale-95 shrink-0 ${isPlaying ? 'bg-red-600' : 'bg-slate-950'} text-white`}
                         >
                             {isLoading ? <i className="fas fa-spinner fa-spin text-xl"></i> : isPlaying ? <i className="fas fa-stop text-xl"></i> : <i className="fas fa-play text-xl ml-1"></i>}
                         </button>
@@ -201,17 +171,20 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                         </div>
                     )}
 
-                    <div className="space-y-6 text-slate-700 text-base leading-relaxed font-medium pb-12">
-                        {currentStop.description.split('\n').map((line, idx) => {
-                            const clean = cleanDescriptionText(line);
-                            return clean ? <p key={idx} className="animate-fade-in">{clean}</p> : null;
+                    <div className="space-y-8 text-slate-700 text-lg leading-relaxed font-medium pb-12">
+                        {currentStop.description.split('\n\n').map((paragraph, idx) => {
+                            const clean = cleanDescriptionText(paragraph);
+                            return clean ? (
+                                <p key={idx} className="animate-fade-in first-letter:text-6xl first-letter:font-black first-letter:text-purple-600 first-letter:mr-3 first-letter:float-left first-letter:mt-1">
+                                    {clean}
+                                </p>
+                            ) : null;
                         })}
                     </div>
                 </div>
              </div>
 
-             {/* 3. Footer Fijo Inferior */}
-             <div className="bg-white/80 backdrop-blur-xl border-t border-slate-100 p-6 flex gap-3 z-[6000] shrink-0 pb-safe">
+             <div className="bg-white/80 backdrop-blur-xl border-t border-slate-100 p-6 flex gap-3 z-[6000] shrink-0 pb-safe-iphone">
                 <button onClick={onPrev} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0 active:scale-95 transition-all">{tl.prev}</button>
                 <button onClick={onNext} disabled={currentStopIndex === tour.stops.length - 1} className="flex-[2] py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all">{tl.next}</button>
              </div>

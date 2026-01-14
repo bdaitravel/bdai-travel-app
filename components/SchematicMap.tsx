@@ -28,6 +28,9 @@ interface SchematicMapProps {
   userLocation?: { lat: number; lng: number } | null;
   language?: string;
   onStopSelect?: (index: number) => void;
+  onPlayAudio?: (id: string, text: string) => void;
+  audioPlayingId?: string | null;
+  audioLoadingId?: string | null;
 }
 
 export const SchematicMap: React.FC<SchematicMapProps> = ({ 
@@ -35,7 +38,10 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
     currentStopIndex, 
     userLocation, 
     language = 'es',
-    onStopSelect
+    onStopSelect,
+    onPlayAudio,
+    audioPlayingId,
+    audioLoadingId
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -46,12 +52,15 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
   const [isAutoFollowing, setIsAutoFollowing] = useState(true);
   const tl = TEXTS[language] || TEXTS.es;
 
+  const currentStop = stops[currentStopIndex];
+  const isPlaying = audioPlayingId === currentStop?.id;
+  const isLoading = audioLoadingId === currentStop?.id;
+
   const openInExternalMaps = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const stop = stops[currentStopIndex];
-      if (!stop) return;
-      const url = `https://www.google.com/maps/dir/?api=1&destination=${stop.latitude},${stop.longitude}&travelmode=walking`;
+      if (!currentStop) return;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${currentStop.latitude},${currentStop.longitude}&travelmode=walking`;
       window.open(url, '_blank');
   };
 
@@ -70,7 +79,9 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
 
     mapInstanceRef.current = map;
     
-    setTimeout(() => { map.invalidateSize(); }, 300);
+    setTimeout(() => { 
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize(); 
+    }, 500);
 
     map.on('dragstart', () => setIsAutoFollowing(false));
     return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
@@ -145,31 +156,39 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
     <div className="w-full h-full relative overflow-hidden bg-slate-200">
         <div ref={mapContainerRef} className="w-full h-full pointer-events-auto" />
         
-        {/* Capa de Control GPS - Siempre arriba del mapa */}
-        {userLocation && stops[currentStopIndex] && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[450] w-[90%] pointer-events-none">
-                <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto">
-                    <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white shrink-0">
-                        <i className={`fas ${STOP_TYPE_ICONS[stops[currentStopIndex].type] || 'fa-location-arrow'} text-xs`}></i>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[7px] font-black text-purple-400 uppercase mb-0.5">{tl.guide}</p>
-                        <h4 className="text-white font-black text-[10px] truncate uppercase">{stops[currentStopIndex].name}</h4>
-                    </div>
+        {/* Banner de Control GPS y Audio - Rediseñado para iPhone Notch & Safe Area */}
+        {currentStop && (
+            <div className="absolute top-[env(safe-area-inset-top,20px)] left-0 right-0 z-[450] flex justify-center p-4 pointer-events-none">
+                <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-3 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-3 pointer-events-auto w-full max-w-sm">
+                    {/* Botón Play/Pause Directo en Mapa */}
                     <button 
-                        onClick={openInExternalMaps} 
-                        className="bg-blue-600 text-white h-8 px-3 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
+                        onClick={() => onPlayAudio?.(currentStop.id, currentStop.description)}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all ${isPlaying ? 'bg-red-600' : 'bg-purple-600'} text-white shadow-lg`}
                     >
-                        <i className="fas fa-map-location-dot"></i> {tl.openInMaps}
+                        {isLoading ? <i className="fas fa-spinner fa-spin text-xs"></i> : isPlaying ? <i className="fas fa-stop text-xs"></i> : <i className="fas fa-play text-xs ml-0.5"></i>}
                     </button>
-                    {!isAutoFollowing && (
+
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[7px] font-black text-purple-400 uppercase mb-0.5 tracking-widest">{tl.guide}</p>
+                        <h4 className="text-white font-black text-[10px] truncate uppercase tracking-tighter leading-none">{currentStop.name}</h4>
+                    </div>
+
+                    <div className="flex gap-1.5 shrink-0">
                         <button 
-                            onClick={(e) => { e.stopPropagation(); setIsAutoFollowing(true); }} 
-                            className="bg-white/10 text-white w-8 h-8 rounded-lg flex items-center justify-center shadow-lg"
+                            onClick={openInExternalMaps} 
+                            className="bg-blue-600 text-white h-10 px-3 rounded-2xl text-[8px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
                         >
-                            <i className="fas fa-crosshairs text-xs"></i>
+                            <i className="fas fa-map-location-dot text-[10px]"></i> {tl.openInMaps}
                         </button>
-                    )}
+                        {!isAutoFollowing && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setIsAutoFollowing(true); }} 
+                                className="bg-white/10 text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg active:scale-95"
+                            >
+                                <i className="fas fa-crosshairs text-xs"></i>
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         )}
