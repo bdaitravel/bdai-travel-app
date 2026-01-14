@@ -14,11 +14,9 @@ import { CommunityBoard } from './components/CommunityBoard';
 import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Email", codePlaceholder: "8 digits code", login: "Start Journey", verify: "Verify", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", authError: "Error", codeError: "Invalid", selectLang: "Language", resend: "Resend", installTitle: "Install bdai", installDesc: "Add to home screen for full experience", installBtn: "Add Now", installIos: "Tap 'Share' and then 'Add to Home Screen'" },
-  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Email", codePlaceholder: "código 8 dígitos", login: "Empezar Viaje", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", authError: "Error", codeError: "Inválido", selectLang: "Idioma", resend: "Reenviar", installTitle: "Instalar bdai", installDesc: "Añade a inicio para la mejor experiencia", installBtn: "Instalar", installIos: "Pulsa 'Compartir' y luego 'Añadir a pantalla de inicio'" },
-  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "Email", codePlaceholder: "codi 8 dígits", login: "Començar", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", selectLang: "Idioma", resend: "Tornar a enviar", installTitle: "Instal·lar bdai", installDesc: "Afegeix a l'inici per millor experiència", installBtn: "Afegir", installIos: "Prem 'Compartir' i després 'Afegir a pantalla d'inici'" },
-  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu hiri bat...", emailPlaceholder: "Email", codePlaceholder: "8 digituko kodea", login: "Hasi", verify: "Egiaztatu", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Denda", selectLang: "Hizkuntza", resend: "Birbidali", installTitle: "Instalatu bdai", installDesc: "Gehitu hasierara esperientzia osorako", installBtn: "Gehitu", installIos: "Sakatu 'Partekatu' eta gero 'Gehitu hasierako pantailan'" },
-  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", emailPlaceholder: "Email", codePlaceholder: "code 8 chiffres", login: "Commencer", verify: "Vérifier", tagline: "better destinations by ai", navElite: "Élite", navHub: "Hub", navVisa: "Visa", navStore: "Boutique", selectLang: "Langue", resend: "Renvoyer", installTitle: "Installer bdai", installDesc: "Ajouter à l'écran d'accueil", installBtn: "Ajouter", installIos: "Appuyez sur 'Partager' puis 'Sur l'écran d'accueil'" }
+  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Email", codePlaceholder: "8 digits code", login: "Start Journey", verify: "Verify", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", authError: "Error", codeError: "Invalid", selectLang: "Language", resend: "Resend", installTitle: "Install bdai", installDesc: "Use it as a real app", installBtn: "Install", installIosStep1: "1. Tap the 'Share' icon below", installIosStep2: "2. Scroll down and tap 'Add to Home Screen'", installIosStep3: "Note: If you don't see it, tap 'Open in Safari' first.", close: "Close" },
+  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Email", codePlaceholder: "código 8 dígitos", login: "Empezar Viaje", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", authError: "Error", codeError: "Inválido", selectLang: "Idioma", resend: "Reenviar", installTitle: "Instalar bdai", installDesc: "Usa bdai como una app real", installBtn: "Instalar", installIosStep1: "1. Pulsa el icono 'Compartir' de abajo", installIosStep2: "2. Busca 'Añadir a pantalla de inicio'", installIosStep3: "Nota: Si no lo ves, pulsa primero 'Abrir en Safari'.", close: "Cerrar" },
+  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "Email", codePlaceholder: "codi 8 dígits", login: "Començar", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", selectLang: "Idioma", resend: "Tornar a enviar", installTitle: "Instal·lar bdai", installDesc: "Com una app real", installBtn: "Instal·lar", installIosStep1: "1. Prem el botó 'Compartir'", installIosStep2: "2. Cerca 'Afegir a pantalla d'inici'", installIosStep3: "Nota: Si no ho veus, prem 'Obrir a Safari' primer.", close: "Tancar" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -50,6 +48,7 @@ export default function App() {
   // PWA States
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showIosGuide, setShowIosGuide] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
   const [user, setUser] = useState<UserProfile>(() => {
@@ -93,8 +92,9 @@ export default function App() {
       if (!checkStandalone) setShowInstallBanner(true);
     });
 
+    // Detect iOS and suggest install
     if (!checkStandalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
-      setTimeout(() => setShowInstallBanner(true), 3000);
+      setTimeout(() => setShowInstallBanner(true), 2000);
     }
 
     if (navigator.geolocation) {
@@ -110,13 +110,11 @@ export default function App() {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowInstallBanner(false);
-      }
+      if (outcome === 'accepted') setShowInstallBanner(false);
       setDeferredPrompt(null);
     } else {
-      // Manual Tip for iOS
-      alert(t('installIos'));
+      // It's iOS or browser without prompt support
+      setShowIosGuide(true);
     }
   };
 
@@ -231,18 +229,42 @@ export default function App() {
     <div className="flex-1 bg-[#020617] flex flex-col relative overflow-hidden text-slate-100 h-[100dvh] w-full font-sans">
       {showOnboarding && <Onboarding language={user.language} onLanguageSelect={handleLanguageSelect} onComplete={(ints) => { const updated = {...user, interests: ints}; handleUpdateUser(updated); setShowOnboarding(false); }} />}
 
+      {/* Guía Visual para iOS */}
+      {showIosGuide && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl animate-fade-in">
+              <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 text-slate-900 shadow-2xl space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-black text-xl uppercase tracking-tighter">Instrucciones iOS</h3>
+                    <button onClick={() => setShowIosGuide(false)} className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400"><i className="fas fa-times"></i></button>
+                  </div>
+                  <div className="space-y-6">
+                      <div className="flex items-start gap-4">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 font-black">1</div>
+                          <p className="text-sm font-medium">{t('installIosStep1')}</p>
+                      </div>
+                      <div className="flex items-start gap-4">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 font-black">2</div>
+                          <p className="text-sm font-medium">{t('installIosStep2')}</p>
+                      </div>
+                      <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                          <p className="text-[11px] font-black text-amber-700 leading-tight">
+                              <i className="fas fa-exclamation-triangle mr-2"></i>
+                              {t('installIosStep3')}
+                          </p>
+                      </div>
+                  </div>
+                  <button onClick={() => setShowIosGuide(false)} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest">{t('close')}</button>
+              </div>
+          </div>
+      )}
+
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-between p-10 bg-[#020617] py-safe-iphone">
-              {/* Selector de idiomas superior - MANTENIDO PEQUEÑO w-8 */}
               <div className="w-full flex flex-col items-center gap-3 animate-fade-in">
                   <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">{t('selectLang')}</p>
                   <div className="flex gap-3">
                       {LANGUAGES.map(lang => (
-                          <button 
-                              key={lang.code} 
-                              onClick={() => handleLanguageSelect(lang.code)}
-                              className={`w-8 h-8 rounded-full overflow-hidden border transition-all active:scale-90 ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-lg shadow-purple-500/20' : 'border-white/10 opacity-30'}`}
-                          >
+                          <button key={lang.code} onClick={() => handleLanguageSelect(lang.code)} className={`w-8 h-8 rounded-full overflow-hidden border transition-all active:scale-90 ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-lg shadow-purple-500/20' : 'border-white/10 opacity-30'}`}>
                               <FlagIcon code={lang.code} className="w-full h-full object-cover scale-150" />
                           </button>
                       ))}
@@ -269,7 +291,6 @@ export default function App() {
                       </div>
                   ) : (
                       <div className="animate-fade-in space-y-4">
-                          {/* Campo de código MANTENIDO MINIMALISTA text-xl */}
                           <input type="text" inputMode="numeric" maxLength={8} placeholder={t('codePlaceholder')} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none text-center font-black text-xl text-purple-400 tracking-[0.2em] focus:border-purple-500/50" />
                           <div className="space-y-3">
                             <button disabled={isLoading} onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
@@ -293,25 +314,20 @@ export default function App() {
                           <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 text-xs font-black text-white"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
 
-                      {/* Banner de Instalación PWA - Mejorado */}
                       {showInstallBanner && !isStandalone && (
-                        <div className="mx-8 mb-6 p-5 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-[2rem] flex items-center justify-between gap-4 animate-slide-up-banner">
+                        <div className="mx-8 mb-6 p-4 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-[2rem] flex items-center justify-between gap-4 animate-slide-up-banner">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-600/20">
-                                    <i className="fas fa-mobile-screen-button text-lg"></i>
-                                </div>
+                                <div className="w-9 h-9 bg-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-600/20"><i className="fas fa-mobile-screen-button text-sm"></i></div>
                                 <div>
-                                    <h4 className="text-[11px] font-black uppercase text-white tracking-tighter">{t('installTitle')}</h4>
-                                    <p className="text-[8px] font-bold text-slate-400 uppercase leading-none mt-1">{t('installDesc')}</p>
+                                    <h4 className="text-[10px] font-black uppercase text-white tracking-tighter">{t('installTitle')}</h4>
+                                    <p className="text-[7px] font-bold text-slate-400 uppercase leading-none mt-1">{t('installDesc')}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button onClick={handleInstallClick} className="bg-white text-slate-950 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg">
+                                <button onClick={handleInstallClick} className="bg-white text-slate-950 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg active:scale-90 transition-transform">
                                     {t('installBtn')}
                                 </button>
-                                <button onClick={() => setShowInstallBanner(false)} className="w-8 h-8 rounded-lg bg-white/5 text-slate-500 flex items-center justify-center">
-                                    <i className="fas fa-times text-xs"></i>
-                                </button>
+                                <button onClick={() => setShowInstallBanner(false)} className="w-8 h-8 rounded-lg bg-white/5 text-slate-500 flex items-center justify-center"><i className="fas fa-times text-xs"></i></button>
                             </div>
                         </div>
                       )}
