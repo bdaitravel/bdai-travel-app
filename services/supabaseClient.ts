@@ -29,37 +29,45 @@ export const sendOtpEmail = async (email: string) => {
 export const verifyOtpCode = async (email: string, token: string) => {
     const emailClean = email.toLowerCase().trim();
     const tokenClean = token.trim();
-    const types: ('signup' | 'email' | 'magiclink' | 'recovery')[] = ['signup', 'email', 'magiclink', 'recovery'];
     
-    for (const type of types) {
-        try {
-            const { data, error } = await supabase.auth.verifyOtp({
-                email: emailClean, 
-                token: tokenClean, 
-                type: type
-            });
-            if (!error && data?.user) return { data, error: null };
-        } catch (e) { continue; }
+    // Verificación directa y única
+    const { data, error } = await supabase.auth.verifyOtp({
+        email: emailClean, 
+        token: tokenClean, 
+        type: 'email'
+    });
+
+    if (error) {
+        // Re-intento rápido para registros nuevos
+        return await supabase.auth.verifyOtp({
+            email: emailClean, 
+            token: tokenClean, 
+            type: 'signup'
+        });
     }
-    return { data: null, error: { message: "Código no válido o caducado." } };
+    
+    return { data, error: null };
 };
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   if (!email) return null;
-  const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase().trim()).maybeSingle();
-  if (error || !data) return null;
-  return { ...data, isLoggedIn: true } as any;
+  try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase().trim()).maybeSingle();
+      if (error || !data) return null;
+      return { ...data, isLoggedIn: true } as any;
+  } catch (e) { return null; }
 };
 
 export const syncUserProfile = async (user: UserProfile) => {
   if (!user || user.id === 'guest') return;
-  await supabase.from('profiles').upsert({
+  // Ejecución asíncrona no bloqueante
+  supabase.from('profiles').upsert({
     id: user.id,
     email: user.email.toLowerCase().trim(),
     language: user.language,
     miles: user.miles,
     updated_at: new Date().toISOString()
-  });
+  }).then();
 };
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
@@ -69,33 +77,60 @@ export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
 
 export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
   const normCity = normalizeKey(city);
-  const { data } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
-  return data ? (data.data as Tour[]) : null;
+  try {
+      const { data } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
+      return data ? (data.data as Tour[]) : null;
+  } catch (e) { return null; }
 };
 
 export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
   const normCity = normalizeKey(city);
-  await supabase.from('tours_cache').upsert({ city: normCity, language, data: tours });
+  supabase.from('tours_cache').upsert({ city: normCity, language, data: tours }).then();
 };
 
-// CORRECCIÓN CRÍTICA: Filtrar por ID (hash del texto) para evitar alucinaciones de audio de otras ciudades
 export const getCachedAudio = async (key: string, language: string, city: string): Promise<string | null> => {
-  const { data } = await supabase.from('audio_cache').select('base64').eq('id', key).maybeSingle();
-  return data?.base64 || null;
+  try {
+      const { data } = await supabase.from('audio_cache').select('base64').eq('id', key).maybeSingle();
+      return data?.base64 || null;
+  } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
-  await supabase.from('audio_cache').upsert({ id: key, language, base64, city: normalizeKey(city) });
+  supabase.from('audio_cache').upsert({ id: key, language, base64, city: normalizeKey(city) }).then();
 };
 
+// Fix: Added missing getCommunityPosts function to retrieve posts from the city board
 export const getCommunityPosts = async (city: string) => {
-  const normCity = normalizeKey(city);
-  const { data } = await supabase.from('community_posts').select('*').eq('city', normCity).order('created_at', { ascending: false });
-  return data || [];
+  try {
+    const { data } = await supabase
+      .from('community_posts')
+      .select('*')
+      .eq('city', city)
+      .order('created_at', { ascending: false });
+    
+    return (data || []).map(post => ({
+      ...post,
+      // Map created_at to time string for UI if time property is missing
+      time: post.time || (post.created_at ? new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now')
+    }));
+  } catch (e) {
+    return [];
+  }
 };
 
-export const addCommunityPost = async (postData: any) => {
-  return await supabase.from('community_posts').insert({
-    city: normalizeKey(postData.city), ...postData, created_at: new Date().toISOString()
-  });
+// Fix: Added missing addCommunityPost function to allow users to post secrets and tips
+export const addCommunityPost = async (post: any) => {
+  try {
+    return await supabase
+      .from('community_posts')
+      .insert([{
+        ...post,
+        likes: 0,
+        status: 'approved',
+        created_at: new Date().toISOString()
+      }]);
+  } catch (e) {
+    console.error('Error adding community post:', e);
+    return { error: e };
+  }
 };

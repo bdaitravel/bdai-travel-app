@@ -9,16 +9,16 @@ import { Shop } from './components/Shop';
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { Onboarding } from './components/Onboarding';
-import { CommunityBoard } from './components/CommunityBoard';
+import { FlagIcon } from './components/FlagIcon';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey, validateEmailFormat } from './services/supabaseClient';
 import { STATIC_TOURS } from './data/toursData';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Your email", codeLabel: "security code", login: "Get Code", verify: "Enter", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing...", navElite: "Elite", navHub: "Hub", navVisa: "Passport", navStore: "Shop" },
-  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Tu email", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Entrar", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Cargando...", navElite: "Élite", navHub: "Mundo", navVisa: "Visa", navStore: "Tienda" },
-  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "El teu correu", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Entrar", tagline: "millors destins per ia", authError: "Revisa el correu o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa el correu", sentTo: "Codi enviat a:", tryDifferent: "Canviar correu", close: "Tancar", loading: "Carregant...", navElite: "Elit", navHub: "Món", navVisa: "Visa", navStore: "Botiga" },
-  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu hiri bat...", emailPlaceholder: "Zure e-posta", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "helmuga hobeak ia bidez", authError: "Begiratu posta edo SPAMa", codeError: "Kode okerra", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu posta", sentTo: "Kodea hona bidali da:", tryDifferent: "Aldatu posta", close: "Itxi", loading: "Kargatzen...", navElite: "Elite", navHub: "Mundua", navVisa: "Visa", navStore: "Denda" },
-  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", emailPlaceholder: "Votre e-mail", codeLabel: "code de sécurité", login: "Envoyer le Code", verify: "Entrer", tagline: "meilleures destinations par ia", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à:", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", navElite: "Élite", navHub: "Monde", navVisa: "Visa", navStore: "Boutique" }
+  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Your email", codeLabel: "security code", login: "Get Code", verify: "Enter", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing...", loadingTour: "Dai is analyzing urban pathology...", navElite: "Elite", navHub: "Hub", navVisa: "Passport", navStore: "Shop" },
+  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Tu email", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Entrar", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Cargando...", loadingTour: "Dai está analizando patologías urbanas...", navElite: "Élite", navHub: "Mundo", navVisa: "Visa", navStore: "Tienda" },
+  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", emailPlaceholder: "El teu email", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Entrar", tagline: "better destinations by ai", authError: "Revisa el teu email o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa el teu email", sentTo: "Codi enviat a:", tryDifferent: "Canviar email", close: "Tancar", loading: "Carregant...", loadingTour: "La Dai està analitzant patologies urbanes...", navElite: "Elit", navHub: "Món", navVisa: "Visa", navStore: "Botiga" },
+  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu edozein hiri...", emailPlaceholder: "Zure emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu zure emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu zure emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai patologia urbanoak aztertzen ari da...", navElite: "Elite", navHub: "Mundua", navVisa: "Visa", navStore: "Denda" },
+  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Rechercher une ville...", emailPlaceholder: "Votre email", codeLabel: "code de sécurité", login: "Envoyer le Code", verify: "Entrer", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai analyse la pathologie urbaine...", navElite: "Élite", navHub: "Monde", navVisa: "Visa", navStore: "Boutique" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -37,19 +37,16 @@ const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: st
 
 export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
-  const [loginStep, setLoginStep] = useState<'EMAIL' | 'CODE'>(() => {
-    // Si hay un email pendiente en el storage, vamos directo al código
-    return localStorage.getItem('bdai_pending_email') ? 'CODE' : 'EMAIL';
-  });
-  
+  const [loginStep, setLoginStep] = useState<'EMAIL' | 'CODE'>('EMAIL');
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [email, setEmail] = useState(() => localStorage.getItem('bdai_pending_email') || '');
+  const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('bdai_profile');
@@ -68,38 +65,33 @@ export default function App() {
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const checkAuth = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-            const email = session.user.email || '';
-            const profile = await getUserProfileByEmail(email);
-            const newUser: UserProfile = { ...(profile || user), id: session.user.id, email, isLoggedIn: true };
-            setUser(newUser);
-            localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-            localStorage.removeItem('bdai_pending_email'); // Limpiamos el email pendiente
+            const profile = await getUserProfileByEmail(session.user.email || '');
+            const newUser = { ...(profile || user), id: session.user.id, email: session.user.email, isLoggedIn: true };
+            setUser(newUser as any);
             setView(AppView.HOME);
             if (!newUser.interests?.length) setShowOnboarding(true);
         }
-    });
-
+    };
+    checkAuth();
     getGlobalRanking().then(setLeaderboard);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}));
     }
-    if (user.isLoggedIn) setView(AppView.HOME);
+  }, []);
 
-    return () => subscription.unsubscribe();
-  }, [user.isLoggedIn]);
-
-  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
+  const t = (key: string) => (TRANSLATIONS[user.language || 'es'] || TRANSLATIONS['es'])[key] || key;
 
   const handleSendOtp = async () => {
     if (!email || !validateEmailFormat(email) || isLoading) return;
     setAuthError(null);
     setIsLoading(true);
+    setLoadingMessage(t('loading'));
     try {
       const { error } = await sendOtpEmail(email);
       if (error) throw error;
-      localStorage.setItem('bdai_pending_email', email); // Guardamos para recordar
       setLoginStep('CODE');
     } catch (e: any) { setAuthError(e.message); } 
     finally { setIsLoading(false); }
@@ -108,6 +100,7 @@ export default function App() {
   const handleVerifyOtp = async () => {
     if (!otpCode || otpCode.length < 6 || isLoading) return;
     setIsLoading(true);
+    setLoadingMessage(t('loading'));
     setAuthError(null);
     try {
       const { data, error } = await verifyOtpCode(email, otpCode);
@@ -118,7 +111,6 @@ export default function App() {
         const newUser: UserProfile = { ...(profile || user), id: data.user.id, email, isLoggedIn: true };
         setUser(newUser);
         localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-        localStorage.removeItem('bdai_pending_email');
         syncUserProfile(newUser);
         setView(AppView.HOME);
         if (!newUser.interests?.length) setShowOnboarding(true);
@@ -128,26 +120,52 @@ export default function App() {
   };
 
   const handleCitySelect = async (cityInput: string) => {
-    if (!cityInput.trim()) return;
+    if (!cityInput.trim() || isLoading) return;
+    
     setIsLoading(true);
-    const standardizedName = await standardizeCityName(cityInput);
-    setSelectedCity(standardizedName);
-    setView(AppView.CITY_DETAIL);
+    setLoadingMessage(t('loadingTour'));
+
     try {
-        const normCity = normalizeKey(standardizedName);
-        const staticForCity = STATIC_TOURS.filter(t => normalizeKey(t.city) === normCity);
-        let dynamicTours = await getCachedTours(standardizedName, user.language) || [];
-        if (dynamicTours.length === 0) {
-            const greeting = await getGreetingContext(standardizedName, user.language);
-            const generated = await generateToursForCity(standardizedName, user, greeting, staticForCity.length > 0);
-            if (generated.length > 0) {
-                dynamicTours = generated;
-                await saveToursToCache(standardizedName, user.language, generated);
-            }
+        const normInput = normalizeKey(cityInput);
+
+        // 1. PRIORIDAD ABSOLUTA: Caché de Supabase (Donde están los tours bien hechos de horas de trabajo)
+        const dbCached = await getCachedTours(cityInput, user.language || 'es');
+        if (dbCached && dbCached.length > 0) {
+            setSelectedCity(cityInput);
+            setTours(dbCached);
+            setView(AppView.CITY_DETAIL);
+            setIsLoading(false);
+            return;
         }
-        setTours([...staticForCity, ...dynamicTours]);
-    } catch (e) { console.error(e); } 
-    finally { setIsLoading(false); }
+
+        // 2. FALLBACK 1: Tours Estáticos (Madrid, BCN, Sevilla reconstruidos)
+        const staticMatches = STATIC_TOURS.filter(t => normalizeKey(t.city) === normInput);
+        if (staticMatches.length > 0) {
+            setSelectedCity(staticMatches[0].city);
+            setTours(staticMatches);
+            setView(AppView.CITY_DETAIL);
+            setIsLoading(false);
+            return;
+        }
+
+        // 3. FALLBACK 2: Generación con Gemini
+        const standardizedName = await standardizeCityName(cityInput);
+        setSelectedCity(standardizedName);
+        
+        const greeting = await getGreetingContext(standardizedName, user.language || 'es');
+        const generated = await generateToursForCity(standardizedName, user, greeting, false);
+        
+        if (generated.length > 0) {
+            setTours(generated);
+            await saveToursToCache(standardizedName, user.language || 'es', generated);
+        }
+        
+        setView(AppView.CITY_DETAIL);
+    } catch (e) { 
+        console.error(e); 
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   const handlePlayAudio = async (id: string, text: string) => {
@@ -162,7 +180,7 @@ export default function App() {
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         const ctx = audioContextRef.current;
         if (ctx.state === 'suspended') await ctx.resume();
-        const base64 = await generateAudio(text, user.language, selectedCity || 'Global');
+        const base64 = await generateAudio(text, user.language || 'es', selectedCity || 'Global');
         if (base64) {
             const binary = atob(base64);
             const bytes = new Uint8Array(binary.length);
@@ -184,49 +202,65 @@ export default function App() {
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      {showOnboarding && <Onboarding language={user.language} onLanguageSelect={(c) => setUser(p => ({...p, language: c}))} onComplete={(ints) => { setUser(p => ({...p, interests: ints})); setShowOnboarding(false); }} />}
+      {showOnboarding && <Onboarding language={user.language || 'es'} onLanguageSelect={(c) => setUser(p => ({...p, language: c}))} onComplete={(ints) => { setUser(p => ({...p, interests: ints})); setShowOnboarding(false); syncUserProfile({...user, interests: ints}); }} />}
       
+      {isLoading && (
+          <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-10 text-center">
+              <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-6"></div>
+              <p className="text-white font-black uppercase text-[10px] tracking-[0.4em] animate-pulse">{loadingMessage || t('loading')}</p>
+          </div>
+      )}
+
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-between p-10 py-safe-iphone relative">
-              <div className="absolute top-12 flex flex-wrap justify-center gap-4 z-20 w-full px-4">
-                {LANGUAGES.map(lang => (
-                  <button key={lang.code} onClick={() => setUser(p => ({...p, language: lang.code}))}
-                    className={`text-[10px] font-black uppercase tracking-widest transition-all px-3 py-1 rounded-xl ${user.language === lang.code ? 'text-purple-400 bg-purple-500/10 border border-purple-500/30 shadow-[0_0_20px_rgba(147,51,234,0.2)]' : 'text-slate-600 opacity-40 hover:opacity-100'}`}
-                  >
-                    {lang.code}
-                  </button>
-                ))}
-              </div>
-              <div className="text-center flex flex-col items-center pt-32">
-                  <div className="w-24 h-24 mb-8 bg-purple-600/10 rounded-[2.5rem] flex items-center justify-center border border-purple-500/20 shadow-2xl animate-pulse">
+              <div className="text-center flex flex-col items-center pt-24">
+                  <div className="w-24 h-24 mb-8 bg-purple-600/10 rounded-[2.5rem] flex items-center justify-center border border-purple-500/20 shadow-2xl">
                      <BdaiLogo className="w-16 h-16" />
                   </div>
                   <h1 className="text-5xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.4em] mt-3">{t('tagline')}</p>
               </div>
-              <div className="w-full space-y-4 max-w-xs z-10 mb-12">
+
+              <div className="w-full space-y-8 max-w-xs z-10 mb-12">
                   {authError && <div className="text-red-400 text-[9px] font-black uppercase text-center bg-red-500/10 p-5 rounded-3xl mb-4 border border-red-500/20">{authError}</div>}
                   
                   {loginStep === 'EMAIL' ? (
-                      <div className="space-y-4 animate-fade-in">
-                          <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-3xl py-6 px-6 text-center text-white focus:border-purple-500 outline-none transition-all placeholder:text-slate-700 font-bold" />
-                          <button disabled={isLoading || !email} onClick={handleSendOtp} className="w-full py-6 bg-white text-slate-950 rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
-                              {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('login')}
-                          </button>
+                      <div className="space-y-6 animate-fade-in">
+                          <div className="space-y-4">
+                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">{t('selectLang')}</p>
+                              <div className="flex justify-center gap-4 overflow-x-auto no-scrollbar py-2">
+                                  {LANGUAGES.map(lang => (
+                                      <button 
+                                        key={lang.code} 
+                                        onClick={() => setUser(p => ({...p, language: lang.code}))}
+                                        className={`w-10 h-10 rounded-2xl overflow-hidden border-2 transition-all flex items-center justify-center bg-white/5 ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-lg' : 'border-white/10 opacity-40'}`}
+                                      >
+                                          <FlagIcon code={lang.code} className="w-6 h-6 object-cover" />
+                                      </button>
+                                  ))}
+                              </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-3xl py-6 px-6 text-center text-white focus:border-purple-500 outline-none transition-all placeholder:text-slate-700 font-bold" />
+                            <button disabled={isLoading || !email} onClick={handleSendOtp} className="w-full py-6 bg-white text-slate-950 rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
+                                {t('login')}
+                            </button>
+                          </div>
                       </div>
                   ) : (
                       <div className="space-y-6 animate-fade-in text-center">
-                          <div>
-                              <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">{t('sentTo')}</p>
-                              <p className="text-purple-400 text-xs font-black truncate">{email}</p>
+                          <div className="space-y-2">
+                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('sentTo')}</p>
+                              <p className="text-xs font-bold text-purple-400">{email}</p>
                           </div>
                           <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 shadow-inner relative group focus-within:border-purple-500/50">
-                            <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} className="w-full bg-transparent border-none outline-none text-center font-black text-4xl text-white tracking-[0.2em]" placeholder="00000000" />
+                            <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} className="w-full bg-transparent border-none outline-none text-center font-black text-4xl text-white tracking-[0.2em]" placeholder="000000" />
                           </div>
                           <button disabled={isLoading || otpCode.length < 6} onClick={handleVerifyOtp} className="w-full py-6 bg-purple-600 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-2xl transition-all">
-                              {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('verify')}
+                              {t('verify')}
                           </button>
-                          <button onClick={() => {setLoginStep('EMAIL'); setAuthError(null); setOtpCode(''); localStorage.removeItem('bdai_pending_email');}} className="text-[9px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">{t('tryDifferent')}</button>
+                          <button onClick={() => setLoginStep('EMAIL')} className="text-[9px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">{t('tryDifferent')}</button>
                       </div>
                   )}
               </div>
@@ -247,7 +281,7 @@ export default function App() {
                             <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500/50 outline-none transition-all font-bold" />
                           </div>
                       </div>
-                      <TravelServices mode="HOME" language={user.language} onCitySelect={handleCitySelect} />
+                      <TravelServices mode="HOME" language={user.language || 'es'} onCitySelect={handleCitySelect} />
                   </div>
                 )}
                 {view === AppView.CITY_DETAIL && (
@@ -258,26 +292,16 @@ export default function App() {
                             <h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate max-w-[200px]">{selectedCity}</h2>
                           </div>
                       </header>
-                      {isLoading ? (
-                          <div className="py-32 flex flex-col items-center justify-center gap-6">
-                              <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
-                              <p className="text-slate-500 font-black uppercase text-[10px] tracking-[0.5em] animate-pulse">{t('loading')}</p>
-                          </div>
-                      ) : (
-                          <div className="space-y-12 pb-24">
-                            <div className="space-y-6">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language} />)}</div>
-                            {selectedCity && <CommunityBoard city={selectedCity} language={user.language} user={user} />}
-                          </div>
-                      )}
+                      <div className="space-y-6 pb-24">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => {setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={setCurrentStopIndex} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language} onBack={() => { if(audioSourceRef.current) audioSourceRef.current.stop(); setAudioPlayingId(null); setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { setUser(p => ({...p, miles: p.miles + miles})); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />
+                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={setCurrentStopIndex} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language || 'es'} onBack={() => { if(audioSourceRef.current) audioSourceRef.current.stop(); setAudioPlayingId(null); setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { setUser(p => ({...p, miles: p.miles + miles})); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />
                 )}
-                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
-                {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={handleCitySelect} />}
+                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language || 'es'} />}
+                {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language || 'es'} onCitySelect={handleCitySelect} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => setUser(p => ({...p, miles: p.miles + reward}))} />}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={(u) => { setUser(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); syncUserProfile(u); }} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language || 'es'} onUpdateUser={(u) => { setUser(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); syncUserProfile(u); }} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} />}
             </div>
             {view !== AppView.TOUR_ACTIVE && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-8 pb-safe-iphone mb-4 pointer-events-none">

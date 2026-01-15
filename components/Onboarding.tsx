@@ -42,7 +42,7 @@ const ONBOARDING_TEXT: any = {
         step0Title: "Hizkuntza Aukeratu",
         stepDaiTitle: "Kaixo, Dai naiz", stepDaiDesc: "bdai-n bizi den adimena naiz. Zure gida pertsonala, aditua eta laguna izango naiz abentura bakoitzean.",
         step1Title: "Zure AI Gida", step1Desc: "Ibilbide bereziak sortzen ditut nor zaren eta zer gustatzen zaizun kontuan hartuta.",
-        step2Title: "Mundua Esploratu", step2Desc: "Munduko hiri guztiak zure esku. Tokiko kultura itzultzen dut zuretzat.",
+        step2Title: "Mundua Esploratu", step2Desc: "Munduko hiri guztiak zure esku. Tokiko kultura itzultzen dut zurezat.",
         step3Title: "Bisita Egiaztagiria", step3Desc: "Miliak irabazteko gunean egon behar duzu fisikoki. GPSak zure ekintza egiaztatzen du.",
         step4Title: "Pasaporte Digitala", step4Desc: "Bildu benetako zigiluak eta igo esploratzaileen munduko sailkapenean.",
         skip: "Saltatu", next: "Hurrengoa", start: "Hasi", selectInt: "Zure Interesak"
@@ -62,10 +62,15 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
     const [step, setStep] = useState(0);
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
-    const t = ONBOARDING_TEXT[language] || ONBOARDING_TEXT['es'];
+    const t = ONBOARDING_TEXT[language || 'es'] || ONBOARDING_TEXT['es'];
 
     const toggleInterest = (id: string) => {
         setSelectedInterests(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
+    const handleLanguagePick = (code: string) => {
+        onLanguageSelect(code);
+        setStep(1); // Avance automático a Dai
     };
 
     const handleNext = () => {
@@ -83,7 +88,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
                         <h2 className="text-3xl font-black text-white mb-8 uppercase tracking-tighter">{t.step0Title}</h2>
                         <div className="grid grid-cols-2 gap-3">
                             {LANGUAGES.map(lang => (
-                                <button key={lang.code} onClick={() => onLanguageSelect(lang.code)} className={`py-4 rounded-2xl font-black transition-all border-2 flex items-center justify-center gap-2 ${language === lang.code ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/5 border-white/10 text-white/60'}`}>
+                                <button key={lang.code} onClick={() => handleLanguagePick(lang.code)} className={`py-4 rounded-2xl font-black transition-all border-2 flex items-center justify-center gap-2 ${language === lang.code ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/5 border-white/10 text-white/60'}`}>
                                     <span className="text-xs uppercase">{lang.name}</span>
                                     <FlagIcon code={lang.code} className="w-5" />
                                 </button>
@@ -144,7 +149,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
                             {INTEREST_OPTIONS.map(opt => (
                                 <button key={opt.id} onClick={() => toggleInterest(opt.id)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all ${selectedInterests.includes(opt.id) ? 'bg-purple-600 border-purple-600 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'}`}>
                                     <span className="text-2xl">{opt.icon}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{(opt.label as any)[language] || (opt.label as any)['es']}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{(opt.label as any)[language || 'es'] || (opt.label as any)['es']}</span>
                                 </button>
                             ))}
                         </div>
@@ -152,10 +157,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
                 )}
 
                 <div className="flex flex-col gap-4 mt-8">
-                    <button onClick={handleNext} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
-                        {step === 6 ? t.start : t.next}
-                    </button>
-                    {step < 6 && (
+                    {step > 0 && (
+                        <button onClick={handleNext} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
+                            {step === 6 ? t.start : t.next}
+                        </button>
+                    )}
+                    {step > 0 && step < 6 && (
                         <button onClick={() => setStep(6)} className="text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:text-white transition-colors">
                             {t.skip}
                         </button>
