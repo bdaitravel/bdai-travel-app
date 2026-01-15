@@ -10,19 +10,20 @@ import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { Onboarding } from './components/Onboarding';
 import { CommunityBoard } from './components/CommunityBoard';
-import { getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey } from './services/supabaseClient';
+import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey } from './services/supabaseClient';
+import { STATIC_TOURS } from './data/toursData';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Email", codeLabel: "8 digits code", login: "Start Journey", verify: "Verify", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", authError: "Error", codeError: "Invalid", selectLang: "Language", resend: "Resend", installTitle: "Install App", installDesc: "Use it as a real app", installIosStep1: "1. Open the 'Share' menu in Safari", installIosStep2: "2. Select 'Add to Home Screen'", installIosStep3: "Note: If you don't see it, choose 'Open in Safari' first.", close: "Close", loading: "Syncing...", installBtn: "Install" },
-  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Email", codeLabel: "código 8 dígitos", login: "Empezar Viaje", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", authError: "Error", codeError: "Inválido", selectLang: "Idioma", resend: "Reenviar", installTitle: "Instalar bdai", installDesc: "Usa bdai como una app real", installIosStep1: "1. Abre el menú de 'Compartir' de Safari", installIosStep2: "2. Selecciona 'Añadir a pantalla de inicio'", installIosStep3: "Nota: Si no lo ves, pulsa primero 'Abrir en Safari'.", close: "Cerrar", loading: "Cargando...", installBtn: "Instalar" },
-  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "Email", codeLabel: "codi 8 dígits", login: "Començar", verify: "Verificar", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", selectLang: "Idioma", resend: "Tornar a enviar", installTitle: "Instal·lar bdai", installDesc: "Com una app real", installIosStep1: "1. Obre el menú 'Compartir' de Safari", installIosStep2: "2. Selecciona 'Afegir a pantalla d'inici'", installIosStep3: "Nota: Si no ho veus, prem 'Obrir a Safari' primer.", close: "Tancar", loading: "Carregant...", installBtn: "Instal·lar" },
-  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu edozein hiri...", emailPlaceholder: "Emaila", codeLabel: "8 digituko kodea", login: "Bidaia Hasi", verify: "Egiaztatu", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Denda", authError: "Errorea", codeError: "Baliogabea", selectLang: "Hizkuntza", resend: "Berriz bidali", installTitle: "Instalatu bdai", installDesc: "Erabili bdai app bat bezala", installIosStep1: "1. Sakatu Safari 'Partekatu' botoia", installIosStep2: "2. Hautatu 'Gehitu hasierako pantailan'", installIosStep3: "Oharra: Ikusten ez baduzu, sakatu 'Ireki Safarin'.", close: "Itxi", loading: "Kargatzen...", installBtn: "Instalatu" },
-  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", emailPlaceholder: "Email", codeLabel: "code à 8 chiffres", login: "Commencer", verify: "Vérifier", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Boutique", authError: "Erreur", codeError: "Invalide", selectLang: "Langue", resend: "Renvoyer", installTitle: "Installer bdai", installDesc: "Utilisez bdai comme une app", installIosStep1: "1. Ouvrez le menu 'Partager' sur Safari", installIosStep2: "2. Sélectionnez 'Sur l'écran d'accueil'", installIosStep3: "Note : Si non visible, tapez 'Ouvrir dans Safari'.", close: "Fermer", loading: "Chargement...", installBtn: "Installer" }
+  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Your email", codeLabel: "8 digits security code", login: "Send Access Code", verify: "Verify Identity", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", authError: "Delivery Error: Check SMTP/DNS", codeError: "Invalid code", selectLang: "Language", resend: "Resend Code", checkEmail: "Check your inbox", installTitle: "Install App", installDesc: "Use it as a real app", installIosStep1: "1. Open the 'Share' menu in Safari", installIosStep2: "2. Select 'Add to Home Screen'", installIosStep3: "Note: If you don't see it, choose 'Open in Safari' first.", close: "Close", loading: "Syncing...", installBtn: "Install" },
+  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Tu email", codeLabel: "código de seguridad (8 dígitos)", login: "Enviar Código de Acceso", verify: "Verificar Identidad", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", authError: "Error de envío: Verifica DNS/SMTP", codeError: "Código incorrecto", selectLang: "Idioma", resend: "Reenviar Código", checkEmail: "Revisa tu email", installTitle: "Instalar bdai", installDesc: "Usa bdai como una app real", installIosStep1: "1. Abre el menú de 'Compartir' de Safari", installIosStep2: "2. Selecciona 'Añadir a pantalla de inicio'", installIosStep3: "Nota: Si no lo ves, pulsa primero 'Abrir en Safari'.", close: "Cerrar", loading: "Cargando...", installBtn: "Instalar" },
+  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "El teu email", codeLabel: "codi de seguretat (8 dígits)", login: "Enviar Codi", verify: "Verificar Identitat", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", selectLang: "Idioma", resend: "Tornar a enviar", checkEmail: "Revisa el teu email", installTitle: "Instal·lar bdai", installDesc: "Com una app real", installIosStep1: "1. Obre el menú 'Compartir' de Safari", installIosStep2: "2. Selecciona 'Afegir a pantalla d'inici'", installIosStep3: "Nota: Si no ho veus, prem 'Obrir a Safari' primer.", close: "Tancar", loading: "Carregant...", installBtn: "Instal·lar" },
+  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu edozein hiri...", emailPlaceholder: "Zure emaila", codeLabel: "8 digituko segurtasun kodea", login: "Bidali Kodea", verify: "Egiaztatu", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Denda", authError: "Bidaltze errorea", codeError: "Kode okerra", selectLang: "Hizkuntza", resend: "Berriz bidali", checkEmail: "Begiratu zure emaila", installTitle: "Instalatu bdai", installDesc: "Erabili bdai app bat bezala", installIosStep1: "1. Sakatu Safari 'Partekatu' botoia", installIosStep2: "2. Hautatu 'Gehitu hasierako pantailan'", installIosStep3: "Oharra: Ikusten ez baduzu, sakatu 'Ireki Safarin'.", close: "Itxi", loading: "Kargatzen...", installBtn: "Instalatu" },
+  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", emailPlaceholder: "Votre email", codeLabel: "code de sécurité (8 chiffres)", login: "Envoyer le Code", verify: "Vérifier l'Identité", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Boutique", authError: "Erreur d'envoi", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer le code", checkEmail: "Vérifiez vos emails", installTitle: "Installer bdai", installDesc: "Utilisez bdai comme une app", installIosStep1: "1. Ouvrez le menu 'Partager' sur Safari", installIosStep2: "2. Sélectionnez 'Sur l'écran d'accueil'", installIosStep3: "Note : Si non visible, tapez 'Ouvrir dans Safari'.", close: "Fermer", loading: "Chargement...", installBtn: "Installer" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', 
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
   email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, birthday: '2000-01-01', 
   visitedCities: [], completedTours: [], savedIntel: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, 
   badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: 'XP-TEMP-BDAI', city: '', country: ''
@@ -69,6 +70,28 @@ export default function App() {
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleUrlAuth = async () => {
+        const hash = window.location.hash;
+        if (hash && (hash.includes('access_token=') || hash.includes('type=recovery'))) {
+            setIsLoading(true);
+            const { data } = await supabase.auth.getSession();
+            if (data?.session?.user) {
+                const userEmail = data.session.user.email || "";
+                const profile = await getUserProfileByEmail(userEmail);
+                const newUser: UserProfile = profile ? { ...profile, isLoggedIn: true } : { ...user, id: data.session.user.id, email: userEmail, isLoggedIn: true };
+                setUser(newUser);
+                localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+                syncUserProfile(newUser);
+                setView(AppView.HOME);
+                window.location.hash = ""; 
+            }
+            setIsLoading(false);
+        }
+    };
+    handleUrlAuth();
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('bdai_profile');
@@ -135,9 +158,18 @@ export default function App() {
     setIsLoading(true);
     try {
       const { error } = await sendOtpEmail(email);
-      if (error) setAuthError(t('authError'));
-      else setLoginStep('VERIFY');
-    } catch (e) { setAuthError(t('authError')); } 
+      if (error) {
+          if (error.message.includes('SMTP') || error.message.includes('Email provider')) {
+              setAuthError(t('authError'));
+          } else {
+              setAuthError(error.message);
+          }
+      } else {
+          setLoginStep('VERIFY');
+      }
+    } catch (e: any) { 
+      setAuthError(e.message || t('authError')); 
+    } 
     finally { setIsLoading(false); }
   };
 
@@ -149,7 +181,7 @@ export default function App() {
       try {
           const { data, error } = await verifyOtpCode(email, otpCode);
           if (error || !data?.user) { 
-            setAuthError(t('codeError')); 
+            setAuthError(error?.message || t('codeError')); 
             setIsLoading(false); 
             return; 
           }
@@ -157,9 +189,12 @@ export default function App() {
           const newUser: UserProfile = profile ? { ...profile, isLoggedIn: true } : { ...user, id: data.user.id, email: email, isLoggedIn: true, language: user.language };
           setUser(newUser);
           localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+          syncUserProfile(newUser);
           setView(AppView.HOME);
           if (!newUser.interests?.length) setShowOnboarding(true);
-      } catch (e) { setAuthError(t('authError')); } 
+      } catch (e: any) { 
+        setAuthError(e.message || t('authError')); 
+      } 
       finally { setIsLoading(false); }
   };
 
@@ -173,16 +208,22 @@ export default function App() {
     setView(AppView.CITY_DETAIL);
 
     try {
-        let finalTours = await getCachedTours(standardizedName, user.language) || [];
-        if (finalTours.length === 0) {
+        const normCity = normalizeKey(standardizedName);
+        const staticForCity = STATIC_TOURS.filter(t => normalizeKey(t.city) === normCity);
+        const hasEssentialStatic = staticForCity.some(t => t.isEssential);
+
+        let dynamicTours = await getCachedTours(standardizedName, user.language) || [];
+        
+        if (dynamicTours.length === 0) {
             const greeting = await getGreetingContext(standardizedName, user.language);
-            const generated = await generateToursForCity(standardizedName, user, greeting);
+            // Si ya hay un tour Essential estático, le decimos a la IA que genere otros temas
+            const generated = await generateToursForCity(standardizedName, user, greeting, hasEssentialStatic);
             if (generated.length > 0) {
-                finalTours = generated;
+                dynamicTours = generated;
                 await saveToursToCache(standardizedName, user.language, generated);
             }
         }
-        setTours(finalTours);
+        setTours([...staticForCity, ...dynamicTours]);
     } catch (e) { console.error(e); } 
     finally { setIsLoading(false); }
   };
@@ -198,20 +239,16 @@ export default function App() {
     setAudioLoadingId(id);
     try {
         const ctx = audioContextRef.current!;
-        // PASAMOS LA CIUDAD SELECCIONADA PARA UN CACHÉ SÓLIDO
         const base64 = await generateAudio(text, user.language, selectedCity || 'Global');
         if (base64) {
             const binary = atob(base64);
             const bytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            
             const validLength = Math.floor(bytes.byteLength / 2);
             const dataInt16 = new Int16Array(bytes.buffer, 0, validLength);
-            
             const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
             const channelData = buffer.getChannelData(0);
             for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-            
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
@@ -291,7 +328,9 @@ export default function App() {
               </div>
 
               <div className="w-full space-y-4 max-w-xs z-10 mb-8">
-                  {authError && <p className="text-red-500 text-[9px] font-black uppercase text-center bg-red-500/10 p-3 rounded-2xl border border-red-500/10">{authError}</p>}
+                  {authError && <div className="text-red-400 text-[9px] font-black uppercase text-center bg-red-500/10 p-4 rounded-2xl border border-red-500/20 leading-tight space-y-2">
+                    <p>{authError}</p>
+                  </div>}
                   {loginStep === 'FORM' ? (
                       <div className="space-y-4 animate-slide-up">
                           <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none text-center text-white focus:border-purple-500/50 text-base" />
@@ -301,12 +340,24 @@ export default function App() {
                       </div>
                   ) : (
                       <div className="animate-fade-in space-y-4">
-                          <div className="text-center">
-                              <span className="text-[9px] font-black text-purple-400/50 uppercase tracking-widest mb-1 block">{t('codeLabel')}</span>
-                              <input type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 outline-none text-center font-black text-lg text-white tracking-[0.3em] focus:border-purple-500/50" />
+                          <div className="text-center space-y-2">
+                              <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest block animate-pulse">{t('checkEmail')}</span>
+                              <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1 block">{t('codeLabel')}</span>
+                              <div className="bg-white/5 border border-white/10 rounded-[2rem] p-6 focus-within:border-purple-500/50 transition-all">
+                                <input 
+                                    autoFocus
+                                    type="text" 
+                                    inputMode="numeric" 
+                                    maxLength={8} 
+                                    value={otpCode} 
+                                    onChange={e => setOtpCode(e.target.value)} 
+                                    className="w-full bg-transparent border-none outline-none text-center font-black text-3xl text-white tracking-[0.5em] placeholder:text-slate-800" 
+                                    placeholder="00000000"
+                                />
+                              </div>
                           </div>
                           <div className="space-y-3 pt-2">
-                            <button disabled={isLoading} onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
+                            <button disabled={isLoading || otpCode.length < 8} onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 disabled:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
                                 {isLoading ? <i className="fas fa-spinner fa-spin text-lg"></i> : t('verify')}
                             </button>
                             <button onClick={() => setLoginStep('FORM')} className="w-full text-[9px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">
@@ -326,7 +377,6 @@ export default function App() {
                           <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">bdai</span></div>
                           <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 text-xs font-black text-white"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
-
                       {showInstallBanner && !isStandalone && (
                         <div className="mx-8 mb-6 p-4 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-[2rem] flex items-center justify-between gap-4 animate-slide-up-banner">
                             <div className="flex items-center gap-3">
@@ -344,7 +394,6 @@ export default function App() {
                             </div>
                         </div>
                       )}
-
                       <div className="px-8 mb-4">
                           <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
                           <div className="relative mt-8">

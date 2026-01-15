@@ -12,21 +12,17 @@ export const normalizeKey = (text: string) => {
     return text.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");     
 };
 
-/**
- * Genera un hash único incluyendo la ciudad y el idioma para evitar regresiones y colisiones.
- */
 const generateTextHash = (text: string, language: string, city: string) => {
     const cleanText = text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
     const normCity = normalizeKey(city) || "global";
     if (cleanText.length === 0) return `${normCity}_${language}_empty`;
-    
-    // Llave sólida: ciudad_idioma_longitud_inicio_fin
     const textPart = `len${cleanText.length}_${cleanText.substring(0, 15)}_${cleanText.slice(-15)}`;
     return `${normCity}_${language}_${textPart}`;
 };
 
 export const sendOtpEmail = async (email: string) => {
     const emailClean = email.toLowerCase().trim();
+    // Forzamos el uso de OTP para que llegue el código de 8 dígitos configurado por el usuario
     return await supabase.auth.signInWithOtp({
         email: emailClean,
         options: { 
@@ -40,21 +36,25 @@ export const verifyOtpCode = async (email: string, token: string) => {
     const emailClean = email.toLowerCase().trim();
     const tokenClean = token.trim();
     
+    // El usuario tiene configurado 8 dígitos. 
+    // Supabase usa el tipo 'email' para códigos numéricos OTP.
     let result = await supabase.auth.verifyOtp({
         email: emailClean, 
         token: tokenClean, 
-        type: 'magiclink'
+        type: 'email' 
     });
 
     if (result.error) {
+        // Fallback por si acaso es un registro inicial (signup)
         result = await supabase.auth.verifyOtp({
-            email: emailClean, token: tokenClean, type: 'email'
+            email: emailClean, token: tokenClean, type: 'signup'
         });
     }
 
     if (result.error) {
+        // Fallback final para magiclink si se ha deshabilitado el OTP
         result = await supabase.auth.verifyOtp({
-            email: emailClean, token: tokenClean, type: 'signup'
+            email: emailClean, token: tokenClean, type: 'magiclink'
         });
     }
 
