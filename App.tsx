@@ -10,23 +10,22 @@ import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { Onboarding } from './components/Onboarding';
 import { CommunityBoard } from './components/CommunityBoard';
-import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey } from './services/supabaseClient';
+import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey, validateEmailFormat } from './services/supabaseClient';
 import { STATIC_TOURS } from './data/toursData';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Your email", codeLabel: "8 digits security code", login: "Send Access Code", verify: "Verify Identity", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Store", authError: "Delivery Error: Check SMTP/DNS", codeError: "Invalid code", selectLang: "Language", resend: "Resend Code", checkEmail: "Check your inbox", installTitle: "Install App", installDesc: "Use it as a real app", installIosStep1: "1. Open the 'Share' menu in Safari", installIosStep2: "2. Select 'Add to Home Screen'", installIosStep3: "Note: If you don't see it, choose 'Open in Safari' first.", close: "Close", loading: "Syncing...", installBtn: "Install" },
-  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Tu email", codeLabel: "código de seguridad (8 dígitos)", login: "Enviar Código de Acceso", verify: "Verificar Identidad", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Tienda", authError: "Error de envío: Verifica DNS/SMTP", codeError: "Código incorrecto", selectLang: "Idioma", resend: "Reenviar Código", checkEmail: "Revisa tu email", installTitle: "Instalar bdai", installDesc: "Usa bdai como una app real", installIosStep1: "1. Abre el menú de 'Compartir' de Safari", installIosStep2: "2. Selecciona 'Añadir a pantalla de inicio'", installIosStep3: "Nota: Si no lo ves, pulsa primero 'Abrir en Safari'.", close: "Cerrar", loading: "Cargando...", installBtn: "Instalar" },
-  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "El teu email", codeLabel: "codi de seguretat (8 dígits)", login: "Enviar Codi", verify: "Verificar Identitat", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Botiga", selectLang: "Idioma", resend: "Tornar a enviar", checkEmail: "Revisa el teu email", installTitle: "Instal·lar bdai", installDesc: "Com una app real", installIosStep1: "1. Obre el menú 'Compartir' de Safari", installIosStep2: "2. Selecciona 'Afegir a pantalla d'inici'", installIosStep3: "Nota: Si no ho veus, prem 'Obrir a Safari' primer.", close: "Tancar", loading: "Carregant...", installBtn: "Instal·lar" },
-  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu edozein hiri...", emailPlaceholder: "Zure emaila", codeLabel: "8 digituko segurtasun kodea", login: "Bidali Kodea", verify: "Egiaztatu", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Denda", authError: "Bidaltze errorea", codeError: "Kode okerra", selectLang: "Hizkuntza", resend: "Berriz bidali", checkEmail: "Begiratu zure emaila", installTitle: "Instalatu bdai", installDesc: "Erabili bdai app bat bezala", installIosStep1: "1. Sakatu Safari 'Partekatu' botoia", installIosStep2: "2. Hautatu 'Gehitu hasierako pantailan'", installIosStep3: "Oharra: Ikusten ez baduzu, sakatu 'Ireki Safarin'.", close: "Itxi", loading: "Kargatzen...", installBtn: "Instalatu" },
-  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", emailPlaceholder: "Votre email", codeLabel: "code de sécurité (8 chiffres)", login: "Envoyer le Code", verify: "Vérifier l'Identité", tagline: "better destinations by ai", navElite: "Elite", navHub: "Hub", navVisa: "Visa", navStore: "Boutique", authError: "Erreur d'envoi", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer le code", checkEmail: "Vérifiez vos emails", installTitle: "Installer bdai", installDesc: "Utilisez bdai comme une app", installIosStep1: "1. Ouvrez le menu 'Partager' sur Safari", installIosStep2: "2. Sélectionnez 'Sur l'écran d'accueil'", installIosStep3: "Note : Si non visible, tapez 'Ouvrir dans Safari'.", close: "Fermer", loading: "Chargement...", installBtn: "Installer" }
+  en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Your email", codeLabel: "security code", login: "Get Code", verify: "Enter", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing...", navElite: "Elite", navHub: "Hub", navVisa: "Passport", navStore: "Shop" },
+  es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Tu email", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Entrar", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Cargando...", navElite: "Élite", navHub: "Mundo", navVisa: "Visa", navStore: "Tienda" },
+  ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca una ciutat...", emailPlaceholder: "El teu correu", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Entrar", tagline: "millors destins per ia", authError: "Revisa el correu o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa el correu", sentTo: "Codi enviat a:", tryDifferent: "Canviar correu", close: "Tancar", loading: "Carregant...", navElite: "Elit", navHub: "Món", navVisa: "Visa", navStore: "Botiga" },
+  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu hiri bat...", emailPlaceholder: "Zure e-posta", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "helmuga hobeak ia bidez", authError: "Begiratu posta edo SPAMa", codeError: "Kode okerra", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu posta", sentTo: "Kodea hona bidali da:", tryDifferent: "Aldatu posta", close: "Itxi", loading: "Kargatzen...", navElite: "Elite", navHub: "Mundua", navVisa: "Visa", navStore: "Denda" },
+  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Chercher une ville...", emailPlaceholder: "Votre e-mail", codeLabel: "code de sécurité", login: "Envoyer le Code", verify: "Entrer", tagline: "meilleures destinations par ia", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à:", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", navElite: "Élite", navHub: "Monde", navVisa: "Visa", navStore: "Boutique" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-  email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, birthday: '2000-01-01', 
-  visitedCities: [], completedTours: [], savedIntel: [], stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, 
-  badges: [], joinDate: new Date().toLocaleDateString(), passportNumber: 'XP-TEMP-BDAI', city: '', country: ''
+  email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, 
+  visitedCities: [], completedTours: [], badges: []
 };
 
 const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
@@ -38,186 +37,109 @@ const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: st
 
 export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
-  const [loginStep, setLoginStep] = useState<'FORM' | 'VERIFY'>('FORM');
+  const [loginStep, setLoginStep] = useState<'EMAIL' | 'CODE'>(() => {
+    // Si hay un email pendiente en el storage, vamos directo al código
+    return localStorage.getItem('bdai_pending_email') ? 'CODE' : 'EMAIL';
+  });
+  
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('bdai_pending_email') || '');
   const [otpCode, setOtpCode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const [showIosGuide, setShowIosGuide] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-
   const [user, setUser] = useState<UserProfile>(() => {
-    try {
-        const saved = localStorage.getItem('bdai_profile');
-        if (saved) return { ...GUEST_PROFILE, ...JSON.parse(saved) };
-    } catch (e) {}
+    const saved = localStorage.getItem('bdai_profile');
+    if (saved) return { ...GUEST_PROFILE, ...JSON.parse(saved) };
     return GUEST_PROFILE;
   });
 
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
-  
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleUrlAuth = async () => {
-        const hash = window.location.hash;
-        if (hash && (hash.includes('access_token=') || hash.includes('type=recovery'))) {
-            setIsLoading(true);
-            const { data } = await supabase.auth.getSession();
-            if (data?.session?.user) {
-                const userEmail = data.session.user.email || "";
-                const profile = await getUserProfileByEmail(userEmail);
-                const newUser: UserProfile = profile ? { ...profile, isLoggedIn: true } : { ...user, id: data.session.user.id, email: userEmail, isLoggedIn: true };
-                setUser(newUser);
-                localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-                syncUserProfile(newUser);
-                setView(AppView.HOME);
-                window.location.hash = ""; 
-            }
-            setIsLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+            const email = session.user.email || '';
+            const profile = await getUserProfileByEmail(email);
+            const newUser: UserProfile = { ...(profile || user), id: session.user.id, email, isLoggedIn: true };
+            setUser(newUser);
+            localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+            localStorage.removeItem('bdai_pending_email'); // Limpiamos el email pendiente
+            setView(AppView.HOME);
+            if (!newUser.interests?.length) setShowOnboarding(true);
         }
-    };
-    handleUrlAuth();
-  }, []);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('bdai_profile');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.isLoggedIn && parsed.id !== 'guest') {
-          setUser(parsed);
-          setView(AppView.HOME);
-        }
-      } catch (e) {}
-    }
-
-    const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    setIsStandalone(!!checkStandalone);
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      if (!checkStandalone) setShowInstallBanner(true);
     });
 
-    if (!checkStandalone && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
-      setTimeout(() => setShowInstallBanner(true), 2000);
-    }
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}),
-        err => console.error("GPS Error:", err)
-      );
-    }
     getGlobalRanking().then(setLeaderboard);
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') setShowInstallBanner(false);
-      setDeferredPrompt(null);
-    } else {
-      setShowIosGuide(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}));
     }
-  };
+    if (user.isLoggedIn) setView(AppView.HOME);
 
-  const unlockAudio = async () => {
-    if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    if (audioContextRef.current.state === 'suspended') {
-      await audioContextRef.current.resume();
-    }
-  };
+    return () => subscription.unsubscribe();
+  }, [user.isLoggedIn]);
 
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
-  const handleLanguageSelect = (code: string) => {
-    setUser(prev => ({ ...prev, language: code }));
-  };
-
   const handleSendOtp = async () => {
-    await unlockAudio();
-    if (!email || isLoading) return;
+    if (!email || !validateEmailFormat(email) || isLoading) return;
     setAuthError(null);
     setIsLoading(true);
     try {
       const { error } = await sendOtpEmail(email);
-      if (error) {
-          if (error.message.includes('SMTP') || error.message.includes('Email provider')) {
-              setAuthError(t('authError'));
-          } else {
-              setAuthError(error.message);
-          }
-      } else {
-          setLoginStep('VERIFY');
-      }
-    } catch (e: any) { 
-      setAuthError(e.message || t('authError')); 
-    } 
+      if (error) throw error;
+      localStorage.setItem('bdai_pending_email', email); // Guardamos para recordar
+      setLoginStep('CODE');
+    } catch (e: any) { setAuthError(e.message); } 
     finally { setIsLoading(false); }
   };
 
   const handleVerifyOtp = async () => {
-      await unlockAudio();
-      if (!otpCode || isLoading) return;
-      setAuthError(null);
-      setIsLoading(true);
-      try {
-          const { data, error } = await verifyOtpCode(email, otpCode);
-          if (error || !data?.user) { 
-            setAuthError(error?.message || t('codeError')); 
-            setIsLoading(false); 
-            return; 
-          }
-          const profile = await getUserProfileByEmail(email);
-          const newUser: UserProfile = profile ? { ...profile, isLoggedIn: true } : { ...user, id: data.user.id, email: email, isLoggedIn: true, language: user.language };
-          setUser(newUser);
-          localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-          syncUserProfile(newUser);
-          setView(AppView.HOME);
-          if (!newUser.interests?.length) setShowOnboarding(true);
-      } catch (e: any) { 
-        setAuthError(e.message || t('authError')); 
-      } 
-      finally { setIsLoading(false); }
+    if (!otpCode || otpCode.length < 6 || isLoading) return;
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      const { data, error } = await verifyOtpCode(email, otpCode);
+      if (error || !data?.user) { 
+          setAuthError(error?.message || t('codeError')); 
+      } else {
+        const profile = await getUserProfileByEmail(email);
+        const newUser: UserProfile = { ...(profile || user), id: data.user.id, email, isLoggedIn: true };
+        setUser(newUser);
+        localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+        localStorage.removeItem('bdai_pending_email');
+        syncUserProfile(newUser);
+        setView(AppView.HOME);
+        if (!newUser.interests?.length) setShowOnboarding(true);
+      }
+    } catch (e: any) { setAuthError(e.message); } 
+    finally { setIsLoading(false); }
   };
 
   const handleCitySelect = async (cityInput: string) => {
-    await unlockAudio();
     if (!cityInput.trim()) return;
     setIsLoading(true);
-    
     const standardizedName = await standardizeCityName(cityInput);
     setSelectedCity(standardizedName);
     setView(AppView.CITY_DETAIL);
-
     try {
         const normCity = normalizeKey(standardizedName);
         const staticForCity = STATIC_TOURS.filter(t => normalizeKey(t.city) === normCity);
-        const hasEssentialStatic = staticForCity.some(t => t.isEssential);
-
         let dynamicTours = await getCachedTours(standardizedName, user.language) || [];
-        
         if (dynamicTours.length === 0) {
             const greeting = await getGreetingContext(standardizedName, user.language);
-            // Si ya hay un tour Essential estático, le decimos a la IA que genere otros temas
-            const generated = await generateToursForCity(standardizedName, user, greeting, hasEssentialStatic);
+            const generated = await generateToursForCity(standardizedName, user, greeting, staticForCity.length > 0);
             if (generated.length > 0) {
                 dynamicTours = generated;
                 await saveToursToCache(standardizedName, user.language, generated);
@@ -229,7 +151,6 @@ export default function App() {
   };
 
   const handlePlayAudio = async (id: string, text: string) => {
-    await unlockAudio();
     if (audioPlayingId === id) { 
       if (audioSourceRef.current) audioSourceRef.current.stop();
       setAudioPlayingId(null);
@@ -238,7 +159,9 @@ export default function App() {
     if (audioSourceRef.current) audioSourceRef.current.stop();
     setAudioLoadingId(id);
     try {
-        const ctx = audioContextRef.current!;
+        if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const ctx = audioContextRef.current;
+        if (ctx.state === 'suspended') await ctx.resume();
         const base64 = await generateAudio(text, user.language, selectedCity || 'Global');
         if (base64) {
             const binary = atob(base64);
@@ -250,120 +173,60 @@ export default function App() {
             const channelData = buffer.getChannelData(0);
             for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
             const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
+            source.buffer = buffer; source.connect(ctx.destination);
             source.onended = () => setAudioPlayingId(null);
-            source.start(0);
-            audioSourceRef.current = source;
+            source.start(0); audioSourceRef.current = source;
             setAudioPlayingId(id);
         }
-    } catch(e) { console.error("Audio Play Error:", e); } 
+    } catch(e) { console.error(e); } 
     finally { setAudioLoadingId(null); }
   };
 
-  const handleUpdateUser = (updated: UserProfile) => {
-    setUser(updated);
-    localStorage.setItem('bdai_profile', JSON.stringify(updated));
-    syncUserProfile(updated);
-  };
-
   return (
-    <div className="flex-1 bg-[#020617] flex flex-col relative overflow-hidden text-slate-100 h-[100dvh] w-full font-sans">
-      {showOnboarding && <Onboarding language={user.language} onLanguageSelect={handleLanguageSelect} onComplete={(ints) => { const updated = {...user, interests: ints}; handleUpdateUser(updated); setShowOnboarding(false); }} />}
-
-      {showIosGuide && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl animate-fade-in">
-              <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 text-slate-900 shadow-2xl space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-black text-xl uppercase tracking-tighter">Instrucciones iOS</h3>
-                    <button onClick={() => setShowIosGuide(false)} className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400"><i className="fas fa-times"></i></button>
-                  </div>
-                  <div className="space-y-6">
-                      <div className="flex items-start gap-4">
-                          <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 font-black">1</div>
-                          <p className="text-sm font-medium leading-tight">{t('installIosStep1')}</p>
-                      </div>
-                      <div className="flex items-start gap-4">
-                          <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 font-black">2</div>
-                          <p className="text-sm font-medium leading-tight">{t('installIosStep2')}</p>
-                      </div>
-                      <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                          <p className="text-[11px] font-black text-amber-700 leading-tight">
-                              <i className="fas fa-exclamation-triangle mr-2"></i>
-                              {t('installIosStep3')}
-                          </p>
-                      </div>
-                  </div>
-                  <button onClick={() => setShowIosGuide(false)} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest">{t('close')}</button>
-              </div>
-          </div>
-      )}
-
+    <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
+      {showOnboarding && <Onboarding language={user.language} onLanguageSelect={(c) => setUser(p => ({...p, language: c}))} onComplete={(ints) => { setUser(p => ({...p, interests: ints})); setShowOnboarding(false); }} />}
+      
       {view === AppView.LOGIN ? (
-          <div className="h-full w-full flex flex-col items-center justify-between p-10 bg-[#020617] py-safe-iphone">
-              <div className="w-full flex flex-col items-center gap-3 animate-fade-in">
-                  <p className="text-[7px] font-black text-white/20 uppercase tracking-[0.3em]">{t('selectLang')}</p>
-                  <div className="flex gap-2">
-                      {LANGUAGES.map(lang => (
-                          <button 
-                            key={lang.code} 
-                            onClick={() => handleLanguageSelect(lang.code)} 
-                            className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all active:scale-90 ${user.language === lang.code ? 'border-purple-500 bg-purple-600/10 text-white shadow-lg shadow-purple-500/20' : 'border-white/10 text-white/30'}`}
-                          >
-                            <span className="text-[8px] font-black tracking-tighter">
-                                {lang.code === 'ca' ? 'CAT' : lang.code === 'eu' ? 'EUS' : lang.code.toUpperCase()}
-                            </span>
-                          </button>
-                      ))}
-                  </div>
+          <div className="h-full w-full flex flex-col items-center justify-between p-10 py-safe-iphone relative">
+              <div className="absolute top-12 flex flex-wrap justify-center gap-4 z-20 w-full px-4">
+                {LANGUAGES.map(lang => (
+                  <button key={lang.code} onClick={() => setUser(p => ({...p, language: lang.code}))}
+                    className={`text-[10px] font-black uppercase tracking-widest transition-all px-3 py-1 rounded-xl ${user.language === lang.code ? 'text-purple-400 bg-purple-500/10 border border-purple-500/30 shadow-[0_0_20px_rgba(147,51,234,0.2)]' : 'text-slate-600 opacity-40 hover:opacity-100'}`}
+                  >
+                    {lang.code}
+                  </button>
+                ))}
               </div>
-
-              <div className="text-center flex flex-col items-center">
-                  <div className="w-32 h-32 mb-4 bg-purple-600/10 rounded-[2rem] flex items-center justify-center border border-purple-500/20 shadow-2xl relative">
-                     <div className="absolute inset-0 bg-purple-500/5 blur-3xl animate-pulse"></div>
-                     <BdaiLogo className="w-20 h-20 relative z-10" />
+              <div className="text-center flex flex-col items-center pt-32">
+                  <div className="w-24 h-24 mb-8 bg-purple-600/10 rounded-[2.5rem] flex items-center justify-center border border-purple-500/20 shadow-2xl animate-pulse">
+                     <BdaiLogo className="w-16 h-16" />
                   </div>
                   <h1 className="text-5xl font-black lowercase tracking-tighter text-white">bdai</h1>
-                  <p className="text-purple-400 text-[8px] font-black uppercase tracking-[0.4em] mt-1">{t('tagline')}</p>
+                  <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.4em] mt-3">{t('tagline')}</p>
               </div>
-
-              <div className="w-full space-y-4 max-w-xs z-10 mb-8">
-                  {authError && <div className="text-red-400 text-[9px] font-black uppercase text-center bg-red-500/10 p-4 rounded-2xl border border-red-500/20 leading-tight space-y-2">
-                    <p>{authError}</p>
-                  </div>}
-                  {loginStep === 'FORM' ? (
-                      <div className="space-y-4 animate-slide-up">
-                          <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none text-center text-white focus:border-purple-500/50 text-base" />
-                          <button disabled={isLoading} onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
+              <div className="w-full space-y-4 max-w-xs z-10 mb-12">
+                  {authError && <div className="text-red-400 text-[9px] font-black uppercase text-center bg-red-500/10 p-5 rounded-3xl mb-4 border border-red-500/20">{authError}</div>}
+                  
+                  {loginStep === 'EMAIL' ? (
+                      <div className="space-y-4 animate-fade-in">
+                          <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-3xl py-6 px-6 text-center text-white focus:border-purple-500 outline-none transition-all placeholder:text-slate-700 font-bold" />
+                          <button disabled={isLoading || !email} onClick={handleSendOtp} className="w-full py-6 bg-white text-slate-950 rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
                               {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('login')}
                           </button>
                       </div>
                   ) : (
-                      <div className="animate-fade-in space-y-4">
-                          <div className="text-center space-y-2">
-                              <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest block animate-pulse">{t('checkEmail')}</span>
-                              <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1 block">{t('codeLabel')}</span>
-                              <div className="bg-white/5 border border-white/10 rounded-[2rem] p-6 focus-within:border-purple-500/50 transition-all">
-                                <input 
-                                    autoFocus
-                                    type="text" 
-                                    inputMode="numeric" 
-                                    maxLength={8} 
-                                    value={otpCode} 
-                                    onChange={e => setOtpCode(e.target.value)} 
-                                    className="w-full bg-transparent border-none outline-none text-center font-black text-3xl text-white tracking-[0.5em] placeholder:text-slate-800" 
-                                    placeholder="00000000"
-                                />
-                              </div>
+                      <div className="space-y-6 animate-fade-in text-center">
+                          <div>
+                              <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest mb-1">{t('sentTo')}</p>
+                              <p className="text-purple-400 text-xs font-black truncate">{email}</p>
                           </div>
-                          <div className="space-y-3 pt-2">
-                            <button disabled={isLoading || otpCode.length < 8} onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 disabled:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
-                                {isLoading ? <i className="fas fa-spinner fa-spin text-lg"></i> : t('verify')}
-                            </button>
-                            <button onClick={() => setLoginStep('FORM')} className="w-full text-[9px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">
-                                {t('resend')}
-                            </button>
+                          <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 shadow-inner relative group focus-within:border-purple-500/50">
+                            <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} className="w-full bg-transparent border-none outline-none text-center font-black text-4xl text-white tracking-[0.2em]" placeholder="00000000" />
                           </div>
+                          <button disabled={isLoading || otpCode.length < 6} onClick={handleVerifyOtp} className="w-full py-6 bg-purple-600 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-2xl transition-all">
+                              {isLoading ? <i className="fas fa-spinner fa-spin"></i> : t('verify')}
+                          </button>
+                          <button onClick={() => {setLoginStep('EMAIL'); setAuthError(null); setOtpCode(''); localStorage.removeItem('bdai_pending_email');}} className="text-[9px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">{t('tryDifferent')}</button>
                       </div>
                   )}
               </div>
@@ -377,28 +240,11 @@ export default function App() {
                           <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">bdai</span></div>
                           <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 text-xs font-black text-white"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
-                      {showInstallBanner && !isStandalone && (
-                        <div className="mx-8 mb-6 p-4 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-[2rem] flex items-center justify-between gap-4 animate-slide-up-banner">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-600/20"><i className="fas fa-mobile-screen-button text-sm"></i></div>
-                                <div>
-                                    <h4 className="text-[10px] font-black uppercase text-white tracking-tighter">{t('installTitle')}</h4>
-                                    <p className="text-[7px] font-bold text-slate-400 uppercase leading-none mt-1">{t('installDesc')}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button onClick={handleInstallClick} className="bg-white text-slate-950 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg active:scale-90 transition-transform">
-                                    {t('installBtn')}
-                                </button>
-                                <button onClick={() => setShowInstallBanner(false)} className="w-8 h-8 rounded-lg bg-white/5 text-slate-500 flex items-center justify-center"><i className="fas fa-times text-xs"></i></button>
-                            </div>
-                        </div>
-                      )}
                       <div className="px-8 mb-4">
                           <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
                           <div className="relative mt-8">
                             <i className="fas fa-search absolute left-6 top-6 text-slate-500"></i>
-                            <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500/50 outline-none" />
+                            <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500/50 outline-none transition-all font-bold" />
                           </div>
                       </div>
                       <TravelServices mode="HOME" language={user.language} onCitySelect={handleCitySelect} />
@@ -408,7 +254,7 @@ export default function App() {
                   <div className="pt-safe-iphone px-6 animate-fade-in">
                       <header className="flex items-center justify-between mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20">
                           <div className="flex items-center gap-4">
-                            <button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
+                            <button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-arrow-left"></i></button>
                             <h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate max-w-[200px]">{selectedCity}</h2>
                           </div>
                       </header>
@@ -426,20 +272,19 @@ export default function App() {
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={setCurrentStopIndex} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language} onBack={() => { if(audioSourceRef.current) audioSourceRef.current.stop(); setAudioPlayingId(null); setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { const updated = { ...user, miles: user.miles + miles }; handleUpdateUser(updated); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />
+                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={setCurrentStopIndex} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language} onBack={() => { if(audioSourceRef.current) audioSourceRef.current.stop(); setAudioPlayingId(null); setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { setUser(p => ({...p, miles: p.miles + miles})); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={handleCitySelect} />}
-                {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => handleUpdateUser({...user, miles: user.miles + reward})} />}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={handleUpdateUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} />}
+                {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => setUser(p => ({...p, miles: p.miles + reward}))} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={(u) => { setUser(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); syncUserProfile(u); }} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} />}
             </div>
-            
             {view !== AppView.TOUR_ACTIVE && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-8 pb-safe-iphone mb-4 pointer-events-none">
                   <nav className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 px-6 py-4 flex justify-between items-center w-full rounded-[3rem] pointer-events-auto shadow-2xl">
                       <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
                       <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
-                      <button onClick={() => setView(AppView.HOME)} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 shadow-lg rotate-45' : 'bg-white/5'}`}>
+                      <button onClick={() => setView(AppView.HOME)} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-lg ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 rotate-45 shadow-purple-600/40' : 'bg-white/5'}`}>
                           <div className={view === AppView.HOME ? '-rotate-45' : ''}><BdaiLogo className="w-7 h-7" /></div>
                       </button>
                       <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />

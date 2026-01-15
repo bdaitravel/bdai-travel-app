@@ -4,11 +4,11 @@ import { Tour, Stop, UserProfile } from '../types';
 import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const LANGUAGE_RULES: Record<string, string> = {
-    es: "PERSONALIDAD: Eres Dai, analista de inteligencia urbana para BIDAERS. Estilo: CÍNICO, DENSO, RAW. No eres una guía, eres una experta en patología de materiales, crónica negra y redes de poder. REGLA DE ORO: Mínimo 500 palabras por parada. PROHIBIDO: Usar inglés si el perfil es español. RESPONDE SIEMPRE EN ESPAÑOL DE ESPAÑA. PROHIBIDO: Usar lenguaje escolar o de profesor. NUNCA digas 'alumnos', 'clase', 'lección', 'tarea' o 'aprender'. REEMPLAZA por 'analista', 'Bidaer', 'informe forense', 'inmersión técnica' o 'estudio de inteligencia'. No numeres las paradas como 'Informe 01', usa títulos evocadores. Fusiona cine, ingeniería y secretos de estado.",
-    en: "PERSONALITY: You are Dai, urban intelligence analyst for BIDAERS. Style: CYNICAL, DENSE, RAW. Not a guide, but an expert in material pathology, dark chronicles, and power networks. GOLDEN RULE: Minimum 500 words per stop. FORBIDDEN: School or teacher language. NEVER say 'students', 'class', 'lesson', 'homework', or 'learn'. REPLACE with 'analyst', 'Bidaer', 'forensic report', 'technical immersion', or 'intelligence study'. Don't number stops as 'Report 01', use evocative titles. Blend cinema, engineering, and state secrets.",
-    ca: "PERSONALITAT: Ets la Dai per a BIDAERS. Estil cínic i dens. PROHIBIT: Llenguatge escolar. Mínim 500 paraules per parada. RESPON SEMPRE EN CATALÀ. Informe tècnic i crònica negra. IDIOMA: Català.",
-    eu: "NORTASUNA: Dai zara BIDAERentzako. Estilo zinikoa eta sakona. PROHIBITUA: Eskola hizkuntza. Gutxienez 500 hitz geldialdi bakoitzean. ERANTZUN BETI EUSKARAZ. Txosten teknikoa eta botere harremanak. IDIOMA: Euskara.",
-    fr: "PERSONNALITÉ: Vous êtes Dai pour BIDAERS. Style cynique et dense. INTERDIT: Langage scolaire. Minimum 500 mots par arrêt. RÉPONDEZ TOUJOURS EN FRANÇAIS. Rapport technique et chronique noire. LANGUAGE: Français."
+    es: "PERSONALIDAD: Eres Dai, analista de inteligencia urbana para BIDAERS. Estilo: CÍNICO, DENSO, RAW. No eres una guía turística, eres una experta en patología de materiales y redes de poder. REGLA DE ORO LINGÜÍSTICA: RESPONDE EXCLUSIVAMENTE EN ESPAÑOL DE ESPAÑA (CASTELLANO). Usa el tuteo ('tú', 'detente', 'observa'). REGLA DE ORO DE DENSIDAD: MÍNIMO 800 PALABRAS POR PARADA. Debes ser técnica y forense. PROHIBIDO: Usar lenguaje escolar. NUNCA digas 'alumnos', 'clase' o 'aprender'. REEMPLAZA por 'analista', 'Bidaer', 'informe forense'.",
+    en: "PERSONALITY: You are Dai, analyst for BIDAERS. Style: CYNICAL, DENSE, RAW. MINIMUM 800 WORDS PER STOP. FORBIDDEN: School or teacher language.",
+    ca: "PERSONALITAT: Ets la Dai per a BIDAERS. Estil cínic i dens. MÍNIM 800 PARAULES PER PARADA. RESPON SEMPRE EN CATALÀ.",
+    eu: "NORTASUNA: Dai zara BIDAERentzako. Estilo zinikoa eta sakona. GUTXIENEZ 800 HITZ GELDIALDI BAKOITZEAN. ERANTZUN BETI EUSKARAZ.",
+    fr: "PERSONNALITÉ: Vous êtes Dai pour BIDAERS. Style cynique et dense. MINIMUM 800 MOTS PAR ARRÊT. RÉPONDEZ TOUGROW TOUJOURS EN FRANÇAIS."
 };
 
 export const cleanDescriptionText = (text: string): string => {
@@ -16,12 +16,24 @@ export const cleanDescriptionText = (text: string): string => {
     return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '').trim();
 };
 
+const generateHash = (str: string) => {
+  let hash = 0;
+  // Usamos un fragmento de 500 caracteres para garantizar unicidad total por parada
+  const slice = str.substring(0, 500);
+  for (let i = 0; i < slice.length; i++) {
+    const char = slice.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+};
+
 export const standardizeCityName = async (input: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Normalize this city name to its official name in Spanish: "${input}". Important: Vitoria is Vitoria (not Vitória). Return ONLY the name.`,
+            contents: `Normalize this city name to its official name in Spanish: "${input}". Return ONLY the name.`,
             config: { temperature: 0 }
         });
         return response.text.trim();
@@ -33,7 +45,7 @@ export const getGreetingContext = async (city: string, language: string): Promis
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `You are Dai. Generate a sharp, technical greeting for a Bidaer in ${city}. Max 12 words. NO school language. Language: ${language}.`,
+            contents: `You are Dai. Technical greeting for a Bidaer in ${city}. Max 12 words. Language: ${language}.`,
             config: { temperature: 0.7 }
         });
         return response.text.trim();
@@ -44,20 +56,12 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const langRule = LANGUAGE_RULES[userProfile.language] || LANGUAGE_RULES.es;
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const tourList = skipEssential 
-    ? "1. LA VISIÓN DEL ARQUITECTO (Ingeniería). 2. ARTE Y CINE (Rodajes, poetas). 3. SECRETOS DEL PODER (Intrigas políticas)."
-    : "1. BIDAER ESSENTIAL (Masterclass de alta densidad). 2. LA VISIÓN DEL ARQUITECTO. 3. ARTE Y CINE.";
-
   const prompt = `${langRule}
-  TAREA: Crea 3 TOURS ÚNICOS de ALTA DENSIDAD para ${cityInput}.
-  ${tourList}
-  
-  REGLAS ESTRICTAS:
-  - EXACTAMENTE 15 paradas por tour. Sin repeticiones.
-  - DENSIDAD DE CONTENIDO: MÍNIMO 500 palabras por parada. Si escribes menos, el informe será rechazado.
-  - IDIOMA: Responde EXCLUSIVAMENTE en el idioma del perfil (si es 'es', responde en ESPAÑOL DE ESPAÑA).
-  - DURACIÓN: DEBE ser "4h".
-  - Prohibido el lenguaje robótico o escolar. Mezcla física de materiales con crónicas negras y cine.
+  MISIÓN: Crea 3 TOURS ÚNICOS para ${cityInput}.
+  REGLAS:
+  - IDIOMA: Si el perfil es 'es', RESPONDE 100% EN CASTELLANO DE ESPAÑA.
+  - CANTIDAD: EXACTAMENTE 10 paradas por tour.
+  - DENSIDAD: MÍNIMO 800 PALABRAS POR PARADA. No resumas.
   - Devuelve un JSON ARRAY.`;
 
   const responseSchema = {
@@ -102,14 +106,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         config: { 
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            thinkingConfig: { thinkingBudget: 32768 }
+            maxOutputTokens: 15000
         }
     });
     const parsed = JSON.parse(response.text || "[]");
     return parsed.map((t: any, idx: number) => ({
         ...t, id: `tour_${idx}_${Date.now()}`, city: cityInput,
         difficulty: 'Hard',
-        duration: "4h",
         stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_${sIdx}_${Date.now()}`, visited: false }))
     }));
   } catch (error) { return []; }
@@ -117,17 +120,28 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
-  const cached = await getCachedAudio(cleanText, language, city);
+  const textHash = generateHash(cleanText);
+  // CACHE V10: Purga absoluta de errores previos
+  const cacheKey = `v10_${language}_${textHash}`;
+  const cached = await getCachedAudio(cacheKey, language, city);
   if (cached) return cached;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const ttsPrompt = `Eres Dai, analista de inteligencia urbana. Informa con tono directo, profesional y aséptico. Sin muletillas ni lenguaje escolar. Máximo detalle: ${cleanText}`;
+    // Refuerzo de System Instruction para evitar alucinaciones geográficas (Ruavieja)
+    const systemInstruction = `ERES DAI, ANALISTA FORENSE DE BIDAER. ESTÁS EN ${city.toUpperCase()}.
+    REGLA CRÍTICA: LEE EXCLUSIVAMENTE EL TEXTO PROPORCIONADO. 
+    PROHIBIDO MENCIONAR: 'Ruavieja', 'Logroño' o cualquier lugar ajeno a ${city}.
+    ACENTO: ESPAÑA (CASTELLANO MADRILEÑO). 
+    TONO: CÍNICO Y PROFESIONAL. 
+    LENGUAJE: TUTEO OBLIGATORIO ('tú', 'detente', 'observa').
+    VOZ: KORE CON ENTONACIÓN CASTELLANA PURA.`;
 
     const response = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
-      contents: [{ parts: [{ text: ttsPrompt }] }], 
+      contents: [{ parts: [{ text: cleanText }] }], 
       config: { 
+        systemInstruction: systemInstruction,
         responseModalities: [Modality.AUDIO], 
         speechConfig: { 
             voiceConfig: { 
@@ -137,37 +151,63 @@ export const generateAudio = async (text: string, language: string = 'es', city:
       }
     });
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (audioData) saveAudioToCache(cleanText, language, city, audioData);
+    if (audioData) saveAudioToCache(cacheKey, language, city, audioData);
     return audioData;
   } catch (e) { return ""; }
 };
 
+// Fix: Added moderateContent export to handle community board moderation
 export const moderateContent = async (text: string): Promise<boolean> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Analyze the following text for inappropriate content: "${text}". Return 'SAFE' or 'UNSAFE'.`,
-            config: { temperature: 0 }
+            contents: `Analyze this user comment for a travel community board. Is it safe, respectful, and appropriate? Avoid hate speech or harassment. Return JSON. Text: "${text}"`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        isSafe: { type: Type.BOOLEAN }
+                    },
+                    required: ["isSafe"]
+                }
+            }
         });
-        return response.text.trim().toUpperCase() === 'SAFE';
+        const result = JSON.parse(response.text || '{"isSafe": true}');
+        return result.isSafe;
     } catch (e) {
+        console.error("Moderation error:", e);
         return true; 
     }
 };
 
+// Fix: Added generateCityPostcard export to handle AI image generation for postcards
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `A cinematic postcard of ${city} for a traveler interested in ${interests.join(', ')}. No text. High end aesthetic.`;
     try {
+        const interestStr = interests.length > 0 ? ` reflecting interests in ${interests.join(", ")}` : "";
+        const prompt = `A cinematic, high-quality travel postcard of the city of ${city}${interestStr}. Professional photography style, vibrant colors, iconic architecture, vertical 9:16 composition.`;
+        
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: prompt }] },
-            config: { imageConfig: { aspectRatio: "9:16" } }
+            config: {
+                imageConfig: {
+                    aspectRatio: "9:16"
+                }
+            }
         });
+
+        // Find the image part in the response candidates
         for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            if (part.inlineData) {
+                return `data:image/png;base64,${part.inlineData.data}`;
+            }
         }
         return null;
-    } catch (e) { return null; }
+    } catch (e) {
+        console.error("Postcard generation error:", e);
+        return null;
+    }
 };
