@@ -17,7 +17,7 @@ const TRANSLATIONS: any = {
   en: { welcome: "Welcome,", explorer: "Explorer", searchPlaceholder: "Search any city...", emailPlaceholder: "Your email", codeLabel: "security code", login: "Get Code", verify: "Enter", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing...", loadingTour: "Dai is analyzing urban pathology...", navElite: "Elite", navHub: "Hub", navVisa: "Passport", navStore: "Shop" },
   es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Tu email", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Entrar", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Cargando...", loadingTour: "Dai está analizando patologías urbanas...", navElite: "Élite", navHub: "Mundo", navVisa: "Visa", navStore: "Tienda" },
   ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", emailPlaceholder: "El teu email", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Entrar", tagline: "better destinations by ai", authError: "Revisa el teu email o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa el teu email", sentTo: "Codi enviat a:", tryDifferent: "Canviar email", close: "Tancar", loading: "Carregant...", loadingTour: "La Dai està analitzant patologies urbanes...", navElite: "Elit", navHub: "Món", navVisa: "Visa", navStore: "Botiga" },
-  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu edozein hiri...", emailPlaceholder: "Zure emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu zure emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu zure emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai patologia urbanoak aztertzen ari da...", navElite: "Elite", navHub: "Mundua", navVisa: "Visa", navStore: "Denda" },
+  eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu edozein hiri...", emailPlaceholder: "Zure emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu tu emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu tu emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai patologia urbanoak aztertzen ari da...", navElite: "Elite", navHub: "Mundua", navVisa: "Visa", navStore: "Denda" },
   fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Rechercher une ville...", emailPlaceholder: "Votre email", codeLabel: "code de sécurité", login: "Envoyer le Code", verify: "Entrer", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai analyse la pathologie urbaine...", navElite: "Élite", navHub: "Monde", navVisa: "Visa", navStore: "Boutique" }
 };
 
@@ -128,17 +128,8 @@ export default function App() {
     try {
         const normInput = normalizeKey(cityInput);
 
-        // 1. PRIORIDAD ABSOLUTA: Caché de Supabase (Donde están los tours bien hechos de horas de trabajo)
-        const dbCached = await getCachedTours(cityInput, user.language || 'es');
-        if (dbCached && dbCached.length > 0) {
-            setSelectedCity(cityInput);
-            setTours(dbCached);
-            setView(AppView.CITY_DETAIL);
-            setIsLoading(false);
-            return;
-        }
-
-        // 2. FALLBACK 1: Tours Estáticos (Madrid, BCN, Sevilla reconstruidos)
+        // 1. PRIORIDAD ABSOLUTA: Tours Estáticos (Madrid, BCN, Sevilla)
+        // Buscamos todas las coincidencias para mostrar la variedad (Essential + Temáticos)
         const staticMatches = STATIC_TOURS.filter(t => normalizeKey(t.city) === normInput);
         if (staticMatches.length > 0) {
             setSelectedCity(staticMatches[0].city);
@@ -148,7 +139,17 @@ export default function App() {
             return;
         }
 
-        // 3. FALLBACK 2: Generación con Gemini
+        // 2. SEGUNDA PRIORIDAD: Caché de la base de datos (Supabase)
+        const dbCached = await getCachedTours(cityInput, user.language || 'es');
+        if (dbCached && dbCached.length > 0) {
+            setSelectedCity(cityInput);
+            setTours(dbCached);
+            setView(AppView.CITY_DETAIL);
+            setIsLoading(false);
+            return;
+        }
+
+        // 3. FALLBACK: Generación con Gemini
         const standardizedName = await standardizeCityName(cityInput);
         setSelectedCity(standardizedName);
         
