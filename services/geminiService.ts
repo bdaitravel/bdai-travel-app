@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile } from '../types';
-import { getCachedAudio, saveAudioToCache } from './supabaseClient';
+import { getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
 
 const LANGUAGE_RULES: Record<string, string> = {
     es: "PERSONALIDAD: Eres Dai, analista forense de BIDAER. ESTILO: CÍNICO, DENSO, RAW. REGLA DE ORO DE TRADUCCIÓN: RESPONDE EXCLUSIVAMENTE EN ESPAÑOL DE ESPAÑA (CASTELLANO). Prohibido usar inglés u otros idiomas en nombres de paradas o descripciones.",
@@ -11,6 +11,8 @@ const LANGUAGE_RULES: Record<string, string> = {
     fr: "PERSONNALITÉ: Vous êtes Dai pour BIDAERS. Style cynique et dense. RÈGLE DE TRADUCTION: RÉPONDEZ EXCLUSIVEMENT EN FRANÇAIS."
 };
 
+const AUDIO_SESSION_CACHE = new Map<string, string>();
+
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
     return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '').trim();
@@ -18,9 +20,8 @@ export const cleanDescriptionText = (text: string): string => {
 
 const generateHash = (str: string) => {
   let hash = 0;
-  const slice = str.substring(0, 500);
-  for (let i = 0; i < slice.length; i++) {
-    const char = slice.charCodeAt(i);
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash;
   }
@@ -110,7 +111,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
     return parsed.map((t: any, idx: number) => ({
         ...t, id: `tour_${idx}_${Date.now()}`, city: cityInput,
         difficulty: 'Hard',
-        stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_${sIdx}_${Date.now()}`, visited: false }))
+        stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_sIdx_${Date.now()}`, visited: false }))
     }));
   } catch (error) { return []; }
 };
@@ -118,15 +119,29 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
   const textHash = generateHash(cleanText);
-  const cacheKey = `v15_${language}_${textHash}`;
+  
+  // USAMOS normalizeKey PARA ASEGURAR QUE NO HAYA ESPACIOS NI CARACTERES QUE ROMPAN LA URL
+  const cacheKey = normalizeKey(`bdai_${language}_${textHash}`);
+
+  if (AUDIO_SESSION_CACHE.has(cacheKey)) {
+    return AUDIO_SESSION_CACHE.get(cacheKey)!;
+  }
+
   const cached = await getCachedAudio(cacheKey, language, city);
-  if (cached) return cached;
+  if (cached) {
+    AUDIO_SESSION_CACHE.set(cacheKey, cached); 
+    return cached;
+  }
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const voicePrompt = language === 'es' 
+        ? `Habla con acento de Madrid (España), voz de hombre maduro, clara y natural: ${cleanText}`
+        : cleanText;
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: cleanText }] }],
+      contents: [{ parts: [{ text: voicePrompt }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -136,10 +151,19 @@ export const generateAudio = async (text: string, language: string = 'es', city:
         },
       },
     });
+    
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (audioData) saveAudioToCache(cacheKey, language, city, audioData);
+    
+    if (audioData) {
+      AUDIO_SESSION_CACHE.set(cacheKey, audioData);
+      // Guardar en Supabase para que otros usuarios lo aprovechen
+      await saveAudioToCache(cacheKey, language, city, audioData);
+    }
     return audioData;
-  } catch (e) { return ""; }
+  } catch (e) { 
+    console.error("Gemini TTS Error:", e);
+    return ""; 
+  }
 };
 
 export const moderateContent = async (text: string): Promise<boolean> => {

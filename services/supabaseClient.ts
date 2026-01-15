@@ -7,9 +7,14 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Normalización estricta para IDs: solo letras y números, sin espacios
 export const normalizeKey = (text: string) => {
     if (!text) return "";
-    return text.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");     
+    return text.toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Quitar acentos
+        .replace(/[^a-z0-9]/g, "");     // Quitar TODO lo que no sea a-z o 0-9
 };
 
 export const validateEmailFormat = (email: string) => {
@@ -30,7 +35,6 @@ export const verifyOtpCode = async (email: string, token: string) => {
     const emailClean = email.toLowerCase().trim();
     const tokenClean = token.trim();
     
-    // Verificación directa y única
     const { data, error } = await supabase.auth.verifyOtp({
         email: emailClean, 
         token: tokenClean, 
@@ -38,7 +42,6 @@ export const verifyOtpCode = async (email: string, token: string) => {
     });
 
     if (error) {
-        // Re-intento rápido para registros nuevos
         return await supabase.auth.verifyOtp({
             email: emailClean, 
             token: tokenClean, 
@@ -60,19 +63,23 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
 
 export const syncUserProfile = async (user: UserProfile) => {
   if (!user || user.id === 'guest') return;
-  // Ejecución asíncrona no bloqueante
-  supabase.from('profiles').upsert({
+  // Usamos upsert con onConflict para evitar Error 409
+  const { error } = await supabase.from('profiles').upsert({
     id: user.id,
     email: user.email.toLowerCase().trim(),
     language: user.language,
     miles: user.miles,
+    username: user.username || 'traveler',
+    avatar: user.avatar,
     updated_at: new Date().toISOString()
-  }).then();
+  }, { onConflict: 'id' });
+  
+  if (error) console.error("Sync Profile Error:", error);
 };
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
   const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
-  return (data || []).map((d, i) => ({ ...d, rank: i + 1 } as any));
+  return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username } as any));
 };
 
 export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
@@ -85,52 +92,85 @@ export const getCachedTours = async (city: string, language: string): Promise<To
 
 export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
   const normCity = normalizeKey(city);
-  supabase.from('tours_cache').upsert({ city: normCity, language, data: tours }).then();
+  const { error } = await supabase.from('tours_cache').upsert({ city: normCity, language, data: tours }, { onConflict: 'city,language' });
+  if (error) console.error("Save Tours Error:", error);
 };
 
 export const getCachedAudio = async (key: string, language: string, city: string): Promise<string | null> => {
   try {
-      const { data } = await supabase.from('audio_cache').select('base64').eq('id', key).maybeSingle();
+      // Limpiamos la clave antes de enviarla para evitar Error 400
+      const cleanKey = normalizeKey(key);
+      const { data, error } = await supabase.from('audio_cache').select('base64').eq('id', cleanKey).maybeSingle();
+      if (error) {
+          console.error("[Cache] Error peticion audio:", error);
+          return null;
+      }
       return data?.base64 || null;
   } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
-  supabase.from('audio_cache').upsert({ id: key, language, base64, city: normalizeKey(city) }).then();
+  const cleanKey = normalizeKey(key);
+  const normCity = normalizeKey(city);
+  
+  const { error } = await supabase.from('audio_cache').upsert({ 
+    id: cleanKey, 
+    language, 
+    base64, 
+    city: normCity 
+  }, { onConflict: 'id' });
+  
+  if (error) {
+    console.error("[Cache] Fallo persistencia Supabase:", error);
+  } else {
+    console.log("[Cache] Audio guardado globalmente en Supabase.");
+  }
 };
 
-// Fix: Added missing getCommunityPosts function to retrieve posts from the city board
+// --- FIX: ADDED MISSING COMMUNITY BOARD SERVICES ---
+// Fetches community posts for a specific city from the community_posts table.
 export const getCommunityPosts = async (city: string) => {
+  const normCity = normalizeKey(city);
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('community_posts')
       .select('*')
-      .eq('city', city)
+      .eq('city', normCity)
       .order('created_at', { ascending: false });
-    
-    return (data || []).map(post => ({
-      ...post,
-      // Map created_at to time string for UI if time property is missing
-      time: post.time || (post.created_at ? new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now')
+
+    if (error) throw error;
+
+    return (data || []).map(d => ({
+      id: d.id,
+      user: d.user_name || 'Explorer',
+      avatar: d.avatar,
+      content: d.content,
+      time: d.created_at ? new Date(d.created_at).toLocaleDateString() : '...',
+      likes: d.likes || 0,
+      type: d.type || 'comment',
+      status: d.status || 'approved',
+      userId: d.user_id
     }));
   } catch (e) {
+    console.error("Error fetching community posts:", e);
     return [];
   }
 };
 
-// Fix: Added missing addCommunityPost function to allow users to post secrets and tips
+// Inserts a new community post into the community_posts table.
 export const addCommunityPost = async (post: any) => {
   try {
-    return await supabase
-      .from('community_posts')
-      .insert([{
-        ...post,
-        likes: 0,
-        status: 'approved',
-        created_at: new Date().toISOString()
-      }]);
+    const { error } = await supabase.from('community_posts').insert({
+      city: normalizeKey(post.city),
+      user_id: post.userId,
+      user_name: post.user,
+      avatar: post.avatar,
+      content: post.content,
+      type: post.type || 'comment',
+      status: 'approved'
+    });
+    if (error) throw error;
   } catch (e) {
-    console.error('Error adding community post:', e);
-    return { error: e };
+    console.error("Error adding community post:", e);
   }
 };
