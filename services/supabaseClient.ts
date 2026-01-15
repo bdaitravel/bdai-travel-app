@@ -111,13 +111,12 @@ export const getCachedAudio = async (key: string, language: string, city: string
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
   const cleanKey = normalizeKey(key);
-  const normCity = normalizeKey(city);
   
+  // ELIMINADO EL CAMPO 'city' PORQUE NO EXISTE EN LA TABLA 'audio_cache' (Error PGRST204)
   const { error } = await supabase.from('audio_cache').upsert({ 
     id: cleanKey, 
     language, 
-    base64, 
-    city: normCity 
+    base64
   }, { onConflict: 'id' });
   
   if (error) {
