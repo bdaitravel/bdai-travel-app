@@ -8,7 +8,7 @@ const LANGUAGE_RULES: Record<string, string> = {
     en: "PERSONALITY: You are Dai, analyst for BIDAERS. Style: CYNICAL, DENSE, RAW. MINIMUM 800 WORDS PER STOP. FORBIDDEN: School or teacher language.",
     ca: "PERSONALITAT: Ets la Dai per a BIDAERS. Estil cínic i dens. MÍNIM 800 PARAULES PER PARADA. RESPON SEMPRE EN CATALÀ.",
     eu: "NORTASUNA: Dai zara BIDAERentzako. Estilo zinikoa eta sakona. GUTXIENEZ 800 HITZ GELDIALDI BAKOITZEAN. ERANTZUN BETI EUSKARAZ.",
-    fr: "PERSONNALITÉ: Vous êtes Dai pour BIDAERS. Style cynique et dense. MINIMUM 800 MOTS PAR ARRÊT. RÉPONDEZ TOUGROW TOUJOURS EN FRANÇAIS."
+    fr: "PERSONNALITÉ: Vous êtes Dai pour BIDAERS. Style cynique et dense. MINIMUM 800 MOTS PAR ARRÊT. RÉPONDEZ TOUJOURS EN FRANÇAIS."
 };
 
 export const cleanDescriptionText = (text: string): string => {
@@ -18,7 +18,7 @@ export const cleanDescriptionText = (text: string): string => {
 
 const generateHash = (str: string) => {
   let hash = 0;
-  // Usamos un fragmento de 500 caracteres para garantizar unicidad total por parada
+  // Usamos 500 caracteres para garantizar que cada parada tenga un audio único y no choque con otros
   const slice = str.substring(0, 500);
   for (let i = 0; i < slice.length; i++) {
     const char = slice.charCodeAt(i);
@@ -121,21 +121,21 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
   const textHash = generateHash(cleanText);
-  // CACHE V10: Purga absoluta de errores previos
-  const cacheKey = `v10_${language}_${textHash}`;
+  // CACHE V12: Purga de errores de colisión. Ahora usamos la columna ID en Supabase.
+  const cacheKey = `v12_${language}_${textHash}`;
   const cached = await getCachedAudio(cacheKey, language, city);
   if (cached) return cached;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // Refuerzo de System Instruction para evitar alucinaciones geográficas (Ruavieja)
+    // Instrucción de sistema blindada: FORZAR ACENTO ESPAÑA Y TUTEO
     const systemInstruction = `ERES DAI, ANALISTA FORENSE DE BIDAER. ESTÁS EN ${city.toUpperCase()}.
     REGLA CRÍTICA: LEE EXCLUSIVAMENTE EL TEXTO PROPORCIONADO. 
-    PROHIBIDO MENCIONAR: 'Ruavieja', 'Logroño' o cualquier lugar ajeno a ${city}.
-    ACENTO: ESPAÑA (CASTELLANO MADRILEÑO). 
+    PROHIBIDO: ACENTO LATINOAMERICANO O NEUTRO.
+    ACENTO OBLIGATORIO: CASTELLANO DE ESPAÑA (MADRILEÑO). 
     TONO: CÍNICO Y PROFESIONAL. 
-    LENGUAJE: TUTEO OBLIGATORIO ('tú', 'detente', 'observa').
-    VOZ: KORE CON ENTONACIÓN CASTELLANA PURA.`;
+    LENGUAJE: TUTEO (USA 'TÚ', 'DETENTE', 'OBSERVA').
+    VOZ: KORE CON CONFIGURACIÓN DE ESPAÑA.`;
 
     const response = await ai.models.generateContent({ 
       model: "gemini-2.5-flash-preview-tts", 
@@ -156,58 +156,38 @@ export const generateAudio = async (text: string, language: string = 'es', city:
   } catch (e) { return ""; }
 };
 
-// Fix: Added moderateContent export to handle community board moderation
 export const moderateContent = async (text: string): Promise<boolean> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Analyze this user comment for a travel community board. Is it safe, respectful, and appropriate? Avoid hate speech or harassment. Return JSON. Text: "${text}"`,
-            config: {
+            contents: `Analyze: "${text}". Return JSON {isSafe: boolean}.`,
+            config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.OBJECT,
-                    properties: {
-                        isSafe: { type: Type.BOOLEAN }
-                    },
+                    properties: { isSafe: { type: Type.BOOLEAN } },
                     required: ["isSafe"]
                 }
             }
         });
         const result = JSON.parse(response.text || '{"isSafe": true}');
         return result.isSafe;
-    } catch (e) {
-        console.error("Moderation error:", e);
-        return true; 
-    }
+    } catch (e) { return true; }
 };
 
-// Fix: Added generateCityPostcard export to handle AI image generation for postcards
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const prompt = `Cinematic travel postcard of ${city}. High quality, 9:16. No text.`;
     try {
-        const interestStr = interests.length > 0 ? ` reflecting interests in ${interests.join(", ")}` : "";
-        const prompt = `A cinematic, high-quality travel postcard of the city of ${city}${interestStr}. Professional photography style, vibrant colors, iconic architecture, vertical 9:16 composition.`;
-        
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: prompt }] },
-            config: {
-                imageConfig: {
-                    aspectRatio: "9:16"
-                }
-            }
+            config: { imageConfig: { aspectRatio: "9:16" } }
         });
-
-        // Find the image part in the response candidates
         for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) {
-                return `data:image/png;base64,${part.inlineData.data}`;
-            }
+            if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
         }
         return null;
-    } catch (e) {
-        console.error("Postcard generation error:", e);
-        return null;
-    }
+    } catch (e) { return null; }
 };

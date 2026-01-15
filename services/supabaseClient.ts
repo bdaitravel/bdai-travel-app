@@ -20,42 +20,28 @@ export const validateEmailFormat = (email: string) => {
 
 export const sendOtpEmail = async (email: string) => {
     const emailClean = email.toLowerCase().trim();
-    // Forzamos el flujo OTP para que Supabase envíe el CÓDIGO de 8 dígitos
     return await supabase.auth.signInWithOtp({
         email: emailClean,
-        options: { 
-            shouldCreateUser: true
-        }
+        options: { shouldCreateUser: true }
     });
 };
 
 export const verifyOtpCode = async (email: string, token: string) => {
     const emailClean = email.toLowerCase().trim();
     const tokenClean = token.trim();
-    
-    // Supabase a veces requiere 'signup' para nuevos y 'email' o 'magiclink' para existentes
-    // Probamos todos para máxima fiabilidad
     const types: ('signup' | 'email' | 'magiclink' | 'recovery')[] = ['signup', 'email', 'magiclink', 'recovery'];
     
     for (const type of types) {
         try {
-            console.log(`[AUTH] Intentando verificación cruzada: ${type}`);
             const { data, error } = await supabase.auth.verifyOtp({
                 email: emailClean, 
                 token: tokenClean, 
                 type: type
             });
-            
-            if (!error && data?.user) {
-                console.log(`[AUTH] ÉXITO con tipo ${type}`);
-                return { data, error: null };
-            }
-        } catch (e) {
-            continue;
-        }
+            if (!error && data?.user) return { data, error: null };
+        } catch (e) { continue; }
     }
-
-    return { data: null, error: { message: "Código no válido o caducado. Revisa que sea el último recibido." } };
+    return { data: null, error: { message: "Código no válido o caducado." } };
 };
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -67,14 +53,13 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
 
 export const syncUserProfile = async (user: UserProfile) => {
   if (!user || user.id === 'guest') return;
-  const { error } = await supabase.from('profiles').upsert({
+  await supabase.from('profiles').upsert({
     id: user.id,
     email: user.email.toLowerCase().trim(),
     language: user.language,
     miles: user.miles,
     updated_at: new Date().toISOString()
   });
-  if (error) console.error("Error sync profile:", error.message);
 };
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
@@ -93,13 +78,14 @@ export const saveToursToCache = async (city: string, language: string, tours: To
   await supabase.from('tours_cache').upsert({ city: normCity, language, data: tours });
 };
 
-export const getCachedAudio = async (text: string, language: string, city: string): Promise<string | null> => {
-  const { data } = await supabase.from('audio_cache').select('base64').limit(1).maybeSingle();
+// CORRECCIÓN CRÍTICA: Filtrar por ID (hash del texto) para evitar alucinaciones de audio de otras ciudades
+export const getCachedAudio = async (key: string, language: string, city: string): Promise<string | null> => {
+  const { data } = await supabase.from('audio_cache').select('base64').eq('id', key).maybeSingle();
   return data?.base64 || null;
 };
 
-export const saveAudioToCache = async (text: string, language: string, city: string, base64: string) => {
-  await supabase.from('audio_cache').upsert({ language, base64 });
+export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
+  await supabase.from('audio_cache').upsert({ id: key, language, base64, city: normalizeKey(city) });
 };
 
 export const getCommunityPosts = async (city: string) => {
