@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { LANGUAGES, INTEREST_OPTIONS } from '../types';
-import { FlagIcon } from './FlagIcon';
 import { BdaiLogo } from './BdaiLogo';
 
 interface OnboardingProps {
@@ -52,7 +51,7 @@ const ONBOARDING_TEXT: any = {
         stepDaiTitle: "Bonjour, je suis Dai", stepDaiDesc: "Je suis l'intelligence qui vit dans bdai. Je serai votre guide personnel, experte et compagne dans chaque aventure.",
         step1Title: "Votre Guide IA", step1Desc: "Je crée des itinéraires uniques basés sur qui vous êtes et ce que vous aimez.",
         step2Title: "Explorez le Monde", step2Desc: "Toutes les villes du monde à votre portée. Je traduis la culture locale pour vous.",
-        step3Title: "Preuve de Visite", step3Desc: "Pour gagner des miles, vous devez être physiquement sur place. Le GPS vérifie votre exploit.",
+        step3Title: "Preuve de Visite", step3Desc: "Pour gagner des miles, vous devez être physiquement sur place. El GPS vérifie votre exploit.",
         step4Title: "Passeport Numérique", step4Desc: "Collectionnez de vrais tampons et grimpez dans le classement mondial des explorateurs.",
         skip: "Passer", next: "Suivant", start: "Commencer", selectInt: "Vos Intérêts"
     }
@@ -70,7 +69,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
 
     const handleLanguagePick = (code: string) => {
         onLanguageSelect(code);
-        setStep(1); // Avance automático a Dai
+        setStep(1); 
     };
 
     const handleNext = () => {
@@ -88,9 +87,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
                         <h2 className="text-3xl font-black text-white mb-8 uppercase tracking-tighter">{t.step0Title}</h2>
                         <div className="grid grid-cols-2 gap-3">
                             {LANGUAGES.map(lang => (
-                                <button key={lang.code} onClick={() => handleLanguagePick(lang.code)} className={`py-4 rounded-2xl font-black transition-all border-2 flex items-center justify-center gap-2 ${language === lang.code ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/5 border-white/10 text-white/60'}`}>
-                                    <span className="text-xs uppercase">{lang.name}</span>
-                                    <FlagIcon code={lang.code} className="w-5" />
+                                <button 
+                                    key={lang.code} 
+                                    onClick={() => handleLanguagePick(lang.code)} 
+                                    className={`py-4 rounded-2xl font-black transition-all border-2 flex items-center justify-center gap-2 ${language === lang.code ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/5 border-white/10 text-white/60'}`}
+                                >
+                                    <span className="text-xs uppercase font-black">{lang.code.toUpperCase()}</span>
                                 </button>
                             ))}
                         </div>

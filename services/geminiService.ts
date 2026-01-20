@@ -4,18 +4,18 @@ import { Tour, Stop, UserProfile } from '../types';
 import { getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
 
 const LANGUAGE_RULES: Record<string, string> = {
-    es: "PERSONALIDAD: Eres Dai, analista forense de BIDAER. ESTILO: CÍNICO, DENSO, RAW. REGLA DE ORO DE TRADUCCIÓN: RESPONDE EXCLUSIVAMENTE EN ESPAÑOL DE ESPAÑA (CASTELLANO). Prohibido usar inglés u otros idiomas en nombres de paradas o descripciones.",
-    en: "PERSONALITY: You are Dai, analyst for BIDAERS. Style: CYNICAL, DENSE, RAW. TRANSLATION RULE: RESPOND EXCLUSIVELY IN ENGLISH.",
-    ca: "PERSONALITAT: Ets la Dai per a BIDAERS. Estil cínic i dens. REGLA DE TRADUCCIÓ: RESPON EXCLUSIVAMENT EN CATALÀ.",
-    eu: "NORTASUNA: Dai zara BIDAERentzako. Estilo zinikoa eta sakona. ITZULPEN ARAUA: ERANTZUN BAKARRIK EUSKARAZ.",
-    fr: "PERSONNALITÉ: Vous êtes Dai pour BIDAERS. Style cynique et dense. RÈGLE DE TRADUCTION: RÉPONDEZ EXCLUSIVEMENT EN FRANÇAIS."
+    es: "PERSONALIDAD: Eres Dai, una GUÍA FEMENINA de élite. ACENTO: Castellano puro de Madrid, España. TONO: Profesional, culto y apasionado. REGLA: Lee TODO el texto proporcionado. IDIOMA: ESPAÑOL DE ESPAÑA.",
+    en: "PERSONALITY: Dai, female elite guide. STYLE: Deep technical narrative. RULE: Speak the FULL text. RESPOND IN ENGLISH.",
+    ca: "PERSONALITAT: Dai, guia femenina d'elit. ESTIL: Narrativa profunda. RESPON EN CATALÀ.",
+    eu: "NORTASUNA: Dai, emakumezko gida aditua. ERANTZUN EUSKARAZ.",
+    fr: "PERSONNALITÉ: Dai, guide féminine d'élite. RÉPONDEZ EN FRANÇAIS."
 };
 
 const AUDIO_SESSION_CACHE = new Map<string, string>();
 
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
-    return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '').trim();
+    return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '').replace(/\n\n/g, ' ').trim();
 };
 
 const generateHash = (str: string) => {
@@ -33,7 +33,7 @@ export const standardizeCityName = async (input: string): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Normalize this city name to its official name in Spanish: "${input}". Return ONLY the name.`,
+            contents: `Official city name for: "${input}". Return ONLY the name.`,
             config: { temperature: 0 }
         });
         return response.text?.trim() || input;
@@ -45,7 +45,7 @@ export const getGreetingContext = async (city: string, language: string): Promis
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `You are Dai. Technical greeting for a Bidaer in ${city}. Max 12 words. Respond ONLY in language: ${language}.`,
+            contents: `Como guía mujer española, saluda brevemente al viajero en ${city}. 10 palabras.`,
             config: { temperature: 0.7 }
         });
         return response.text?.trim() || "";
@@ -57,10 +57,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const prompt = `${langRule}
-  MISIÓN: Crea 3 TOURS ÚNICOS para ${cityInput}.
-  REGLA DE ORO DE IDIOMA: TODO EL CONTENIDO (Títulos, Paradas, Descripciones) DEBE ESTAR AL 100% EN EL IDIOMA: ${userProfile.language}.
-  REGLA DE DENSIDAD: MÍNIMO 300 PALABRAS POR PARADA. Sé técnico y forense.
-  Devuelve un JSON ARRAY.`;
+  MISIÓN: Crea 2 RUTAS MASTERCLASS COMPLETAS para ${cityInput}. 
+  
+  ESTRUCTURA:
+  1. 2 Tours diferentes.
+  2. 10 paradas por cada tour.
+  3. Mínimo 300 palabras por parada.
+  4. TIPOS: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.`;
 
   const responseSchema = {
     type: Type.ARRAY,
@@ -72,7 +75,6 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         duration: { type: Type.STRING },
         distance: { type: Type.STRING },
         theme: { type: Type.STRING },
-        isEssential: { type: Type.BOOLEAN },
         stops: {
           type: Type.ARRAY,
           items: {
@@ -82,10 +84,14 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
               description: { type: Type.STRING },
               latitude: { type: Type.NUMBER },
               longitude: { type: Type.NUMBER },
-              type: { type: Type.STRING },
+              type: { type: Type.STRING, enum: ['historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'] },
               photoSpot: {
                 type: Type.OBJECT,
-                properties: { angle: { type: Type.STRING }, milesReward: { type: Type.NUMBER }, secretLocation: { type: Type.STRING } },
+                properties: { 
+                  angle: { type: Type.STRING }, 
+                  milesReward: { type: Type.NUMBER }, 
+                  secretLocation: { type: Type.STRING } 
+                },
                 required: ["angle", "milesReward", "secretLocation"]
               }
             },
@@ -99,19 +105,22 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
   try {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview', 
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: { 
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            maxOutputTokens: 12000
+            maxOutputTokens: 15000, 
+            temperature: 0.8
         }
     });
+    
     const parsed = JSON.parse(response.text || "[]");
     return parsed.map((t: any, idx: number) => ({
-        ...t, id: `tour_${idx}_${Date.now()}`, city: cityInput,
-        difficulty: 'Hard',
-        stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_sIdx_${Date.now()}`, visited: false }))
+        ...t, 
+        id: `tour_${idx}_${Date.now()}`, 
+        city: cityInput,
+        stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_${sIdx}_${Date.now()}`, visited: false }))
     }));
   } catch (error) { return []; }
 };
@@ -119,14 +128,10 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
   const textHash = generateHash(cleanText);
-  
-  // USAMOS normalizeKey PARA ASEGURAR QUE NO HAYA ESPACIOS NI CARACTERES QUE ROMPAN LA URL
-  const cacheKey = normalizeKey(`bdai_${language}_${textHash}`);
+  // Clave de caché unificada para Supabase y memoria
+  const cacheKey = normalizeKey(`bd_f_v2_${language}_${textHash}`);
 
-  if (AUDIO_SESSION_CACHE.has(cacheKey)) {
-    return AUDIO_SESSION_CACHE.get(cacheKey)!;
-  }
-
+  if (AUDIO_SESSION_CACHE.has(cacheKey)) return AUDIO_SESSION_CACHE.get(cacheKey)!;
   const cached = await getCachedAudio(cacheKey, language, city);
   if (cached) {
     AUDIO_SESSION_CACHE.set(cacheKey, cached); 
@@ -135,9 +140,8 @@ export const generateAudio = async (text: string, language: string = 'es', city:
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const voicePrompt = language === 'es' 
-        ? `Habla con acento de Madrid (España), voz de hombre maduro, clara y natural: ${cleanText}`
-        : cleanText;
+    // Instrucción reforzada para que NO corte el texto
+    const voicePrompt = `Narración íntegra por MUJER GUÍA de Madrid, España. Voz femenina, profesional y con acento castellano. Lee TODO el texto a continuación sin omitir nada: ${cleanText}`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -146,55 +150,74 @@ export const generateAudio = async (text: string, language: string = 'es', city:
         responseModalities: [Modality.AUDIO],
         speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Kore' },
+              prebuiltVoiceConfig: { voiceName: 'Kore' }, 
             },
         },
       },
     });
     
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    
     if (audioData) {
       AUDIO_SESSION_CACHE.set(cacheKey, audioData);
-      // Guardar en Supabase para que otros usuarios lo aprovechen
-      await saveAudioToCache(cacheKey, language, city, audioData);
+      // Guardado asíncrono en Supabase
+      saveAudioToCache(cacheKey, language, city, audioData).catch(console.error);
     }
     return audioData;
   } catch (e) { 
-    console.error("Gemini TTS Error:", e);
+    console.error("TTS Generation Error:", e);
     return ""; 
   }
 };
 
+// Fix: Added moderateContent to handle community board post moderation
 export const moderateContent = async (text: string): Promise<boolean> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Analyze if this community post is safe and appropriate for a travel community board. Is it offensive, toxic, or spam? Answer ONLY with "SAFE" or "UNSAFE". Text: "${text}"`,
-            config: { temperature: 0 }
-        });
-        const result = response.text?.trim().toUpperCase();
-        return result === "SAFE";
-    } catch (e) { return true; }
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Determine if the following text is safe for a public travel community board (no hate speech, toxicity, or explicit content): "${text}"`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            isSafe: { type: Type.BOOLEAN }
+          },
+          required: ["isSafe"]
+        }
+      }
+    });
+    const parsed = JSON.parse(response.text || '{"isSafe": true}');
+    return !!parsed.isSafe;
+  } catch (e) {
+    return true; // Graceful fallback
+  }
 };
 
+// Fix: Added generateCityPostcard to create AI-generated postcards for cities
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `A stunning cinematic, artistic travel postcard of ${city} highlighting interests like ${interests.join(', ')}. Vibrant lighting, high resolution, 9:16 aspect ratio.`;
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: prompt }] },
-            config: {
-                imageConfig: { aspectRatio: "9:16" }
-            }
-        });
-
-        const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
-        if (part?.inlineData) {
-            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const prompt = `A cinematic vertical postcard of ${city} highlighting ${interests.join(' and ')}. High resolution, travel aesthetic, artistic style, no text.`;
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: {
+          aspectRatio: "9:16"
         }
-        return null;
-    } catch (e) { return null; }
+      }
+    });
+    
+    // Iterate through all parts to find the image part
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error("Image generation failed:", e);
+    return null;
+  }
 };

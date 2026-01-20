@@ -7,19 +7,19 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Normalización estricta para IDs: solo letras y números, sin espacios
 export const normalizeKey = (text: string) => {
     if (!text) return "";
     return text.toLowerCase()
         .trim()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-        .replace(/[^a-z0-9]/g, "");     // Quitar TODO lo que no sea a-z o 0-9
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "");
 };
 
 export const validateEmailFormat = (email: string) => {
   return String(email)
     .toLowerCase()
+    .trim()
     .match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
 };
 
@@ -57,24 +57,39 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
   try {
       const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase().trim()).maybeSingle();
       if (error || !data) return null;
-      return { ...data, isLoggedIn: true } as any;
+      return { 
+          ...data, 
+          firstName: data.first_name, 
+          lastName: data.last_name, 
+          isLoggedIn: true 
+      } as any;
   } catch (e) { return null; }
 };
 
 export const syncUserProfile = async (user: UserProfile) => {
-  if (!user || user.id === 'guest') return;
-  // Usamos upsert con onConflict para evitar Error 409
-  const { error } = await supabase.from('profiles').upsert({
+  if (!user || !user.id || user.id === 'guest') return;
+  
+  const emailClean = user.email ? user.email.toLowerCase().trim() : '';
+
+  const payload = {
     id: user.id,
-    email: user.email.toLowerCase().trim(),
-    language: user.language,
-    miles: user.miles,
+    email: emailClean,
+    language: user.language || 'es',
+    miles: user.miles || 0,
     username: user.username || 'traveler',
     avatar: user.avatar,
+    first_name: user.firstName || '',
+    last_name: user.lastName || '',
     updated_at: new Date().toISOString()
-  }, { onConflict: 'id' });
+  };
+
+  const { error } = await supabase.from('profiles').upsert(payload, { 
+    onConflict: 'email' 
+  });
   
-  if (error) console.error("Sync Profile Error:", error);
+  if (error) {
+      console.error("Sync Profile Error:", error);
+  }
 };
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
@@ -85,60 +100,58 @@ export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
 export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
   const normCity = normalizeKey(city);
   try {
-      const { data } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
+      const { data, error } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
+      if (error) {
+        console.debug("Tour Cache Read Error:", error);
+        return null;
+      }
       return data ? (data.data as Tour[]) : null;
   } catch (e) { return null; }
 };
 
 export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
   const normCity = normalizeKey(city);
-  const { error } = await supabase.from('tours_cache').upsert({ city: normCity, language, data: tours }, { onConflict: 'city,language' });
-  if (error) console.error("Save Tours Error:", error);
+  try {
+      const { error } = await supabase.from('tours_cache').upsert({ 
+          city: normCity, 
+          language, 
+          data: tours,
+          updated_at: new Date().toISOString()
+      }, { onConflict: 'city,language' });
+      
+      if (error) console.error("Error saving tours to cache:", error.message);
+      else console.debug("Tours cached successfully for:", normCity);
+  } catch (e) { console.error(e); }
 };
 
 export const getCachedAudio = async (key: string, language: string, city: string): Promise<string | null> => {
   try {
-      // Limpiamos la clave antes de enviarla para evitar Error 400
       const cleanKey = normalizeKey(key);
       const { data, error } = await supabase.from('audio_cache').select('base64').eq('id', cleanKey).maybeSingle();
-      if (error) {
-          console.error("[Cache] Error peticion audio:", error);
-          return null;
-      }
+      if (error) return null;
       return data?.base64 || null;
   } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
+  if (!base64 || base64.length < 100) return;
   const cleanKey = normalizeKey(key);
-  
-  // ELIMINADO EL CAMPO 'city' PORQUE NO EXISTE EN LA TABLA 'audio_cache' (Error PGRST204)
-  const { error } = await supabase.from('audio_cache').upsert({ 
-    id: cleanKey, 
-    language, 
-    base64
-  }, { onConflict: 'id' });
-  
-  if (error) {
-    console.error("[Cache] Fallo persistencia Supabase:", error);
-  } else {
-    console.log("[Cache] Audio guardado globalmente en Supabase.");
-  }
+  try {
+      await supabase.from('audio_cache').upsert({ 
+          id: cleanKey, 
+          base64: base64, 
+          language: language, 
+          city: normalizeKey(city),
+          created_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+  } catch (e) {}
 };
 
-// --- FIX: ADDED MISSING COMMUNITY BOARD SERVICES ---
-// Fetches community posts for a specific city from the community_posts table.
 export const getCommunityPosts = async (city: string) => {
   const normCity = normalizeKey(city);
   try {
-    const { data, error } = await supabase
-      .from('community_posts')
-      .select('*')
-      .eq('city', normCity)
-      .order('created_at', { ascending: false });
-
+    const { data, error } = await supabase.from('community_posts').select('*').eq('city', normCity).order('created_at', { ascending: false });
     if (error) throw error;
-
     return (data || []).map(d => ({
       id: d.id,
       user: d.user_name || 'Explorer',
@@ -150,13 +163,9 @@ export const getCommunityPosts = async (city: string) => {
       status: d.status || 'approved',
       userId: d.user_id
     }));
-  } catch (e) {
-    console.error("Error fetching community posts:", e);
-    return [];
-  }
+  } catch (e) { return []; }
 };
 
-// Inserts a new community post into the community_posts table.
 export const addCommunityPost = async (post: any) => {
   try {
     const { error } = await supabase.from('community_posts').insert({
@@ -169,7 +178,5 @@ export const addCommunityPost = async (post: any) => {
       status: 'approved'
     });
     if (error) throw error;
-  } catch (e) {
-    console.error("Error adding community post:", e);
-  }
+  } catch (e) {}
 };
