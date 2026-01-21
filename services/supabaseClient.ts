@@ -132,31 +132,28 @@ export const getCachedAudio = async (key: string, language: string, city: string
 };
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
-  // Evitar guardar basura o audios vacíos
   if (!base64 || base64.length < 500) return;
-  
   const cleanKey = normalizeKey(key);
   
   try {
-      const payload = { 
-          text_hash: cleanKey, 
-          base64: base64, 
-          language: language,
-          city: normalizeKey(city)
-      };
-
-      // Al usar upsert con onConflict: 'text_hash', Supabase requiere que esa columna sea PRIMARY KEY
       const { error } = await supabase
           .from('audio_cache')
-          .upsert(payload, { onConflict: 'text_hash' });
+          .upsert({ 
+              text_hash: cleanKey, 
+              base64: base64, 
+              language: language,
+              city: normalizeKey(city)
+          }, { 
+              onConflict: 'text_hash' 
+          });
 
       if (error) {
-          console.error(`❌ Error persistencia audio:`, error.message);
+          console.warn("Error persistencia audio (RLS o Red):", error.message);
       } else {
-          console.debug(`✅ Audio en la nube: ${cleanKey.substring(0, 10)}...`);
+          console.debug("Audio cacheado en nube:", cleanKey.substring(0, 8));
       }
   } catch (e) {
-      console.error("❌ Fallo crítico saveAudio:", e);
+      console.error("Excepción saveAudioToCache:", e);
   }
 };
 
