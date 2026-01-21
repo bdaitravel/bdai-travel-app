@@ -88,7 +88,7 @@ export const syncUserProfile = async (user: UserProfile) => {
   });
   
   if (error) {
-      console.error("Sync Profile Error:", error);
+      console.error("Sync Profile Error:", error.message);
   }
 };
 
@@ -101,10 +101,7 @@ export const getCachedTours = async (city: string, language: string): Promise<To
   const normCity = normalizeKey(city);
   try {
       const { data, error } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
-      if (error) {
-          console.debug("Cache read attempt failed for:", normCity, error.message);
-          return null;
-      }
+      if (error) return null;
       return data ? (data.data as Tour[]) : null;
   } catch (e) { return null; }
 };
@@ -114,7 +111,7 @@ export const saveToursToCache = async (city: string, language: string, tours: To
   const normCity = normalizeKey(city);
   
   try {
-    const { error } = await supabase.from('tours_cache').upsert({ 
+    await supabase.from('tours_cache').upsert({ 
         city: normCity, 
         language: language, 
         data: tours,
@@ -122,50 +119,57 @@ export const saveToursToCache = async (city: string, language: string, tours: To
     }, { 
         onConflict: 'city,language' 
     });
-
-    if (error) {
-        console.error("SUPABASE TOURS CACHE ERROR:", error.message);
-    } else {
-        console.debug("✓ Tours cached successfully for:", normCity);
-    }
-  } catch (e) {
-    console.error("Critical Exception in saveToursToCache:", e);
-  }
+  } catch (e) {}
 };
 
 export const getCachedAudio = async (key: string, language: string, city: string): Promise<string | null> => {
   try {
       const cleanKey = normalizeKey(key);
       const { data, error } = await supabase.from('audio_cache').select('base64').eq('text_hash', cleanKey).maybeSingle();
-      if (error) return null;
+      if (error) {
+          console.error("Error al buscar audio cacheado:", error.message);
+          return null;
+      }
       return data?.base64 || null;
   } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
-  if (!base64 || base64.length < 100) return;
+  // Verificación básica de datos
+  if (!base64 || base64.length < 500) {
+      console.warn("Audio demasiado corto para ser cacheado.");
+      return;
+  }
   
   const cleanKey = normalizeKey(key);
   
+  console.log(`[Cache Manager] Intentando persistir audio: ${cleanKey.substring(0, 20)}...`);
+
   try {
-      // Usamos exactamente los campos de tu captura: text_hash, language, base64
-      // El created_at lo pondrá la base de datos automáticamente
-      const { error } = await supabase.from('audio_cache').upsert({ 
+      const payload = { 
           text_hash: cleanKey, 
           base64: base64, 
           language: language
-      }, { onConflict: 'text_hash' });
-      
+      };
+
+      // Importante: Usamos upsert con onConflict explícito
+      const { data, error, status } = await supabase
+          .from('audio_cache')
+          .upsert(payload, { onConflict: 'text_hash' });
+
       if (error) {
-          console.error("❌ ERROR GUARDANDO AUDIO:", error.message);
-          if (error.code === '42501') {
-              console.error("👉 DEBES EJECUTAR EL CÓDIGO SQL EN SUPABASE PARA DAR PERMISOS.");
+          console.error(`❌ Error en Supabase (Status ${status}):`, error.message);
+          if (error.message.includes('unique or exclusion constraint')) {
+              console.error("👉 SOLUCIÓN: Ejecuta el SQL para poner text_hash como PRIMARY KEY.");
+          }
+          if (error.message.includes('RLS')) {
+              console.error("👉 SOLUCIÓN: Ejecuta el SQL para desactivar o configurar RLS.");
           }
       } else {
-          console.debug(`✅ AUDIO PERSISTIDO EN SUPABASE: ${cleanKey.substring(0, 20)}...`);
+          console.log("✅ Audio guardado exitosamente en la base de datos.");
       }
   } catch (e) {
-      console.error("❌ EXCEPCIÓN EN SUPABASE:", e);
+      console.error("❌ Excepción crítica al guardar audio:", e);
   }
 };
 
