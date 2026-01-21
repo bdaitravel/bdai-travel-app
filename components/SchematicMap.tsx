@@ -5,31 +5,21 @@ import { Stop } from '../types';
 const L = (window as any).L;
 
 const STOP_TYPE_ICONS: Record<string, string> = {
-    historical: 'fa-building-columns',
-    food: 'fa-plate-wheat',
+    historical: 'fa-landmark',
+    food: 'fa-utensils',
     art: 'fa-palette',
-    culture: 'fa-masks-theater',
-    nature: 'fa-tree',
-    photo: 'fa-camera-retro',
+    nature: 'fa-leaf',
+    photo: 'fa-camera',
+    culture: 'fa-users',
     architecture: 'fa-archway'
 };
 
-const STOP_TYPE_HEX: Record<string, string> = {
-    historical: '#F59E0B',
-    food: '#10B981',
-    art: '#6366F1',
-    culture: '#3B82F6',
-    nature: '#22C55E',
-    photo: '#F43F5E',
-    architecture: '#475569'
-};
-
 const TEXTS: any = {
-    en: { guide: "Masterclass at", openInMaps: "GPS Nav" },
-    es: { guide: "Masterclass en", openInMaps: "Ir con GPS" },
-    ca: { guide: "Masterclass a", openInMaps: "GPS" },
-    eu: { guide: "Masterclass-a", openInMaps: "GPS" },
-    fr: { guide: "Masterclass à", openInMaps: "GPS" }
+    en: { guide: "Walking to stop", recenter: "Recenter", openInMaps: "GPS Nav" },
+    es: { guide: "Caminando a la parada", recenter: "Recentrar", openInMaps: "Ir con GPS" },
+    ca: { guide: "Caminant a la parada", recenter: "Recentrar", openInMaps: "Anar amb GPS" },
+    eu: { guide: "Geldialdirantz oinez", recenter: "Berriz zentratu", openInMaps: "GPSarekin joan" },
+    fr: { guide: "Marche vers l'arrêt", recenter: "Recentrer", openInMaps: "Nav GPS" }
 };
 
 interface SchematicMapProps {
@@ -57,6 +47,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const userMarkerRef = useRef<any>(null);
+  const mainRouteLineRef = useRef<any>(null);
   const navigationLineRef = useRef<any>(null);
   const [isAutoFollowing, setIsAutoFollowing] = useState(true);
   const tl = TEXTS[language] || TEXTS.es;
@@ -65,13 +56,35 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
   const isPlaying = audioPlayingId === currentStop?.id;
   const isLoading = audioLoadingId === currentStop?.id;
 
+  const openInExternalMaps = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!currentStop) return;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${currentStop.latitude},${currentStop.longitude}&travelmode=walking`;
+      window.open(url, '_blank');
+  };
+
   useEffect(() => {
     if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
-    const map = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false }).setView([0, 0], 16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+    
+    const map = L.map(mapContainerRef.current, {
+        zoomControl: false,
+        attributionControl: false,
+        tap: false
+    }).setView([0, 0], 15);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20
+    }).addTo(map);
+
     mapInstanceRef.current = map;
+    
+    setTimeout(() => { 
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize(); 
+    }, 500);
+
     map.on('dragstart', () => setIsAutoFollowing(false));
-    return () => { if (mapInstanceRef.current) mapInstanceRef.current.remove(); };
+    return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
   }, []);
 
   useEffect(() => {
@@ -80,47 +93,51 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
 
     markersRef.current.forEach(m => map.removeLayer(m));
     markersRef.current = [];
+    if (mainRouteLineRef.current) map.removeLayer(mainRouteLineRef.current);
     if (navigationLineRef.current) map.removeLayer(navigationLineRef.current);
     if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
 
+    const validStops = stops.filter(s => s.latitude && s.longitude);
     const activeStop = stops[currentStopIndex];
+
+    const allCoords = validStops.map(s => [s.latitude, s.longitude]);
+    mainRouteLineRef.current = L.polyline(allCoords, {
+        color: '#94a3b8', weight: 4, opacity: 0.2, dashArray: '10, 15'
+    }).addTo(map);
 
     if (userLocation && activeStop) {
         navigationLineRef.current = L.polyline([
             [userLocation.lat, userLocation.lng],
             [activeStop.latitude, activeStop.longitude]
         ], {
-            color: '#7c3aed',
-            weight: 6,
-            opacity: 0.8,
-            dashArray: '12, 20',
-            className: 'animate-pulse-line'
+            color: '#7c3aed', weight: 6, opacity: 0.8, dashArray: '1, 15', lineCap: 'round'
         }).addTo(map);
+        if (isAutoFollowing) {
+            const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [activeStop.latitude, activeStop.longitude]]);
+            map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+        }
     }
 
-    stops.forEach((stop, idx) => {
+    validStops.forEach((stop, idx) => {
         const isActive = idx === currentStopIndex;
-        const color = STOP_TYPE_HEX[stop.type] || '#7c3aed';
-        const icon = STOP_TYPE_ICONS[stop.type] || 'fa-location-dot';
-        
-        // Estilo Crystal Pin
+        const typeIcon = STOP_TYPE_ICONS[stop.type] || 'fa-location-dot';
         const iconHtml = `
-            <div class="relative flex flex-col items-center">
-                ${isActive ? `<div class="absolute -inset-6 bg-purple-500 rounded-full animate-ping opacity-10"></div>` : ''}
-                <div class="w-16 h-16 rounded-[2rem] flex items-center justify-center text-white transition-all duration-500 ${isActive ? 'scale-125 z-[5000] shadow-[0_20px_40px_rgba(0,0,0,0.5)]' : 'opacity-90 shadow-xl'}"
-                     style="background: linear-gradient(135deg, ${color}, ${color}dd); 
-                            border: 4px solid white; 
-                            box-shadow: inset 0 0 15px rgba(255,255,255,0.4), 0 10px 20px rgba(0,0,0,0.3);">
-                    <i class="fas ${icon}" style="font-size: 24px;"></i>
+            <div class="relative flex items-center justify-center cursor-pointer">
+                <div class="w-10 h-10 rounded-full border-4 border-white shadow-2xl flex items-center justify-center text-[11px] font-black
+                    ${isActive ? 'bg-purple-600 text-white scale-125 z-[5000]' : 'bg-slate-900 text-white opacity-50'}
+                ">
+                    <i class="fas ${typeIcon}"></i>
                 </div>
-                <div class="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[12px] border-t-white mt-[-4px] ${isActive ? 'scale-125' : ''}"></div>
-                ${stop.visited ? '<div class="absolute -top-3 -right-3 w-8 h-8 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-[11px] text-white z-[5001] shadow-2xl"><i class="fas fa-check"></i></div>' : ''}
             </div>
         `;
         const marker = L.marker([stop.latitude, stop.longitude], { 
-            icon: L.divIcon({ className: '', html: iconHtml, iconSize: [64, 80], iconAnchor: [32, 80] }) 
+            icon: L.divIcon({ className: '', html: iconHtml, iconSize: [40, 40], iconAnchor: [20, 20] }) 
         }).addTo(map);
-        marker.on('click', () => onStopSelect && onStopSelect(idx));
+
+        marker.on('click', () => {
+            if (onStopSelect) onStopSelect(idx);
+        });
+
         markersRef.current.push(marker);
     });
 
@@ -128,51 +145,49 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({
         userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], {
             icon: L.divIcon({
                 className: '',
-                html: `
-                    <div class="relative flex items-center justify-center">
-                        <div class="w-12 h-12 bg-blue-600 rounded-full border-4 border-white shadow-2xl z-20 flex items-center justify-center text-white">
-                            <i class="fas fa-location-arrow text-base animate-pulse"></i>
-                        </div>
-                        <div class="absolute w-20 h-20 bg-blue-400/20 rounded-full animate-ping"></div>
-                    </div>
-                `,
-                iconSize: [48, 48], iconAnchor: [24, 24]
+                html: '<div class="w-8 h-8 bg-blue-600 rounded-full border-4 border-white shadow-xl"></div>',
+                iconSize: [32, 32], iconAnchor: [16, 16]
             })
         }).addTo(map);
-    }
-
-    if (isAutoFollowing && activeStop) {
-        if (userLocation) {
-            const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [activeStop.latitude, activeStop.longitude]]);
-            map.fitBounds(bounds, { padding: [120, 120], maxZoom: 17 });
-        } else {
-            map.setView([activeStop.latitude, activeStop.longitude], 17);
-        }
     }
   }, [stops, currentStopIndex, userLocation, isAutoFollowing]);
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-slate-100">
-        <style>{`
-            @keyframes dash { to { stroke-dashoffset: -60; } }
-            .animate-pulse-line { animation: dash 1.5s linear infinite; }
-        `}</style>
+    <div className="w-full h-full relative overflow-hidden bg-slate-200">
         <div ref={mapContainerRef} className="w-full h-full pointer-events-auto" />
         
+        {/* Banner de Control GPS y Audio - Rediseñado para iPhone Notch & Safe Area */}
         {currentStop && (
-            <div className="absolute top-4 left-4 right-4 z-[450] flex flex-col gap-3 pointer-events-none">
-                <div className="bg-slate-950/98 backdrop-blur-3xl border border-white/10 p-4 rounded-[2.5rem] shadow-2xl flex items-center gap-4 pointer-events-auto">
-                    <button onClick={() => onPlayAudio?.(currentStop.id, currentStop.description)} className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPlaying ? 'bg-red-600' : 'bg-purple-600'} text-white shadow-lg active:scale-90`}>
-                        {isLoading ? <i className="fas fa-spinner fa-spin text-lg"></i> : isPlaying ? <i className="fas fa-stop text-lg"></i> : <i className="fas fa-play text-lg ml-1"></i>}
+            <div className="absolute top-[env(safe-area-inset-top,20px)] left-0 right-0 z-[450] flex justify-center p-4 pointer-events-none">
+                <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-3 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-3 pointer-events-auto w-full max-w-sm">
+                    {/* Botón Play/Pause Directo en Mapa */}
+                    <button 
+                        onClick={() => onPlayAudio?.(currentStop.id, currentStop.description)}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all ${isPlaying ? 'bg-red-600' : 'bg-purple-600'} text-white shadow-lg`}
+                    >
+                        {isLoading ? <i className="fas fa-spinner fa-spin text-xs"></i> : isPlaying ? <i className="fas fa-stop text-xs"></i> : <i className="fas fa-play text-xs ml-0.5"></i>}
                     </button>
+
                     <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">{tl.guide}</p>
-                        <h4 className="text-white font-black text-[13px] truncate uppercase tracking-tight">{currentStop.name}</h4>
+                        <p className="text-[7px] font-black text-purple-400 uppercase mb-0.5 tracking-widest">{tl.guide}</p>
+                        <h4 className="text-white font-black text-[10px] truncate uppercase tracking-tighter leading-none">{currentStop.name}</h4>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${currentStop.latitude},${currentStop.longitude}&travelmode=walking`, '_blank')} className="bg-blue-600 text-white h-14 px-5 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg active:scale-95 transition-transform">
-                            <i className="fas fa-location-arrow"></i> {tl.openInMaps}
+
+                    <div className="flex gap-1.5 shrink-0">
+                        <button 
+                            onClick={openInExternalMaps} 
+                            className="bg-blue-600 text-white h-10 px-3 rounded-2xl text-[8px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
+                        >
+                            <i className="fas fa-map-location-dot text-[10px]"></i> {tl.openInMaps}
                         </button>
+                        {!isAutoFollowing && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setIsAutoFollowing(true); }} 
+                                className="bg-white/10 text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg active:scale-95"
+                            >
+                                <i className="fas fa-crosshairs text-xs"></i>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

@@ -75,7 +75,7 @@ const getCountryFlag = (country: string): string => {
 
 const getCityFlag = (city: string): string => {
     const c = city.toLowerCase();
-    if (['madrid', 'barcelona', 'sevilla', 'santillana del mar', 'albarracín', 'cudillero', 'ronda', 'vitoria-gasteiz', 'vitoria'].includes(c)) return '🇪🇸';
+    if (['madrid', 'barcelona', 'sevilla', 'santillana del mar', 'albarracín', 'cudillero', 'ronda'].includes(c)) return '🇪🇸';
     if (['parís', 'paris', 'lyon', 'niza', 'bordeaux', 'marseille', 'strasbourg'].includes(c)) return '🇫🇷';
     if (['tokio', 'tokyo', 'kyoto', 'osaka'].includes(c)) return '🇯🇵';
     if (['nueva york', 'new york', 'los angeles', 'chicago'].includes(c)) return '🇺🇸';
