@@ -33,8 +33,15 @@ export const standardizeCityName = async (input: string): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Official city name for: "${input}". Return ONLY the name.`,
-            config: { temperature: 0 }
+            contents: `TASK: Standardize city name. Input: "${input}". 
+            RULES: 
+            1. Return ONLY the canonical name of the city.
+            2. NO country name. 
+            3. NO punctuation. 
+            4. Correct spelling. 
+            Example: "madrid españa" -> "Madrid". 
+            Example: "nyc" -> "New York".`,
+            config: { temperature: 0, seed: 42 }
         });
         return response.text?.trim() || input;
     } catch (e) { return input; }
@@ -128,8 +135,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
   const textHash = generateHash(cleanText);
-  // Clave de caché unificada para Supabase y memoria
-  const cacheKey = normalizeKey(`bd_f_v2_${language}_${textHash}`);
+  const cacheKey = normalizeKey(`bd_f_v3_${language}_${textHash}`);
 
   if (AUDIO_SESSION_CACHE.has(cacheKey)) return AUDIO_SESSION_CACHE.get(cacheKey)!;
   const cached = await getCachedAudio(cacheKey, language, city);
@@ -140,7 +146,6 @@ export const generateAudio = async (text: string, language: string = 'es', city:
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // Instrucción reforzada para que NO corte el texto
     const voicePrompt = `Narración íntegra por MUJER GUÍA de Madrid, España. Voz femenina, profesional y con acento castellano. Lee TODO el texto a continuación sin omitir nada: ${cleanText}`;
 
     const response = await ai.models.generateContent({
@@ -159,8 +164,7 @@ export const generateAudio = async (text: string, language: string = 'es', city:
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (audioData) {
       AUDIO_SESSION_CACHE.set(cacheKey, audioData);
-      // Guardado asíncrono en Supabase
-      saveAudioToCache(cacheKey, language, city, audioData).catch(console.error);
+      saveAudioToCache(cacheKey, language, city, audioData).catch(e => console.error("Async Audio Cache Fail:", e));
     }
     return audioData;
   } catch (e) { 
@@ -169,7 +173,6 @@ export const generateAudio = async (text: string, language: string = 'es', city:
   }
 };
 
-// Fix: Added moderateContent to handle community board post moderation
 export const moderateContent = async (text: string): Promise<boolean> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
@@ -190,11 +193,10 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     const parsed = JSON.parse(response.text || '{"isSafe": true}');
     return !!parsed.isSafe;
   } catch (e) {
-    return true; // Graceful fallback
+    return true; 
   }
 };
 
-// Fix: Added generateCityPostcard to create AI-generated postcards for cities
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
@@ -209,7 +211,6 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
       }
     });
     
-    // Iterate through all parts to find the image part
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;

@@ -101,10 +101,7 @@ export const getCachedTours = async (city: string, language: string): Promise<To
   const normCity = normalizeKey(city);
   try {
       const { data, error } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
-      if (error) {
-        console.debug("Tour Cache Read Error:", error);
-        return null;
-      }
+      if (error) return null;
       return data ? (data.data as Tour[]) : null;
   } catch (e) { return null; }
 };
@@ -112,23 +109,26 @@ export const getCachedTours = async (city: string, language: string): Promise<To
 export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
   const normCity = normalizeKey(city);
   try {
-      const { error } = await supabase.from('tours_cache').upsert({ 
-          city: normCity, 
-          language, 
-          data: tours,
-          updated_at: new Date().toISOString()
-      }, { onConflict: 'city,language' });
-      
-      if (error) console.error("Error saving tours to cache:", error.message);
-      else console.debug("Tours cached successfully for:", normCity);
-  } catch (e) { console.error(e); }
+    const { error } = await supabase.from('tours_cache').upsert({ 
+        city: normCity, 
+        language, 
+        data: tours,
+        updated_at: new Date().toISOString()
+    }, { onConflict: 'city,language' });
+    if (error) console.error("Error saving tours cache:", error.message);
+  } catch (e) {
+    console.error("Exception saving tours cache:", e);
+  }
 };
 
 export const getCachedAudio = async (key: string, language: string, city: string): Promise<string | null> => {
   try {
       const cleanKey = normalizeKey(key);
       const { data, error } = await supabase.from('audio_cache').select('base64').eq('id', cleanKey).maybeSingle();
-      if (error) return null;
+      if (error) {
+          console.debug("Audio cache lookup error:", error.message);
+          return null;
+      }
       return data?.base64 || null;
   } catch (e) { return null; }
 };
@@ -137,14 +137,23 @@ export const saveAudioToCache = async (key: string, language: string, city: stri
   if (!base64 || base64.length < 100) return;
   const cleanKey = normalizeKey(key);
   try {
-      await supabase.from('audio_cache').upsert({ 
+      // Intentamos el upsert. Si la tabla no permite upserts anónimos o no existe, fallará aquí.
+      const { error } = await supabase.from('audio_cache').upsert({ 
           id: cleanKey, 
           base64: base64, 
           language: language, 
           city: normalizeKey(city),
           created_at: new Date().toISOString()
       }, { onConflict: 'id' });
-  } catch (e) {}
+      
+      if (error) {
+          console.error("Supabase Audio Save Error:", error.message, "| Details:", error.details);
+      } else {
+          console.debug("Audio cached successfully in Supabase:", cleanKey);
+      }
+  } catch (e) {
+      console.error("Supabase audio_cache exception:", e);
+  }
 };
 
 export const getCommunityPosts = async (city: string) => {

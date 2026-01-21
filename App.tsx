@@ -16,7 +16,7 @@ const TRANSLATIONS: any = {
   es: { welcome: "Bienvenido,", explorer: "Explorador", searchPlaceholder: "Busca cualquier ciudad...", emailPlaceholder: "Tu email", codeLabel: "Código de Seguridad", login: "Enviar Código", verify: "Entrar", tagline: "Better Destinations by AI", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", loading: "Cargando...", loadingTour: "Sincronizando destino...", navElite: "Élite", navHub: "Mundo", navVisa: "Visa", navStore: "Tienda" },
   ca: { welcome: "Benvingut,", explorer: "Explorador", searchPlaceholder: "Cerca qualsevol ciutat...", emailPlaceholder: "El teu email", codeLabel: "Codi de Seguretat", login: "Enviar Codi", verify: "Entrar", tagline: "Better Destinations by AI", authError: "Revisa el teu email o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", checkEmail: "Revisa el teu email", sentTo: "Codi enviat a:", tryDifferent: "Canviar email", loading: "Carregant...", loadingTour: "Sincronitzant destí...", navElite: "Elit", navHub: "Món", navVisa: "Visa", navStore: "Botiga" },
   eu: { welcome: "Ongi etorri,", explorer: "Esploratzailea", searchPlaceholder: "Bilatu edozein hiri...", emailPlaceholder: "Zure emaila", codeLabel: "Segurtasun Kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "Better Destinations by AI", authError: "Begiratu zure emaila", codeError: "Kode baliogabea", selectLang: "Hizkuntza", checkEmail: "Begiratu emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Aldatu emaila", loading: "Sinkronizatzen...", loadingTour: "Helmuga prestatzen...", navElite: "Elite", navHub: "Mundua", navVisa: "Visa", navStore: "Denda" },
-  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Rechercher une ville...", emailPlaceholder: "Votre e-mail", codeLabel: "Code de Sécurité", login: "Envoyer le Code", verify: "Entrer", tagline: "Better Destinations by AI", authError: "Vérifiez vos emails", codeError: "Code invalide", selectLang: "Langue", checkEmail: "Vérifiez vos emails", sentTo: "Code envoyé à :", tryDifferent: "Modifier l'email", loading: "Sync...", loadingTour: "Synchronisation...", navElite: "Élite", navHub: "Monde", navVisa: "Visa", navStore: "Boutique" }
+  fr: { welcome: "Bienvenue,", explorer: "Explorateur", searchPlaceholder: "Rechercher une ville...", emailPlaceholder: "Votre e-mail", codeLabel: "Code de Securité", login: "Envoyer le Code", verify: "Entrer", tagline: "Better Destinations by AI", authError: "Vérifiez vos emails", codeError: "Code invalide", selectLang: "Langue", checkEmail: "Vérifiez vos emails", sentTo: "Code envoyé à :", tryDifferent: "Modifier l'email", loading: "Sync...", loadingTour: "Synchronisation...", navElite: "Élite", navHub: "Monde", navVisa: "Visa", navStore: "Boutique" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -133,26 +133,41 @@ export default function App() {
     setLoadingMessage(t('loadingTour'));
     
     try {
-        // PASO 1: Estandarizar nombre con IA para unificar claves de caché (ej: "madrid" -> "Madrid")
-        const standardizedName = await standardizeCityName(cityInput);
+        console.debug("City Select Init:", cityInput);
         
-        // PASO 2: Buscar en Supabase usando el nombre estandarizado
+        // Estandarización 1: Normalización directa para búsqueda rápida
+        const fastNorm = normalizeKey(cityInput);
+        const fastCached = await getCachedTours(fastNorm, user.language || 'es');
+        
+        if (fastCached && fastCached.length > 0) {
+            console.debug("Fast Cache Hit!");
+            setSelectedCity(cityInput);
+            setTours(fastCached);
+            setView(AppView.CITY_DETAIL);
+            return;
+        }
+
+        // Estandarización 2: IA para unificar nombres
+        const standardizedName = await standardizeCityName(cityInput);
+        console.debug("Standardized Name:", standardizedName);
+        
         const dbCached = await getCachedTours(standardizedName, user.language || 'es');
         
         if (dbCached && dbCached.length > 0) {
+            console.debug("IA Cache Hit!");
             setSelectedCity(standardizedName);
             setTours(dbCached);
             setView(AppView.CITY_DETAIL);
             return;
         }
 
-        // PASO 3: Si no hay caché, generar nuevo contenido
+        console.debug("Cache Miss. Generating new tours...");
         const greeting = await getGreetingContext(standardizedName, user.language || 'es');
         const generated = await generateToursForCity(standardizedName, user, greeting, false);
         
         if (generated.length > 0) {
             setTours(generated);
-            // Guardar en caché usando el nombre estandarizado
+            // Guardamos con el nombre estandarizado para futuras consultas
             await saveToursToCache(standardizedName, user.language || 'es', generated);
             setSelectedCity(standardizedName);
             setView(AppView.CITY_DETAIL);
