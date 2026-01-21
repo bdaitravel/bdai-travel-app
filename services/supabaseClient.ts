@@ -135,38 +135,30 @@ export const getCachedAudio = async (key: string, language: string, city: string
 };
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
-  // Verificación básica de datos
-  if (!base64 || base64.length < 500) {
-      console.warn("Audio demasiado corto para ser cacheado.");
-      return;
-  }
+  if (!base64 || base64.length < 500) return;
   
   const cleanKey = normalizeKey(key);
   
-  console.log(`[Cache Manager] Intentando persistir audio: ${cleanKey.substring(0, 20)}...`);
-
   try {
       const payload = { 
           text_hash: cleanKey, 
           base64: base64, 
-          language: language
+          language: language,
+          city: normalizeKey(city)
       };
 
-      // Importante: Usamos upsert con onConflict explícito
-      const { data, error, status } = await supabase
+      // Intentamos guardar. Si falla por falta de restricción única, avisamos al usuario.
+      const { error, status } = await supabase
           .from('audio_cache')
           .upsert(payload, { onConflict: 'text_hash' });
 
       if (error) {
           console.error(`❌ Error en Supabase (Status ${status}):`, error.message);
           if (error.message.includes('unique or exclusion constraint')) {
-              console.error("👉 SOLUCIÓN: Ejecuta el SQL para poner text_hash como PRIMARY KEY.");
-          }
-          if (error.message.includes('RLS')) {
-              console.error("👉 SOLUCIÓN: Ejecuta el SQL para desactivar o configurar RLS.");
+              console.error("👉 SOLUCIÓN: Ejecuta el SQL para poner 'text_hash' como PRIMARY KEY en la tabla 'audio_cache'.");
           }
       } else {
-          console.log("✅ Audio guardado exitosamente en la base de datos.");
+          console.debug(`✅ Audio guardado en caché: ${cleanKey.substring(0, 15)}...`);
       }
   } catch (e) {
       console.error("❌ Excepción crítica al guardar audio:", e);
