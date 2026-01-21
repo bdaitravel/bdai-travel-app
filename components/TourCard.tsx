@@ -13,9 +13,8 @@ const TEXTS: any = {
 };
 
 const getCalculatedDuration = (stopsCount: number) => {
-    // Lógica bidaer real: 12 minutos por parada (trayecto + masterclass)
-    // 15 paradas = 180 min = 3 horas.
-    const mins = stopsCount * 12;
+    // Para tours de alta densidad (400+ palabras), cada parada requiere ~20 min (audio + lectura + trayecto)
+    const mins = stopsCount * 20;
     const hours = Math.floor(mins / 60);
     const remainingMins = mins % 60;
     
@@ -38,7 +37,6 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
 
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS.es;
-  // SOBRESCRIBIMOS DURACIÓN CON CÁLCULO REAL BASADO EN PARADAS
   const duration = getCalculatedDuration(tour.stops.length);
   
   return (
@@ -83,7 +81,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
 
     return (
         <div className="fixed inset-0 bg-slate-50 flex flex-col z-[5000] overflow-hidden">
-             {/* Header */}
              <div className="bg-white border-b border-slate-100 px-6 py-6 flex items-center justify-between z-[6000] shrink-0 pt-safe-iphone shadow-sm">
                 <button onClick={(e) => { e.stopPropagation(); onBack(); }} className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950 active:scale-90 transition-transform"><i className="fas fa-arrow-left"></i></button>
                 <div className="text-center">
@@ -93,7 +90,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                 <button onClick={() => setShowItinerary(!showItinerary)} className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all ${showItinerary ? 'bg-slate-950 border-slate-950 text-white' : 'bg-slate-50 border-slate-200 text-slate-950'}`}><i className="fas fa-layer-group"></i></button>
              </div>
 
-             {/* Modal Itinerario */}
              {showItinerary && (
                  <div className="absolute inset-0 z-[7000] flex flex-col animate-fade-in">
                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setShowItinerary(false)}></div>
@@ -121,20 +117,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                 </div>
 
                 <div className="px-8 pt-10 pb-40 space-y-10 bg-white rounded-t-[3rem] -mt-10 shadow-[0_-30px_60px_rgba(0,0,0,0.05)] z-[200]">
-                    
-                    {/* MANIFIESTO BIDAER - Visible al inicio */}
-                    {currentStopIndex === 0 && (
-                        <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-200 mb-6 animate-fade-in relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-5"><i className="fas fa-quote-right text-6xl"></i></div>
-                            <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.3em] mb-4 flex items-center gap-3">
-                                <i className="fas fa-terminal text-purple-600"></i> {tl.intro}
-                            </h4>
-                            <p className="text-slate-600 text-sm font-bold leading-relaxed italic border-l-4 border-purple-500 pl-4">
-                                {cleanDescriptionText(tour.description)}
-                            </p>
-                        </div>
-                    )}
-
                     <div className="flex justify-between items-center gap-4">
                         <div className="flex-1">
                             {distanceToStop !== null && (
@@ -147,27 +129,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                             {isLoading ? <i className="fas fa-circle-notch fa-spin text-xl"></i> : isPlaying ? <i className="fas fa-pause text-xl"></i> : <i className="fas fa-play text-xl ml-1"></i>}
                         </button>
                     </div>
-
-                    {currentStop.photoSpot && (
-                        <div className={`p-8 rounded-[2.5rem] border-2 transition-all ${isNearEnough ? 'bg-slate-900 border-slate-800 text-white shadow-2xl' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'}`}>
-                            <div className="flex items-center justify-between mb-6">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                                    <i className="fas fa-camera"></i> {tl.photoSpot}
-                                </h4>
-                                <span className="text-[8px] font-black bg-white/10 px-3 py-1.5 rounded-lg border border-white/5">+{currentStop.photoSpot.milesReward} MI</span>
-                            </div>
-                            <p className="text-xs font-black italic mb-6 leading-tight opacity-80">"{currentStop.photoSpot.angle}"</p>
-                            {!currentStop.visited ? (
-                                <button onClick={handlePhotoReward} disabled={!isNearEnough || isCapturing} className={`w-full py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${isNearEnough ? 'bg-purple-600 text-white shadow-xl shadow-purple-600/30' : 'bg-slate-200 text-slate-400'}`}>
-                                    {isCapturing ? <i className="fas fa-sync fa-spin"></i> : isNearEnough ? tl.capture : tl.approach}
-                                </button>
-                            ) : (
-                                <div className="bg-green-600/20 py-4 rounded-2xl text-center border border-green-500/30 text-[9px] font-black uppercase tracking-widest text-green-400">
-                                    <i className="fas fa-check-double mr-2"></i> {tl.rewardReceived}
-                                </div>
-                            )}
-                        </div>
-                    )}
 
                     <div className="space-y-10 text-slate-800 text-lg leading-relaxed font-medium pb-20">
                         {currentStop.description.split('\n\n').map((paragraph, idx) => {
