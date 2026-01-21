@@ -5,35 +5,35 @@ const UI_LABELS: any = {
     es: { 
         hubTitle: "Explora el Mundo", hubSub: "Destinos Globales Inteligentes", 
         homeTitle: "Explora España", homeSub: "Grandes Capitales",
-        villagesTitle: "Pueblos con Encanto", villagesSub: "Joyas Rurales de España",
+        villagesTitle: "Joyas por Descubrir", villagesSub: "Destinos con Identidad Propia",
         catVisited: "Iconos Mundiales", catGrowth: "Joyas en Auge", catExotic: "Destinos Exóticos",
         loading: "Sincronizando con satélites..." 
     },
     en: { 
         hubTitle: "Explore the World", hubSub: "Smart Global Destinations", 
         homeTitle: "Explore Spain", homeSub: "Major Capitals",
-        villagesTitle: "Charming Villages", villagesSub: "Spanish Rural Gems",
+        villagesTitle: "Hidden Gems", villagesSub: "Destinations with Character",
         catVisited: "Global Icons", catGrowth: "Rising Stars", catExotic: "Exotic Destinations",
         loading: "Syncing with satellites..." 
     },
     ca: { 
         hubTitle: "Explora el Món", hubSub: "Destins Globals Intel·ligents", 
         homeTitle: "Explora Espanya", homeSub: "Grans Capitals",
-        villagesTitle: "Pobles amb Encant", villagesSub: "Joies Rurals d'Espanya",
+        villagesTitle: "Joies per Descobrir", villagesSub: "Destins amb Identitat",
         catVisited: "Icones Mundials", catGrowth: "Joies en Auge", catExotic: "Destins Exòtics",
         loading: "Sincronitzant..." 
     },
     eu: { 
         hubTitle: "Mundua Esploratu", hubSub: "Nazioarteko Helmuga Adimentsuak", 
         homeTitle: "Espainia Esploratu", homeSub: "Hiriburu Handiak",
-        villagesTitle: "Herri Xarmangarriak", villagesSub: "Espainiako Landa Bitxiak",
+        villagesTitle: "Bitxi Ezkutuak", villagesSub: "Nortasuna duten Helmugak",
         catVisited: "Ikonikoak", catGrowth: "Goraka Doazenak", catExotic: " Helmuga Exotikoak",
         loading: "Sateliteekin sinkronizatzen..." 
     },
     fr: { 
         hubTitle: "Explorer le Monde", hubSub: "Destinations Globales Intelligentes", 
         homeTitle: "Explorer l'Espagne", homeSub: "Grandes Capitales",
-        villagesTitle: "Villages de Charme", villagesSub: "Joyaux Ruraux d'Espagne",
+        villagesTitle: "Joyaux à Découvrir", villagesSub: "Destinations de Caractère",
         catVisited: "Icônes Mondiales", catGrowth: "Destinations en Vogue", catExotic: "Destinations Exotiques",
         loading: "Synchronisation..." 
     }
@@ -46,10 +46,10 @@ const SPAIN_CITIES = [
 ];
 
 const SPAIN_VILLAGES = [
+    { name: 'Vitoria-Gasteiz', theme: 'Capital Green', color: 'from-green-700 to-slate-900', icon: 'fa-leaf' },
     { name: 'Albarracín', theme: 'Tesoro Medieval', color: 'from-red-800 to-stone-900', icon: 'fa-fort-awesome' },
     { name: 'Cudillero', theme: 'Anfiteatro Marino', color: 'from-cyan-700 to-slate-900', icon: 'fa-anchor' },
-    { name: 'Ronda', theme: 'La Ciudad Soñada', color: 'from-emerald-700 to-slate-900', icon: 'fa-bridge' },
-    { name: 'Santillana del Mar', theme: 'La Villa de las Tres Mentiras', color: 'from-stone-600 to-slate-950', icon: 'fa-scroll' }
+    { name: 'Ronda', theme: 'La Ciudad Soñada', color: 'from-emerald-700 to-slate-900', icon: 'fa-bridge' }
 ];
 
 const HUB_CATEGORIES: any = {

@@ -129,27 +129,48 @@ export default function App() {
 
   const handleCitySelect = async (cityInput: string) => {
     if (!cityInput.trim() || isLoading) return;
+    
+    const startTime = performance.now();
     setIsLoading(true);
     setLoadingMessage(t('loadingTour'));
     
     try {
-        // 1. Siempre estandarizamos primero para que la clave de caché sea consistente (ej: 'madrid' -> 'Madrid')
-        const standardizedName = await standardizeCityName(cityInput);
         const language = user.language || 'es';
-
-        // 2. Buscamos en caché usando el nombre estandarizado
-        const dbCached = await getCachedTours(standardizedName, language);
+        
+        // --- PASO 1: BÚSQUEDA INSTANTÁNEA (CACHE SIN IA) ---
+        // Buscamos directamente con el input normalizado. Es el caso más rápido.
+        const fastKey = normalizeKey(cityInput);
+        console.debug(`[Cache] Buscando directamente con clave rápida: ${fastKey}`);
+        
+        let dbCached = await getCachedTours(fastKey, language);
         
         if (dbCached && dbCached.length > 0) {
-            console.debug("Cache Hit para:", standardizedName);
-            setSelectedCity(standardizedName);
+            console.debug(`[Cache] HIT DIRECTO en ${(performance.now() - startTime).toFixed(0)}ms`);
+            setSelectedCity(cityInput);
             setTours(dbCached);
             setView(AppView.CITY_DETAIL);
             return;
         }
 
-        // 3. Si no hay caché, generamos
-        console.debug("Cache Miss. Generando tours para:", standardizedName);
+        // --- PASO 2: ESTANDARIZACIÓN CON IA (SOLO SI FALLA EL PASO 1) ---
+        // Si no hay caché directa, usamos la IA para ver si es un alias (ej: nyc -> New York)
+        console.debug(`[Cache] MISS Directo. Consultando IA para estandarizar...`);
+        const standardizedName = await standardizeCityName(cityInput);
+        
+        // Volvemos a mirar en caché con el nombre corregido
+        if (normalizeKey(standardizedName) !== fastKey) {
+            dbCached = await getCachedTours(standardizedName, language);
+            if (dbCached && dbCached.length > 0) {
+                console.debug(`[Cache] HIT IA en ${(performance.now() - startTime).toFixed(0)}ms`);
+                setSelectedCity(standardizedName);
+                setTours(dbCached);
+                setView(AppView.CITY_DETAIL);
+                return;
+            }
+        }
+
+        // --- PASO 3: GENERACIÓN (ULTIMO RECURSO) ---
+        console.debug(`[Cache] MISS total en ${(performance.now() - startTime).toFixed(0)}ms. Generando...`);
         const greeting = await getGreetingContext(standardizedName, language);
         const generated = await generateToursForCity(standardizedName, user, greeting, false);
         
@@ -158,8 +179,9 @@ export default function App() {
             setSelectedCity(standardizedName);
             setView(AppView.CITY_DETAIL);
             
-            // 4. Guardamos en caché (esto ahora disparará logs detallados en caso de error)
+            // Guardamos para la próxima vez
             await saveToursToCache(standardizedName, language, generated);
+            console.debug(`[Cache] Nuevo destino guardado: ${standardizedName}`);
         }
     } catch (e) { 
         console.error("City Select Error:", e);

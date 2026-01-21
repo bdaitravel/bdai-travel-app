@@ -127,17 +127,14 @@ export const saveToursToCache = async (city: string, language: string, tours: To
         console.error("SUPABASE TOURS CACHE ERROR:", {
             code: error.code,
             message: error.message,
-            details: error.details,
-            hint: error.hint
+            details: error.details
         });
         
         if (error.code === '42501') {
-            console.error("HINT: Row Level Security (RLS) is blocking the INSERT. Check Supabase Policies for tours_cache.");
-        } else if (error.code === '42P01') {
-            console.error("HINT: The table 'tours_cache' does not exist in your database.");
+            console.error("HINT: RLS is blocking the INSERT in tours_cache. Check Supabase Policies.");
         }
     } else {
-        console.debug("✓ Tours cached successfully in Supabase for:", normCity);
+        console.debug("✓ Tours cached successfully for:", normCity);
     }
   } catch (e) {
     console.error("Critical Exception in saveToursToCache:", e);
@@ -154,21 +151,42 @@ export const getCachedAudio = async (key: string, language: string, city: string
 };
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
-  if (!base64 || base64.length < 100) return;
+  if (!base64 || base64.length < 100) {
+      console.warn("Audio data too short to cache or empty.");
+      return;
+  }
+  
   const cleanKey = normalizeKey(key);
+  const normCity = normalizeKey(city);
+  
   try {
       const { error } = await supabase.from('audio_cache').upsert({ 
           id: cleanKey, 
           base64: base64, 
           language: language, 
-          city: normalizeKey(city),
+          city: normCity,
           created_at: new Date().toISOString()
       }, { onConflict: 'id' });
       
       if (error) {
-          console.error("Supabase Audio Cache Error:", error.message);
+          console.error("SUPABASE AUDIO CACHE ERROR:", {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+          });
+          
+          if (error.code === '42501') {
+              console.error("HINT: Row Level Security (RLS) is blocking the INSERT in 'audio_cache'. Check Supabase Policies.");
+          } else if (error.code === '42P01') {
+              console.error("HINT: The table 'audio_cache' does not exist in your database.");
+          }
+      } else {
+          console.debug(`✓ Audio cached successfully for: ${normCity} (Key: ${cleanKey.substring(0, 10)}...)`);
       }
-  } catch (e) {}
+  } catch (e) {
+      console.error("Critical Exception in saveAudioToCache:", e);
+  }
 };
 
 export const getCommunityPosts = async (city: string) => {

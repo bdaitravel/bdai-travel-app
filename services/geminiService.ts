@@ -33,14 +33,19 @@ export const standardizeCityName = async (input: string): Promise<string> => {
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `TASK: Standardize city name. Input: "${input}". 
+            contents: `TASK: Standardize city name to its OFFICIAL CANONICAL form.
+            Input: "${input}". 
             RULES: 
-            1. Return ONLY the canonical name of the city.
+            1. Return ONLY the official name.
             2. NO country name. 
-            3. NO punctuation. 
-            4. Correct spelling. 
-            Example: "madrid españa" -> "Madrid". 
-            Example: "nyc" -> "New York".`,
+            3. CORRECT spelling (e.g., Vitoria does NOT have a tilde).
+            4. Use dual names if official (e.g., Vitoria-Gasteiz, San Sebastián-Donostia).
+            
+            Examples:
+            - "vitoria" -> "Vitoria-Gasteiz"
+            - "madrid españa" -> "Madrid"
+            - "nyc" -> "New York"
+            - "bcn" -> "Barcelona"`,
             config: { temperature: 0, seed: 42 }
         });
         return response.text?.trim() || input;
