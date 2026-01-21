@@ -18,14 +18,12 @@ export const cleanDescriptionText = (text: string): string => {
     return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '').replace(/\n\n/g, ' ').trim();
 };
 
-const generateHash = (str: string) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(36);
+const generateSlug = (text: string) => {
+    return text.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "")
+        .substring(0, 30);
 };
 
 export const standardizeCityName = async (input: string): Promise<string> => {
@@ -139,8 +137,9 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
-  const textHash = generateHash(cleanText);
-  const cacheKey = normalizeKey(`bd_f_v3_${language}_${textHash}`);
+  const textSlug = generateSlug(cleanText);
+  // Formato observado en la captura: ciudad_idioma_lenXXX_slug
+  const cacheKey = normalizeKey(`${city}_${language}_len${cleanText.length}_${textSlug}`);
 
   if (AUDIO_SESSION_CACHE.has(cacheKey)) return AUDIO_SESSION_CACHE.get(cacheKey)!;
   const cached = await getCachedAudio(cacheKey, language, city);
@@ -169,7 +168,8 @@ export const generateAudio = async (text: string, language: string = 'es', city:
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (audioData) {
       AUDIO_SESSION_CACHE.set(cacheKey, audioData);
-      saveAudioToCache(cacheKey, language, city, audioData).catch(e => console.error("Async Audio Cache Fail:", e));
+      // Guardado asíncrono en Supabase
+      saveAudioToCache(cacheKey, language, city, audioData).catch(e => console.error("Critical Audio Save Error:", e));
     }
     return audioData;
   } catch (e) { 
