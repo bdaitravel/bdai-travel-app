@@ -133,44 +133,33 @@ export default function App() {
     setLoadingMessage(t('loadingTour'));
     
     try {
-        console.debug("City Select Init:", cityInput);
-        
-        // Estandarización 1: Normalización directa para búsqueda rápida
-        const fastNorm = normalizeKey(cityInput);
-        const fastCached = await getCachedTours(fastNorm, user.language || 'es');
-        
-        if (fastCached && fastCached.length > 0) {
-            console.debug("Fast Cache Hit!");
-            setSelectedCity(cityInput);
-            setTours(fastCached);
-            setView(AppView.CITY_DETAIL);
-            return;
-        }
-
-        // Estandarización 2: IA para unificar nombres
+        // 1. Siempre estandarizamos primero para que la clave de caché sea consistente (ej: 'madrid' -> 'Madrid')
         const standardizedName = await standardizeCityName(cityInput);
-        console.debug("Standardized Name:", standardizedName);
-        
-        const dbCached = await getCachedTours(standardizedName, user.language || 'es');
+        const language = user.language || 'es';
+
+        // 2. Buscamos en caché usando el nombre estandarizado
+        const dbCached = await getCachedTours(standardizedName, language);
         
         if (dbCached && dbCached.length > 0) {
-            console.debug("IA Cache Hit!");
+            console.debug("Cache Hit para:", standardizedName);
             setSelectedCity(standardizedName);
             setTours(dbCached);
             setView(AppView.CITY_DETAIL);
             return;
         }
 
-        console.debug("Cache Miss. Generating new tours...");
-        const greeting = await getGreetingContext(standardizedName, user.language || 'es');
+        // 3. Si no hay caché, generamos
+        console.debug("Cache Miss. Generando tours para:", standardizedName);
+        const greeting = await getGreetingContext(standardizedName, language);
         const generated = await generateToursForCity(standardizedName, user, greeting, false);
         
-        if (generated.length > 0) {
+        if (generated && generated.length > 0) {
             setTours(generated);
-            // Guardamos con el nombre estandarizado para futuras consultas
-            await saveToursToCache(standardizedName, user.language || 'es', generated);
             setSelectedCity(standardizedName);
             setView(AppView.CITY_DETAIL);
+            
+            // 4. Guardamos en caché (esto ahora disparará logs detallados en caso de error)
+            await saveToursToCache(standardizedName, language, generated);
         }
     } catch (e) { 
         console.error("City Select Error:", e);

@@ -101,23 +101,46 @@ export const getCachedTours = async (city: string, language: string): Promise<To
   const normCity = normalizeKey(city);
   try {
       const { data, error } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
-      if (error) return null;
+      if (error) {
+          console.debug("Cache read attempt failed for:", normCity, error.message);
+          return null;
+      }
       return data ? (data.data as Tour[]) : null;
   } catch (e) { return null; }
 };
 
 export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
+  if (!tours || tours.length === 0) return;
   const normCity = normalizeKey(city);
+  
   try {
     const { error } = await supabase.from('tours_cache').upsert({ 
         city: normCity, 
-        language, 
+        language: language, 
         data: tours,
         updated_at: new Date().toISOString()
-    }, { onConflict: 'city,language' });
-    if (error) console.error("Error saving tours cache:", error.message);
+    }, { 
+        onConflict: 'city,language' 
+    });
+
+    if (error) {
+        console.error("SUPABASE TOURS CACHE ERROR:", {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+        });
+        
+        if (error.code === '42501') {
+            console.error("HINT: Row Level Security (RLS) is blocking the INSERT. Check Supabase Policies for tours_cache.");
+        } else if (error.code === '42P01') {
+            console.error("HINT: The table 'tours_cache' does not exist in your database.");
+        }
+    } else {
+        console.debug("✓ Tours cached successfully in Supabase for:", normCity);
+    }
   } catch (e) {
-    console.error("Exception saving tours cache:", e);
+    console.error("Critical Exception in saveToursToCache:", e);
   }
 };
 
@@ -125,10 +148,7 @@ export const getCachedAudio = async (key: string, language: string, city: string
   try {
       const cleanKey = normalizeKey(key);
       const { data, error } = await supabase.from('audio_cache').select('base64').eq('id', cleanKey).maybeSingle();
-      if (error) {
-          console.debug("Audio cache lookup error:", error.message);
-          return null;
-      }
+      if (error) return null;
       return data?.base64 || null;
   } catch (e) { return null; }
 };
@@ -137,7 +157,6 @@ export const saveAudioToCache = async (key: string, language: string, city: stri
   if (!base64 || base64.length < 100) return;
   const cleanKey = normalizeKey(key);
   try {
-      // Intentamos el upsert. Si la tabla no permite upserts anónimos o no existe, fallará aquí.
       const { error } = await supabase.from('audio_cache').upsert({ 
           id: cleanKey, 
           base64: base64, 
@@ -147,13 +166,9 @@ export const saveAudioToCache = async (key: string, language: string, city: stri
       }, { onConflict: 'id' });
       
       if (error) {
-          console.error("Supabase Audio Save Error:", error.message, "| Details:", error.details);
-      } else {
-          console.debug("Audio cached successfully in Supabase:", cleanKey);
+          console.error("Supabase Audio Cache Error:", error.message);
       }
-  } catch (e) {
-      console.error("Supabase audio_cache exception:", e);
-  }
+  } catch (e) {}
 };
 
 export const getCommunityPosts = async (city: string) => {
