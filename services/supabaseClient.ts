@@ -16,26 +16,11 @@ export const normalizeKey = (text: string) => {
         .replace(/[^a-z0-9]/g, "");     
 };
 
+// --- PERFILES ---
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   if (!email) return null;
   const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase().trim()).maybeSingle();
   return (error || !data) ? null : { ...data, isLoggedIn: true } as any;
-};
-
-export const validateEmailFormat = (email: string) => {
-  return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
-};
-
-export const sendOtpEmail = async (email: string) => {
-    const emailClean = email.toLowerCase().trim();
-    return await supabase.auth.signInWithOtp({ email: emailClean, options: { shouldCreateUser: true } });
-};
-
-export const verifyOtpCode = async (email: string, token: string) => {
-    const emailClean = email.toLowerCase().trim();
-    const { data, error } = await supabase.auth.verifyOtp({ email: emailClean, token: token.trim(), type: 'email' });
-    if (error) return await supabase.auth.verifyOtp({ email: emailClean, token: token.trim(), type: 'signup' });
-    return { data, error: null };
 };
 
 export const syncUserProfile = async (user: UserProfile) => {
@@ -51,6 +36,7 @@ export const syncUserProfile = async (user: UserProfile) => {
   }, { onConflict: 'id' });
 };
 
+// --- TOURS (EN TABLA) ---
 export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
   const normCity = normalizeKey(city);
   const { data, error } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
@@ -62,14 +48,21 @@ export const saveToursToCache = async (city: string, language: string, tours: To
   await supabase.from('tours_cache').upsert({ city: normCity, language, data: tours }, { onConflict: 'city,language' });
 };
 
-// --- AUDIO STORAGE (EL CORAZÓN DEL CAMBIO) ---
+// --- AUDIOS (EN STORAGE - NO EN TABLA) ---
 export const getCachedAudio = async (key: string): Promise<string | null> => {
   try {
       const fileName = `${normalizeKey(key)}.txt`;
+      // Buscamos el archivo en la "Caja" (Bucket) de audios
       const { data, error } = await supabase.storage.from('audios').download(fileName);
-      if (error || !data) return null;
+      
+      if (error || !data) {
+          console.debug("[Storage] Audio no encontrado en cache:", fileName);
+          return null;
+      }
       return await data.text();
-  } catch (e) { return null; }
+  } catch (e) { 
+      return null; 
+  }
 };
 
 export const saveAudioToCache = async (key: string, base64: string) => {
@@ -77,14 +70,34 @@ export const saveAudioToCache = async (key: string, base64: string) => {
   try {
       const fileName = `${normalizeKey(key)}.txt`;
       const blob = new Blob([base64], { type: 'text/plain' });
-      // Usamos 'upsert: true' para que si ya existe, lo sobrescriba sin errores
-      await supabase.storage.from('audios').upload(fileName, blob, {
+      
+      // Subimos el archivo al Storage. Esto NO aparece en las tablas del Table Editor.
+      const { error } = await supabase.storage.from('audios').upload(fileName, blob, {
           upsert: true,
           contentType: 'text/plain'
       });
-  } catch (e) { console.error("[Storage] Error:", e); }
+      
+      if (error) console.error("[Storage] Error al subir:", error.message);
+      else console.log("[Storage] Audio guardado correctamente como archivo:", fileName);
+  } catch (e) { 
+      console.error("[Storage] Error crítico:", e); 
+  }
 };
 
+// --- AUTH ---
+export const sendOtpEmail = async (email: string) => {
+    return await supabase.auth.signInWithOtp({ email: email.toLowerCase().trim(), options: { shouldCreateUser: true } });
+};
+
+export const verifyOtpCode = async (email: string, token: string) => {
+    return await supabase.auth.verifyOtp({ email: email.toLowerCase().trim(), token: token.trim(), type: 'email' });
+};
+
+export const validateEmailFormat = (email: string) => {
+  return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+};
+
+// --- RANKING & COMUNIDAD ---
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
   const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
   return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username } as any));
