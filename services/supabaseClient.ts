@@ -126,15 +126,13 @@ export const getCachedAudio = async (key: string, language: string, city: string
   try {
       const cleanKey = normalizeKey(key);
       const { data, error } = await supabase.from('audio_cache').select('base64').eq('text_hash', cleanKey).maybeSingle();
-      if (error) {
-          console.error("Error al buscar audio cacheado:", error.message);
-          return null;
-      }
+      if (error) return null;
       return data?.base64 || null;
   } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (key: string, language: string, city: string, base64: string) => {
+  // Evitar guardar basura o audios vacíos
   if (!base64 || base64.length < 500) return;
   
   const cleanKey = normalizeKey(key);
@@ -147,21 +145,18 @@ export const saveAudioToCache = async (key: string, language: string, city: stri
           city: normalizeKey(city)
       };
 
-      // Intentamos guardar. Si falla por falta de restricción única, avisamos al usuario.
-      const { error, status } = await supabase
+      // Al usar upsert con onConflict: 'text_hash', Supabase requiere que esa columna sea PRIMARY KEY
+      const { error } = await supabase
           .from('audio_cache')
           .upsert(payload, { onConflict: 'text_hash' });
 
       if (error) {
-          console.error(`❌ Error en Supabase (Status ${status}):`, error.message);
-          if (error.message.includes('unique or exclusion constraint')) {
-              console.error("👉 SOLUCIÓN: Ejecuta el SQL para poner 'text_hash' como PRIMARY KEY en la tabla 'audio_cache'.");
-          }
+          console.error(`❌ Error persistencia audio:`, error.message);
       } else {
-          console.debug(`✅ Audio guardado en caché: ${cleanKey.substring(0, 15)}...`);
+          console.debug(`✅ Audio en la nube: ${cleanKey.substring(0, 10)}...`);
       }
   } catch (e) {
-      console.error("❌ Excepción crítica al guardar audio:", e);
+      console.error("❌ Fallo crítico saveAudio:", e);
   }
 };
 
