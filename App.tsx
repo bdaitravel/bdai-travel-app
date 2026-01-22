@@ -122,33 +122,34 @@ export default function App() {
   const handleCitySelect = async (cityInput: string) => {
     if (!cityInput.trim() || isLoading) return;
     
-    // 1. COMPROBACIÓN RÁPIDA (Sin Loading Screen)
-    const normInput = normalizeKey(cityInput);
-    
-    // Primero miramos en los tours estáticos por si es una ciudad base
-    const staticMatches = STATIC_TOURS.filter(t => normalizeKey(t.city) === normInput);
-    if (staticMatches.length > 0) {
-        setSelectedCity(staticMatches[0].city);
-        setTours(staticMatches);
-        setView(AppView.CITY_DETAIL);
-        return;
-    }
-
-    // Luego miramos en el caché de Supabase con el nombre tal cual lo puso el usuario
-    const dbCached = await getCachedTours(cityInput, user.language || 'es');
-    if (dbCached && dbCached.length > 0) {
-        setSelectedCity(dbCached[0].city || cityInput);
-        setTours(dbCached);
-        setView(AppView.CITY_DETAIL);
-        return;
-    }
-
-    // 2. SI NO ESTÁ EXACTO, ESTANDARIZAMOS SILENCIOSAMENTE (Con un pequeño indicador de red si acaso)
-    // No activamos el 'Heavy Loading' de Dai todavía.
+    // 1. PRIORIDAD: COMPROBACIÓN EN CLOUD (Supabase)
+    // Buscamos primero en el caché de Supabase para Madrid, Barcelona, Sevilla o cualquier otra.
+    // Esto permite que las actualizaciones en la nube se vean antes que los datos locales.
     try {
+        const dbCached = await getCachedTours(cityInput, user.language || 'es');
+        if (dbCached && dbCached.length > 0) {
+            setSelectedCity(dbCached[0].city || cityInput);
+            setTours(dbCached);
+            setView(AppView.CITY_DETAIL);
+            return;
+        }
+
+        // 2. FALLBACK: DATOS ESTÁTICOS LOCALES
+        // Solo si no hay nada en Supabase, miramos los tours harcodeados.
+        const normInput = normalizeKey(cityInput);
+        const staticMatches = STATIC_TOURS.filter(t => normalizeKey(t.city) === normInput);
+        if (staticMatches.length > 0) {
+            setSelectedCity(staticMatches[0].city);
+            setTours(staticMatches);
+            setView(AppView.CITY_DETAIL);
+            return;
+        }
+
+        // 3. SI NO ESTÁ EN NINGÚN SITIO, NORMALIZAMOS CON IA
+        // Intentamos corregir el nombre (ej. "Madri" -> "Madrid")
         const standardizedName = await standardizeCityName(cityInput);
         
-        // VOLVEMOS A MIRAR EN CACHÉ con el nombre estandarizado (ej. "Madri" -> "Madrid")
+        // Volvemos a mirar en Supabase con el nombre corregido
         const secondCacheCheck = await getCachedTours(standardizedName, user.language || 'es');
         if (secondCacheCheck && secondCacheCheck.length > 0) {
             setSelectedCity(standardizedName);
@@ -157,7 +158,7 @@ export default function App() {
             return;
         }
 
-        // 3. SOLO SI REALMENTE NO EXISTE, GENERAMOS CONTENIDO (Aquí entra Dai)
+        // 4. GENERACIÓN DESDE CERO (Aquí sí entra la pantalla de carga pesada)
         setIsLoading(true);
         setLoadingMessage(t('loadingTour'));
         
