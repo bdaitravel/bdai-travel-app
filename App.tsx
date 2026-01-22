@@ -122,23 +122,46 @@ export default function App() {
   const handleCitySelect = async (cityInput: string) => {
     if (!cityInput.trim() || isLoading) return;
     
-    setIsLoading(true);
-    setLoadingMessage(t('loadingTour'));
+    // 1. COMPROBACIÓN RÁPIDA (Sin Loading Screen)
+    const normInput = normalizeKey(cityInput);
+    
+    // Primero miramos en los tours estáticos por si es una ciudad base
+    const staticMatches = STATIC_TOURS.filter(t => normalizeKey(t.city) === normInput);
+    if (staticMatches.length > 0) {
+        setSelectedCity(staticMatches[0].city);
+        setTours(staticMatches);
+        setView(AppView.CITY_DETAIL);
+        return;
+    }
 
+    // Luego miramos en el caché de Supabase con el nombre tal cual lo puso el usuario
+    const dbCached = await getCachedTours(cityInput, user.language || 'es');
+    if (dbCached && dbCached.length > 0) {
+        setSelectedCity(dbCached[0].city || cityInput);
+        setTours(dbCached);
+        setView(AppView.CITY_DETAIL);
+        return;
+    }
+
+    // 2. SI NO ESTÁ EXACTO, ESTANDARIZAMOS SILENCIOSAMENTE (Con un pequeño indicador de red si acaso)
+    // No activamos el 'Heavy Loading' de Dai todavía.
     try {
-        const normInput = normalizeKey(cityInput);
-        const dbCached = await getCachedTours(cityInput, user.language || 'es');
-        if (dbCached && dbCached.length > 0) {
-            setSelectedCity(cityInput);
-            setTours(dbCached);
+        const standardizedName = await standardizeCityName(cityInput);
+        
+        // VOLVEMOS A MIRAR EN CACHÉ con el nombre estandarizado (ej. "Madri" -> "Madrid")
+        const secondCacheCheck = await getCachedTours(standardizedName, user.language || 'es');
+        if (secondCacheCheck && secondCacheCheck.length > 0) {
+            setSelectedCity(standardizedName);
+            setTours(secondCacheCheck);
             setView(AppView.CITY_DETAIL);
-            setIsLoading(false);
             return;
         }
 
-        const standardizedName = await standardizeCityName(cityInput);
-        setSelectedCity(standardizedName);
+        // 3. SOLO SI REALMENTE NO EXISTE, GENERAMOS CONTENIDO (Aquí entra Dai)
+        setIsLoading(true);
+        setLoadingMessage(t('loadingTour'));
         
+        setSelectedCity(standardizedName);
         const greeting = await getGreetingContext(standardizedName, user.language || 'es');
         const generated = await generateToursForCity(standardizedName, user, greeting, false);
         
@@ -146,15 +169,12 @@ export default function App() {
             setTours(generated);
             await saveToursToCache(standardizedName, user.language || 'es', generated);
             setView(AppView.CITY_DETAIL);
-        } else {
-            const staticMatches = STATIC_TOURS.filter(t => normalizeKey(t.city) === normInput);
-            if (staticMatches.length > 0) {
-                setSelectedCity(staticMatches[0].city);
-                setTours(staticMatches);
-                setView(AppView.CITY_DETAIL);
-            }
         }
-    } catch (e) { console.error(e); } finally { setIsLoading(false); }
+    } catch (e) { 
+        console.error("City selection error:", e); 
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   const handlePlayAudio = async (id: string, text: string) => {
