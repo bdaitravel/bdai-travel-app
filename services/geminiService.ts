@@ -11,9 +11,6 @@ const LANGUAGE_RULES: Record<string, string> = {
     fr: "PERSONNALITÉ: Vous êtes Dai, analyste senior de BDAI. STYLE: Cynique et narratif. FOCUS: Histoire profonde, légendes et secrets culturels. RÈGLE: Chaque description doit dépasser 400 mots. RÉPONDEZ EXCLUSIVEMENT EN FRANÇAIS."
 };
 
-/**
- * Función de utilidad para reintentar llamadas a la API de Gemini en caso de errores temporales (503, 429).
- */
 async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1000) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -46,16 +43,22 @@ const generateHash = (str: string) => {
   return Math.abs(hash).toString(36);
 };
 
+/**
+ * Normaliza el nombre de una ciudad corrigiendo erratas, idiomas y variaciones.
+ */
 export const standardizeCityName = async (input: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Normalize this city name to its official name in Spanish: "${input}". Return ONLY the name.`,
+            contents: `Identify the city intended by this input: "${input}". Correct typos, translations, or spelling variations. Return ONLY the official name of the city in Spanish (e.g., "marrakech" -> "Marraquech", "london" -> "Londres"). If you don't know the city, return the original input but capitalized.`,
             config: { temperature: 0 }
         }));
         return response.text?.trim() || input;
-    } catch (e) { return input; }
+    } catch (e) { 
+        console.error("Standardize error:", e);
+        return input; 
+    }
 };
 
 export const getGreetingContext = async (city: string, language: string): Promise<string> => {
@@ -144,11 +147,9 @@ export const generateAudio = async (text: string, language: string = 'es', city:
   const textHash = generateHash(cleanText);
   const cacheKey = `audio_${language}_${textHash}`;
   
-  // 1. Intentar sacar de Supabase primero
   const cached = await getCachedAudio(cacheKey);
   if (cached) return cached;
 
-  // 2. Si no está, pedir a la IA con reintentos para evitar el error 503
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await callAiWithRetry(() => ai.models.generateContent({
@@ -162,7 +163,6 @@ export const generateAudio = async (text: string, language: string = 'es', city:
     
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (audioData) {
-        // Guardar en Supabase en segundo plano
         saveAudioToCache(cacheKey, audioData).catch(console.error);
     }
     return audioData;
