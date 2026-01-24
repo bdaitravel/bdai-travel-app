@@ -14,11 +14,11 @@ import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verify
 import { STATIC_TOURS } from './data/toursData';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Credential email", codeLabel: "security code", login: "Send Code", verify: "Access", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing data...", loadingTour: "Dai is deconstructing urban reality...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store" },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email de credencial", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Sincronizando...", loadingTour: "Dai está deconstruyendo la realidad urbana...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda" },
-  ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email de credencial", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa el teu email o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa el teu email", sentTo: "Codi enviat a:", tryDifferent: "Canviar email", close: "Tancar", loading: "Carregant...", loadingTour: "La Dai està deconstruint la realitat urbana...", navElite: "Elit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga" },
-  eu: { welcome: "Bidaer Log:", explorer: "Esploratzailea", searchPlaceholder: "Helburu hiria...", emailPlaceholder: "Egiaztapen emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu tu emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu tu emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai errealitate urbanoa aztertzen ari da...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda" },
-  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email d'accès", codeLabel: "code de sécurité", login: "Envoyer le Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai déconstruit la réalité urbaine...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique" }
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Credential email", codeLabel: "security code", login: "Send Code", verify: "Access", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing data...", loadingTour: "Dai is deconstructing urban reality...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", quotaError: "Dai is exhausted. Please wait a minute before requesting more routes." },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email de credencial", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Sincronizando...", loadingTour: "Dai está deconstruyendo la realidad urbana...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", quotaError: "Dai está exhausta. Por favor, espera un minuto antes de pedir más rutas." },
+  ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email de credencial", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa el teu email o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", resend: "Renvoyer", checkEmail: "Revisa el teu email", sentTo: "Codi enviat a:", tryDifferent: "Canviar email", close: "Tancar", loading: "Carregant...", loadingTour: "La Dai està deconstruint la realitat urbana...", navElite: "Elit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga", quotaError: "La Dai està esgotada. Espera un minut per demanar més rutes." },
+  eu: { welcome: "Bidaer Log:", explorer: "Esploratzailea", searchPlaceholder: "Helburu hiria...", emailPlaceholder: "Egiaztapen emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu tu emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu tu emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai errealitate urbanoa aztertzen ari da...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", quotaError: "Dai nekatuta dago. Itxaron minutu bat gehiago eskatzeko." },
+  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email d'accès", codeLabel: "code de sécurité", login: "Envoyer le Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai déconstruit la réalité urbaine...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", quotaError: "Dai est épuisée. Attendez une minute avant de demander plus de routes." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -122,9 +122,6 @@ export default function App() {
   const handleCitySelect = async (cityInput: string) => {
     if (!cityInput.trim() || isLoading) return;
     
-    // 1. PRIORIDAD: COMPROBACIÓN EN CLOUD (Supabase)
-    // Buscamos primero en el caché de Supabase para Madrid, Barcelona, Sevilla o cualquier otra.
-    // Esto permite que las actualizaciones en la nube se vean antes que los datos locales.
     try {
         const dbCached = await getCachedTours(cityInput, user.language || 'es');
         if (dbCached && dbCached.length > 0) {
@@ -134,10 +131,12 @@ export default function App() {
             return;
         }
 
-        // 2. FALLBACK: DATOS ESTÁTICOS LOCALES
-        // Solo si no hay nada en Supabase, miramos los tours harcodeados.
         const normInput = normalizeKey(cityInput);
-        const staticMatches = STATIC_TOURS.filter(t => normalizeKey(t.city) === normInput);
+        const staticMatches = STATIC_TOURS.filter(t => {
+            const normCity = normalizeKey(t.city);
+            return normCity.includes(normInput) || normInput.includes(normCity);
+        });
+        
         if (staticMatches.length > 0) {
             setSelectedCity(staticMatches[0].city);
             setTours(staticMatches);
@@ -145,11 +144,8 @@ export default function App() {
             return;
         }
 
-        // 3. SI NO ESTÁ EN NINGÚN SITIO, NORMALIZAMOS CON IA
-        // Intentamos corregir el nombre (ej. "Madri" -> "Madrid")
         const standardizedName = await standardizeCityName(cityInput);
         
-        // Volvemos a mirar en Supabase con el nombre corregido
         const secondCacheCheck = await getCachedTours(standardizedName, user.language || 'es');
         if (secondCacheCheck && secondCacheCheck.length > 0) {
             setSelectedCity(standardizedName);
@@ -158,7 +154,6 @@ export default function App() {
             return;
         }
 
-        // 4. GENERACIÓN DESDE CERO (Aquí sí entra la pantalla de carga pesada)
         setIsLoading(true);
         setLoadingMessage(t('loadingTour'));
         
@@ -171,8 +166,11 @@ export default function App() {
             await saveToursToCache(standardizedName, user.language || 'es', generated);
             setView(AppView.CITY_DETAIL);
         }
-    } catch (e) { 
+    } catch (e: any) { 
         console.error("City selection error:", e); 
+        if (e.message?.includes("429") || e.message?.includes("RESOURCE_EXHAUSTED")) {
+            alert(t('quotaError'));
+        }
     } finally { 
         setIsLoading(false); 
     }

@@ -21,7 +21,6 @@ const generateHash = (str: string) => {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
   }
   return Math.abs(hash).toString(36);
 };
@@ -55,14 +54,16 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const interestsStr = userProfile.interests.length > 0 ? userProfile.interests.join(", ") : "historia y cultura";
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Genera 3 TOURS para ${cityInput}. Intereses del usuario: [${interestsStr}]. 
-  
-  REGLAS OBLIGATORIAS:
-  1. PARADAS: Cada tour DEBE tener MÍNIMO 10 paradas (entre 10 y 12). No acepto menos.
-  2. TÍTULOS: No uses NUNCA las palabras 'Ruta' o 'Protocolo'. Crea nombres sugerentes sobre el alma de la ciudad.
-  3. CONTENIDO: Cada parada es una MASTERCLASS de más de 450 palabras de texto puro.
-  4. TEMÁTICA: Olvida la ingeniería y materiales. Céntrate en: Historia real, leyendas locales, anécdotas de personajes históricos, salseo de época y curiosidades culturales. 
-  5. ESTILO: Eres Dai, cínica, analítica y apasionada por los secretos históricos.`;
+  const authenticBizInstruction = userProfile.interests.includes('authentic_biz') 
+    ? "IMPORTANTE: El usuario busca 'Negocios Auténticos'. Prioriza talleres artesanales (ej: Mantas de Ezcaray en La Rioja), bodegas con historia, hornos centenarios, tiendas de ultramarinos con alma y locales que definan la identidad comercial y humana del pueblo o ciudad. No hables de franquicias."
+    : "";
+
+  const prompt = `Genera 3 TOURS para ${cityInput}. Intereses: [${interestsStr}]. ${authenticBizInstruction}
+  REGLAS:
+  1. PARADAS: Mínimo 10.
+  2. TÍTULOS: Sin usar 'Ruta' o 'Protocolo'.
+  3. CONTENIDO: Masterclass de +450 palabras por parada.
+  4. TEMÁTICA: Salseo histórico, drama humano, leyendas y misterio.`;
 
   const responseSchema = {
     type: Type.ARRAY,
@@ -78,7 +79,6 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         stops: {
           type: Type.ARRAY,
           minItems: 10,
-          maxItems: 12,
           items: {
             type: Type.OBJECT,
             properties: {
@@ -103,14 +103,13 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
 
   try {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
+        model: 'gemini-3-flash-preview', 
         contents: prompt,
         config: { 
             systemInstruction: langRule,
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            maxOutputTokens: 60000,
-            thinkingConfig: { thinkingBudget: 20000 },
+            maxOutputTokens: 25000,
             temperature: 0.8
         }
     });
@@ -120,35 +119,26 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
         ...t, id: `tour_${idx}_${Date.now()}`, city: cityInput, difficulty: 'Moderate',
         stops: t.stops.map((s: any, sIdx: number) => ({ ...s, id: `s_${idx}_${sIdx}_${Date.now()}`, visited: false }))
     }));
-  } catch (error) { 
-    console.error("Gemini Tour Generation Error:", error);
-    return []; 
-  }
+  } catch (error) { throw error; }
 };
 
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text).substring(0, 4000);
   const textHash = generateHash(cleanText);
   const cacheKey = `audio_${language}_${textHash}`;
-
   const cached = await getCachedAudio(cacheKey);
   if (cached) return cached;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const voicePrompt = language === 'es' 
-        ? `Actúa como Dai. Voz madura, culta y con un toque cínico. Lee este relato histórico con ritmo: ${cleanText}`
-        : cleanText;
-
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: voicePrompt }] }],
+      contents: [{ parts: [{ text: `Voz Dai, cínica y culta: ${cleanText}` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
       },
     });
-    
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (audioData) await saveAudioToCache(cacheKey, audioData);
     return audioData;
@@ -160,7 +150,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Analyze for safety. Respond ONLY "SAFE" or "UNSAFE". Text: "${text}"`,
+            contents: `SAFE or UNSAFE? Text: "${text}"`,
             config: { temperature: 0 }
         });
         return response.text?.trim().toUpperCase().includes('SAFE') ?? true;
@@ -169,7 +159,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
 
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Artistic and evocative postcard of ${city}. Focus on its history and soul. Interests: ${interests.join(', ')}. Cinema style, 9:16 vertical.`;
+    const prompt = `Artistic vertical postcard of ${city}. Soul of the place. Interests: ${interests.join(', ')}.`;
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',

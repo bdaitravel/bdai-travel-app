@@ -39,8 +39,14 @@ export const syncUserProfile = async (user: UserProfile) => {
 // --- TOURS (EN TABLA) ---
 export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
   const normCity = normalizeKey(city);
-  const { data, error } = await supabase.from('tours_cache').select('data').eq('city', normCity).eq('language', language).maybeSingle();
-  return (error || !data) ? null : (data.data as Tour[]);
+  // Usamos ilike con % para que si pones "Vitoria" encuentre "Vitoria-Gasteiz"
+  const { data, error } = await supabase.from('tours_cache')
+    .select('data')
+    .ilike('city', `%${normCity}%`)
+    .eq('language', language)
+    .limit(1);
+    
+  return (error || !data || data.length === 0) ? null : (data[0].data as Tour[]);
 };
 
 export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
@@ -52,17 +58,10 @@ export const saveToursToCache = async (city: string, language: string, tours: To
 export const getCachedAudio = async (key: string): Promise<string | null> => {
   try {
       const fileName = `${normalizeKey(key)}.txt`;
-      // Buscamos el archivo en la "Caja" (Bucket) de audios
       const { data, error } = await supabase.storage.from('audios').download(fileName);
-      
-      if (error || !data) {
-          console.debug("[Storage] Audio no encontrado en cache:", fileName);
-          return null;
-      }
+      if (error || !data) return null;
       return await data.text();
-  } catch (e) { 
-      return null; 
-  }
+  } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (key: string, base64: string) => {
@@ -70,18 +69,8 @@ export const saveAudioToCache = async (key: string, base64: string) => {
   try {
       const fileName = `${normalizeKey(key)}.txt`;
       const blob = new Blob([base64], { type: 'text/plain' });
-      
-      // Subimos el archivo al Storage. Esto NO aparece en las tablas del Table Editor.
-      const { error } = await supabase.storage.from('audios').upload(fileName, blob, {
-          upsert: true,
-          contentType: 'text/plain'
-      });
-      
-      if (error) console.error("[Storage] Error al subir:", error.message);
-      else console.log("[Storage] Audio guardado correctamente como archivo:", fileName);
-  } catch (e) { 
-      console.error("[Storage] Error crítico:", e); 
-  }
+      await supabase.storage.from('audios').upload(fileName, blob, { upsert: true, contentType: 'text/plain' });
+  } catch (e) { console.error(e); }
 };
 
 // --- AUTH ---

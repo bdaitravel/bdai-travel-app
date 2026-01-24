@@ -134,6 +134,7 @@ export const LANGUAGES = [
 export const INTEREST_OPTIONS = [
   { id: 'history', label: { es: 'Historia', en: 'History', ca: 'Història', eu: 'Historia', fr: 'Histoire' }, icon: '🏛️' },
   { id: 'food', label: { es: 'Gastro', en: 'Food', ca: 'Gastro', eu: 'Gastro', fr: 'Gastro' }, icon: '🍷' },
+  { id: 'authentic_biz', label: { es: 'Negocios Auténticos', en: 'Authentic Biz', ca: 'Negocis Locals', eu: 'Negozio Autentikoak', fr: 'Boutiques Authentiques' }, icon: '🏪' },
   { id: 'art', label: { es: 'Arte', en: 'Art', ca: 'Art', eu: 'Artea', fr: 'Art' }, icon: '🎨' },
   { id: 'photo', label: { es: 'Foto', en: 'Photo', ca: 'Foto', eu: 'Argazki', fr: 'Photo' }, icon: '📸' },
   { id: 'nature', label: { es: 'Naturaleza', en: 'Nature', ca: 'Natura', eu: 'Natura', fr: 'Nature' }, icon: '🌿' },
