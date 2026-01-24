@@ -11,16 +11,20 @@ const LANGUAGE_RULES: Record<string, string> = {
     fr: "PERSONNALITÉ: Vous êtes Dai, analyste senior de BDAI. STYLE: Cynique et narratif. FOCUS: Histoire profonde, légendes et secrets culturels. RÈGLE: Chaque description doit dépasser 400 mots. RÉPONDEZ EXCLUSIVEMENT EN FRANÇAIS."
 };
 
-// Función auxiliar para reintentar llamadas a la IA si hay saturación (Error 503)
-async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1500) {
+/**
+ * Función de utilidad para reintentar llamadas a la API de Gemini en caso de errores temporales (503, 429).
+ */
+async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1000) {
     for (let i = 0; i < retries; i++) {
         try {
             return await fn();
         } catch (error: any) {
-            const isServiceBusy = error.message?.includes('503') || error.message?.includes('overloaded') || error.message?.includes('429');
-            if (isServiceBusy && i < retries - 1) {
-                console.warn(`Dai está saturada. Reintento ${i + 1}/${retries}...`);
-                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+            const errorMsg = error.message || "";
+            const isRetryable = errorMsg.includes('503') || errorMsg.includes('overloaded') || errorMsg.includes('429') || errorMsg.includes('UNAVAILABLE');
+            
+            if (isRetryable && i < retries - 1) {
+                console.warn(`[BDAI] Dai está ocupada (Intento ${i + 1}/${retries}). Reintentando en ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
                 continue;
             }
             throw error;
@@ -144,7 +148,7 @@ export const generateAudio = async (text: string, language: string = 'es', city:
   const cached = await getCachedAudio(cacheKey);
   if (cached) return cached;
 
-  // 2. Si no está, pedir a la IA con reintentos por si está saturada
+  // 2. Si no está, pedir a la IA con reintentos para evitar el error 503
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await callAiWithRetry(() => ai.models.generateContent({
@@ -158,7 +162,7 @@ export const generateAudio = async (text: string, language: string = 'es', city:
     
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     if (audioData) {
-        // Guardar en Supabase para la próxima vez (esto ocurre en segundo plano)
+        // Guardar en Supabase en segundo plano
         saveAudioToCache(cacheKey, audioData).catch(console.error);
     }
     return audioData;
@@ -168,51 +172,30 @@ export const generateAudio = async (text: string, language: string = 'es', city:
   }
 };
 
-/**
- * Moderates content to ensure safety in community discussions.
- */
 export const moderateContent = async (text: string): Promise<boolean> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Analyze if the following message is appropriate for a travel community. It should not contain hate speech, violence, or extreme toxicity. Respond ONLY with "SAFE" or "UNSAFE": "${text}"`,
+            contents: `Analyze if the following message is appropriate: "${text}". Respond ONLY with "SAFE" or "UNSAFE"`,
             config: { temperature: 0 }
         }));
         return response.text?.trim().toUpperCase() === "SAFE";
-    } catch (e) { 
-        return true; // Default to safe if AI call fails
-    }
+    } catch (e) { return true; }
 };
 
-/**
- * Generates an AI-powered postcard image for a specific city and interests.
- */
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `A stunning vertical travel postcard of ${city} capturing the essence of ${interests.join(', ')}. Cinematic photography, high resolution, artistic style. No text or logos.`;
+    const prompt = `A stunning vertical travel postcard of ${city} capturing the essence of ${interests.join(', ')}. Cinematic photography. No text.`;
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [{ text: prompt }]
-            },
-            config: {
-                imageConfig: {
-                    aspectRatio: "9:16"
-                }
-            }
+            contents: { parts: [{ text: prompt }] },
+            config: { imageConfig: { aspectRatio: "9:16" } }
         }));
-        
-        // Find the image part in the response
         for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            }
+            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
         }
         return null;
-    } catch (e) {
-        console.error("Postcard generation error:", e);
-        return null;
-    }
+    } catch (e) { return null; }
 };

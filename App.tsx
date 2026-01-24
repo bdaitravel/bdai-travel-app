@@ -162,7 +162,7 @@ export default function App() {
         }
     } catch (e: any) { 
         console.error("City selection error:", e); 
-        const isQuota = e.message?.includes("503") || e.message?.includes("429");
+        const isQuota = e.message?.includes("503") || e.message?.includes("429") || e.message?.includes("UNAVAILABLE");
         setAuthError(isQuota ? t('quotaError') : e.message);
     } finally { 
         setIsLoading(false); 
@@ -181,7 +181,9 @@ export default function App() {
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         const ctx = audioContextRef.current;
         if (ctx.state === 'suspended') await ctx.resume();
+        
         const base64 = await generateAudio(text, user.language || 'es', selectedCity || 'Global');
+        
         if (base64) {
             const binary = atob(base64);
             const bytes = new Uint8Array(binary.length);
@@ -196,9 +198,17 @@ export default function App() {
             source.onended = () => setAudioPlayingId(null);
             source.start(0); audioSourceRef.current = source;
             setAudioPlayingId(id);
+        } else {
+            // Si no hay audio, reseteamos el estado de carga
+            setAudioLoadingId(null);
         }
-    } catch(e) { console.error(e); } 
-    finally { setAudioLoadingId(null); }
+    } catch(e) { 
+        console.error("Audio Playback Error:", e);
+        setAudioLoadingId(null);
+        setAudioPlayingId(null);
+    } finally { 
+        setAudioLoadingId(null); 
+    }
   };
 
   return (
