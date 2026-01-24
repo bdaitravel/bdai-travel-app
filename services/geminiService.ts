@@ -11,6 +11,23 @@ const LANGUAGE_RULES: Record<string, string> = {
     fr: "PERSONNALITÉ: Vous êtes Dai, analyste senior de BDAI. STYLE: Cynique et narratif. FOCUS: Histoire profonde, légendes et secrets culturels. RÈGLE: Chaque description doit dépasser 400 mots. RÉPONDEZ EXCLUSIVEMENT EN FRANÇAIS."
 };
 
+// Función auxiliar para reintentar llamadas a la IA si hay saturación (Error 503)
+async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1500) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (error: any) {
+            const isServiceBusy = error.message?.includes('503') || error.message?.includes('overloaded') || error.message?.includes('429');
+            if (isServiceBusy && i < retries - 1) {
+                console.warn(`Dai está saturada. Reintento ${i + 1}/${retries}...`);
+                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+                continue;
+            }
+            throw error;
+        }
+    }
+}
+
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
     return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '').replace(/\*/g, '').trim();
@@ -28,11 +45,11 @@ const generateHash = (str: string) => {
 export const standardizeCityName = async (input: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
-        const response = await ai.models.generateContent({
+        const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `Normalize this city name to its official name in Spanish: "${input}". Return ONLY the name.`,
             config: { temperature: 0 }
-        });
+        }));
         return response.text?.trim() || input;
     } catch (e) { return input; }
 };
@@ -40,11 +57,11 @@ export const standardizeCityName = async (input: string): Promise<string> => {
 export const getGreetingContext = async (city: string, language: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
-        const response = await ai.models.generateContent({
+        const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `You are Dai. Technical but stylish greeting for a Bidaer in ${city}. Max 12 words. Respond ONLY in: ${language}.`,
             config: { temperature: 0.7 }
-        });
+        }));
         return response.text?.trim() || "";
     } catch (e) { return ""; }
 };
@@ -54,11 +71,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   const interestsStr = userProfile.interests.length > 0 ? userProfile.interests.join(", ") : "historia y cultura";
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const authenticBizInstruction = userProfile.interests.includes('authentic_biz') 
-    ? "IMPORTANTE: El usuario busca 'Negocios Auténticos'. Prioriza talleres artesanales (ej: Mantas de Ezcaray en La Rioja), bodegas con historia, hornos centenarios, tiendas de ultramarinos con alma y locales que definan la identidad comercial y humana del pueblo o ciudad. No hables de franquicias."
-    : "";
-
-  const prompt = `Genera 3 TOURS para ${cityInput}. Intereses: [${interestsStr}]. ${authenticBizInstruction}
+  const prompt = `Genera 3 TOURS para ${cityInput}. Intereses: [${interestsStr}].
   REGLAS:
   1. PARADAS: Mínimo 10.
   2. TÍTULOS: Sin usar 'Ruta' o 'Protocolo'.
@@ -102,7 +115,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
   };
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await callAiWithRetry(() => ai.models.generateContent({
         model: 'gemini-3-flash-preview', 
         contents: prompt,
         config: { 
@@ -112,7 +125,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
             maxOutputTokens: 25000,
             temperature: 0.8
         }
-    });
+    }));
     
     const parsed = JSON.parse(response.text || "[]");
     return parsed.map((t: any, idx: number) => ({
@@ -126,49 +139,80 @@ export const generateAudio = async (text: string, language: string = 'es', city:
   const cleanText = cleanDescriptionText(text).substring(0, 4000);
   const textHash = generateHash(cleanText);
   const cacheKey = `audio_${language}_${textHash}`;
+  
+  // 1. Intentar sacar de Supabase primero
   const cached = await getCachedAudio(cacheKey);
   if (cached) return cached;
 
+  // 2. Si no está, pedir a la IA con reintentos por si está saturada
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await ai.models.generateContent({
+    const response = await callAiWithRetry(() => ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: `Voz Dai, cínica y culta: ${cleanText}` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
       },
-    });
+    }));
+    
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (audioData) await saveAudioToCache(cacheKey, audioData);
+    if (audioData) {
+        // Guardar en Supabase para la próxima vez (esto ocurre en segundo plano)
+        saveAudioToCache(cacheKey, audioData).catch(console.error);
+    }
     return audioData;
-  } catch (e) { return ""; }
+  } catch (e) { 
+    console.error("Error crítico de Audio:", e);
+    return ""; 
+  }
 };
 
+/**
+ * Moderates content to ensure safety in community discussions.
+ */
 export const moderateContent = async (text: string): Promise<boolean> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
-        const response = await ai.models.generateContent({
+        const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `SAFE or UNSAFE? Text: "${text}"`,
+            contents: `Analyze if the following message is appropriate for a travel community. It should not contain hate speech, violence, or extreme toxicity. Respond ONLY with "SAFE" or "UNSAFE": "${text}"`,
             config: { temperature: 0 }
-        });
-        return response.text?.trim().toUpperCase().includes('SAFE') ?? true;
-    } catch (e) { return true; }
+        }));
+        return response.text?.trim().toUpperCase() === "SAFE";
+    } catch (e) { 
+        return true; // Default to safe if AI call fails
+    }
 };
 
+/**
+ * Generates an AI-powered postcard image for a specific city and interests.
+ */
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Artistic vertical postcard of ${city}. Soul of the place. Interests: ${interests.join(', ')}.`;
+    const prompt = `A stunning vertical travel postcard of ${city} capturing the essence of ${interests.join(', ')}. Cinematic photography, high resolution, artistic style. No text or logos.`;
     try {
-        const response = await ai.models.generateContent({
+        const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: prompt }] },
-            config: { imageConfig: { aspectRatio: "9:16" } }
-        });
-        for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            contents: {
+                parts: [{ text: prompt }]
+            },
+            config: {
+                imageConfig: {
+                    aspectRatio: "9:16"
+                }
+            }
+        }));
+        
+        // Find the image part in the response
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
         }
         return null;
-    } catch (e) { return null; }
+    } catch (e) {
+        console.error("Postcard generation error:", e);
+        return null;
+    }
 };
