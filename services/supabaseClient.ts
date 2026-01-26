@@ -19,7 +19,7 @@ export const normalizeKey = (text: string) => {
 // --- PERFILES ---
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   if (!email) return null;
-  const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase().trim()).maybeSingle();
+  const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase()).maybeSingle();
   return (error || !data) ? null : { ...data, isLoggedIn: true } as any;
 };
 
@@ -27,7 +27,7 @@ export const syncUserProfile = async (user: UserProfile) => {
   if (!user || !user.id || user.id === 'guest') return;
   await supabase.from('profiles').upsert({
     id: user.id,
-    email: user.email.toLowerCase().trim(),
+    email: user.email.toLowerCase(),
     language: user.language || 'es',
     miles: user.miles || 0,
     username: user.username || 'traveler',
@@ -39,7 +39,6 @@ export const syncUserProfile = async (user: UserProfile) => {
 // --- TOURS (EN TABLA) ---
 export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
   const normCity = normalizeKey(city);
-  // Usamos ilike con % para que si pones "Vitoria" encuentre "Vitoria-Gasteiz"
   const { data, error } = await supabase.from('tours_cache')
     .select('data')
     .ilike('city', `%${normCity}%`)
@@ -54,7 +53,7 @@ export const saveToursToCache = async (city: string, language: string, tours: To
   await supabase.from('tours_cache').upsert({ city: normCity, language, data: tours }, { onConflict: 'city,language' });
 };
 
-// --- AUDIOS (EN STORAGE - NO EN TABLA) ---
+// --- AUDIOS ---
 export const getCachedAudio = async (key: string): Promise<string | null> => {
   try {
       const fileName = `${normalizeKey(key)}.txt`;
@@ -73,13 +72,17 @@ export const saveAudioToCache = async (key: string, base64: string) => {
   } catch (e) { console.error(e); }
 };
 
-// --- AUTH ---
+// --- AUTH ORIGINAL ---
 export const sendOtpEmail = async (email: string) => {
-    return await supabase.auth.signInWithOtp({ email: email.toLowerCase().trim(), options: { shouldCreateUser: true } });
+    return await supabase.auth.signInWithOtp({ email });
 };
 
 export const verifyOtpCode = async (email: string, token: string) => {
-    return await supabase.auth.verifyOtp({ email: email.toLowerCase().trim(), token: token.trim(), type: 'email' });
+    return await supabase.auth.verifyOtp({ 
+        email, 
+        token, 
+        type: 'email' 
+    });
 };
 
 export const validateEmailFormat = (email: string) => {

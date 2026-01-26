@@ -14,11 +14,11 @@ import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verify
 import { STATIC_TOURS } from './data/toursData';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Credential email", codeLabel: "security code", login: "Send Code", verify: "Access", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing data...", loadingTour: "Dai is deconstructing urban reality...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", quotaError: "Dai is exhausted or the server is busy. Retrying automatically..." },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email de credencial", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", quotaError: "Dai está exhausta o el servidor está ocupado. Reintentando..." },
-  ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email de credencial", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa el teu email o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", resend: "Renvoyer", checkEmail: "Revisa el teu email", sentTo: "Codi enviat a:", tryDifferent: "Canviar email", close: "Tancar", loading: "Carregant...", loadingTour: "La Dai està analitzant la ciutat...", navElite: "Elit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga", quotaError: "La Dai està esgotada. Reintentant..." },
-  eu: { welcome: "Bidaer Log:", explorer: "Esploratzailea", searchPlaceholder: "Helburu hiria...", emailPlaceholder: "Egiaztapen emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu tu emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu tu emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai hiria aztertzen ari da...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", quotaError: "Dai nekatuta dago. Berriro saiatzen..." },
-  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email d'accès", codeLabel: "code de sécurité", login: "Envoyer le Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai analyse la ville...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", quotaError: "Dai est épuisée. Nouvelle tentative..." }
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Credential email", codeLabel: "security code", login: "Send Code", verify: "Access", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing data...", loadingTour: "Dai is deconstructing urban reality...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", quotaError: "Dai is exhausted or the server is busy. Retrying automatically...", timeoutError: "Connection timeout. Please try again." },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email de credencial", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", quotaError: "Dai está exhausta o el servidor está ocupado. Reintentando...", timeoutError: "Tiempo de espera agotado. Inténtalo de nuevo." },
+  ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email de credencial", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa el teu email o SPAM", codeError: "Codi no vàlid", selectLang: "Idioma", resend: "Renvoyer", checkEmail: "Revisa el teu email", sentTo: "Codi enviat a:", tryDifferent: "Canviar email", close: "Tancar", loading: "Carregant...", loadingTour: "La Dai està analitzant la ciutat...", navElite: "Elit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga", quotaError: "La Dai està esgotada. Reintentant...", timeoutError: "Temps d'espera esgotat." },
+  eu: { welcome: "Bidaer Log:", explorer: "Esploratzailea", searchPlaceholder: "Helburu hiria...", emailPlaceholder: "Egiaztapen emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu tu emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu tu emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai hiria aztertzen ari da...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", quotaError: "Dai nekatuta dago. Berriro saiatzen...", timeoutError: "Denbora agortu da." },
+  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email d'accès", codeLabel: "code de seguridad", login: "Envoyer le Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai analyse la ville...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", quotaError: "Dai est épuisée. Nouvelle tentative...", timeoutError: "Délai d'attente dépassé." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -88,19 +88,20 @@ export default function App() {
     if (!email || !validateEmailFormat(email) || isLoading) return;
     setAuthError(null);
     setIsLoading(true);
-    setLoadingMessage(t('loading'));
     try {
       const { error } = await sendOtpEmail(email);
       if (error) throw error;
       setLoginStep('CODE');
-    } catch (e: any) { setAuthError(e.message); } 
-    finally { setIsLoading(false); }
+    } catch (e: any) { 
+      setAuthError(e.message); 
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const handleVerifyOtp = async () => {
     if (!otpCode || otpCode.length < 6 || isLoading) return;
     setIsLoading(true);
-    setLoadingMessage(t('loading'));
     setAuthError(null);
     try {
       const { data, error } = await verifyOtpCode(email, otpCode);
@@ -119,9 +120,6 @@ export default function App() {
     finally { setIsLoading(false); }
   };
 
-  /**
-   * Manejador de selección de ciudad mejorado con Normalización Inteligente (Fuzzy Matching).
-   */
   const handleCitySelect = async (cityInput: string) => {
     if (!cityInput.trim() || isLoading) return;
     setAuthError(null);
@@ -129,12 +127,10 @@ export default function App() {
     setLoadingMessage(t('loadingTour'));
     
     try {
-        // PASO 1: Normalizar el nombre de la ciudad con la IA (para corregir erratas como "marrakech" -> "Marraquech")
         const standardizedName = await standardizeCityName(cityInput);
         setSelectedCity(standardizedName);
         setLoadingMessage(`${t('loadingTour')} (${standardizedName})`);
 
-        // PASO 2: Mirar si ya existe en la base de datos con el nombre normalizado
         const dbCached = await getCachedTours(standardizedName, user.language || 'es');
         if (dbCached && dbCached.length > 0) {
             setTours(dbCached);
@@ -143,7 +139,6 @@ export default function App() {
             return;
         }
 
-        // PASO 3: Mirar si es una de nuestras ciudades estáticas (fallbacks rápidos)
         const normInput = normalizeKey(standardizedName);
         const staticMatches = STATIC_TOURS.filter(t => {
             const normCity = normalizeKey(t.city);
@@ -157,7 +152,6 @@ export default function App() {
             return;
         }
 
-        // PASO 4: Si no existe, generar nuevos tours para la ciudad normalizada
         const greeting = await getGreetingContext(standardizedName, user.language || 'es');
         const generated = await generateToursForCity(standardizedName, user, greeting, false);
         
@@ -187,9 +181,7 @@ export default function App() {
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         const ctx = audioContextRef.current;
         if (ctx.state === 'suspended') await ctx.resume();
-        
         const base64 = await generateAudio(text, user.language || 'es', selectedCity || 'Global');
-        
         if (base64) {
             const binary = atob(base64);
             const bytes = new Uint8Array(binary.length);
@@ -204,13 +196,9 @@ export default function App() {
             source.onended = () => setAudioPlayingId(null);
             source.start(0); audioSourceRef.current = source;
             setAudioPlayingId(id);
-        } else {
-            setAudioLoadingId(null);
         }
     } catch(e) { 
         console.error("Audio Playback Error:", e);
-        setAudioLoadingId(null);
-        setAudioPlayingId(null);
     } finally { 
         setAudioLoadingId(null); 
     }

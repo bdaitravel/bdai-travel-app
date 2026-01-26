@@ -4,24 +4,24 @@ import { Tour, Stop, UserProfile } from '../types';
 import { getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
 
 const LANGUAGE_RULES: Record<string, string> = {
-    es: "PERSONALIDAD: Eres Dai, analista senior de BDAI. ESTILO: CÍNICO, NARRATIVO, HIPER-DETALLISTA. ENFOQUE: Historia profunda, salseo histórico (chismes de época), leyendas urbanas y secretos culturales. REGLA CRÍTICA: Cada descripción de parada DEBE ser extensa y profunda, superando las 400 palabras. EVITA términos de ingeniería o arquitectura técnica aburrida; busca el drama humano, los secretos y el misterio. RESPONDE EXCLUSIVAMENTE EN ESPAÑOL DE ESPAÑA.",
-    en: "PERSONALITY: You are Dai, senior analyst for BDAI. STYLE: CYNICAL, NARRATIVE, HYPER-DETAILED. FOCUS: Deep history, historical gossip, urban legends, and cultural secrets. CRITICAL RULE: Each stop description MUST exceed 400 words. AVOID boring engineering or technical terms; focus on drama and mystery. RESPOND EXCLUSIVELY IN ENGLISH.",
-    ca: "PERSONALITAT: Ets la Dai, analista sènior de BDAI. ESTIL: Cínic i narratiu. ENFOCAMENT: Història profunda, llegendes i secrets culturals. REGLA: Cada descripció ha de superar les 400 paraules. RESPON EXCLUSIVAMENT EN CATALÀ.",
-    eu: "NORTASUNA: Dai zara, BDAI-ko analista seniorra. ESTILOA: Zinikoa eta narratiboa. ENFOKEA: Historia sakona, kondairak eta sekretu kulturalak. ARAUA: Deskribapen bakoitzak 400 hitz baino gehiago izan behar ditu. ERANTZUN BAKARRIK EUSKARAZ.",
-    fr: "PERSONNALITÉ: Vous êtes Dai, analyste senior de BDAI. STYLE: Cynique et narratif. FOCUS: Histoire profonde, légendes et secrets culturels. RÈGLE: Chaque description doit dépasser 400 mots. RÉPONDEZ EXCLUSIVEMENT EN FRANÇAIS."
+    es: "PERSONALIDAD: Eres Dai, analista senior de BDAI. ESTILO: CÍNICO, NARRATIVO, HIPER-DETALLISTA. ENFOQUE: Historia profunda, salseo histórico (chismes de época), leyendas urbanas y secretos culturales. REGLA CRÍTICA: Cada descripción de parada DEBE ser extensa y profunda, superando las 450 palabras por parada. EVITA términos de ingeniería o arquitectura técnica aburrida; busca el drama humano, los secretos y el misterio. RESPONDE EXCLUSIVAMENTE EN ESPAÑOL DE ESPAÑA.",
+    en: "PERSONALITY: You are Dai, senior analyst for BDAI. STYLE: CYNICAL, NARRATIVE, HYPER-DETAILED. FOCUS: Deep history, historical gossip, urban legends, and cultural secrets. CRITICAL RULE: Each stop description MUST exceed 450 words. AVOID boring engineering or technical terms; focus on drama and mystery. RESPOND EXCLUSIVELY IN ENGLISH.",
+    ca: "PERSONALITAT: Ets la Dai, analista sènior de BDAI. ESTIL: Cínic i narratiu. ENFOCAMENT: Història profunda, llegendes i secrets culturals. REGLA: Cada descripció ha de superar les 450 paraules. RESPON EXCLUSIVAMENT EN CATALÀ.",
+    eu: "NORTASUNA: Dai zara, BDAI-ko analista seniorra. ESTILOA: Zinikoa eta narratiboa. ENFOKEA: Historia sakona, kondairak eta sekretu kulturalak. ARAUA: Deskribapen bakoitzak 450 hitz baino gehiago izan behar ditu. ERANTZUN BAKARRIK EUSKARAZ.",
+    fr: "PERSONNALITÉ: Vous êtes Dai, analyste senior de BDAI. STYLE: Cynique et narratif. FOCUS: Histoire profonde, légendes et secrets culturels. RÈGLE: Chaque description doit dépasser 450 mots. RÉPONDEZ EXCLUSIVEMENT EN FRANÇAIS."
 };
 
-async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1000) {
+async function callAiWithRetry(fn: () => Promise<any>, retries = 4, delay = 2000) {
     for (let i = 0; i < retries; i++) {
         try {
             return await fn();
         } catch (error: any) {
             const errorMsg = error.message || "";
-            const isRetryable = errorMsg.includes('503') || errorMsg.includes('overloaded') || errorMsg.includes('429') || errorMsg.includes('UNAVAILABLE');
+            const isRetryable = errorMsg.includes('503') || errorMsg.includes('overloaded') || errorMsg.includes('429') || errorMsg.includes('UNAVAILABLE') || errorMsg.includes('deadline');
             
             if (isRetryable && i < retries - 1) {
-                console.warn(`[BDAI] Dai está ocupada (Intento ${i + 1}/${retries}). Reintentando en ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                console.warn(`[BDAI] Reintentando petición pesada (${i + 1}/${retries})...`);
+                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
                 continue;
             }
             throw error;
@@ -44,20 +44,30 @@ const generateHash = (str: string) => {
 };
 
 /**
- * Normaliza el nombre de una ciudad corrigiendo erratas, idiomas y variaciones.
+ * Normaliza nombres de ciudades reconociendo idiomas regionales y nombres de países.
+ * Si el usuario pone un país (ej. "Guatemala"), lo resuelve a la capital ("Ciudad de Guatemala").
  */
 export const standardizeCityName = async (input: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Identify the city intended by this input: "${input}". Correct typos, translations, or spelling variations. Return ONLY the official name of the city in Spanish (e.g., "marrakech" -> "Marraquech", "london" -> "Londres"). If you don't know the city, return the original input but capitalized.`,
+            contents: `Identify the specific city intended by: "${input}". 
+            RULES:
+            1. If the input is a COUNTRY name, return the name of its CAPITAL city in Spanish.
+            2. If the name is in another language (Basque, Catalan, English, etc.), translate it to its official name in Spanish.
+            EXAMPLES:
+            - "guatemala" -> "Ciudad de Guatemala"
+            - "lekeitio" -> "Lequeitio"
+            - "donostia" -> "San Sebastián"
+            - "mexico" -> "Ciudad de México"
+            - "london" -> "Londres"
+            Return ONLY the city name in Spanish, capitalized. No extra text.`,
             config: { temperature: 0 }
         }));
-        return response.text?.trim() || input;
+        return response.text?.trim().replace(/\.$/, "") || input;
     } catch (e) { 
-        console.error("Standardize error:", e);
-        return input; 
+        return input.charAt(0).toUpperCase() + input.slice(1).toLowerCase(); 
     }
 };
 
@@ -66,7 +76,7 @@ export const getGreetingContext = async (city: string, language: string): Promis
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `You are Dai. Technical but stylish greeting for a Bidaer in ${city}. Max 12 words. Respond ONLY in: ${language}.`,
+            contents: `Greeting for ${city} in ${language}. Max 10 words.`,
             config: { temperature: 0.7 }
         }));
         return response.text?.trim() || "";
@@ -75,15 +85,16 @@ export const getGreetingContext = async (city: string, language: string): Promis
 
 export const generateToursForCity = async (cityInput: string, userProfile: UserProfile, contextGreeting?: string, skipEssential: boolean = false): Promise<Tour[]> => {
   const langRule = LANGUAGE_RULES[userProfile.language] || LANGUAGE_RULES.es;
-  const interestsStr = userProfile.interests.length > 0 ? userProfile.interests.join(", ") : "historia y cultura";
+  const interestsStr = userProfile.interests.join(", ") || "historia y cultura";
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  const prompt = `Genera 3 TOURS para ${cityInput}. Intereses: [${interestsStr}].
-  REGLAS:
-  1. PARADAS: Mínimo 10.
-  2. TÍTULOS: Sin usar 'Ruta' o 'Protocolo'.
-  3. CONTENIDO: Masterclass de +450 palabras por parada.
-  4. TEMÁTICA: Salseo histórico, drama humano, leyendas y misterio.`;
+  const prompt = `Genera exactamente 3 TOURS para ${cityInput}. 
+  Intereses del usuario: [${interestsStr}].
+  REGLAS CRÍTICAS:
+  1. PARADAS: Exactamente 10 paradas por cada tour.
+  2. DESCRIPCIÓN: Cada parada DEBE tener un texto de al menos 450 palabras.
+  3. TEMÁTICA: Salseo histórico, secretos, leyendas urbanas y drama humano.
+  4. FORMATO: JSON estricto.`;
 
   const responseSchema = {
     type: Type.ARRAY,
@@ -129,7 +140,7 @@ export const generateToursForCity = async (cityInput: string, userProfile: UserP
             systemInstruction: langRule,
             responseMimeType: "application/json", 
             responseSchema: responseSchema,
-            maxOutputTokens: 25000,
+            maxOutputTokens: 40000, 
             temperature: 0.8
         }
     }));
@@ -154,22 +165,16 @@ export const generateAudio = async (text: string, language: string = 'es', city:
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await callAiWithRetry(() => ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Voz Dai, cínica y culta: ${cleanText}` }] }],
+      contents: [{ parts: [{ text: cleanText }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
       },
     }));
-    
     const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (audioData) {
-        saveAudioToCache(cacheKey, audioData).catch(console.error);
-    }
+    if (audioData) saveAudioToCache(cacheKey, audioData).catch(console.error);
     return audioData;
-  } catch (e) { 
-    console.error("Error crítico de Audio:", e);
-    return ""; 
-  }
+  } catch (e) { return ""; }
 };
 
 export const moderateContent = async (text: string): Promise<boolean> => {
@@ -177,7 +182,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Analyze if the following message is appropriate: "${text}". Respond ONLY with "SAFE" or "UNSAFE"`,
+            contents: `Appropriate? "${text}". Return SAFE or UNSAFE.`,
             config: { temperature: 0 }
         }));
         return response.text?.trim().toUpperCase() === "SAFE";
@@ -186,7 +191,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
 
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `A stunning vertical travel postcard of ${city} capturing the essence of ${interests.join(', ')}. Cinematic photography. No text.`;
+    const prompt = `Vertical travel postcard of ${city}, focus on ${interests.join(', ')}. No text.`;
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
