@@ -86,12 +86,10 @@ export interface Stop {
   description: string;
   latitude: number;
   longitude: number;
-  // Added 'architecture' to the allowed types to support specific tour stops in toursData.ts
   type: 'historical' | 'food' | 'art' | 'nature' | 'photo' | 'culture' | 'architecture';
   visited: boolean;
   photoSpot?: {
     angle: string;
-    // Fix: Made bestTime and instagramHook optional to reconcile Stop type with static tours data
     bestTime?: string;
     instagramHook?: string;
     milesReward: number;
@@ -129,16 +127,20 @@ export const LANGUAGES = [
   { code: 'ca', name: 'Català' },
   { code: 'eu', name: 'Euskera' },
   { code: 'fr', name: 'Français' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'ja', name: '日本語' },
+  { code: 'zh', name: '中文' },
+  { code: 'ar', name: 'العربية' },
 ];
 
 export const INTEREST_OPTIONS = [
-  { id: 'history', label: { es: 'Historia', en: 'History', ca: 'Història', eu: 'Historia', fr: 'Histoire' }, icon: '🏛️' },
-  { id: 'food', label: { es: 'Gastro', en: 'Food', ca: 'Gastro', eu: 'Gastro', fr: 'Gastro' }, icon: '🍷' },
-  { id: 'authentic_biz', label: { es: 'Negocios Auténticos', en: 'Authentic Biz', ca: 'Negocis Locals', eu: 'Negozio Autentikoak', fr: 'Boutiques Authentiques' }, icon: '🏪' },
-  { id: 'art', label: { es: 'Arte', en: 'Art', ca: 'Art', eu: 'Artea', fr: 'Art' }, icon: '🎨' },
-  { id: 'photo', label: { es: 'Foto', en: 'Photo', ca: 'Foto', eu: 'Argazki', fr: 'Photo' }, icon: '📸' },
-  { id: 'nature', label: { es: 'Naturaleza', en: 'Nature', ca: 'Natura', eu: 'Natura', fr: 'Nature' }, icon: '🌿' },
-  { id: 'night', label: { es: 'Ocio Nocturno', en: 'Nightlife', ca: 'Nit', eu: 'Gaua', fr: 'Nuit' }, icon: '🌙' }
+  { id: 'history', label: { es: 'Historia', en: 'History', ca: 'Història', eu: 'Historia', fr: 'Histoire', de: 'Geschichte', ja: '歴史', zh: '历史', ar: 'تاريخ' }, icon: '🏛️' },
+  { id: 'food', label: { es: 'Gastro', en: 'Food', ca: 'Gastro', eu: 'Gastro', fr: 'Gastro', de: 'Gastro', ja: 'グルメ', zh: '美食', ar: 'طعام' }, icon: '🍷' },
+  { id: 'authentic_biz', label: { es: 'Negocios Auténticos', en: 'Authentic Biz', ca: 'Negocis Locals', eu: 'Negozio Autentikoak', fr: 'Boutiques Authentiques', de: 'Authentische Läden', ja: '地元の店', zh: '地道商家', ar: 'أعمال أصيلة' }, icon: '🏪' },
+  { id: 'art', label: { es: 'Arte', en: 'Art', ca: 'Art', eu: 'Artea', fr: 'Art', de: 'Kunst', ja: 'アート', zh: '艺术', ar: 'فن' }, icon: '🎨' },
+  { id: 'photo', label: { es: 'Foto', en: 'Photo', ca: 'Foto', eu: 'Argazki', fr: 'Photo', de: 'Foto', ja: '写真', zh: '摄影', ar: 'صورة' }, icon: '📸' },
+  { id: 'nature', label: { es: 'Naturaleza', en: 'Nature', ca: 'Natura', eu: 'Natura', fr: 'Nature', de: 'Natur', ja: '自然', zh: '自然', ar: 'طبيعة' }, icon: '🌿' },
+  { id: 'night', label: { es: 'Ocio Nocturno', en: 'Nightlife', ca: 'Nit', eu: 'Gaua', fr: 'Nuit', de: 'Nachtleben', ja: 'ナイトライフ', zh: '夜生活', ar: 'حياة ليلية' }, icon: '🌙' }
 ];
 
 export const AVATARS = [

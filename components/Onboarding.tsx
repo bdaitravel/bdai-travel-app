@@ -55,6 +55,42 @@ const ONBOARDING_TEXT: any = {
         step3Title: "Preuve de Visite", step3Desc: "Pour gagner des miles, vous devez être physiquement sur place. Le GPS vérifie votre exploit.",
         step4Title: "Passeport Numérique", step4Desc: "Collectionnez de vrais tampons et grimpez dans le classement mondial des explorateurs.",
         skip: "Passer", next: "Suivant", start: "Commencer", selectInt: "Vos Intérêts"
+    },
+    de: {
+        step0Title: "Sprache wählen",
+        stepDaiTitle: "Hallo, ich bin Dai", stepDaiDesc: "Ich bin die KI-Stimme von bdai. Ich werde dein persönlicher Experte, Führer und Begleiter auf jeder Reise sein.",
+        step1Title: "KI-gestützte Intelligenz", step1Desc: "Ich erstelle einzigartige Routen basierend darauf, wer du bist und was du liebst.",
+        step2Title: "Die Welt erkunden", step2Desc: "Alle Städte der Welt in deiner Hand. Ich übersetze Kultur für dich.",
+        step3Title: "Besuchsnachweis", step3Desc: "Um Meilen zu sammeln, musst du physisch vor Ort sein. GPS verifiziert deinen Erfolg.",
+        step4Title: "Digitaler Reisepass", step4Desc: "Sammle Stempel und steige im globalen Entdecker-Ranking auf.",
+        skip: "Überspringen", next: "Weiter", start: "Loslegen", selectInt: "Deine Interessen"
+    },
+    ja: {
+        step0Title: "言語を選択",
+        stepDaiTitle: "こんにちは、Daiです", stepDaiDesc: "私はbdaiのAIボイスです。あらゆる旅であなたの専属エキスパート、ガイド、パートナーになります。",
+        step1Title: "AIパワード・インテリジェンス", step1Desc: "あなたの好みや個性に合わせた、ユニークなルートを作成します。",
+        step2Title: "世界を探索", step2Desc: "世界中の都市があなたの手の中に。現地の文化をあなたのために翻訳します。",
+        step3Title: "訪問の証明", step3Desc: "マイルを獲得するには、実際にその場所にいる必要があります。GPSで実績を検証します。",
+        step4Title: "デジタルパスポート", step4Desc: "スタンプを集めて、グローバル・エクスプローラー・ランキングを駆け上がりましょう。",
+        skip: "スキップ", next: "次へ", start: "はじめる", selectInt: "興味のあること"
+    },
+    zh: {
+        step0Title: "选择语言",
+        stepDaiTitle: "你好，我是 Dai", stepDaiDesc: "我是 bdai 的 AI 声音。我将成为你在每次旅行中的私人专家、向导和伴侣。",
+        step1Title: "AI 驱动的智能", step1Desc: "我根据你的身份和喜好创建独特的路线。",
+        step2Title: "探索世界", step2Desc: "世界各地的城市触手可及。我为你翻译文化。",
+        step3Title: "访问证明", step3Desc: "要赚取里程，你必须亲身到达现场。GPS 会验证你的成就。",
+        step4Title: "数字护照", step4Desc: "收集印章并提升全球探险家排名。",
+        skip: "跳过", next: "下一步", start: "开始使用", selectInt: "你的兴趣"
+    },
+    ar: {
+        step0Title: "اختر اللغة",
+        stepDaiTitle: "مرحباً، أنا داي", stepDaiDesc: "أنا صوت الذكاء الاصطناعي في bdai. سأكون خبيرك الشخصي ودليلك ورفيقك في كل رحلة.",
+        step1Title: "ذكاء مدعوم بالذكاء الاصطناعي", step1Desc: "أقوم بإنشاء مسارات فريدة بناءً على هويتك وما تحب.",
+        step2Title: "استكشف العالم", step2Desc: "كل مدن العالم في متناول يدك. أقوم بترجمة الثقافة لك.",
+        step3Title: "إثبات الزيارة", step3Desc: "لكسب الأميال، يجب أن تكون في الموقع فعلياً. يتحقق نظام GPS من إنجازك.",
+        step4Title: "جواز السفر الرقمي", step4Desc: "اجمع الأختام وارتقِ في تصنيف المستكشفين العالمي.",
+        skip: "تخطي", next: "التالي", start: "ابدأ الآن", selectInt: "اهتماماتك"
     }
 };
 
@@ -70,7 +106,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
 
     const handleLanguagePick = (code: string) => {
         onLanguageSelect(code);
-        setStep(1); // Avance automático a Dai
+        setStep(1); 
     };
 
     const handleNext = () => {
@@ -86,12 +122,19 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
                 {step === 0 && (
                     <div className="animate-slide-up text-center">
                         <h2 className="text-3xl font-black text-white mb-8 uppercase tracking-tighter">{t.step0Title}</h2>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-y-6 gap-x-2">
                             {LANGUAGES.map(lang => (
-                                <button key={lang.code} onClick={() => handleLanguagePick(lang.code)} className={`py-4 rounded-2xl font-black transition-all border-2 flex items-center justify-center gap-2 ${language === lang.code ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/5 border-white/10 text-white/60'}`}>
-                                    <span className="text-xs uppercase">{lang.name}</span>
-                                    <FlagIcon code={lang.code} className="w-5" />
-                                </button>
+                                <div key={lang.code} className="flex flex-col items-center gap-2">
+                                    <button 
+                                      onClick={() => handleLanguagePick(lang.code)} 
+                                      className={`w-14 h-14 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center shadow-lg ${language === lang.code ? 'bg-purple-600 border-purple-500 scale-110 shadow-purple-500/30' : 'bg-white/5 border-white/10 opacity-60'}`}
+                                    >
+                                        <FlagIcon code={lang.code} className="w-full h-full" />
+                                    </button>
+                                    <span className={`text-[8px] font-black uppercase tracking-widest ${language === lang.code ? 'text-purple-400' : 'text-slate-500'}`}>
+                                        {lang.name}
+                                    </span>
+                                </div>
                             ))}
                         </div>
                     </div>

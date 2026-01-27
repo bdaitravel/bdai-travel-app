@@ -58,6 +58,42 @@ const MODAL_TEXTS: any = {
         save: "Enregistrer Passeport", edit: "Modifier l'Identité", logout: "Déconnexion",
         username: "Utilisateur", audioMemory: "Écouter le Souvenir", linked: "Lié",
         language: "Langue Actuelle", rank: "Rang Voyageur", miles: "Total des Miles"
+    },
+    de: {
+        title: "bdai Globaler Reisepass", subtitle: "Digital Nomad Credential",
+        surname: "Nachname", givenNames: "Vorname", city: "Herkunftsstadt", country: "Land",
+        birthday: "Geburtsdatum", age: "Alter", social: "Social Matrix", interests: "Interessenprofil",
+        visas: "Verifizierte Visa", entry: "EINTRITT", verified: "VERIFIZIERT", noVisas: "Bereit für Stempel",
+        save: "Pass speichern", edit: "Identität bearbeiten", logout: "Ausloggen",
+        username: "Benutzername", audioMemory: "Erinnerung anhören", linked: "Verbunden",
+        language: "Sprache", rank: "Rang", miles: "Meilen"
+    },
+    ja: {
+        title: "bdai グローバルパスポート", subtitle: "デジタルノマド証明書",
+        surname: "姓", givenNames: "名", city: "出身都市", country: "国",
+        birthday: "生年月日", age: "年齢", social: "ソーシャル・マトリックス", interests: "興味プロファイル",
+        visas: "確認済みビザ", entry: "入国", verified: "確認済み", noVisas: "スタンプの準備完了",
+        save: "パスポートを保存", edit: "身元を編集", logout: "ログアウト",
+        username: "ユーザー名", audioMemory: "思い出を聴く", linked: "リンク済み",
+        language: "現在の言語", rank: "ランク", miles: "合計マイル"
+    },
+    zh: {
+        title: "bdai 全球护照", subtitle: "数字游民凭证",
+        surname: "姓", givenNames: "名", city: "籍贯城市", country: "国家",
+        birthday: "出生日期", age: "年龄", social: "社交矩阵", interests: "兴趣分析",
+        visas: "已验证签证", entry: "入境", verified: "已验证", noVisas: "等待盖章",
+        save: "保存护照", edit: "编辑身份", logout: "注销",
+        username: "用户名", audioMemory: "收听回忆", linked: "已链接",
+        language: "当前语言", rank: "等级", miles: "总里程"
+    },
+    ar: {
+        title: "جواز سفر bdai العالمي", subtitle: "وثيقة الرحالة الرقمي",
+        surname: "اللقب", givenNames: "الأسماء", city: "مدينة الأصل", country: "البلد",
+        birthday: "تاريخ الميلاد", age: "العمر", social: "المصفوفة الاجتماعية", interests: "ملف الاهتمامات",
+        visas: "تأشيرات تم التحقق منها", entry: "دخول", verified: "تم التحقق", noVisas: "جاهز للأختام",
+        save: "حفظ الجواز", edit: "تعديل الهوية", logout: "تسجيل الخروج",
+        username: "اسم المستخدم", audioMemory: "استمع للذكرى", linked: "مرتبط",
+        language: "اللغة الحالية", rank: "الرتبة", miles: "إجمالي الأميال"
     }
 };
 
@@ -136,7 +172,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
 
           const text = user.language === 'es' ? `Bienvenido de nuevo a ${city}, explorador. Es un placer volver a ver tu sello en este pasaporte.` : `Welcome back to ${city}, explorer. It is a pleasure to see your stamp in this passport again.`;
           
-          // PASAMOS LA CIUDAD ESPECÍFICA PARA EL CACHÉ ETIQUETADO
           const base64 = await generateAudio(text, user.language, city);
           
           if (base64) {
@@ -181,7 +216,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       <div className="absolute inset-0 bg-slate-950/98 backdrop-blur-xl" onClick={onClose}></div>
       <div className="bg-[#f2efe4] w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] relative z-10 border-[6px] border-[#d4cfbd] flex flex-col max-h-[92vh] text-slate-900 font-sans">
         
-        {/* Passport Header */}
         <div className="bg-[#7b1b1b] p-6 pb-8 flex flex-col gap-1 border-b-[6px] border-[#d4cfbd] shrink-0 pt-safe-iphone">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -203,7 +237,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
             </div>
         </div>
 
-        {/* Scrollable Passport Content */}
         <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-10 pb-32">
             
             <div className="grid grid-cols-2 gap-4">
@@ -262,15 +295,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
 
             <div className="space-y-4">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3 px-1"><i className="fas fa-language text-slate-800"></i> {pt('language')}</h4>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 pt-2">
                     {LANGUAGES.map(lang => (
-                        <button 
-                            key={lang.code} 
-                            onClick={() => handleLanguageChange(lang.code)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${formData.language === lang.code ? 'bg-white border-purple-600 shadow-md scale-105' : 'bg-slate-200/50 border-transparent opacity-60'}`}
-                        >
-                            <span className="text-[10px] font-black uppercase text-slate-700">{lang.name}</span>
-                        </button>
+                        <div key={lang.code} className="flex flex-col items-center gap-2 shrink-0">
+                            <button 
+                                onClick={() => handleLanguageChange(lang.code)}
+                                className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center bg-white ${formData.language === lang.code ? 'border-purple-600 shadow-md scale-105 shadow-purple-500/20' : 'border-transparent opacity-50 grayscale-[0.5]'}`}
+                            >
+                                <FlagIcon code={lang.code} className="w-full h-full" />
+                            </button>
+                            <span className={`text-[8px] font-black uppercase tracking-widest ${formData.language === lang.code ? 'text-purple-600' : 'text-slate-400'}`}>
+                                {lang.name}
+                            </span>
+                        </div>
                     ))}
                 </div>
             </div>

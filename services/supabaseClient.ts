@@ -16,6 +16,15 @@ export const normalizeKey = (text: string) => {
         .replace(/[^a-z0-9]/g, "");     
 };
 
+/**
+ * Genera una clave única que combina ciudad y país para evitar colisiones.
+ */
+const getCombinedCityKey = (city: string, country: string) => {
+    const cName = normalizeKey(city);
+    const cCountry = normalizeKey(country);
+    return cCountry ? `${cName}_${cCountry}` : cName;
+};
+
 // --- PERFILES ---
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   if (!email) return null;
@@ -37,20 +46,40 @@ export const syncUserProfile = async (user: UserProfile) => {
 };
 
 // --- TOURS (EN TABLA) ---
-export const getCachedTours = async (city: string, language: string): Promise<Tour[] | null> => {
-  const normCity = normalizeKey(city);
-  const { data, error } = await supabase.from('tours_cache')
+/**
+ * Recupera tours de la caché con sistema de fallback para compatibilidad legacy.
+ */
+export const getCachedTours = async (city: string, country: string, language: string): Promise<Tour[] | null> => {
+  const combinedKey = getCombinedCityKey(city, country);
+  const legacyKey = normalizeKey(city);
+
+  // 1. Intento con clave moderna (ciudad_pais)
+  let { data, error } = await supabase.from('tours_cache')
     .select('data')
-    .ilike('city', `%${normCity}%`)
+    .eq('city', combinedKey)
     .eq('language', language)
     .limit(1);
+    
+  // 2. Fallback a clave antigua (solo ciudad) para recuperar los 300+ registros existentes
+  if ((!data || data.length === 0) && combinedKey !== legacyKey) {
+    const legacyRes = await supabase.from('tours_cache')
+      .select('data')
+      .eq('city', legacyKey)
+      .eq('language', language)
+      .limit(1);
+    
+    if (!legacyRes.error && legacyRes.data && legacyRes.data.length > 0) {
+      data = legacyRes.data;
+      error = legacyRes.error;
+    }
+  }
     
   return (error || !data || data.length === 0) ? null : (data[0].data as Tour[]);
 };
 
-export const saveToursToCache = async (city: string, language: string, tours: Tour[]) => {
-  const normCity = normalizeKey(city);
-  await supabase.from('tours_cache').upsert({ city: normCity, language, data: tours }, { onConflict: 'city,language' });
+export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
+  const combinedKey = getCombinedCityKey(city, country);
+  await supabase.from('tours_cache').upsert({ city: combinedKey, language, data: tours }, { onConflict: 'city,language' });
 };
 
 // --- AUDIOS ---
