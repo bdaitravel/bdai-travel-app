@@ -20,7 +20,7 @@ const TRANSLATIONS: any = {
   eu: { welcome: "Bidaer Log:", explorer: "Esploratzailea", searchPlaceholder: "Helburu hiria...", emailPlaceholder: "Egiaztapen emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu tu emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu tu emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai hiria aztertzen ari da...", translating: "Adimen egiaztatua itzultzen...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", quotaError: "Dai nekatuta dago. Berriro saiatzen...", timeoutError: "Denbora agortu da.", selectAmbiguity: "Zein hiri da?" },
   fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email d'accès", codeLabel: "code de seguridad", login: "Envoyer le Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai analyse la ville...", translating: "Traduction de l'intelligence vérifiée...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", quotaError: "Dai est épuisée. Nouvelle tentative...", timeoutError: "Délai d'attente dépassé.", selectAmbiguity: "De quelle ville s'agit-il ?" },
   de: { welcome: "Bidaer Log:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "Anmelde-E-Mail", codeLabel: "Sicherheitscode", login: "Code senden", verify: "Zugreifen", tagline: "Bessere Ziele durch KI", authError: "E-Mail/Spam prüfen", codeError: "Ungültiger Code", selectLang: "Sprache", resend: "Erneut senden", checkEmail: "Posteingang prüfen", sentTo: "Code gesendet an:", tryDifferent: "E-Mail ändern", close: "Schließen", loading: "Synchronisierung...", loadingTour: "Dai analysiert die Stadt...", translating: "Übersetzung läuft...", navElite: "Elite", navHub: "Intel", navVisa: "Reisepass", navStore: "Shop", quotaError: "Dai ist erschöpft. Automatischer Neustart...", timeoutError: "Zeitüberschreitung.", selectAmbiguity: "Welche Stadt meinen Sie?" },
-  ja: { welcome: "Bidaer ログ:", explorer: "エクスプローラー", searchPlaceholder: "目的地を入力...", emailPlaceholder: "メールアドレス", codeLabel: "セキュリティコード", login: "コードを送信", verify: "アクセス", tagline: "AIによる次世代の旅", authError: "メール/迷惑メールを確認してください", codeError: "無効なコードです", selectLang: "言語", resend: "再送する", checkEmail: "受信トレイを確認", sentTo: "送信先:", tryDifferent: "メールを変更", close: "閉じる", loading: "同期中...", loadingTour: "Daiが都市を分析しています...", translating: "翻訳中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", quotaError: "Daiが少し疲れています。再試行中...", timeoutError: "タイムアウトしました。", selectAmbiguity: "どちらの都市ですか？" },
+  ja: { welcome: "Bidaer ログ:", explorer: "エクスプローラー", searchPlaceholder: "目的地を入力...", emailPlaceholder: "メールアドレス", codeLabel: "セキュリティコード", login: "コードを送信", verify: "アクセス", tagline: "AIによる次世代の旅", authError: "メール/迷惑メールを確認してください", codeError: "無効なコードです", selectLang: "言語", resend: "再送する", checkEmail: "受信トレイを確認", sentTo: "送信先:", tryDifferent: "メールを変更", close: "閉じる", loading: "同期中...", loadingTour: "Daiが都市を分析しています...", translating: "翻訳中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", quotaError: "Dai que un poco cansada. Reintentando...", timeoutError: "Tiempo de espera agotado.", selectAmbiguity: "Cual ciudad?" },
   zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "凭证邮箱", codeLabel: "安全码", login: "发送代码", verify: "进入", tagline: "AI驱动的更好目的地", authError: "请检查邮箱或垃圾邮件", codeError: "无效代码", selectLang: "语言", resend: "重新发送", checkEmail: "检查收件箱", sentTo: "代码已发送至:", tryDifferent: "更换邮箱", close: "关闭", loading: "同步中...", loadingTour: "Dai 正在分析城市...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", quotaError: "Dai 累了，正在自动重试...", timeoutError: "连接超时。", selectAmbiguity: "您指的是哪个城市？" },
   ar: { welcome: "سجل بيداير:", explorer: "مكتشف", searchPlaceholder: "المدينة المستهدفة...", emailPlaceholder: "البريد الإلكتروني", codeLabel: "رمز الأمان", login: "إرسال الرمز", verify: "دخول", tagline: "وجهات أفضل عبر الذكاء الاصطناعي", authError: "تحقق من البريد أو السبام", codeError: "رمز غير صالح", selectLang: "اللغة", resend: "إعادة إرسال", checkEmail: "تحقق من الوارد", sentTo: "أُرسل الرمز إلى:", tryDifferent: "تغيير البريد", close: "إغلاق", loading: "جاري المزامنة...", loadingTour: "داي تحلل المدينة...", translating: "جاري الترجمة...", navElite: "النخبة", navHub: "المعلومات", navVisa: "جواز السفر", navStore: "المتجر", quotaError: "داي مرهقة، جاري المحاولة...", timeoutError: "انتهى الوقت.", selectAmbiguity: "أي مدينة تقصد؟" }
 };
@@ -258,57 +258,57 @@ export default function App() {
       )}
 
       {view === AppView.LOGIN ? (
-          <div className="h-full w-full flex flex-col items-center justify-between p-10 py-safe-iphone relative">
-              <div className="text-center flex flex-col items-center pt-24">
-                  <div className="w-24 h-24 mb-8 bg-purple-600/10 rounded-[2.5rem] flex items-center justify-center border border-purple-500/20 shadow-2xl">
-                     <BdaiLogo className="w-16 h-16" />
+          <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative overflow-hidden">
+              <div className="text-center flex flex-col items-center pt-8 shrink-0">
+                  <div className="w-16 h-16 mb-4 bg-purple-600/10 rounded-[1.5rem] flex items-center justify-center border border-purple-500/20 shadow-2xl">
+                     <BdaiLogo className="w-10 h-10" />
                   </div>
-                  <h1 className="text-5xl font-black lowercase tracking-tighter text-white">bdai</h1>
-                  <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.4em] mt-3">{t('tagline')}</p>
+                  <h1 className="text-3xl font-black lowercase tracking-tighter text-white">bdai</h1>
+                  <p className="text-purple-400 text-[8px] font-black uppercase tracking-[0.4em] mt-1">{t('tagline')}</p>
               </div>
 
-              <div className="w-full space-y-8 max-w-xs z-10 mb-12">
-                  {authError && <div className="text-red-400 text-[9px] font-black uppercase text-center bg-red-500/10 p-5 rounded-3xl mb-4 border border-red-500/20">{authError}</div>}
+              <div className="w-full space-y-4 max-w-xs z-10 mb-6">
+                  {authError && <div className="text-red-400 text-[8px] font-black uppercase text-center bg-red-500/10 p-3 rounded-2xl mb-4 border border-red-500/20">{authError}</div>}
                   {loginStep === 'EMAIL' ? (
-                      <div className="space-y-6 animate-fade-in">
-                          <div className="space-y-4">
-                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">{t('selectLang')}</p>
-                              <div className="flex justify-center gap-6 overflow-x-auto no-scrollbar py-2">
+                      <div className="space-y-4 animate-fade-in">
+                          <div className="space-y-2">
+                              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center">{t('selectLang')}</p>
+                              <div className="flex justify-start gap-3 overflow-x-auto no-scrollbar py-2 px-2 mask-fade-edges">
                                   {LANGUAGES.map(lang => (
-                                      <div key={lang.code} className="flex flex-col items-center gap-2 shrink-0">
+                                      <div key={lang.code} className="flex flex-col items-center gap-1.5 shrink-0">
                                           <button 
                                             onClick={() => setUser(p => ({...p, language: lang.code}))}
-                                            className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center bg-white/5 ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'border-white/10 opacity-40'}`}
+                                            className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center bg-white/5 ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-[0_0_10px_rgba(147,51,234,0.3)]' : 'border-white/5 opacity-40'}`}
                                           >
                                               <FlagIcon code={lang.code} className="w-full h-full" />
                                           </button>
-                                          <span className={`text-[8px] font-black uppercase tracking-widest ${user.language === lang.code ? 'text-purple-400' : 'text-slate-600'}`}>
+                                          <span className={`text-[7px] font-black uppercase tracking-tighter ${user.language === lang.code ? 'text-purple-400' : 'text-slate-600'}`}>
                                             {lang.name}
                                           </span>
                                       </div>
                                   ))}
                               </div>
                           </div>
-                          <div className="space-y-4">
-                            <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-3xl py-6 px-6 text-center text-white focus:border-purple-500 outline-none transition-all placeholder:text-slate-700 font-bold" />
-                            <button disabled={isLoading || !email} onClick={handleSendOtp} className="w-full py-6 bg-white text-slate-950 rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
+                          <div className="space-y-3">
+                            <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-center text-white focus:border-purple-500 outline-none transition-all placeholder:text-slate-700 font-bold" />
+                            <button disabled={isLoading || !email} onClick={handleSendOtp} className="w-full py-4 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[9px] shadow-2xl active:scale-95 transition-all">
                                 {t('login')}
                             </button>
                           </div>
                       </div>
                   ) : (
-                      <div className="space-y-6 animate-fade-in text-center">
-                          <div className="space-y-2">
-                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('sentTo')}</p>
+                      <div className="space-y-4 animate-fade-in text-center">
+                          <div className="space-y-1">
+                              <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t('sentTo')}</p>
                               <p className="text-xs font-bold text-purple-400">{email}</p>
                           </div>
-                          <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 shadow-inner relative group focus-within:border-purple-500/50">
-                            <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} className="w-full bg-transparent border-none outline-none text-center font-black text-4xl text-white tracking-[0.2em]" placeholder="000000" />
+                          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-inner relative group focus-within:border-purple-500/50">
+                            <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} className="w-full bg-transparent border-none outline-none text-center font-black text-3xl text-white tracking-[0.2em]" placeholder="000000" />
                           </div>
-                          <button disabled={isLoading || otpCode.length < 6} onClick={handleVerifyOtp} className="w-full py-6 bg-purple-600 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-2xl transition-all">
+                          <button disabled={isLoading || otpCode.length < 6} onClick={handleVerifyOtp} className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl transition-all">
                               {t('verify')}
                           </button>
-                          <button onClick={() => setLoginStep('EMAIL')} className="text-[9px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">{t('tryDifferent')}</button>
+                          <button onClick={() => setLoginStep('EMAIL')} className="text-[8px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-colors">{t('tryDifferent')}</button>
                       </div>
                   )}
               </div>

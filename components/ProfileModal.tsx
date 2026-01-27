@@ -295,16 +295,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
 
             <div className="space-y-4">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3 px-1"><i className="fas fa-language text-slate-800"></i> {pt('language')}</h4>
-                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 pt-2">
+                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1">
                     {LANGUAGES.map(lang => (
-                        <div key={lang.code} className="flex flex-col items-center gap-2 shrink-0">
+                        <div key={lang.code} className="flex flex-col items-center gap-1.5 shrink-0">
                             <button 
                                 onClick={() => handleLanguageChange(lang.code)}
-                                className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center bg-white ${formData.language === lang.code ? 'border-purple-600 shadow-md scale-105 shadow-purple-500/20' : 'border-transparent opacity-50 grayscale-[0.5]'}`}
+                                className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center bg-white ${formData.language === lang.code ? 'border-purple-600 shadow-md scale-105 shadow-purple-500/20' : 'border-transparent opacity-50 grayscale-[0.5]'}`}
                             >
                                 <FlagIcon code={lang.code} className="w-full h-full" />
                             </button>
-                            <span className={`text-[8px] font-black uppercase tracking-widest ${formData.language === lang.code ? 'text-purple-600' : 'text-slate-400'}`}>
+                            <span className={`text-[7px] font-black uppercase tracking-widest ${formData.language === lang.code ? 'text-purple-600' : 'text-slate-400'}`}>
                                 {lang.name}
                             </span>
                         </div>

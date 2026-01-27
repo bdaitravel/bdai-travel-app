@@ -115,23 +115,23 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
     };
 
     return (
-        <div className="fixed inset-0 z-[200] bg-slate-950 flex flex-col items-center justify-center p-8 animate-fade-in font-sans overflow-hidden">
+        <div className="fixed inset-0 z-[200] bg-slate-950 flex flex-col items-center justify-center p-6 animate-fade-in font-sans overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none"></div>
             
-            <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-[3rem] p-10 backdrop-blur-xl relative z-10 shadow-[0_0_80px_rgba(147,51,234,0.1)]">
+            <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl relative z-10 shadow-[0_0_80px_rgba(147,51,234,0.1)]">
                 {step === 0 && (
                     <div className="animate-slide-up text-center">
-                        <h2 className="text-3xl font-black text-white mb-8 uppercase tracking-tighter">{t.step0Title}</h2>
-                        <div className="grid grid-cols-3 gap-y-6 gap-x-2">
+                        <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tighter">{t.step0Title}</h2>
+                        <div className="flex justify-start gap-4 overflow-x-auto no-scrollbar py-2 px-1 mask-fade-edges">
                             {LANGUAGES.map(lang => (
-                                <div key={lang.code} className="flex flex-col items-center gap-2">
+                                <div key={lang.code} className="flex flex-col items-center gap-2 shrink-0">
                                     <button 
                                       onClick={() => handleLanguagePick(lang.code)} 
-                                      className={`w-14 h-14 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center shadow-lg ${language === lang.code ? 'bg-purple-600 border-purple-500 scale-110 shadow-purple-500/30' : 'bg-white/5 border-white/10 opacity-60'}`}
+                                      className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center shadow-lg ${language === lang.code ? 'bg-purple-600 border-purple-500 scale-110 shadow-purple-500/30' : 'bg-white/5 border-white/10 opacity-60'}`}
                                     >
                                         <FlagIcon code={lang.code} className="w-full h-full" />
                                     </button>
-                                    <span className={`text-[8px] font-black uppercase tracking-widest ${language === lang.code ? 'text-purple-400' : 'text-slate-500'}`}>
+                                    <span className={`text-[7px] font-black uppercase tracking-widest ${language === lang.code ? 'text-purple-400' : 'text-slate-500'}`}>
                                         {lang.name}
                                     </span>
                                 </div>
@@ -142,79 +142,79 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
 
                 {step === 1 && (
                     <div className="animate-slide-up text-center flex flex-col items-center">
-                        <div className="w-24 h-24 mb-6 relative">
+                        <div className="w-16 h-16 mb-4 relative">
                             <div className="absolute inset-0 bg-purple-500 rounded-full blur-2xl opacity-40 animate-pulse"></div>
-                            <div className="relative z-10 bg-slate-900 rounded-3xl w-full h-full flex items-center justify-center border border-purple-500 shadow-xl overflow-hidden">
-                                <BdaiLogo className="w-16 h-16" />
+                            <div className="relative z-10 bg-slate-900 rounded-2xl w-full h-full flex items-center justify-center border border-purple-500 shadow-xl overflow-hidden">
+                                <BdaiLogo className="w-10 h-10" />
                             </div>
                         </div>
-                        <h2 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter">{t.stepDaiTitle}</h2>
-                        <p className="text-slate-300 text-sm leading-relaxed mb-8 italic">"{t.stepDaiDesc}"</p>
+                        <h2 className="text-2xl font-black text-white mb-3 uppercase tracking-tighter">{t.stepDaiTitle}</h2>
+                        <p className="text-slate-300 text-xs leading-relaxed mb-6 italic">"{t.stepDaiDesc}"</p>
                     </div>
                 )}
 
                 {step === 2 && (
                     <div className="animate-slide-up text-center">
-                        <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl shadow-purple-500/40">🏛️</div>
-                        <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">{t.step1Title}</h2>
-                        <p className="text-slate-400 text-sm leading-relaxed mb-8">{t.step1Desc}</p>
+                        <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-2xl shadow-purple-500/40">🏛️</div>
+                        <h2 className="text-xl font-black text-white mb-3 uppercase tracking-tighter">{t.step1Title}</h2>
+                        <p className="text-slate-400 text-xs leading-relaxed mb-6">{t.step1Desc}</p>
                     </div>
                 )}
 
                 {step === 3 && (
                     <div className="animate-slide-up text-center">
-                        <div className="w-20 h-20 bg-emerald-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl shadow-emerald-500/40">🌍</div>
-                        <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">{t.step2Title}</h2>
-                        <p className="text-slate-400 text-sm leading-relaxed mb-8">{t.step2Desc}</p>
+                        <div className="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-2xl shadow-emerald-500/40">🌍</div>
+                        <h2 className="text-xl font-black text-white mb-3 uppercase tracking-tighter">{t.step2Title}</h2>
+                        <p className="text-slate-400 text-xs leading-relaxed mb-6">{t.step2Desc}</p>
                     </div>
                 )}
 
                 {step === 4 && (
                     <div className="animate-slide-up text-center">
-                        <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl shadow-red-500/40">📍</div>
-                        <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">{t.step3Title}</h2>
-                        <p className="text-slate-400 text-sm leading-relaxed mb-8">{t.step3Desc}</p>
+                        <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-2xl shadow-red-500/40">📍</div>
+                        <h2 className="text-xl font-black text-white mb-3 uppercase tracking-tighter">{t.step3Title}</h2>
+                        <p className="text-slate-400 text-xs leading-relaxed mb-6">{t.step3Desc}</p>
                     </div>
                 )}
 
                 {step === 5 && (
                     <div className="animate-slide-up text-center">
-                        <div className="w-20 h-20 bg-amber-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl shadow-amber-500/40">🎟️</div>
-                        <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">{t.step4Title}</h2>
-                        <p className="text-slate-400 text-sm leading-relaxed mb-8">{t.step4Desc}</p>
+                        <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-2xl shadow-amber-500/40">🎟️</div>
+                        <h2 className="text-xl font-black text-white mb-3 uppercase tracking-tighter">{t.step4Title}</h2>
+                        <p className="text-slate-400 text-xs leading-relaxed mb-6">{t.step4Desc}</p>
                     </div>
                 )}
 
                 {step === 6 && (
                     <div className="animate-slide-up">
-                        <h2 className="text-2xl font-black text-white mb-6 text-center uppercase tracking-tighter">{t.selectInt}</h2>
-                        <div className="grid grid-cols-2 gap-3 mb-8">
+                        <h2 className="text-xl font-black text-white mb-4 text-center uppercase tracking-tighter">{t.selectInt}</h2>
+                        <div className="grid grid-cols-2 gap-3 mb-6">
                             {INTEREST_OPTIONS.map(opt => (
-                                <button key={opt.id} onClick={() => toggleInterest(opt.id)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all ${selectedInterests.includes(opt.id) ? 'bg-purple-600 border-purple-600 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'}`}>
-                                    <span className="text-2xl">{opt.icon}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{(opt.label as any)[language || 'es'] || (opt.label as any)['es']}</span>
+                                <button key={opt.id} onClick={() => toggleInterest(opt.id)} className={`p-3 rounded-xl flex flex-col items-center gap-1 border-2 transition-all ${selectedInterests.includes(opt.id) ? 'bg-purple-600 border-purple-600 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'}`}>
+                                    <span className="text-xl">{opt.icon}</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest">{(opt.label as any)[language || 'es'] || (opt.label as any)['es']}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
                 )}
 
-                <div className="flex flex-col gap-4 mt-8">
+                <div className="flex flex-col gap-3 mt-4">
                     {step > 0 && (
-                        <button onClick={handleNext} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all">
+                        <button onClick={handleNext} className="w-full py-4 bg-white text-slate-950 rounded-xl font-black uppercase tracking-widest text-[9px] shadow-2xl active:scale-95 transition-all">
                             {step === 6 ? t.start : t.next}
                         </button>
                     )}
                     {step > 0 && step < 6 && (
-                        <button onClick={() => setStep(6)} className="text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:text-white transition-colors">
+                        <button onClick={() => setStep(6)} className="text-slate-500 font-bold text-[9px] uppercase tracking-widest hover:text-white transition-colors">
                             {t.skip}
                         </button>
                     )}
                 </div>
 
-                <div className="flex justify-center gap-1.5 mt-8">
+                <div className="flex justify-center gap-1.5 mt-6">
                     {[0,1,2,3,4,5,6].map(i => (
-                        <div key={i} className={`h-1 rounded-full transition-all ${i === step ? 'w-6 bg-purple-500' : 'w-2 bg-white/10'}`}></div>
+                        <div key={i} className={`h-1 rounded-full transition-all ${i === step ? 'w-5 bg-purple-500' : 'w-1.5 bg-white/10'}`}></div>
                     ))}
                 </div>
             </div>
