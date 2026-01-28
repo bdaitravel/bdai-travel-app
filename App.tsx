@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
-import { generateToursForCity, generateAudio, standardizeCityName, getGreetingContext, translateTours } from './services/geminiService';
+import { generateToursForCity, generateAudio, standardizeCityName, getGreetingContext, translateTours, cleanDescriptionText } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { Leaderboard } from './components/Leaderboard';
 import { ProfileModal } from './components/ProfileModal';
@@ -10,6 +10,7 @@ import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { Onboarding } from './components/Onboarding';
 import { FlagIcon } from './components/FlagIcon';
+import { AdminPanel } from './components/AdminPanel';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey, validateEmailFormat } from './services/supabaseClient';
 import { STATIC_TOURS } from './data/toursData';
 
@@ -21,7 +22,7 @@ const TRANSLATIONS: any = {
   fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email d'accès", codeLabel: "code de seguridad", login: "Envoyer le Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai analyse la ville...", translating: "Traduction de l'intelligence vérifiée...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", quotaError: "Dai est épuisée. Nouvelle tentative...", timeoutError: "Délai d'attente dépassé.", selectAmbiguity: "De quelle ville s'agit-il ?" },
   de: { welcome: "Bidaer Log:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "Anmelde-E-Mail", codeLabel: "Sicherheitscode", login: "Code senden", verify: "Zugreifen", tagline: "Bessere Ziele durch KI", authError: "E-Mail/Spam prüfen", codeError: "Ungültiger Code", selectLang: "Sprache", resend: "Erneut senden", checkEmail: "Posteingang prüfen", sentTo: "Code gesendet an:", tryDifferent: "E-Mail ändern", close: "Schließen", loading: "Synchronisierung...", loadingTour: "Dai analysiert die Stadt...", translating: "Übersetzung läuft...", navElite: "Elite", navHub: "Intel", navVisa: "Reisepass", navStore: "Shop", quotaError: "Dai ist erschöpft. Automatischer Neustart...", timeoutError: "Zeitüberschreitung.", selectAmbiguity: "Welche Stadt meinen Sie?" },
   ja: { welcome: "Bidaer ログ:", explorer: "エクスプローラー", searchPlaceholder: "目的地を入力...", emailPlaceholder: "メールアドレス", codeLabel: "セキュリティコード", login: "コードを送信", verify: "アクセス", tagline: "AIによる次世代の旅", authError: "メール/迷惑メールを確認してください", codeError: "無効なコードです", selectLang: "言語", resend: "再送する", checkEmail: "受信トレイを確認", sentTo: "送信先:", tryDifferent: "メールを変更", close: "閉じる", loading: "同期中...", loadingTour: "Daiが都市を分析しています...", translating: "翻訳中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", quotaError: "Dai que un poco cansada. Reintentando...", timeoutError: "Tiempo de espera agotado.", selectAmbiguity: "Cual ciudad?" },
-  zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "凭证邮箱", codeLabel: "安全码", login: "发送代码", verify: "进入", tagline: "AI驱动的更好目的地", authError: "请检查邮箱或垃圾邮件", codeError: "无效代码", selectLang: "语言", resend: "重新发送", checkEmail: "检查收件箱", sentTo: "代码已发送至:", tryDifferent: "更换邮箱", close: "关闭", loading: "同步中...", loadingTour: "Dai 正在分析城市...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", quotaError: "Dai 累了，正在自动重试...", timeoutError: "连接超时。", selectAmbiguity: "您指的是哪个城市？" },
+  zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "凭证邮箱", codeLabel: "安全码", login: "发送代码", verify: "进入", tagline: "AI驱动的更好目的地", authError: "请检查邮箱 o 垃圾邮件", codeError: "无效代码", selectLang: "语言", resend: "重新发送", checkEmail: "检查收件箱", sentTo: "代码已发送至:", tryDifferent: "更换邮箱", close: "关闭", loading: "同步中...", loadingTour: "Dai 正在分析城市...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", quotaError: "Dai 累了，正在自动重试...", timeoutError: "连接超时。", selectAmbiguity: "您指的是哪个城市？" },
   ar: { welcome: "سجل بيداير:", explorer: "مكتشف", searchPlaceholder: "المدينة المستهدفة...", emailPlaceholder: "البريد الإلكتروني", codeLabel: "رمز الأمان", login: "إرسال الرمز", verify: "دخول", tagline: "وجهات أفضل عبر الذكاء الاصطناعي", authError: "تحقق من البريد أو السبام", codeError: "رمز غير صالح", selectLang: "اللغة", resend: "إعادة إرسال", checkEmail: "تحقق من الوارد", sentTo: "أُرسل الرمز إلى:", tryDifferent: "تغيير البريد", close: "إغلاق", loading: "جاري المزامنة...", loadingTour: "داي تحلل المدينة...", translating: "جاري الترجمة...", navElite: "النخبة", navHub: "المعلومات", navVisa: "جواز السفر", navStore: "المتجر", quotaError: "داي مرهقة، جاري المحاولة...", timeoutError: "انتهى الوقت.", selectAmbiguity: "أي مدينة تقصد؟" }
 };
 
@@ -211,19 +212,53 @@ export default function App() {
     }
   };
 
+  /**
+   * Sistema de lectura nativo del dispositivo (Fallback Gratuito)
+   */
+  const speakWithLocalSynthesis = (text: string, language: string) => {
+      const synth = window.speechSynthesis;
+      if (!synth) return;
+      
+      synth.cancel(); // Cancelar cualquier lectura previa
+      const cleanText = cleanDescriptionText(text);
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = language;
+      
+      // Intentar buscar una voz más humana si está disponible
+      const voices = synth.getVoices();
+      const preferred = voices.find(v => v.lang.startsWith(language) && (v.name.includes('Google') || v.name.includes('Premium')));
+      if (preferred) utterance.voice = preferred;
+      
+      utterance.onend = () => setAudioPlayingId(null);
+      utterance.onerror = () => setAudioPlayingId(null);
+      
+      synth.speak(utterance);
+  };
+
   const handlePlayAudio = async (id: string, text: string) => {
+    const synth = window.speechSynthesis;
+    
     if (audioPlayingId === id) { 
       if (audioSourceRef.current) audioSourceRef.current.stop();
+      if (synth) synth.cancel();
       setAudioPlayingId(null);
       return; 
     }
+
     if (audioSourceRef.current) audioSourceRef.current.stop();
+    if (synth) synth.cancel();
+    
     setAudioLoadingId(id);
+    const targetLang = user.language || 'es';
+
     try {
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         const ctx = audioContextRef.current;
         if (ctx.state === 'suspended') await ctx.resume();
-        const base64 = await generateAudio(text, user.language || 'es', selectedCity || 'Global');
+        
+        // INTENTO 1: IA DE ALTA CALIDAD (DAI)
+        const base64 = await generateAudio(text, targetLang, selectedCity || 'Global');
+        
         if (base64) {
             const binary = atob(base64);
             const bytes = new Uint8Array(binary.length);
@@ -238,9 +273,16 @@ export default function App() {
             source.onended = () => setAudioPlayingId(null);
             source.start(0); audioSourceRef.current = source;
             setAudioPlayingId(id);
+        } else {
+            // INTENTO 2: FALLBACK AL LECTOR NATIVO (GRATIS E INFALIBLE)
+            setAudioPlayingId(id);
+            speakWithLocalSynthesis(text, targetLang);
         }
     } catch(e) { 
-        console.error("Audio Playback Error:", e);
+        console.warn("AI Audio Error, switching to local synth:", e);
+        // FALLBACK EN CASO DE ERROR DE RED O CONTEXTO
+        setAudioPlayingId(id);
+        speakWithLocalSynthesis(text, targetLang);
     } finally { 
         setAudioLoadingId(null); 
     }
@@ -260,8 +302,8 @@ export default function App() {
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative overflow-hidden">
               <div className="text-center flex flex-col items-center pt-8 shrink-0">
-                  <div className="w-16 h-16 mb-4 bg-purple-600/10 rounded-[1.5rem] flex items-center justify-center border border-purple-500/20 shadow-2xl">
-                     <BdaiLogo className="w-10 h-10" />
+                  <div className="w-24 h-24 mb-6 bg-purple-600/10 rounded-[2.5rem] flex items-center justify-center border border-purple-500/20 shadow-2xl">
+                     <BdaiLogo className="w-16 h-16" />
                   </div>
                   <h1 className="text-3xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-purple-400 text-[8px] font-black uppercase tracking-[0.4em] mt-1">{t('tagline')}</p>
@@ -369,12 +411,13 @@ export default function App() {
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={setCurrentStopIndex} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language || 'es'} onBack={() => { if(audioSourceRef.current) audioSourceRef.current.stop(); setAudioPlayingId(null); setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { setUser(p => ({...p, miles: p.miles + miles})); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />
+                  <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={setCurrentStopIndex} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language || 'es'} onBack={() => { if(audioSourceRef.current) audioSourceRef.current.stop(); if(window.speechSynthesis) window.speechSynthesis.cancel(); setAudioPlayingId(null); setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { setUser(p => ({...p, miles: p.miles + miles})); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />
                 )}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language || 'es'} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language || 'es'} onCitySelect={(name) => handleCitySelect(name)} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => setUser(p => ({...p, miles: p.miles + reward}))} />}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language || 'es'} onUpdateUser={(u) => { setUser(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); syncUserProfile(u); }} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language || 'es'} onUpdateUser={(u) => { setUser(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); syncUserProfile(u); }} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
+                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
             {view !== AppView.TOUR_ACTIVE && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-8 pb-safe-iphone mb-4 pointer-events-none">

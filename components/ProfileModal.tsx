@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { UserProfile, LANGUAGES, AVATARS, Badge, SocialLinks, INTEREST_OPTIONS } from '../types';
 import { FlagIcon } from './FlagIcon';
-import { generateAudio } from '../services/geminiService';
+import { generateAudio, cleanDescriptionText } from '../services/geminiService';
 
 interface ProfileModalProps {
   user: UserProfile;
@@ -10,6 +10,7 @@ interface ProfileModalProps {
   isOwnProfile?: boolean;
   onUpdateUser?: (updatedUser: UserProfile) => void;
   onLogout?: () => void;
+  onOpenAdmin?: () => void;
   language?: string;
 }
 
@@ -91,7 +92,7 @@ const MODAL_TEXTS: any = {
         surname: "اللقب", givenNames: "الأسماء", city: "مدينة الأصل", country: "البلد",
         birthday: "تاريخ الميلاد", age: "العمر", social: "المصفوفة الاجتماعية", interests: "ملف الاهتمامات",
         visas: "تأشيرات تم التحقق منها", entry: "دخول", verified: "تم التحقق", noVisas: "جاهز للأختام",
-        save: "حفظ الجواز", edit: "تعديل الهوية", logout: "تسجيل الخروج",
+        save: "حفظ الجواز", edit: "تعد일 الهوية", logout: "تسجيل الخروج",
         username: "اسم المستخدم", audioMemory: "استمع للذكرى", linked: "مرتبط",
         language: "اللغة الحالية", rank: "الرتبة", miles: "إجمالي الأميال"
     }
@@ -120,7 +121,7 @@ const getCityFlag = (city: string): string => {
     return '🏳️';
 };
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwnProfile, onUpdateUser, onLogout }) => {
+export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwnProfile, onUpdateUser, onLogout, onOpenAdmin }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [playingCityAudio, setPlayingCityAudio] = useState<string | null>(null);
   const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
@@ -128,6 +129,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // EMAIL DEL ADMINISTRADOR
+  const isAdmin = user.email === 'travelbdai@gmail.com';
+
   const pt = (key: string) => (MODAL_TEXTS[user.language] || MODAL_TEXTS['es'])[key] || key;
 
   const [formData, setFormData] = useState({
@@ -158,45 +162,60 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       }
   };
 
+  /**
+   * Fallback de síntesis de voz nativa para el pasaporte
+   */
+  const speakLocally = (text: string) => {
+      const synth = window.speechSynthesis;
+      if (!synth) return;
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = user.language || 'es';
+      utterance.onend = () => setPlayingCityAudio(null);
+      synth.speak(utterance);
+  };
+
   const handlePlayCityAudio = async (city: string) => {
+      const synth = window.speechSynthesis;
       if (playingCityAudio === city) {
           if (audioSourceRef.current) audioSourceRef.current.stop();
+          if (synth) synth.cancel();
           setPlayingCityAudio(null);
           return;
       }
+
       setLoadingAudio(city);
+      const welcomeText = user.language === 'es' ? `Bienvenido de nuevo a ${city}, explorador. Es un placer volver a ver tu sello en este pasaporte.` : `Welcome back to ${city}, explorer. It is a pleasure to see your stamp in this passport again.`;
+
       try {
           if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
           const ctx = audioContextRef.current;
           if (ctx.state === 'suspended') await ctx.resume();
 
-          const text = user.language === 'es' ? `Bienvenido de nuevo a ${city}, explorador. Es un placer volver a ver tu sello en este pasaporte.` : `Welcome back to ${city}, explorer. It is a pleasure to see your stamp in this passport again.`;
-          
-          const base64 = await generateAudio(text, user.language, city);
+          const base64 = await generateAudio(welcomeText, user.language, city);
           
           if (base64) {
               const binary = atob(base64);
               const bytes = new Uint8Array(binary.length);
               for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-              
               const validLength = Math.floor(bytes.byteLength / 2);
               const dataInt16 = new Int16Array(bytes.buffer, 0, validLength);
-              
               const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
               const channelData = buffer.getChannelData(0);
               for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-              
               const source = ctx.createBufferSource();
-              source.buffer = buffer;
-              source.connect(ctx.destination);
+              source.buffer = buffer; source.connect(ctx.destination);
               source.onended = () => setPlayingCityAudio(null);
-              source.start(0);
-              audioSourceRef.current = source;
+              source.start(0); audioSourceRef.current = source;
               setPlayingCityAudio(city);
+          } else {
+              setPlayingCityAudio(city);
+              speakLocally(welcomeText);
           }
       } catch (e) { 
-        console.error("Profile Audio Error:", e);
-        setPlayingCityAudio(null); 
+        console.warn("Passport audio error, fallback to local:", e);
+        setPlayingCityAudio(city);
+        speakLocally(welcomeText);
       } finally { 
         setLoadingAudio(null); 
       }
@@ -226,6 +245,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                     </div>
                 </div>
                 <div className="flex gap-2">
+                    {isAdmin && onOpenAdmin && (
+                        <button onClick={onOpenAdmin} className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-lg animate-pulse" title="Admin Panel"><i className="fas fa-microchip"></i></button>
+                    )}
                     {isOwnProfile && (
                         <>
                             <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${isEditing ? 'bg-green-600' : 'bg-white/10'} text-white`}><i className={`fas ${isEditing ? 'fa-save' : 'fa-edit'}`}></i></button>
@@ -239,6 +261,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
 
         <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-10 pb-32">
             
+            {isAdmin && (
+                <button 
+                    onClick={onOpenAdmin}
+                    className="w-full py-4 bg-purple-600/10 border-2 border-dashed border-purple-500/50 rounded-2xl flex items-center justify-center gap-3 group active:scale-95 transition-all"
+                >
+                    <i className="fas fa-tools text-purple-500 group-hover:rotate-45 transition-transform"></i>
+                    <span className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">Acceder a Sala de Máquinas</span>
+                </button>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/60 border-2 border-dashed border-[#d4cfbd] rounded-2xl p-4 flex flex-col items-center justify-center shadow-inner">
                     <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest mb-1">{pt('rank')}</p>
