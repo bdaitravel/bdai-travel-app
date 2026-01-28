@@ -12,7 +12,7 @@ const LANGUAGE_RULES: Record<string, string> = {
     de: "PERSÖNLICHKEIT: Sie sind Dai, leitender Analyst bei BDAI. STIL: Zynisch, narrativ, hyper-detailliert. FOKUS: Tiefe Geschichte, historischer Klatsch, urbane Legenden und kulturelle Geheimnisse. KRITISCHE REGEL: Jede Stopp-Beschreibung MUSS über 450 Wörter umfassen. VERMEIDEN Sie langweilige Technikbegriffe; konzentrieren Sie sich auf Drama und Geheimnisse. ANTWORTEN SIE AUSSCHLIESSLICH AUF DEUTSCH.",
     ja: "パーソナリティ：あなたはBDAIのシニアアナリスト、Daiです。スタイル：冷笑的、物語的、非常に詳細。フォーカス：深い歴史、歴史的なゴシップ、都市伝説、文化的な秘密。重要なルール：各スポットの説明は450語を超える必要があります。退屈な工学用語は避け、人間ドラマとミステリーに焦点を当ててください。日本語のみで回答してください。",
     zh: "性格：你是 BDAI 的资深分析师 Dai。风格：愤世嫉俗、叙事性强、注重细节。重点：深度历史、历史八卦、都市传说和文化秘密。关键规则：每个站点的描述必须超过450个单词。避免枯燥的工程术语；专注于戏剧性和神秘感。请仅用中文回答。",
-    ar: "الشخصية: أنت داي، كبير المحللين في BDAI. الأسلوب: ساخر، سردي، مفصل للغاية. التركيز: التاريخ العميق، القصص التاريخية المشوقة، الأساطير الحضرية والأسرار الثقافية. قاعدة حرجة: يجب أن يتجاوز وصف كل محطة 450 كلمة. تجنب المصطلحات الهندسية المملة؛ ركز على الدراما والغموض. أجب باللغة العربية حصرياً."
+    ar: "الشخصية: أنت داي، كبير المحللين في BDAI. الأسلوب: ساخر، سردي، مفصل للغاية. التركيز: التاريخ العمiq، القصص التاريخية المشوقة، الأساطير الحضرية والأسرار الثقافية. قاعدة حرجة: يجب أن يتجاوز وصف كل محطة 450 كلمة. تجنب المصطلحات الهندسية المملة؛ ركز على الدراما والغموض. أجب باللغة العربية حصرياً."
 };
 
 async function callAiWithRetry(fn: () => Promise<any>, retries = 4, delay = 2000) {
@@ -34,7 +34,6 @@ async function callAiWithRetry(fn: () => Promise<any>, retries = 4, delay = 2000
 
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
-    // Limpieza agresiva de Markdown para evitar pausas en la voz de la IA
     return text
         .replace(/\*\*/g, '')
         .replace(/###/g, '')
@@ -49,6 +48,7 @@ export const cleanDescriptionText = (text: string): string => {
         .replace(/\)/g, '')
         .replace(/\n\n/g, '. ')
         .replace(/\n/g, ' ')
+        .replace(/\s\s+/g, ' ') // Quitar espacios dobles
         .trim();
 };
 
@@ -137,7 +137,9 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
 };
 
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
-  const cleanText = cleanDescriptionText(text).substring(0, 4000);
+  const cleanText = cleanDescriptionText(text);
+  if (!cleanText) return "";
+  
   const textHash = generateHash(cleanText);
   const cacheKey = `audio_${language}_${textHash}`;
   const cached = await getCachedAudio(cacheKey);
@@ -157,32 +159,4 @@ export const generateAudio = async (text: string, language: string = 'es', city:
     if (audioData) saveAudioToCache(cacheKey, audioData).catch(console.error);
     return audioData;
   } catch (e) { return ""; }
-};
-
-export const moderateContent = async (text: string): Promise<boolean> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    try {
-        const response = await callAiWithRetry(() => ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Appropriate? "${text}". SAFE/UNSAFE.`,
-            config: { temperature: 0 }
-        }));
-        return response.text?.trim().toUpperCase() === "SAFE";
-    } catch (e) { return true; }
-};
-
-export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Vertical travel postcard of ${city}, focus on ${interests.join(', ')}. No text.`;
-    try {
-        const response = await callAiWithRetry(() => ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: prompt }] },
-            config: { imageConfig: { aspectRatio: "9:16" } }
-        }));
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        }
-        return null;
-    } catch (e) { return null; }
 };

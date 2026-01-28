@@ -19,7 +19,7 @@ const TRANSLATIONS: any = {
   es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email de credencial", codeLabel: "código de seguridad", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Selecciona tu idioma", resend: "Reenviar", checkEmail: "Revisa tu email", sentTo: "Código enviado a:", tryDifferent: "Cambiar email", close: "Cerrar", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", translating: "Traduciendo inteligencia verificada...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", quotaError: "Dai está exhausta. Reintentando...", timeoutError: "Tiempo de espera agotado.", selectAmbiguity: "¿A qué ciudad te refieres?" },
   ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email de credencial", codeLabel: "codi de seguretat", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa el teu email o SPAM", codeError: "Codi no vàlid", selectLang: "Selecciona el teu idioma", resend: "Renvoyer", checkEmail: "Revisa el teu email", sentTo: "Codi enviat a:", tryDifferent: "Canviar email", close: "Tancar", loading: "Carregant...", loadingTour: "La Dai està analitzant la ciutat...", translating: "Traduint intel·ligència verificada...", navElite: "Elit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga", quotaError: "La Dai està esgotada. Reintentant...", timeoutError: "Temps d'espera esgotat.", selectAmbiguity: "A quina ciutat et refereixes?" },
   eu: { welcome: "Bidaer Log:", explorer: "Esploratzailea", searchPlaceholder: "Helburu hiria...", emailPlaceholder: "Egiaztapen emaila", codeLabel: "segurtasun kodea", login: "Bidali Kodea", verify: "Sartu", tagline: "better destinations by ai", authError: "Begiratu tu emaila edo SPAMa", codeError: "Kode baliogabea", selectLang: "Hautatu zure hizkuntza", resend: "Berriro bidali", checkEmail: "Begiratu tu emaila", sentTo: "Kodea hona bidali da:", tryDifferent: "Emaila aldatu", close: "Itxi", loading: "Kargatzen...", loadingTour: "Dai hiria aztertzen ari da...", translating: "Adimen egiaztatua itzultzen...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", quotaError: "Dai nekatuta dago. Berriro saiatzen...", timeoutError: "Denbora agortu da.", selectAmbiguity: "Zein hiri da?" },
-  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email d'accès", codeLabel: "code de seguridad", login: "Envoyer le Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Choisissez votre langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai analyse la ville...", translating: "Traduction de l'intelligence vérifiée...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", quotaError: "Dai est épuisée. Nouvelle tentative...", timeoutError: "Délai d'attente dépassé.", selectAmbiguity: "De quelle ville s'agit-il ?" },
+  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email d'accès", codeLabel: "code de seguridad", login: "Envoyer le Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails ou SPAM", codeError: "Code invalide", selectLang: "Choisissez votre langue", resend: "Renvoyer", checkEmail: "Vérifiez vos e-mails", sentTo: "Code envoyé à :", tryDifferent: "Changer d'e-mail", close: "Fermer", loading: "Chargement...", loadingTour: "Dai analyse la ville...", translating: "Traduction de l'intelligence vérifiée...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", quotaError: "Dai est épuisée. Nouvelle tentative...", timeoutError: "Délai d'attente passé.", selectAmbiguity: "De quelle ville s'agit-il ?" },
   de: { welcome: "Bidaer Log:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "E-Mail", codeLabel: "Code", login: "Code senden", verify: "Zugreifen", tagline: "Bessere Ziele durch KI", authError: "E-Mail/Spam prüfen", codeError: "Ungültiger Code", selectLang: "Wählen Sie Ihre Sprache", resend: "Erneut senden", checkEmail: "Posteingang prüfen", sentTo: "Code gesendet an:", tryDifferent: "E-Mail ändern", close: "Schließen", loading: "Synchronisierung...", loadingTour: "Dai analysiert...", translating: "Übersetzung...", navElite: "Elite", navHub: "Intel", navVisa: "Pass", navStore: "Shop", quotaError: "Dai ist erschöpft. Erneuter Versuch...", timeoutError: "Zeitüberschreitung.", selectAmbiguity: "Welche Stadt meinen Sie?" },
   ja: { welcome: "Bidaer ログ:", explorer: "エクスプローラー", searchPlaceholder: "目的地...", emailPlaceholder: "メール", codeLabel: "コード", login: "送信", verify: "アクセス", tagline: "AIによる次世代の旅", authError: "メールを確認してください", codeError: "無効なコード", selectLang: "言語を選択してください", resend: "再送", checkEmail: "受信トレイを確認", sentTo: "送信先:", tryDifferent: "メール変更", close: "閉じる", loading: "同期中...", loadingTour: "分析中...", translating: "翻訳中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポー", navStore: "ショップ", quotaError: "Daiは疲れました。再試行中...", timeoutError: "タイムアウト。", selectAmbiguity: "どの都市ですか？" },
   zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "邮箱", codeLabel: "验证码", login: "发送", verify: "进入", tagline: "AI驱动的旅程", authError: "请检查邮箱", codeError: "无效代码", selectLang: "请选择您的语言", resend: "重发", checkEmail: "检查收件箱", sentTo: "代码已发送至:", tryDifferent: "更换邮箱", close: "关闭", loading: "同步中...", loadingTour: "分析中...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", quotaError: "Dai 累了，正在重试...", timeoutError: "超时。", selectAmbiguity: "您指的是哪个城市？" },
@@ -174,40 +174,7 @@ export default function App() {
 
   const handlePlayAudio = async (id: string, text: string) => {
     await unlockAudio();
-    const synth = window.speechSynthesis;
-    if (audioPlayingId === id) { 
-      if (audioSourceRef.current) audioSourceRef.current.stop();
-      if (synth) synth.cancel(); setAudioPlayingId(null); return; 
-    }
-    if (audioSourceRef.current) audioSourceRef.current.stop();
-    if (synth) synth.cancel();
-    setAudioLoadingId(id);
-    try {
-        if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const ctx = audioContextRef.current;
-        if (ctx.state === 'suspended') await ctx.resume();
-        const base64 = await generateAudio(text, user.language, selectedCity || 'Global');
-        if (base64) {
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            const dataInt16 = new Int16Array(bytes.buffer, 0, Math.floor(bytes.byteLength / 2));
-            const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
-            const channelData = buffer.getChannelData(0);
-            for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-            const source = ctx.createBufferSource();
-            source.buffer = buffer; source.connect(ctx.destination);
-            source.onended = () => setAudioPlayingId(null);
-            source.start(0); audioSourceRef.current = source; setAudioPlayingId(id);
-        } else {
-            setAudioPlayingId(id);
-            const utterance = new SpeechSynthesisUtterance(cleanDescriptionText(text));
-            utterance.lang = user.language;
-            utterance.onend = () => setAudioPlayingId(null);
-            synth.speak(utterance);
-        }
-    } catch(e) { setAudioPlayingId(null); } 
-    finally { setAudioLoadingId(null); }
+    // La lógica de reproducción se ha movido al componente ActiveTourCard para soportar Chaining
   };
 
   return (
@@ -223,8 +190,8 @@ export default function App() {
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative overflow-hidden">
               <div className="text-center pt-8">
-                  <div className="w-40 h-40 mb-6 bg-purple-600/10 rounded-[3rem] flex items-center justify-center border border-purple-500/20 shadow-[0_0_50px_rgba(147,51,234,0.3)] mx-auto animate-pulse transition-all">
-                     <BdaiLogo className="w-28 h-28" />
+                  <div className="w-48 h-48 mb-6 bg-purple-600/10 rounded-[3rem] flex items-center justify-center border border-purple-500/20 mx-auto animate-pulse-logo transition-all">
+                     <BdaiLogo className="w-32 h-32" />
                   </div>
                   <h1 className="text-3xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-purple-400 text-[8px] font-black uppercase tracking-[0.4em] mt-1">{t('tagline')}</p>
@@ -234,15 +201,15 @@ export default function App() {
                   {loginStep === 'EMAIL' ? (
                       <div className="space-y-4">
                           <div className="space-y-2">
-                              <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest text-center animate-pulse">{t('selectLang')}</p>
-                              <div className="flex justify-start gap-3 overflow-x-auto no-scrollbar py-2 px-1">
+                              <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] text-center animate-pulse">{t('selectLang')}</p>
+                              <div className="flex justify-start gap-3 overflow-x-auto no-scrollbar py-3 px-1">
                                   {LANGUAGES.map(lang => (
-                                      <button key={lang.code} onClick={() => { unlockAudio(); setUser(p => ({...p, language: lang.code})); }} className={`w-10 h-10 shrink-0 rounded-full border-2 overflow-hidden transition-all ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'border-white/5 opacity-40'}`}><FlagIcon code={lang.code} className="w-full h-full" /></button>
+                                      <button key={lang.code} onClick={() => { unlockAudio(); setUser(p => ({...p, language: lang.code})); }} className={`w-12 h-12 shrink-0 rounded-full border-2 overflow-hidden transition-all ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'border-white/5 opacity-40'}`}><FlagIcon code={lang.code} className="w-full h-full" /></button>
                                   ))}
                               </div>
                           </div>
-                          <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-center text-white focus:border-purple-500 outline-none font-bold" />
-                          <button onClick={handleSendOtp} className="w-full py-4 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[9px] shadow-2xl">
+                          <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-center text-white focus:border-purple-500 outline-none font-bold" />
+                          <button onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[9px] shadow-2xl">
                               {t('login')}
                           </button>
                       </div>
@@ -250,7 +217,7 @@ export default function App() {
                       <div className="space-y-4 text-center">
                           <p className="text-[8px] font-black text-slate-500 uppercase">{t('sentTo')} {email}</p>
                           <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} className="w-full bg-white/5 border border-white/10 rounded-3xl py-6 text-center font-black text-3xl text-white tracking-widest outline-none" placeholder="000000" />
-                          <button onClick={handleVerifyOtp} className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl">{t('verify')}</button>
+                          <button onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl">{t('verify')}</button>
                           <button onClick={() => setLoginStep('EMAIL')} className="text-[8px] font-black text-slate-600 uppercase">{t('tryDifferent')}</button>
                       </div>
                   )}
@@ -289,7 +256,7 @@ export default function App() {
                       <div className="space-y-6 pb-24">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { unlockAudio(); setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
                   </div>
                 )}
-                {view === AppView.TOUR_ACTIVE && activeTour && <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => { unlockAudio(); setCurrentStopIndex(i => i + 1); }} onPrev={() => { unlockAudio(); setCurrentStopIndex(i => i - 1); }} onJumpTo={(i: number) => { unlockAudio(); setCurrentStopIndex(i); }} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} language={user.language || 'es'} onBack={() => { if(audioSourceRef.current) audioSourceRef.current.stop(); if(window.speechSynthesis) window.speechSynthesis.cancel(); setAudioPlayingId(null); setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { setUser(p => ({...p, miles: p.miles + miles})); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />}
+                {view === AppView.TOUR_ACTIVE && activeTour && <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => { unlockAudio(); setCurrentStopIndex(i => i + 1); }} onPrev={() => { unlockAudio(); setCurrentStopIndex(i => i - 1); }} onJumpTo={(i: number) => { unlockAudio(); setCurrentStopIndex(i); }} language={user.language || 'es'} onBack={() => { setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { setUser(p => ({...p, miles: p.miles + miles})); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => unlockAudio()} language={user.language || 'es'} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language || 'es'} onCitySelect={(name) => handleCitySelect(name)} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => setUser(p => ({...p, miles: p.miles + reward}))} />}
