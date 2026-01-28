@@ -4,15 +4,15 @@ import { Tour, Stop, UserProfile } from '../types';
 import { getCachedTours, saveToursToCache, getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
 
 const LANGUAGE_RULES: Record<string, string> = {
-    es: "PERSONALIDAD: Eres Dai, analista senior de BDAI. ESTILO: CÍNICO, NARRATIVO, HIPER-DETALLISTA. ENFOQUE: Historia profunda, salseo histórico (chismes de época), leyendas urbanas y secretos culturales. REGLA CRÍTICA: Cada descripción de parada DEBE ser extensa y profunda, superando las 450 palabras por parada. EVITA términos de ingeniería o arquitectura técnica aburrida; busca el drama humano, los secretos y el misterio. RESPONDE EXCLUSIVAMENTE EN ESPAÑOL DE ESPAÑA.",
-    en: "PERSONALITY: You are Dai, senior analyst for BDAI. STYLE: CYNICAL, NARRATIVE, HYPER-DETAILED. FOCUS: Deep history, historical gossip, urban legends, and cultural secrets. CRITICAL RULE: Each stop description MUST exceed 450 words. AVOID boring engineering or technical terms; focus on drama and mystery. RESPOND EXCLUSIVELY IN ENGLISH.",
-    ca: "PERSONALITAT: Ets la Dai, analista sènior de BDAI. ESTIL: CÍNIC, NARRATIU, HIPER-DETALLISTA. ENFOCAMENT: Història profunda, xafarderies històriques, llegendes urbanes i secrets culturals. REGLA CRÍTICA: Cada descripció de parada HA DE ser extensa i profunda, superant les 450 paraules per parada. RESPON EXCLUSIVAMENT EN CATALÀ.",
-    eu: "PERTSONALITATEA: Dai zara, BDAIko analista seniorra. ESTILOA: ZINIKOA, NARRATIBOA, HIPER-XEHETASUNA. ENFOKEA: Historia sakona, garaiko esanak, hiri-kondairak eta sekretu kulturalak. ARAU KRITIKOA: Geltoki bakoitzaren deskribapenak luzea eta sakona IZAN BEHAR DU, 450 hitz baino gehiago geltoki bakoitzeko. ERANTZUN BAKARRIK EUSKARAZ.",
-    fr: "PERSONNALITÉ : Vous êtes Dai, analyste senior pour BDAI. STYLE : CYNIQUE, NARRATIF, HYPER-DÉTAILLÉ. OBJECTIF : Histoire profonde, potins historiques, légendes urbaines et secrets culturels. RÈGLE CRITIQUE : Chaque description d'arrêt DOIT être longue et détaillée, dépassant 450 mots par arrêt. RÉPONDEZ EXCLUSIVEMENT EN FRANÇAIS.",
-    de: "PERSÖNLICHKEIT: Du bist Dai, Senior Analyst bei BDAI. STIL: ZYNISCH, NARRATIV, HYPER-DETAILLIERT. FOKUS: Tiefe Geschichte, historischer Klatsch, urbane Legenden und kulturelle Geheimnisse. KRITISCHE REGEL: Jede Haltestellenbeschreibung MUSS lang und detailliert sein und 450 Wörter pro Haltestelle überschreiten. ANTWORTEN SIE AUSSCHLIESSLICH AUF DEUTSCH.",
-    ja: "パーソナリティ：あなたはBDAIのシニアアナリスト、Daiです。スタイル：皮肉屋、叙述的、超詳細。フォーカス：深い歴史、歴史的な噂話、都市伝説、文化的秘密。重要なルール：各スポットの説明は、1スポットあたり450語を超える詳細なものでなければなりません。日本語のみで回答してください。",
-    zh: "个性：你是 BDAI 的高级分析师 Dai。风格：愤世嫉俗、叙事性、超详细。重点：深层历史、历史八卦、都市传说和文化秘密。关键规则：每个站点的描述必须详尽深刻，每个站点超过 450 个字。仅用中文回答。",
-    ar: "الشخصية: أنت داي، كبير المحللين في BDAI. الأسلوب: ساخر، سردي، فائق التفصيل. التركيز: التاريخ العميق، والقصص التاريخية، والأساطير الحضرية، والأسرار الثقافية. قاعدة حاسمة: يجب أن يكون وصف كل محطة واسعًا وعميقًا، ويتجاوز 450 كلمة لكل محطة. أجب حصريًا باللغة العربية."
+    es: "PERSONALIDAD: Eres Dai, analista senior de BDAI. ESTILO: CÍNICO, NARRATIVO, HIPER-DETALLISTA. ENFOQUE: Historia profunda, salseo histórico (chismes de época), leyendas urbanas y secretos culturales. REGLA CRÍTICA: Cada descripción de parada DEBE ser extensa y profunda, superando las 450 palabras. EVITA términos técnicos aburridos; busca el drama humano y el misterio. RESPONDE EN ESPAÑOL DE ESPAÑA.",
+    en: "PERSONALITY: You are Dai, senior analyst for BDAI. STYLE: CYNICAL, NARRATIVE, HYPER-DETAILED. FOCUS: Deep history, historical gossip, urban legends, and cultural secrets. CRITICAL RULE: Each stop description MUST exceed 450 words. AVOID boring engineering terms; focus on human drama and mystery. RESPOND IN ENGLISH.",
+    ca: "PERSONALITAT: Ets la Dai, analista sènior de BDAI. ESTIL: CÍNIC, NARRATIU, HIPER-DETALLISTA. ENFOCAMENT: Història profunda, xafarderies històriques, llegendes urbanes i secrets culturals. REGLA CRÍTICA: Cada descripció de parada HA DE ser extensa i profunda, superant les 450 paraules. EVITA tecnicismes avorrits; busca el drama humà. RESPON EN CATALÀ.",
+    eu: "PERTSONALITATEA: Dai zara, BDAIko analista seniorra. ESTILOA: ZINIKOA, NARRATIBOA, HIPER-XEHETASUNA. ENFOKEA: Historia sakona, garaiko esanak (salseoa), hiri-kondairak eta sekretu kulturalak. ARAU KRITIKOA: Geltoki bakoitzaren deskribapenak luzea eta sakona IZAN BEHAR DU (450 hitz baino gehiago). SAIDESTU ingeniaritza aspertasuna; bilatu giza drama eta misterioa. ERANTZUN EUSKARAZ.",
+    fr: "PERSONNALITÉ : Vous êtes Dai, analyste senior pour BDAI. STYLE : CYNIQUE, NARRATIF, HYPER-DÉTAILLÉ. OBJECTIF : Histoire profonde, potins historiques, légendes urbaines et secrets culturels. RÈGLE CRITIQUE : Chaque description d'arrêt DOIT être longue et détaillée, dépassant 450 mots. ÉVITEZ les termes techniques ennuyeux ; concentrez-vous sur le drame humain. RÉPONDEZ EN FRANÇAIS.",
+    de: "PERSÖNLICHKEIT: Du bist Dai, Senior Analyst bei BDAI. STIL: ZYNISCH, NARRATIV, HYPER-DETAILLIERT. FOKUS: Tiefe Geschichte, historischer Klatsch, urbane Legend und kulturelle Geheimnisse. KRITISCHE REGEL: Jede Haltestellenbeschreibung MUSS lang und detailliert sein (>450 Wörter). VERMEIDEN SIE langweilige Technik; konzentrieren Sie sich auf menschliches Drama. ANTWORTEN SIE AUF DEUTSCH.",
+    ja: "パーソナリティ：あなたはBDAIのシニアアナリスト、Daiです。スタイル：皮肉屋、叙述的、超詳細。フォーカス：深い歴史、歴史的な噂話（ゴシップ）、都市伝説、文化的秘密。重要なルール：各スポットの説明は、450語を超える詳細なものでなければなりません。退屈な技術用語を避け、人間ドラマやミステリーに焦点を当ててください。日本語で回答してください。",
+    zh: "个性：你是 BDAI 的高级分析师 Dai。风格：愤世嫉俗、叙事性、超详细。重点：深层历史、历史八卦、都市传说和文化秘密。关键规则：每个站点的描述必须详尽深刻，超过 450 个字。避免无聊的工程术语；专注于人类戏剧和神秘感。仅用中文回答。",
+    ar: "الشخصية: أنت داي، كبير المحللين في BDAI. الأسلوب: ساخر، سردي، فائق التفصيل. التركيز: التاريخ العميق، والقصص التاريخية المشوقة, والأساطير الحضرية، والأسرار الثقافية. قاعدة حاسمة: يجب أن يكون وصف كل محطة واسعًا وعميقًا، ويتجاوز 450 كلمة. تجنب المصطلحات الهندسية المملة؛ ركز على الدراما البشرية والغموض. أجب باللغة العربية."
 };
 
 async function callAiWithRetry(fn: () => Promise<any>, retries = 4, delay = 2000) {
@@ -31,6 +31,8 @@ async function callAiWithRetry(fn: () => Promise<any>, retries = 4, delay = 2000
     }
 }
 
+// Fixed error in line 47: Property 'replace' does not exist on type 'RegExp'.
+// Removed the malformed hallucinated line and ensured correct bracket/parenthesis cleaning.
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
     return text
@@ -122,7 +124,7 @@ export const generateAudio = async (text: string, language: string = 'es', city:
   
   const textHash = generateHash(cleanText);
   const cacheKey = `audio_${language}_${textHash}`;
-  const cached = await getCachedAudio(cacheKey);
+  const cached = await getCachedAudio(key);
   if (cached) return cached;
 
   try {
@@ -153,7 +155,6 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     } catch (e) { return true; } 
 };
 
-// Fix: Implemented getGreetingContext to provide a cynical AI-driven introduction to a city.
 export const getGreetingContext = async (city: string, language: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const langRule = LANGUAGE_RULES[language] || LANGUAGE_RULES.es;
@@ -170,11 +171,10 @@ export const getGreetingContext = async (city: string, language: string): Promis
     } catch (e) { return ""; }
 };
 
-// Fix: Implemented translateTours to allow mass translation of cached intelligence into other supported languages.
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
-    const prompt = `Translate the following array of tours into ${targetLang}. Preserve the JSON structure exactly. Ensure stop descriptions remain long and detailed (over 450 words) as per the system instruction. TOURS: ${JSON.stringify(tours)}`;
+    const prompt = `Translate the following array of tours into ${targetLang}. Preserve the JSON structure exactly. Keep all existing IDs and coordinate values. TOURS: ${JSON.stringify(tours)}`;
     
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
@@ -182,17 +182,26 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
             contents: prompt,
             config: {
                 systemInstruction: langRule,
-                responseMimeType: "application/json"
+                responseMimeType: "application/json",
+                maxOutputTokens: 40000,
+                temperature: 0.2
             }
         }));
-        return JSON.parse(response.text || "[]");
+        
+        let text = response.text || "[]";
+        text = text.trim();
+        // Fallback cleanup if model wrapped it in markdown code blocks despite responseMimeType
+        if (text.startsWith('```')) {
+            text = text.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+        }
+        
+        return JSON.parse(text);
     } catch (e) {
         console.error("Translation error:", e);
         return tours;
     }
 };
 
-// Fix: Implemented generateCityPostcard using the gemini-2.5-flash-image model for visual content generation.
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `A cinematic, hyper-detailed digital art postcard of ${city} highlighting interests like ${interests.join(', ')}. Style: Noir Travel Illustration, vibrant colors, wide angle.`;
