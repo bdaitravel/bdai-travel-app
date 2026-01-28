@@ -10,9 +10,8 @@ const TEXTS: any = {
     ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Loguejar Dades", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Avançar", meters: "m", itinerary: "Seqüència", syncing: "Sincronitzant veu...", tooFar: "Massa lluny! Apropa't al punt.", locked: "GPS Bloquejat" }
 };
 
-// Fórmula de Haversine para validación GPS real
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371000; // Radio de la tierra en metros
+    const R = 6371000;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -48,14 +47,14 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [rewardClaimed, setRewardClaimed] = useState(false);
     const [photoClaimed, setPhotoClaimed] = useState(false);
 
-    // Audio Engine con Jitter Buffer (Playback continuo)
+    // NUEVO MOTOR DE AUDIO SECUENCIAL (Just-In-Time)
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
     
+    // Fragmentación por frases para evitar Timeouts en iPhone
     const phrases = useMemo(() => {
-        // Dividimos el texto en oraciones para procesamiento por bloques
-        return currentStop.description.split(/[.!?]+\s/).filter(p => p.trim().length > 3);
+        return currentStop.description.split(/[.!?\n]+\s/).filter(p => p.trim().length > 3);
     }, [currentStop.id]);
 
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -73,19 +72,20 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         setRewardClaimed(false);
         setPhotoClaimed(false);
         
-        // Empezamos a precargar el primer bloque
-        preloadPhrases(0);
+        // Iniciamos la precarga de la frase 0 de forma inmediata pero secuencial
+        preloadPhrase(0);
     }, [currentStop.id]);
 
-    const preloadPhrases = async (startIndex: number) => {
-        for (let i = startIndex; i < Math.min(startIndex + 3, phrases.length); i++) {
-            if (!preloadedBuffersRef.current.has(i)) {
-                const base64 = await generateAudio(phrases[i], language, tour.city);
-                if (base64) {
-                    const buffer = await decodeBase64ToBuffer(base64);
-                    if (buffer) preloadedBuffersRef.current.set(i, buffer);
-                }
+    const preloadPhrase = async (index: number) => {
+        if (index >= phrases.length || preloadedBuffersRef.current.has(index)) return;
+        try {
+            const base64 = await generateAudio(phrases[index], language, tour.city);
+            if (base64) {
+                const buffer = await decodeBase64ToBuffer(base64);
+                if (buffer) preloadedBuffersRef.current.set(index, buffer);
             }
+        } catch (e) {
+            console.error("Audio preload error index", index, e);
         }
     };
 
@@ -96,7 +96,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
         
-        // Decodificación de PCM raw 16bit 24kHz
         const dataInt16 = new Int16Array(bytes.buffer, 0, Math.floor(bytes.byteLength / 2));
         const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
         const channelData = buffer.getChannelData(0);
@@ -111,6 +110,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         });
         activeSourcesRef.current = [];
         nextStartTimeRef.current = 0;
+        setIsPlaying(false);
     };
 
     const startContinuousPlayback = async (startIndex: number) => {
@@ -122,17 +122,16 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
         isPlayingRef.current = true;
         setIsPlaying(true);
-        nextStartTimeRef.current = ctx.currentTime + 0.1;
+        nextStartTimeRef.current = ctx.currentTime + 0.05; // Margen de inicio
 
-        playNextInQueue(startIndex);
+        playNextSequential(startIndex);
     };
 
-    const playNextInQueue = async (index: number) => {
+    const playNextSequential = async (index: number) => {
         if (!isPlayingRef.current || index >= phrases.length) {
             if (index >= phrases.length) {
-                setIsPlaying(false);
-                isPlayingRef.current = false;
-                handleVisitReward(); // Gana millas al terminar de escuchar
+                stopAudio();
+                handleVisitReward(); 
             }
             return;
         }
@@ -153,35 +152,29 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             source.buffer = buffer;
             source.connect(ctx.destination);
             
-            // Programamos el inicio exacto para evitar GAPS
             const startTime = Math.max(ctx.currentTime, nextStartTimeRef.current);
             source.start(startTime);
             
             nextStartTimeRef.current = startTime + buffer.duration;
             activeSourcesRef.current.push(source);
 
-            // Precarga la siguiente mientras suena esta
-            preloadPhrases(index + 1);
+            // CARGA SECUENCIAL: Pedimos la siguiente SOLO cuando esta ya está programada
+            preloadPhrase(index + 1);
 
             source.onended = () => {
                 activeSourcesRef.current = activeSourcesRef.current.filter(s => s !== source);
+                // Si ya no quedan frases sonando y seguimos en play, disparamos la siguiente
                 if (activeSourcesRef.current.length === 0 && isPlayingRef.current) {
-                    playNextInQueue(index + 1);
+                    playNextSequential(index + 1);
                 }
             };
-
-            // Si hay buffer de la siguiente, la encolamos ya mismo para que el hilo no muera
-            if (preloadedBuffersRef.current.has(index + 1)) {
-                // Pequeño delay para no saturar el event loop
-                setTimeout(() => playNextInQueue(index + 1), 10);
-            }
-        } else {
-            setIsPlaying(false);
-            isPlayingRef.current = false;
+        } else if (isPlayingRef.current) {
+            // Si falla la carga de un bloque, intentamos saltar al siguiente tras un breve delay
+            setTimeout(() => playNextSequential(index + 1), 500);
         }
     };
 
-    // VALIDACIÓN GPS
+    // VALIDACIÓN GPS ESTRICTA (50m)
     const getDistance = () => {
         if (!userLocation) return Infinity;
         return calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
@@ -190,7 +183,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const handleVisitReward = () => {
         if (rewardClaimed) return;
         const dist = getDistance();
-        if (dist > 50) return; // Demasiado lejos
+        if (dist > 50) return; 
 
         onUpdateUser({ ...user, miles: user.miles + 25 });
         setRewardClaimed(true);
@@ -205,11 +198,10 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             return;
         }
 
-        // Distinción de puntos: Millas + Puntos de Foto (Insignias)
         onUpdateUser({ 
             ...user, 
-            photoPoints: (user.photoPoints || 0) + 1, // Puntos de estatus/insignia
-            miles: user.miles + 50, // Recompensa económica
+            photoPoints: (user.photoPoints || 0) + 1, 
+            miles: user.miles + 50,
             stats: { ...user.stats, photosTaken: user.stats.photosTaken + 1 }
         });
         setPhotoClaimed(true);
@@ -264,7 +256,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                         </button>
                     </div>
 
-                    {/* Photo Spot con bloqueo GPS */}
+                    {/* Photo Spot Estricto */}
                     <div className={`bg-slate-50 rounded-[2.5rem] border ${isLocked ? 'border-slate-200 opacity-60' : 'border-purple-200 bg-purple-50/30'} p-6 flex flex-col gap-4 transition-all`}>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
