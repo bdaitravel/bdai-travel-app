@@ -11,8 +11,8 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { Onboarding } from './components/Onboarding';
 import { FlagIcon } from './components/FlagIcon';
 import { AdminPanel } from './components/AdminPanel';
+import { CommunityBoard } from './components/CommunityBoard';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, normalizeKey, validateEmailFormat } from './services/supabaseClient';
-import { STATIC_TOURS } from './data/toursData';
 
 const TRANSLATIONS: any = {
   en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Credential email", codeLabel: "security code", login: "Send Code", verify: "Access", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select your language", resend: "Resend", checkEmail: "Check inbox", sentTo: "Code sent to:", tryDifferent: "Change email", close: "Close", loading: "Syncing data...", loadingTour: "Dai is deconstructing urban reality...", translating: "Translating verified intelligence...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", quotaError: "Dai is exhausted. Retrying...", timeoutError: "Connection timeout.", selectAmbiguity: "Which one do you mean?" },
@@ -42,6 +42,7 @@ const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: st
 
 export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
+  const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   const [loginStep, setLoginStep] = useState<'EMAIL' | 'CODE'>('EMAIL');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [email, setEmail] = useState('');
@@ -67,9 +68,6 @@ export default function App() {
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
 
   const audioContextRef = useRef<AudioContext | null>(null);
-  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
-  const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
-  const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
   const isAudioUnlocked = useRef(false);
 
   useEffect(() => {
@@ -82,35 +80,31 @@ export default function App() {
             setView(AppView.HOME);
             if (!newUser.interests?.length) setShowOnboarding(true);
         }
+        setIsVerifyingSession(false);
     };
     checkAuth();
     getGlobalRanking().then(setLeaderboard);
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}));
+      navigator.geolocation.watchPosition(pos => setUserLocation({lat: pos.coords.latitude, lng: pos.coords.longitude}), err => console.warn(err), { enableHighAccuracy: true });
     }
   }, []);
 
   const t = (key: string) => (TRANSLATIONS[user.language || 'es'] || TRANSLATIONS['es'])[key] || key;
 
-  /**
-   * AUDIO BRIDGE: Desbloqueo síncrono del motor de audio para iOS.
-   */
   const unlockAudio = async () => {
     if (isAudioUnlocked.current) return;
     try {
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         const ctx = audioContextRef.current;
         if (ctx.state === 'suspended') await ctx.resume();
-        const buffer = ctx.createBuffer(1, 1, 22050);
-        const source = ctx.createBufferSource();
-        source.buffer = buffer; source.connect(ctx.destination);
-        source.start(0);
-        if (window.speechSynthesis) {
-            const utterance = new SpeechSynthesisUtterance("");
-            utterance.volume = 0; window.speechSynthesis.speak(utterance);
-        }
         isAudioUnlocked.current = true;
     } catch (e) { console.warn(e); }
+  };
+
+  const handleUpdateUser = (updatedUser: UserProfile) => {
+    setUser(updatedUser);
+    localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
+    syncUserProfile(updatedUser);
   };
 
   const handleSendOtp = async () => {
@@ -135,8 +129,8 @@ export default function App() {
       else {
         const profile = await getUserProfileByEmail(email);
         const newUser: UserProfile = { ...(profile || user), id: data.user.id, email, isLoggedIn: true };
-        setUser(newUser); localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-        syncUserProfile(newUser); setView(AppView.HOME);
+        handleUpdateUser(newUser);
+        setView(AppView.HOME);
         if (!newUser.interests?.length) setShowOnboarding(true);
       }
     } catch (e: any) { setAuthError(e.message); } 
@@ -172,14 +166,18 @@ export default function App() {
     } catch (e: any) { setAuthError(e.message); setIsLoading(false); }
   };
 
-  const handlePlayAudio = async (id: string, text: string) => {
-    await unlockAudio();
-    // La lógica de reproducción se ha movido al componente ActiveTourCard para soportar Chaining
-  };
+  if (isVerifyingSession) {
+      return (
+          <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-10">
+              <BdaiLogo className="w-24 h-24 mb-6 animate-pulse" />
+              <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{t('loading')}</p>
+          </div>
+      );
+  }
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      {showOnboarding && <Onboarding language={user.language || 'es'} onLanguageSelect={(c) => { unlockAudio(); setUser(p => ({...p, language: c})); }} onComplete={(ints) => { unlockAudio(); setUser(p => ({...p, interests: ints})); setShowOnboarding(false); syncUserProfile({...user, interests: ints}); }} />}
+      {showOnboarding && <Onboarding language={user.language || 'es'} onLanguageSelect={(c) => { unlockAudio(); setUser(p => ({...p, language: c})); }} onComplete={(interests) => { unlockAudio(); handleUpdateUser({...user, interests}); setShowOnboarding(false); }} />}
       {isLoading && (
           <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-10 text-center">
               <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-6"></div>
@@ -202,9 +200,9 @@ export default function App() {
                       <div className="space-y-4">
                           <div className="space-y-2">
                               <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] text-center animate-pulse">{t('selectLang')}</p>
-                              <div className="flex justify-start gap-3 overflow-x-auto no-scrollbar py-3 px-1">
+                              <div className="flex justify-start gap-4 overflow-x-auto no-scrollbar py-3 px-1">
                                   {LANGUAGES.map(lang => (
-                                      <button key={lang.code} onClick={() => { unlockAudio(); setUser(p => ({...p, language: lang.code})); }} className={`w-12 h-12 shrink-0 rounded-full border-2 overflow-hidden transition-all ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'border-white/5 opacity-40'}`}><FlagIcon code={lang.code} className="w-full h-full" /></button>
+                                      <button key={lang.code} onClick={() => { unlockAudio(); setUser(p => ({...p, language: lang.code})); }} className={`w-10 h-10 shrink-0 rounded-full border-2 overflow-hidden transition-all ${user.language === lang.code ? 'border-purple-500 scale-110 shadow-[0_0_15px_rgba(147,51,234,0.3)]' : 'border-white/5 opacity-40'}`}><FlagIcon code={lang.code} className="w-full h-full" /></button>
                                   ))}
                               </div>
                           </div>
@@ -253,14 +251,15 @@ export default function App() {
                         <button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button>
                         <h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2>
                       </header>
-                      <div className="space-y-6 pb-24">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { unlockAudio(); setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
+                      <div className="space-y-6 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { unlockAudio(); setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
+                      <CommunityBoard city={selectedCity} language={user.language || 'es'} user={user} />
                   </div>
                 )}
-                {view === AppView.TOUR_ACTIVE && activeTour && <ActiveTourCard tour={activeTour} currentStopIndex={currentStopIndex} onNext={() => { unlockAudio(); setCurrentStopIndex(i => i + 1); }} onPrev={() => { unlockAudio(); setCurrentStopIndex(i => i - 1); }} onJumpTo={(i: number) => { unlockAudio(); setCurrentStopIndex(i); }} language={user.language || 'es'} onBack={() => { setView(AppView.CITY_DETAIL); }} userLocation={userLocation} onVisit={(id: string, miles: number) => { setUser(p => ({...p, miles: p.miles + miles})); setActiveTour({ ...activeTour, stops: activeTour.stops.map(s => s.id === id ? { ...s, visited: true } : s) }); }} />}
+                {view === AppView.TOUR_ACTIVE && activeTour && <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => { unlockAudio(); setCurrentStopIndex(i => i + 1); }} onPrev={() => { unlockAudio(); setCurrentStopIndex(i => i - 1); }} onJumpTo={(i: number) => { unlockAudio(); setCurrentStopIndex(i); }} onUpdateUser={handleUpdateUser} language={user.language || 'es'} onBack={() => { setView(AppView.CITY_DETAIL); }} userLocation={userLocation} />}
                 {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => unlockAudio()} language={user.language || 'es'} />}
                 {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language || 'es'} onCitySelect={(name) => handleCitySelect(name)} />}
-                {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => setUser(p => ({...p, miles: p.miles + reward}))} />}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language || 'es'} onUpdateUser={(u) => { unlockAudio(); setUser(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); syncUserProfile(u); }} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
+                {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => handleUpdateUser({...user, miles: user.miles + reward})} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language || 'es'} onUpdateUser={handleUpdateUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
             {view !== AppView.TOUR_ACTIVE && (

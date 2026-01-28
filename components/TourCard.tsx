@@ -1,32 +1,30 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Tour, Stop } from '../types';
+import { Tour, Stop, UserProfile } from '../types';
 import { SchematicMap } from './SchematicMap';
 import { cleanDescriptionText, generateAudio } from '../services/geminiService';
 
 const TEXTS: any = {
-    en: { start: "Launch", stop: "Hub", of: "of", photoSpot: "Technical Angle", capture: "Log Data", approach: "Verify proximity", rewardReceived: "Data Synced", prev: "Back", next: "Advance", meters: "m", share: "Transmit", itinerary: "Sequence", intro: "Bidaer Manifesto", syncing: "Dai is syncing voice..." },
-    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", approach: "Verifica proximidad", rewardReceived: "Datos Sincronizados", prev: "Atrás", next: "Avanzar", meters: "m", share: "Transmitir", itinerary: "Secuencia", intro: "Manifiesto Bidaer", syncing: "Dai sincronizando voz..." },
-    ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Loguejar Dades", approach: "Verifica proximitat", rewardReceived: "Dades Sincronitzades", prev: "Enrere", next: "Avançar", meters: "m", share: "Transmetre", itinerary: "Seqüència", intro: "Manifest Bidaer", syncing: "La Dai sincronitza veu..." },
-    eu: { start: "Abiarazi", stop: "Geldialdia", of: "-(e)tik", photoSpot: "Angulu Teknikoa", capture: "Datuak Gorde", approach: "Hurbiltasuna egiaztatu", rewardReceived: "Datuak Sinkronizatuta", prev: "Atzera", next: "Aurrera", meters: "m", share: "Partekatu", itinerary: "Sekuentzia", intro: "Bidaer Manifestua", syncing: "Dai ahotsa sinkronizatzen..." },
-    fr: { start: "Lancer", stop: "Arrêt", of: "sur", photoSpot: "Angle Technique", capture: "Loguer Données", approach: "Vérifier proximité", rewardReceived: "Données Sync", prev: "Retour", next: "Avancer", meters: "m", share: "Transmettre", itinerary: "Séquence", intro: "Manifeste Bidaer", syncing: "Dai synchronise sa voix..." },
-    de: { start: "Starten", stop: "Stopp", of: "von", photoSpot: "Winkel", capture: "Daten loggen", approach: "Nähe prüfen", rewardReceived: "Daten synchronisiert", prev: "Zurück", next: "Weiter", meters: "m", share: "Teilen", itinerary: "Route", intro: "Manifest", syncing: "Dai synchronisiert..." },
-    ja: { start: "開始", stop: "スポット", of: "中の", photoSpot: "アングル", capture: "ログ保存", approach: "接近を確認", rewardReceived: "同期完了", prev: "戻る", next: "進む", meters: "m", share: "共有", itinerary: "旅程", intro: "マニフェスト", syncing: "Daiが同期中..." },
-    zh: { start: "启动", stop: "站点", of: "的", photoSpot: "角度", capture: "记录数据", approach: "检查距离", rewardReceived: "数据同步", prev: "返回", next: "下一步", meters: "米", share: "分享", itinerary: "路线", intro: "宣言", syncing: "Dai正在同步语音..." },
-    ar: { start: "إطلاق", stop: "محطة", of: "من", photoSpot: "زاوية", capture: "تسجيل", approach: "تحقق من القرب", rewardReceived: "تمت المزامنة", prev: "السابق", next: "التالي", meters: "م", share: "مشاركة", itinerary: "المسار", intro: "بيان", syncing: "داي تقوم بالمزامنة..." }
+    en: { start: "Launch", stop: "Hub", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Sync Successful", prev: "Back", next: "Advance", meters: "m", itinerary: "Sequence", syncing: "Syncing voice...", tooFar: "Too far! Move closer to the spot." },
+    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Secuencia", syncing: "Sincronizando voz...", tooFar: "¡Demasiado lejos! Acércate al punto real." },
+    ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Loguejar Dades", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Avançar", meters: "m", itinerary: "Seqüència", syncing: "Sincronitzant veu...", tooFar: "Massa lluny! Apropa't al punt." }
 };
 
-const getCalculatedDuration = (stopsCount: number) => {
-    const mins = stopsCount * 20;
-    const hours = Math.floor(mins / 60);
-    const remainingMins = mins % 60;
-    if (hours > 0) return `${hours}h${remainingMins > 0 ? ' ' + remainingMins + 'm' : ''}`;
-    return `${mins}m`;
+// Fórmula de Haversine para validación GPS real
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371000; // Radio de la tierra en metros
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
 };
 
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS.es;
-  const duration = getCalculatedDuration(tour.stops.length);
+  const duration = tour.stops.length * 20 + "m";
   return (
     <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-md p-7 mb-4 cursor-pointer relative">
       <div className="flex flex-col">
@@ -44,12 +42,13 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
   );
 };
 
-export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, onPrev, onJumpTo, onPlayAudio, audioPlayingId, audioLoadingId, onBack, language = 'es' }) => {
+export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS.es;
     const currentStop = tour.stops[currentStopIndex] as Stop;
-    const [showItinerary, setShowItinerary] = useState(false);
+    const [rewardClaimed, setRewardClaimed] = useState(false);
+    const [photoClaimed, setPhotoClaimed] = useState(false);
 
-    // Audio Chaining State
+    // Audio Storytelling Engine
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
@@ -59,27 +58,33 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
 
     const audioContextRef = useRef<AudioContext | null>(null);
     const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
-    const preloadedBuffers = useRef<Record<number, AudioBuffer>>({});
+    const preloadedBuffers = useRef<Map<number, AudioBuffer>>(new Map());
+    const isPreloading = useRef(false);
 
-    // Pre-carga automática al cambiar de parada
     useEffect(() => {
         stopAudio();
         setIsPlaying(false);
         setIsLoading(false);
         setCurrentPhraseIndex(0);
-        preloadedBuffers.current = {};
-        preloadSentence(0);
+        preloadedBuffers.current.clear();
+        setRewardClaimed(false);
+        setPhotoClaimed(false);
+        preloadNextPhrases(0);
     }, [currentStop.id]);
 
-    const preloadSentence = async (index: number) => {
-        if (index >= phrases.length || preloadedBuffers.current[index]) return;
-        try {
-            const base64 = await generateAudio(phrases[index], language, tour.city);
-            if (base64) {
-                const buffer = await decodeBase64ToBuffer(base64);
-                if (buffer) preloadedBuffers.current[index] = buffer;
+    const preloadNextPhrases = async (startIndex: number) => {
+        if (isPreloading.current) return;
+        isPreloading.current = true;
+        for (let i = startIndex; i < Math.min(startIndex + 3, phrases.length); i++) {
+            if (!preloadedBuffers.current.has(i)) {
+                const base64 = await generateAudio(phrases[i], language, tour.city);
+                if (base64) {
+                    const buffer = await decodeBase64ToBuffer(base64);
+                    if (buffer) preloadedBuffers.current.set(i, buffer);
+                }
             }
-        } catch (e) { console.warn("Preload failed", e); }
+        }
+        isPreloading.current = false;
     };
 
     const decodeBase64ToBuffer = async (base64: string): Promise<AudioBuffer | null> => {
@@ -105,58 +110,69 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
     const playPhrase = async (index: number) => {
         if (index >= phrases.length) {
             setIsPlaying(false);
+            // Recompensa automática por escuchar (Millas)
+            handleVisitReward();
             return;
         }
-
         setCurrentPhraseIndex(index);
+        let buffer = preloadedBuffers.current.get(index);
         
-        let buffer = preloadedBuffers.current[index];
         if (!buffer) {
             setIsLoading(true);
             const base64 = await generateAudio(phrases[index], language, tour.city);
-            if (base64) {
-                buffer = await decodeBase64ToBuffer(base64);
-            }
+            if (base64) buffer = await decodeBase64ToBuffer(base64);
+            setIsLoading(false);
         }
 
         if (buffer) {
-            setIsLoading(false);
             const ctx = audioContextRef.current!;
             if (ctx.state === 'suspended') await ctx.resume();
-            
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
-            source.onended = () => playPhrase(index + 1);
+            source.onended = () => {
+                const nextIdx = index + 1;
+                playPhrase(nextIdx);
+                preloadNextPhrases(nextIdx + 1);
+            };
             source.start(0);
             audioSourceRef.current = source;
-            
-            // Pre-cargar la siguiente mientras suena esta
-            preloadSentence(index + 1);
+            setIsPlaying(true);
         } else {
-            // Fallback selectivo para no arruinar el Euskera
-            const criticalLangs = ['eu', 'ca', 'ja', 'ar'];
-            if (!criticalLangs.includes(language)) {
-                const synth = window.speechSynthesis;
-                const utterance = new SpeechSynthesisUtterance(phrases[index]);
-                utterance.lang = language;
-                utterance.onend = () => playPhrase(index + 1);
-                synth.speak(utterance);
-            } else {
-                // Si es euskera y falla el buffer, esperamos un poco y reintentamos
-                setTimeout(() => playPhrase(index), 2000);
-            }
+            setIsPlaying(false);
         }
     };
 
-    const handleToggleAudio = () => {
-        if (isPlaying) {
-            stopAudio();
-            setIsPlaying(false);
-        } else {
-            setIsPlaying(true);
-            playPhrase(currentPhraseIndex);
+    // Lógica de validación GPS para Millas (Visita)
+    const handleVisitReward = () => {
+        if (rewardClaimed || !userLocation) return;
+        const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
+        if (dist > 50) return; // Demasiado lejos para loguear visita
+
+        const updatedUser = { ...user, miles: user.miles + 25 };
+        onUpdateUser(updatedUser);
+        setRewardClaimed(true);
+    };
+
+    // Lógica de validación GPS para Puntos de Foto (Ángulo Técnico)
+    const handlePhotoReward = () => {
+        if (photoClaimed) return;
+        if (!userLocation) { alert(tl.tooFar); return; }
+        
+        const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
+        if (dist > 50) {
+            alert(`${tl.tooFar} (${Math.round(dist)}m)`);
+            return;
         }
+
+        const updatedUser = { 
+            ...user, 
+            photoPoints: (user.photoPoints || 0) + 1,
+            miles: user.miles + 50, // Bonus de millas por foto
+            stats: { ...user.stats, photosTaken: user.stats.photosTaken + 1 }
+        };
+        onUpdateUser(updatedUser);
+        setPhotoClaimed(true);
     };
 
     return (
@@ -167,40 +183,39 @@ export const ActiveTourCard: React.FC<any> = ({ tour, currentStopIndex, onNext, 
                     <p className="text-[8px] font-black text-purple-600 uppercase tracking-widest">{tl.stop} {currentStopIndex + 1} {tl.of} {tour.stops.length}</p>
                     <h2 className="text-sm font-black text-slate-900 uppercase truncate max-w-[150px]">{currentStop.name}</h2>
                 </div>
-                <button onClick={() => setShowItinerary(!showItinerary)} className={`w-12 h-12 rounded-2xl border flex items-center justify-center ${showItinerary ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-950'}`}><i className="fas fa-layer-group"></i></button>
+                <div className="w-12 h-12"></div>
              </div>
-             {showItinerary && (
-                 <div className="absolute inset-0 z-[7000] flex flex-col animate-fade-in">
-                     <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setShowItinerary(false)}></div>
-                     <div className="mt-auto bg-white rounded-t-[3rem] p-8 max-h-[70vh] overflow-y-auto relative z-10 pb-safe-iphone">
-                        <div className="flex justify-between items-center mb-8">
-                            <h3 className="text-xl font-black uppercase text-slate-900">{tl.itinerary}</h3>
-                            <button onClick={() => setShowItinerary(false)} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center"><i className="fas fa-times"></i></button>
-                        </div>
-                        <div className="space-y-3">
-                            {tour.stops.map((stop: Stop, idx: number) => (
-                                <div key={stop.id} onClick={() => { onJumpTo(idx); setShowItinerary(false); }} className={`flex items-center gap-4 p-4 rounded-2xl border ${idx === currentStopIndex ? 'bg-slate-900 text-white shadow-xl' : 'bg-white border-slate-100'}`}>
-                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === currentStopIndex ? 'bg-white text-slate-950' : 'bg-slate-100 text-slate-400'}`}>{idx + 1}</div>
-                                    <p className="text-[10px] font-black uppercase truncate flex-1">{stop.name}</p>
-                                </div>
-                            ))}
-                        </div>
-                     </div>
-                 </div>
-             )}
+             
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col relative">
                 <div className="h-[35vh] w-full relative z-[100] shrink-0 border-b border-slate-100 bg-slate-200">
-                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={onJumpTo} onPlayAudio={handleToggleAudio} audioPlayingId={isPlaying ? currentStop.id : null} audioLoadingId={isLoading ? currentStop.id : null} />
+                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={onJumpTo} onPlayAudio={() => { if (isPlaying) { stopAudio(); setIsPlaying(false); } else { playPhrase(currentPhraseIndex); } }} audioPlayingId={isPlaying ? currentStop.id : null} audioLoadingId={isLoading ? currentStop.id : null} userLocation={userLocation} />
                 </div>
                 <div className="px-8 pt-10 pb-40 space-y-10 bg-white rounded-t-[3rem] -mt-10 shadow-[0_-30px_60px_rgba(0,0,0,0.05)] z-[200]">
                     <div className="flex justify-between items-center">
                         <div className="flex-1">
                              {isLoading && <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest animate-pulse">{tl.syncing}</p>}
                         </div>
-                        <button onClick={handleToggleAudio} disabled={isLoading} className={`w-16 h-16 rounded-[2rem] flex items-center justify-center shadow-2xl transition-all active:scale-95 shrink-0 ${isPlaying ? 'bg-red-600' : 'bg-slate-950'} text-white`}>
+                        <button onClick={() => { if (isPlaying) { stopAudio(); setIsPlaying(false); } else { playPhrase(currentPhraseIndex); } }} disabled={isLoading} className={`w-16 h-16 rounded-[2rem] flex items-center justify-center shadow-2xl transition-all active:scale-95 shrink-0 ${isPlaying ? 'bg-red-600' : 'bg-slate-950'} text-white`}>
                             {isLoading ? <i className="fas fa-circle-notch fa-spin"></i> : isPlaying ? <i className="fas fa-pause"></i> : <i className="fas fa-play ml-1"></i>}
                         </button>
                     </div>
+
+                    <div className="bg-slate-50 rounded-[2.5rem] border border-slate-200 p-6 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center text-sm shadow-lg"><i className="fas fa-camera"></i></div>
+                                <div>
+                                    <p className="text-[8px] font-black text-purple-600 uppercase tracking-widest">{tl.photoSpot}</p>
+                                    <h4 className="text-[10px] font-black uppercase text-slate-900">{currentStop.photoSpot?.angle || tl.capture}</h4>
+                                </div>
+                            </div>
+                            <span className="text-sm font-black text-slate-900">+{currentStop.photoSpot?.milesReward || 50}m</span>
+                        </div>
+                        <button onClick={handlePhotoReward} disabled={photoClaimed} className={`w-full py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${photoClaimed ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-slate-900 text-white shadow-xl'}`}>
+                            {photoClaimed ? <><i className="fas fa-check-circle mr-2"></i> {tl.rewardReceived}</> : tl.capture}
+                        </button>
+                    </div>
+
                     <div className="space-y-10 text-slate-800 text-lg leading-relaxed font-medium pb-20">
                         {currentStop.description.split('\n\n').map((paragraph, idx) => (
                             <p key={idx} className="animate-fade-in first-letter:text-6xl first-letter:font-black first-letter:text-slate-950 first-letter:mr-3 first-letter:float-left first-letter:mt-1 opacity-90">
