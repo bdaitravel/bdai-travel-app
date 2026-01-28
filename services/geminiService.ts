@@ -22,7 +22,6 @@ async function callAiWithRetry(fn: () => Promise<any>, retries = 4, delay = 2000
         } catch (error: any) {
             const errorMsg = error.message || "";
             const isRetryable = errorMsg.includes('503') || errorMsg.includes('overloaded') || errorMsg.includes('429') || errorMsg.includes('UNAVAILABLE') || errorMsg.includes('deadline');
-            
             if (isRetryable && i < retries - 1) {
                 console.warn(`[BDAI] Reintentando petición pesada (${i + 1}/${retries})...`);
                 await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
@@ -35,7 +34,22 @@ async function callAiWithRetry(fn: () => Promise<any>, retries = 4, delay = 2000
 
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
-    return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/#/g, '').replace(/\*/g, '').trim();
+    // Limpieza agresiva de Markdown para evitar pausas en la voz de la IA
+    return text
+        .replace(/\*\*/g, '')
+        .replace(/###/g, '')
+        .replace(/##/g, '')
+        .replace(/#/g, '')
+        .replace(/\*/g, '')
+        .replace(/_/g, '')
+        .replace(/`/g, '')
+        .replace(/\[/g, '')
+        .replace(/\]/g, '')
+        .replace(/\(/g, '')
+        .replace(/\)/g, '')
+        .replace(/\n\n/g, '. ')
+        .replace(/\n/g, ' ')
+        .trim();
 };
 
 const generateHash = (str: string) => {
@@ -52,12 +66,7 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Identify the intended city from: "${input}". 
-            REGLAS:
-            1. Sé extremadamente tolerante a erratas, falta de letras o idiomas.
-            2. Si el nombre es un PAÍS, elige su CAPITAL.
-            3. Si el nombre es AMBIGUO (existe en varios países), devuelve las opciones más importantes (máximo 5).
-            4. Devuelve los nombres en ESPAÑOL.`,
+            contents: `Identify the intended city from: "${input}". REGLAS: 1. Tolerante a erratas. 2. País = Capital. 3. Ambiguo = Opciones. 4. Devuelve en español.`,
             config: { 
                 temperature: 0,
                 responseMimeType: "application/json",
@@ -66,44 +75,28 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            name: { type: Type.STRING, description: "Nombre de la ciudad en español" },
-                            country: { type: Type.STRING, description: "Nombre del país en español" }
+                            name: { type: Type.STRING },
+                            country: { type: Type.STRING }
                         },
                         required: ["name", "country"]
                     }
                 }
             }
         }));
-        const parsed = JSON.parse(response.text || "[]");
-        return parsed.length > 0 ? parsed : [{ name: input, country: "" }];
-    } catch (e) { 
-        return [{ name: input, country: "" }]; 
-    }
+        return JSON.parse(response.text || "[]");
+    } catch (e) { return [{ name: input, country: "" }]; }
 };
 
 export const translateTours = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `Traduce este array de tours al idioma "${targetLanguage}".
-    REGLAS:
-    1. Mantén la personalidad de Dai: Cínica, detallista y narrativa.
-    2. NO cambies coordenadas (lat/lng), IDs ni tipos.
-    3. Traduce todos los campos de texto: title, description, name, theme, angle, secretLocation.
-    4. Devuelve exactamente el mismo formato JSON.`;
-
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `${prompt}\n\nDATA: ${JSON.stringify(tours)}`,
-            config: { 
-                temperature: 0.3,
-                responseMimeType: "application/json"
-            }
+            contents: `Traduce este array al idioma "${targetLanguage}". Mantén personalidad de Dai. NO cambies coordenadas. DATA: ${JSON.stringify(tours)}`,
+            config: { temperature: 0.3, responseMimeType: "application/json" }
         }));
         return JSON.parse(response.text || "[]");
-    } catch (e) {
-        console.error("Translation error:", e);
-        return tours; // Fallback al original si falla
-    }
+    } catch (e) { return tours; }
 };
 
 export const getGreetingContext = async (city: string, language: string): Promise<string> => {
@@ -122,51 +115,7 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
   const langRule = LANGUAGE_RULES[userProfile.language] || LANGUAGE_RULES.es;
   const interestsStr = userProfile.interests.join(", ") || "historia y cultura";
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  const prompt = `Genera exactamente 3 TOURS para la ciudad de ${cityInput} en el país de ${countryInput}. 
-  Intereses del usuario: [${interestsStr}].
-  REGLAS CRÍTICAS:
-  1. UBICACIÓN: Asegúrate de que todas las paradas existan realmente en ${cityInput}, ${countryInput}. No mezcles con otras ciudades del mismo nombre en otros países.
-  2. PARADAS: Exactamente 10 paradas por cada tour.
-  3. DESCRIPCIÓN: Cada parada DEBE tener un texto de al menos 450 palabras.
-  4. TEMÁTICA: Salseo histórico, secretos, leyendas urbanas y drama humano.
-  5. FORMATO: JSON estricto.`;
-
-  const responseSchema = {
-    type: Type.ARRAY,
-    items: {
-      type: Type.OBJECT,
-      properties: {
-        title: { type: Type.STRING },
-        description: { type: Type.STRING },
-        duration: { type: Type.STRING },
-        distance: { type: Type.STRING },
-        theme: { type: Type.STRING },
-        isEssential: { type: Type.BOOLEAN },
-        stops: {
-          type: Type.ARRAY,
-          minItems: 10,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              description: { type: Type.STRING },
-              latitude: { type: Type.NUMBER },
-              longitude: { type: Type.NUMBER },
-              type: { type: Type.STRING, enum: ["historical", "food", "art", "nature", "photo", "culture", "architecture"] },
-              photoSpot: {
-                type: Type.OBJECT,
-                properties: { angle: { type: Type.STRING }, milesReward: { type: Type.NUMBER }, secretLocation: { type: Type.STRING } },
-                required: ["angle", "milesReward", "secretLocation"]
-              }
-            },
-            required: ["name", "description", "latitude", "longitude", "type", "photoSpot"]
-          }
-        }
-      },
-      required: ["title", "description", "duration", "distance", "theme", "stops"]
-    }
-  };
+  const prompt = `Genera 3 TOURS para ${cityInput}, ${countryInput}. Intereses: [${interestsStr}]. 10 paradas. 450 palabras/parada. JSON estricto.`;
 
   try {
     const response = await callAiWithRetry(() => ai.models.generateContent({
@@ -175,12 +124,10 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
         config: { 
             systemInstruction: langRule,
             responseMimeType: "application/json", 
-            responseSchema: responseSchema,
             maxOutputTokens: 40000, 
             temperature: 0.8
         }
     }));
-    
     const parsed = JSON.parse(response.text || "[]");
     return parsed.map((t: any, idx: number) => ({
         ...t, id: `tour_${idx}_${Date.now()}`, city: cityInput, difficulty: 'Moderate',
@@ -193,7 +140,6 @@ export const generateAudio = async (text: string, language: string = 'es', city:
   const cleanText = cleanDescriptionText(text).substring(0, 4000);
   const textHash = generateHash(cleanText);
   const cacheKey = `audio_${language}_${textHash}`;
-  
   const cached = await getCachedAudio(cacheKey);
   if (cached) return cached;
 
@@ -218,7 +164,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Appropriate? "${text}". Return SAFE or UNSAFE.`,
+            contents: `Appropriate? "${text}". SAFE/UNSAFE.`,
             config: { temperature: 0 }
         }));
         return response.text?.trim().toUpperCase() === "SAFE";
