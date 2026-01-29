@@ -8,56 +8,45 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
- * Normalización agresiva para coincidir con registros como 'puertoespana' o 'alain'
+ * Normalización para claves de caché.
+ * Ahora es obligatorio pasar ciudad y opcional país para discriminar correctamente.
  */
-export const normalizeKey = (text: string) => {
-    if (!text) return "";
-    return text.toLowerCase()
+export const normalizeKey = (city: string, country?: string) => {
+    const raw = country ? `${city}_${country}` : city;
+    return raw.toLowerCase()
         .trim()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") // Quita tildes
-        .replace(/[^a-z0-9]/g, ""); // QUITA TODO lo que no sea letra o número (espacios, guiones, etc.)
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/[^a-z0-9]/g, ""); 
 };
 
-/**
- * Busca un tour en la caché con máxima flexibilidad.
- */
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string} | null> => {
-  const nInput = normalizeKey(city);
+  const nInput = normalizeKey(city, country);
   if (!nInput) return null;
   
-  // 1. Intentamos match exacto de IDIOMA y CIUDAD (Sin caracteres especiales)
+  // 1. Match exacto de idioma y localización (ciudad+país)
   const { data: exactMatch } = await supabase.from('tours_cache')
     .select('data, language')
-    .ilike('city', nInput)
+    .eq('city', nInput)
     .eq('language', language)
     .maybeSingle();
 
   if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language };
 
-  // 2. Si no hay match de idioma, buscamos la CIUDAD en cualquier idioma
+  // 2. Fallback a cualquier idioma para la misma localización
   const { data: anyMatch } = await supabase.from('tours_cache')
     .select('data, language')
-    .ilike('city', nInput)
+    .eq('city', nInput)
     .limit(1)
     .maybeSingle();
 
   if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language };
 
-  // 3. Búsqueda por prefijo (por si acaso el nombre en la DB es más largo)
-  const { data: prefixMatch } = await supabase.from('tours_cache')
-    .select('data, language')
-    .ilike('city', `${nInput}%`)
-    .limit(1)
-    .maybeSingle();
-
-  if (prefixMatch) return { data: prefixMatch.data as Tour[], langFound: prefixMatch.language };
-
   return null;
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
-  const nKey = normalizeKey(city);
+  const nKey = normalizeKey(city, country);
   await supabase.from('tours_cache').upsert({ 
     city: nKey, 
     language, 

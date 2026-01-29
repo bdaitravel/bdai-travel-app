@@ -18,11 +18,11 @@ export const FlagIcon = ({ code, className }: { code: string; className?: string
   };
   
   return (
-    <div className={`${className} rounded-full overflow-hidden flex items-center justify-center bg-slate-800 border border-white/10 aspect-square shrink-0`}>
+    <div className={`${className} rounded-full overflow-hidden flex items-center justify-center bg-slate-800 border border-white/20 aspect-square shrink-0 shadow-sm`}>
       <img 
         src={flags[code] || flags['es']} 
         alt={`Flag ${code}`} 
-        className="w-full h-full object-cover" 
+        className="w-full h-full object-cover scale-110" 
         onError={(e) => {
           (e.target as HTMLImageElement).src = flags['es'];
         }}

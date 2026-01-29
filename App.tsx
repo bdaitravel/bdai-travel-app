@@ -14,8 +14,12 @@ import { CommunityBoard } from './components/CommunityBoard';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", apiError: "AI AUTH ERROR: Check your API_KEY in Vercel settings.", quotaError: "Dai is tired. Too many requests. Wait a bit." },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", apiError: "ERROR DE IA: Tu API_KEY no es válida. Revisa Vercel.", quotaError: "Dai está saturada. Espera unos minutos (Límite Gratuito)." }
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", apiError: "AI AUTH ERROR: Check your API_KEY.", quotaError: "Dai is tired. Wait a bit.", genError: "Sync error. Try again." },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", apiError: "ERROR DE IA: Revisa tu API_KEY.", quotaError: "Dai está saturada. Espera unos minutos.", genError: "Error de sincronización. Reintenta." },
+  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Autenticar", tagline: "better destinations by ai", authError: "Verifique o email", codeError: "Código inválido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está gerando...", analyzing: "Localizando cidade...", generating: "Gerando tours...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", apiError: "Erro de IA.", quotaError: "Dai cansada. Espere.", genError: "Erro de sincronização." },
+  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Autentica", tagline: "better destinations by ai", authError: "Controlla email", codeError: "Codice non valido", selectLang: "Lingua", loading: "Sincronizzazione...", loadingTour: "Dai sta analizzando...", analyzing: "Localizzazione città...", generating: "Generazione tour...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", apiError: "Errore IA.", quotaError: "Dai è stanca. Aspetta.", genError: "Errore di sincronizzazione." },
+  ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa l'email", codeError: "Codi no vàlid", selectLang: "Idioma", loading: "Sincronitzant...", loadingTour: "Dai està analitzant...", analyzing: "Localitzant ciutat...", generating: "Generant tours...", translating: "Traduint...", navElite: "Elit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga", apiError: "Error d'IA.", quotaError: "Dai està saturada.", genError: "Error de sincronització." },
+  eu: { welcome: "Log Bidaer:", explorer: "Esploratzailea", searchPlaceholder: "Helmuga...", emailPlaceholder: "Emaila", login: "Kodea Bidali", verify: "Sartu", tagline: "better destinations by ai", authError: "Egiaztatu emaila", codeError: "Kode okerra", selectLang: "Hizkuntza", loading: "Sinkronizatzen...", loadingTour: "Dai aztertzen ari da...", analyzing: "Hiria kokatzen...", generating: "Tourrak sortzen...", translating: "Itzultzen...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", apiError: "IA errorea.", quotaError: "Dai nekatuta dago.", genError: "Sinkronizazio errorea." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -53,6 +57,7 @@ export default function App() {
   });
 
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
@@ -86,15 +91,18 @@ export default function App() {
     syncUserProfile(updatedUser);
   };
 
-  const processCitySelection = async (officialNames: {name: string, spanishName: string, country: string}) => {
+  const processCitySelection = async (official: {name: string, spanishName: string, country: string}) => {
     setIsLoading(true); 
     setSearchOptions(null); 
     setLoadingMessage(t('loadingTour'));
     const targetLang = user.language || 'es';
     
     try {
-        setSelectedCity(officialNames.spanishName); 
-        const cached = await getCachedTours(officialNames.spanishName, officialNames.country, targetLang);
+        setSelectedCity(official.spanishName); 
+        setSelectedCountry(official.country);
+
+        // Usamos ciudad + país para discriminar en la caché
+        const cached = await getCachedTours(official.spanishName, official.country, targetLang);
         
         if (cached) {
             if (cached.langFound === targetLang) {
@@ -104,21 +112,25 @@ export default function App() {
                 setLoadingMessage(t('translating'));
                 const translated = await translateTours(cached.data, targetLang);
                 setTours(translated);
-                await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, translated);
+                await saveToursToCache(official.spanishName, official.country, targetLang, translated);
                 setView(AppView.CITY_DETAIL);
                 setIsLoading(false); return;
             }
         }
 
         setLoadingMessage(t('generating'));
-        const generated = await generateToursForCity(officialNames.spanishName, officialNames.country, user);
+        const generated = await generateToursForCity(official.spanishName, official.country, user);
+        
+        if (!generated || generated.length === 0) throw new Error("GEN_FAILED");
+
         setTours(generated); 
-        await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, generated);
+        await saveToursToCache(official.spanishName, official.country, targetLang, generated);
         setView(AppView.CITY_DETAIL);
     } catch (e: any) { 
+        console.error("Critical Flow Error:", e);
         if (e.message === 'AUTH_ERROR') setAuthError(t('apiError'));
         else if (e.message === 'QUOTA_EXCEEDED') setAuthError(t('quotaError'));
-        else setAuthError("Error de conexión. Reintenta.");
+        else setAuthError(t('genError'));
     } finally { setIsLoading(false); }
   };
 
@@ -174,10 +186,16 @@ export default function App() {
               </div>
 
               <div className="w-full max-w-sm space-y-12">
-                  <div className="flex overflow-x-auto no-scrollbar gap-3 px-2 py-2">
-                    {LANGUAGES.map(lang => (
-                        <button key={lang.code} onClick={() => handleUpdateUser({...user, language: lang.code})} className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all border ${user.language === lang.code ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/5 text-slate-500 grayscale opacity-60'}`}><FlagIcon code={lang.code} className="w-5 h-5" /><span className="text-[9px] font-black uppercase whitespace-nowrap">{lang.name}</span></button>
-                    ))}
+                  <div className="flex flex-col gap-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 text-center">{t('selectLang')}</p>
+                    <div className="flex justify-center gap-6 overflow-x-auto no-scrollbar py-2">
+                        {LANGUAGES.map(lang => (
+                            <button key={lang.code} onClick={() => handleUpdateUser({...user, language: lang.code})} className="flex flex-col items-center gap-2 group transition-all">
+                                <FlagIcon code={lang.code} className={`w-10 h-10 transition-all ${user.language === lang.code ? 'border-purple-500 ring-4 ring-purple-500/20 scale-110' : 'opacity-40 grayscale group-hover:opacity-80'}`} />
+                                <span className={`text-[7px] font-black uppercase tracking-widest ${user.language === lang.code ? 'text-white' : 'text-slate-600'}`}>{lang.name}</span>
+                            </button>
+                        ))}
+                    </div>
                   </div>
                   
                   <div className="w-full space-y-4 max-w-xs mx-auto">
@@ -229,7 +247,7 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 animate-fade-in">
-                      <header className="flex items-center gap-4 mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2></header>
+                      <header className="flex items-center gap-4 mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity} <span className="text-slate-500 text-[10px] ml-2 tracking-widest">{selectedCountry}</span></h2></header>
                       <div className="space-y-4 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
                       <CommunityBoard city={selectedCity} language={user.language || 'es'} user={user} />
                   </div>
