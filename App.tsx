@@ -15,10 +15,10 @@ import { CommunityBoard } from './components/CommunityBoard';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat, normalizeKey } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Access Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "System Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Interpreting location...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Transmitting code to:" },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma del Sistema", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Interpretando localización...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando código a:" },
-  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "E-mail", login: "Enviar Código", verify: "Acessar", tagline: "better destinations by ai", authError: "Verifique seu e-mail", codeError: "Código inválido", selectLang: "Idioma do Sistema", loading: "Sincronizando...", loadingTour: "Dai está analisando...", analyzing: "Interpretando...", generating: "Gerando tours...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", sendingTo: "Enviando para:" },
-  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "better destinations by ai", authError: "Controlla email", codeError: "Codice errato", selectLang: "Lingua del Sistema", loading: "Sincronizzazione...", loadingTour: "Dai sta analizzando...", analyzing: "Interpretazione...", generating: "Generando tour...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", sendingTo: "Invio a:" },
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Access Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "System Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Activating Reasoning Cores...", generating: "Generating Masterclass Content...", translating: "Translating Knowledge...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Transmitting code to:" },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma del Sistema", loading: "Sincronizando...", loadingTour: "Dai está razonando la ciudad...", analyzing: "Activando Núcleos de Razonamiento...", generating: "Generando Contenido Masterclass...", translating: "Traduciendo Conocimiento...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando código a:" },
+  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "E-mail", login: "Enviar Código", verify: "Acessar", tagline: "better destinations by ai", authError: "Verifique seu e-mail", codeError: "Código inválido", selectLang: "Idioma do Sistema", loading: "Sincronizando...", loadingTour: "Dai está analisando...", analyzing: "Ativando Raciocínio...", generating: "Gerando tours...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", sendingTo: "Enviando para:" },
+  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "better destinations by ai", authError: "Controlla email", codeError: "Codice errato", selectLang: "Lingua del Sistema", loading: "Sincronizzazione...", loadingTour: "Dai sta analizzando...", analyzing: "Ragionamento in corso...", generating: "Generando tour...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", sendingTo: "Invio a:" },
   ru: { welcome: "Log Bidaer:", explorer: "Исследователь", searchPlaceholder: "Город...", emailPlaceholder: "Email", login: "Код", verify: "Вход", tagline: "better destinations by ai", authError: "Проверьте почту", selectLang: "Язык системы", loading: "Синхронизация...", loadingTour: "Дай анализирует...", analyzing: "Анализ...", generating: "Генерация...", translating: "Перевод...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", sendingTo: "Отправка на:" },
   hi: { welcome: "Bidaer Log:", explorer: "खोजकर्ता", searchPlaceholder: "शहर खोजें...", emailPlaceholder: "ईमेल", login: "कोड भेजें", verify: "पहुंच", tagline: "better destinations by ai", authError: "ईमेल जांचें", selectLang: "सिस्टम की भाषा", loading: "सिंक हो रहा है...", loadingTour: "दाई विश्लेषण कर रही है...", analyzing: "व्याख्या...", generating: "दौरे उत्पन्न करना...", translating: "अनुवाद...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", sendingTo: "कोड भेजा जा रहा है:" },
   fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville...", emailPlaceholder: "Email", login: "Code", verify: "Accès", tagline: "better destinations by ai", authError: "Vérifiez vos emails", selectLang: "Langue du système", loading: "Sync...", loadingTour: "Dai analyse...", analyzing: "Interprétation...", generating: "Génération...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", sendingTo: "Envoi à:" },
@@ -80,6 +80,13 @@ export default function App() {
     };
     checkAuth();
     getGlobalRanking().then(setLeaderboard);
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            null, { enableHighAccuracy: true }
+        );
+    }
   }, []);
 
   const t = (key: string) => (TRANSLATIONS[user.language || 'es'] || TRANSLATIONS['es'])[key] || key;
@@ -93,40 +100,38 @@ export default function App() {
   const processCitySelection = async (officialNames: {name: string, spanishName: string, country: string}) => {
     setIsLoading(true); 
     setSearchOptions(null); 
-    setLoadingMessage(t('loadingTour'));
+    setLoadingMessage(t('analyzing'));
     const targetLang = user.language || 'es';
     
     try {
         setSelectedCity(officialNames.spanishName); 
+        const cached = await getCachedTours(officialNames.spanishName, officialNames.country, targetLang);
         
-        // 1. INTENTAMOS MATCH EN CACHÉ
-        const variantsToTry = [officialNames.spanishName, officialNames.name];
-        let cachedMatch = null;
-        for (const variant of variantsToTry) {
-            const cached = await getCachedTours(variant, officialNames.country, targetLang);
-            if (cached) { cachedMatch = cached; break; }
-        }
-        
-        if (cachedMatch) {
-            if (cachedMatch.langFound === targetLang) {
-                setTours(cachedMatch.data); setView(AppView.CITY_DETAIL); 
+        if (cached) {
+            if (cached.langFound === targetLang) {
+                setTours(cached.data); setView(AppView.CITY_DETAIL);
+                setIsLoading(false); return;
             } else {
                 setLoadingMessage(t('translating'));
-                const translated = await translateTours(cachedMatch.data, targetLang);
+                const translated = await translateTours(cached.data, targetLang);
                 setTours(translated);
                 await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, translated);
                 setView(AppView.CITY_DETAIL);
+                setIsLoading(false); return;
             }
-            setIsLoading(false); return;
         }
 
-        // 2. GENERACIÓN MAESTRA (Aprovechando Paid Key)
         setLoadingMessage(t('generating'));
         const generated = await generateToursForCity(officialNames.spanishName, officialNames.country, user);
         setTours(generated); 
         await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, generated);
         setView(AppView.CITY_DETAIL);
-    } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
+    } catch (e: any) { 
+        console.error("Critical AI Error:", e);
+        setAuthError("Dai está experimentando alta latencia. Reintenta."); 
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   const handleCitySelect = async (cityInput: string) => {
@@ -136,20 +141,19 @@ export default function App() {
     setLoadingMessage(t('analyzing'));
 
     try {
-        // Estandarización inteligente (Paso previo para ahorrar API calls y unificar datos)
         const results = await standardizeCityName(cityInput);
-        if (results.length === 1) {
-            await processCitySelection(results[0]);
-        } else if (results.length > 1) {
-            setSearchOptions(results);
-            setIsLoading(false);
+        if (results && results.length > 0) {
+            if (results.length === 1) {
+                await processCitySelection(results[0]);
+            } else {
+                setSearchOptions(results);
+                setIsLoading(false);
+            }
         } else {
-            setAuthError("Localización no reconocida.");
-            setIsLoading(false);
+            await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
         }
     } catch (e: any) {
-        setAuthError(e.message);
-        setIsLoading(false);
+        await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
     }
   };
 
@@ -176,12 +180,12 @@ export default function App() {
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      {isLoading && <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-10"><div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-6"></div><p className="text-white font-black uppercase text-[10px] tracking-[0.4em]">{loadingMessage || t('loading')}</p></div>}
+      {isLoading && <div className="fixed inset-0 z-[9999] bg-slate-950/90 backdrop-blur-3xl flex flex-col items-center justify-center p-10"><div className="w-20 h-20 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-8 shadow-[0_0_30px_rgba(147,51,234,0.3)]"></div><p className="text-white font-black uppercase text-[11px] tracking-[0.5em] text-center max-w-xs leading-loose">{loadingMessage || t('loading')}</p></div>}
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative bg-[#020617]">
               <div className="text-center pt-12">
-                  <BdaiLogo className="w-24 h-24 mx-auto mb-6" />
+                  <BdaiLogo className="w-24 h-24 mx-auto mb-6 animate-pulse-logo" />
                   <h1 className="text-4xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mt-2">{t('tagline')}</p>
               </div>
@@ -198,7 +202,7 @@ export default function App() {
                             <button 
                                 key={lang.code}
                                 onClick={() => handleUpdateUser({...user, language: lang.code})} 
-                                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all border ${user.language === lang.code ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/5 text-slate-500 grayscale opacity-60'}`}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all border ${user.language === lang.code ? 'bg-purple-600 border-purple-500 text-white shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 grayscale opacity-60'}`}
                             >
                                 <FlagIcon code={lang.code} className="w-5 h-5" />
                                 <span className="text-[9px] font-black uppercase whitespace-nowrap">{lang.name}</span>
@@ -211,14 +215,14 @@ export default function App() {
                       {authError && <div className="text-red-400 text-[8px] font-black uppercase text-center bg-red-500/10 p-3 rounded-2xl border border-red-500/20">{authError}</div>}
                       {loginStep === 'EMAIL' ? (
                           <div className="space-y-4">
-                              <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-2xl py-5 px-6 text-center text-white focus:border-purple-500 outline-none font-bold placeholder:opacity-20 transition-all" />
+                              <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-2xl py-5 px-6 text-center text-white focus:border-purple-500 outline-none font-bold placeholder:opacity-20 transition-all shadow-inner" />
                               <button onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl transition-all active:scale-95">{t('login')}</button>
                           </div>
                       ) : (
                           <div className="space-y-6 text-center animate-fade-in">
                               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('sendingTo')} <br/><span className="text-purple-400 lowercase">{email}</span></p>
                               <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-purple-500/30 rounded-3xl py-6 text-center font-black text-3xl text-white tracking-widest outline-none" placeholder="000000" />
-                              <button onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all active:scale-95">{t('verify')}</button>
+                              <button onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all active:scale-95 shadow-xl">{t('verify')}</button>
                           </div>
                       )}
                   </div>
@@ -235,11 +239,31 @@ export default function App() {
                           <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
-                      <div className="relative mt-8"><i className="fas fa-search absolute left-6 top-6 text-slate-500"></i><input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500 outline-none font-bold" /></div>
+                      
+                      <div className="relative mt-8 flex gap-3">
+                          <div className="relative flex-1">
+                              <i className="fas fa-location-crosshairs absolute left-6 top-6 text-slate-500"></i>
+                              <input 
+                                  type="text" 
+                                  value={searchVal} 
+                                  onChange={(e) => setSearchVal(e.target.value)} 
+                                  onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} 
+                                  placeholder={t('searchPlaceholder')} 
+                                  className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500 outline-none font-bold" 
+                              />
+                          </div>
+                          <button 
+                              onClick={() => handleCitySelect(searchVal)}
+                              className="w-16 h-16 rounded-[2rem] bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-[0_10px_30px_rgba(147,51,234,0.4)] active:scale-90 transition-all"
+                          >
+                              <i className="fas fa-search"></i>
+                          </button>
+                      </div>
+
                       {searchOptions && (
-                          <div className="mt-6 space-y-3 animate-fade-in">
+                          <div className="mt-6 space-y-3 animate-fade-in bg-white/5 p-4 rounded-[2.5rem] border border-white/5">
                               {searchOptions.map((opt: any, i: number) => (
-                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-6 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-between group active:bg-purple-600 transition-all"><div className="flex flex-col items-start"><span className="text-white font-black uppercase text-sm">{opt.spanishName}</span><span className="text-[9px] text-slate-500 font-bold uppercase">{opt.country}</span></div><i className="fas fa-chevron-right text-slate-700"></i></button>
+                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-6 bg-slate-900 border border-white/10 rounded-3xl flex items-center justify-between group active:bg-purple-600 transition-all"><div className="flex flex-col items-start"><span className="text-white font-black uppercase text-sm">{opt.spanishName}</span><span className="text-[9px] text-slate-500 font-bold uppercase">{opt.country}</span></div><i className="fas fa-chevron-right text-slate-700"></i></button>
                               ))}
                           </div>
                       )}
