@@ -23,8 +23,8 @@ const LANGUAGE_RULES: Record<string, string> = {
     de: `${MASTERCLASS_INSTRUCTION} ANTWORTEN SIE AUF DEUTSCH.`,
     ja: `${MASTERCLASS_INSTRUCTION} 日本語で回答してください。`,
     zh: `${MASTERCLASS_INSTRUCTION} 仅用中文回答.`,
-    ca: `${MASTERCLASS_INSTRUCTION} RESPON EN CATALÀ.`,
-    eu: `${MASTERCLASS_INSTRUCTION} EUSKARAZ ERANTZUN.`
+    ca: `${MASTERCLASS_INSTRUCTION} RESPON SEMPRE EN CATALÀ.`,
+    eu: `${MASTERCLASS_INSTRUCTION} ERANTZUN BETI EUSKARAZ.`
 };
 
 async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1000) {
@@ -49,7 +49,9 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Identify global locations named: "${input}". Provide multiple results if ambiguous (e.g. Cordoba in Spain vs Argentina). Return JSON array: [{name(EN), spanishName, country}].`,
+            contents: `Search global locations for: "${input}". 
+            If ambiguous (e.g. Cordoba), list major ones. 
+            Return JSON array: [{name(EN), spanishName, country}].`,
             config: { 
                 temperature: 0,
                 responseMimeType: "application/json",
@@ -69,7 +71,7 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
         });
         return JSON.parse(response.text || "[]");
     } catch (e) { 
-        return [{ name: input, spanishName: input, country: "" }]; 
+        return []; 
     }
 };
 
@@ -79,7 +81,8 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
   const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
   
   const prompt = `Genera 3 TOURS TEMÁTICOS de ALTA DENSIDAD para ${cityInput}, ${countryInput}. 
-  Cada tour debe tener 8 paradas con coordenadas precisas. Formato JSON.`;
+  Cada tour debe tener 8 paradas con coordenadas precisas. Formato JSON. 
+  RESPONDE OBLIGATORIAMENTE EN EL IDIOMA: ${targetLang}.`;
 
   const response = await callAiWithRetry(() => ai.models.generateContent({
       model: 'gemini-3-flash-preview', 
@@ -160,30 +163,73 @@ export const generateAudio = async (text: string, language: string = 'es', city:
       },
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-  } catch (e) { return ""; }
+  } catch (e) { 
+    console.error("Audio Generation Error:", e);
+    return ""; 
+  }
 };
 
+/**
+ * Moderates content to ensure it is appropriate for the travel community board.
+ */
 export const moderateContent = async (text: string): Promise<boolean> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Is this content safe? "${text}" (SAFE/UNSAFE)`,
-            config: { temperature: 0 }
+            contents: `Analyze if this message is inappropriate, toxic, or offensive for a travel community board: "${text}". 
+            Return JSON: { "isSafe": boolean }`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        isSafe: { type: Type.BOOLEAN }
+                    },
+                    required: ["isSafe"]
+                }
+            }
         });
-        return response.text?.toUpperCase().includes('SAFE');
-    } catch (e) { return true; } 
+        const result = JSON.parse(response.text || '{"isSafe": true}');
+        return result.isSafe;
+    } catch (e) {
+        console.error("Content Moderation Error:", e);
+        return true; // Default to safe if error occurs to avoid blocking user interaction unnecessarily
+    }
 };
 
+/**
+ * Generates an artistic postcard for a city based on user interests.
+ */
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
+        const prompt = `A highly detailed, cinematic travel postcard for the city of ${city}. 
+        Incorporate themes from these interests: ${interests.join(', ')}. 
+        Style: Professional travel photography, vibrant and saturated colors, golden hour lighting, 9:16 portrait aspect ratio. 
+        The image should capture an iconic landmark or the unique atmosphere of the city.`;
+
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: `Cinematic photography of ${city}. 8k resolution.` }] },
-            config: { imageConfig: { aspectRatio: "9:16" } }
+            contents: {
+                parts: [{ text: prompt }]
+            },
+            config: {
+                imageConfig: {
+                    aspectRatio: "9:16"
+                }
+            }
         });
-        const part = response.candidates[0].content.parts.find(p => p.inlineData);
-        return part ? `data:image/png;base64,${part.inlineData.data}` : null;
-    } catch (e) { return null; }
+
+        // The model returns image parts, iterate to find the inlineData part
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error("Postcard Generation Error:", e);
+        return null;
+    }
 };

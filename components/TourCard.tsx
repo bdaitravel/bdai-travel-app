@@ -7,16 +7,12 @@ import { cleanDescriptionText, generateAudio } from '../services/geminiService';
 const TEXTS: any = {
     en: { start: "Launch", stop: "Hub", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Sync Successful", prev: "Back", next: "Advance", meters: "m", itinerary: "Sequence", syncing: "Syncing voice...", tooFar: "Too far! Move closer to the spot." },
     es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Secuencia", syncing: "Sincronizando voz...", tooFar: "¡Demasiado lejos! Acércate al punto real." },
+    ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Registrar", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Avançar", meters: "m", itinerary: "Seqüència", syncing: "Sincronitzant veu...", tooFar: "Massa lluny !" },
+    eu: { start: "Abiarazi", stop: "Geldialdia", of: "/", photoSpot: "Angelu Teknikoa", capture: "Erregistratu", rewardReceived: "Sinkronizatuta", prev: "Atzera", next: "Aurrera", meters: "m", itinerary: "Sekuentzia", syncing: "Ahotsa sinkronizatzen...", tooFar: "Urrunegi !" },
     pt: { start: "Iniciar", stop: "Parada", of: "de", photoSpot: "Ângulo Técnico", capture: "Registrar", rewardReceived: "Sincronizado", prev: "Voltar", next: "Avançar", meters: "m", itinerary: "Sequência", syncing: "Sincronizando voz...", tooFar: "Muito longe! Aproxime-se do local." },
     it: { start: "Avvia", stop: "Tappa", of: "di", photoSpot: "Angolo Tecnico", capture: "Registra", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Sequenza", syncing: "Sincronizzazione...", tooFar: "Troppo lontano! Avvicinati al punto." },
-    ru: { start: "Начать", stop: "Остановка", of: "из", photoSpot: "Угол съемки", capture: "Лог", rewardReceived: "Успешно", prev: "Назад", next: "Далее", meters: "м", itinerary: "Маршрут", syncing: "Синхронизация...", tooFar: "Слишком далеко!" },
-    hi: { start: "लॉन्च", stop: "स्टॉप", of: "का", photoSpot: "तकनीकी कोण", capture: "डेटा लॉग करें", rewardReceived: "सफल", prev: "पीछे", next: "आगे", meters: "मीटर", itinerary: "अनुक्रम", syncing: "आवाज़ सिंक हो रही है...", tooFar: "बहुत दूर! पास आएँ।" },
-    fr: { start: "Lancer", stop: "Arrêt", of: "de", photoSpot: "Angle Technique", capture: "Enregistrer", rewardReceived: "Synchronisé", prev: "Retour", next: "Avancer", meters: "m", itinerary: "Séquence", syncing: "Synchronisation...", tooFar: "Trop loin !" },
-    de: { start: "Start", stop: "Stopp", of: "von", photoSpot: "Winkel", capture: "Log", rewardReceived: "Erfolgreich", prev: "Zurück", next: "Weiter", meters: "m", itinerary: "Route", syncing: "Stimme wird synchronisiert...", tooFar: "Zu weit weg !" },
     ja: { start: "開始", stop: "目的地", of: "/", photoSpot: "撮影角度", capture: "ログ", rewardReceived: "同期完了", prev: "戻る", next: "進む", meters: "m", itinerary: "シーケンス", syncing: "音声同期中...", tooFar: "遠すぎます！もっと近づいてください。" },
-    zh: { start: "启动", stop: "站点", of: "/", photoSpot: "技术角度", capture: "记录", rewardReceived: "同步成功", prev: "返回", next: "前进", meters: "米", itinerary: "顺序", syncing: "语音同步中...", tooFar: "太远了！请靠近一点。" },
-    ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Registrar", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Avançar", meters: "m", itinerary: "Seqüència", syncing: "Sincronitzant veu...", tooFar: "Massa lluny !" },
-    eu: { start: "Abiarazi", stop: "Geldialdia", of: "/", photoSpot: "Angelu Teknikoa", capture: "Erregistratu", rewardReceived: "Sinkronizatuta", prev: "Atzera", next: "Aurrera", meters: "m", itinerary: "Sekuentzia", syncing: "Ahotsa sinkronizatzen...", tooFar: "Urrunegi !" }
+    zh: { start: "启动", stop: "站点", of: "/", photoSpot: "技术角度", capture: "记录", rewardReceived: "同步成功", prev: "返回", next: "前进", meters: "米", itinerary: "顺序", syncing: "语音同步中...", tooFar: "太远了！请靠近一点。" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -71,7 +67,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const audioContextRef = useRef<AudioContext | null>(null);
     const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
     const preloadedBuffers = useRef<Map<number, AudioBuffer>>(new Map());
-    const isPreloading = useRef(false);
 
     useEffect(() => {
         stopAudio();
@@ -81,40 +76,29 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         preloadedBuffers.current.clear();
         setRewardClaimed(false);
         setPhotoClaimed(false);
-        preloadSpecificPhrase(0);
     }, [currentStop.id]);
-
-    const preloadSpecificPhrase = async (idx: number) => {
-        if (preloadedBuffers.current.has(idx)) return;
-        try {
-            const base64 = await generateAudio(phrases[idx], language, tour.city);
-            if (base64) {
-                const buffer = await decodeBase64ToBuffer(base64);
-                if (buffer) preloadedBuffers.current.set(idx, buffer);
-            }
-        } catch (e) { console.error(e); }
-    };
-
-    const preloadNextPhrases = async (startIndex: number) => {
-        if (isPreloading.current) return;
-        isPreloading.current = true;
-        for (let i = startIndex; i < Math.min(startIndex + 2, phrases.length); i++) {
-            await preloadSpecificPhrase(i);
-        }
-        isPreloading.current = false;
-    };
 
     const decodeBase64ToBuffer = async (base64: string): Promise<AudioBuffer | null> => {
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         const ctx = audioContextRef.current;
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const dataInt16 = new Int16Array(bytes.buffer, 0, Math.floor(bytes.byteLength / 2));
-        const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
-        const channelData = buffer.getChannelData(0);
-        for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-        return buffer;
+        
+        try {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            
+            // Raw PCM 16-bit Mono 24kHz
+            const dataInt16 = new Int16Array(bytes.buffer);
+            const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
+            const channelData = buffer.getChannelData(0);
+            for (let i = 0; i < dataInt16.length; i++) {
+                channelData[i] = dataInt16[i] / 32768.0;
+            }
+            return buffer;
+        } catch (e) {
+            console.error("Decoding Error:", e);
+            return null;
+        }
     };
 
     const stopAudio = () => {
@@ -127,52 +111,41 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const playPhrase = async (index: number) => {
         if (index >= phrases.length) {
             setIsPlaying(false);
-            handleVisitReward();
             return;
         }
-        setCurrentPhraseIndex(index);
-        let buffer = preloadedBuffers.current.get(index);
         
-        if (!buffer) {
-            setIsLoading(true);
+        setCurrentPhraseIndex(index);
+        setIsLoading(true);
+        
+        try {
             const base64 = await generateAudio(phrases[index], language, tour.city);
-            if (base64) buffer = await decodeBase64ToBuffer(base64);
+            const buffer = await decodeBase64ToBuffer(base64);
+            
+            if (buffer) {
+                const ctx = audioContextRef.current!;
+                if (ctx.state === 'suspended') await ctx.resume();
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+                source.onended = () => {
+                    playPhrase(index + 1);
+                };
+                source.start(0);
+                audioSourceRef.current = source;
+                setIsPlaying(true);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
             setIsLoading(false);
         }
-
-        if (buffer) {
-            const ctx = audioContextRef.current!;
-            if (ctx.state === 'suspended') await ctx.resume();
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
-            source.onended = () => {
-                const nextIdx = index + 1;
-                playPhrase(nextIdx);
-                preloadNextPhrases(nextIdx + 1);
-            };
-            source.start(0);
-            audioSourceRef.current = source;
-            setIsPlaying(true);
-        } else {
-            setIsPlaying(false);
-        }
-    };
-
-    const handleVisitReward = () => {
-        if (rewardClaimed || !userLocation) return;
-        const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
-        if (dist > 50) return;
-        const updatedUser = { ...user, miles: user.miles + 25 };
-        onUpdateUser(updatedUser);
-        setRewardClaimed(true);
     };
 
     const handlePhotoReward = () => {
         if (photoClaimed) return;
         if (!userLocation) { alert(tl.tooFar); return; }
         const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
-        if (dist > 50) { alert(`${tl.tooFar} (${Math.round(dist)}m)`); return; }
+        if (dist > 100) { alert(`${tl.tooFar} (${Math.round(dist)}m)`); return; }
         const updatedUser = { 
             ...user, 
             photoPoints: (user.photoPoints || 0) + 1,
@@ -184,7 +157,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-50 flex flex-col z-[5000] overflow-hidden">
+        <div className="fixed inset-0 bg-slate-50 flex flex-col z-[5000] overflow-hidden animate-fade-in">
              <div className="bg-white border-b border-slate-100 px-6 py-6 flex items-center justify-between z-[6000] shrink-0 pt-safe-iphone shadow-sm">
                 <button onClick={() => { stopAudio(); onBack(); }} className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950"><i className="fas fa-arrow-left"></i></button>
                 <div className="text-center">
@@ -196,7 +169,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col relative">
                 <div className="h-[35vh] w-full relative z-[100] shrink-0 border-b border-slate-100 bg-slate-200">
-                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={onJumpTo} onPlayAudio={() => { if (isPlaying) { stopAudio(); setIsPlaying(false); } else { playPhrase(currentPhraseIndex); } }} audioPlayingId={isPlaying ? currentStop.id : null} audioLoadingId={isLoading ? currentStop.id : null} userLocation={userLocation} />
+                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={onJumpTo} userLocation={userLocation} />
                 </div>
                 <div className="px-8 pt-10 pb-40 space-y-10 bg-white rounded-t-[3rem] -mt-10 shadow-[0_-30px_60px_rgba(0,0,0,0.05)] z-[200]">
                     <div className="flex justify-between items-center">

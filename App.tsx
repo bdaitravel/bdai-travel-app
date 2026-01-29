@@ -14,15 +14,17 @@ import { CommunityBoard } from './components/CommunityBoard';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: Record<string, any> = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "AI Latency. Try again.", codeError: "Invalid code", selectLang: "Language", loading: "Syncing...", analyzing: "Locating...", generating: "Generating...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Sending to:" },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Latencia de IA. Reintenta.", codeError: "Código no válido", selectLang: "Idioma", loading: "Sincronizando...", analyzing: "Localizando...", generating: "Generando...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando a:" },
-  ja: { welcome: "ビデアーログ:", explorer: "探検家", searchPlaceholder: "対象都市...", emailPlaceholder: "メールアドレス", login: "コードを送信", verify: "認証する", tagline: "AIによるより良い目的地", authError: "AIの遅延。再試行してください。", codeError: "無効なコード", selectLang: "言語設定", loading: "同期中...", analyzing: "位置特定中...", generating: "生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "情報", navVisa: "パスポート", navStore: "ストア", sendingTo: "送信先:" },
-  zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "电子邮件", login: "发送代码", verify: "验证身份", tagline: "由AI打造的更佳目的地", authError: "AI 延迟。请重试。", codeError: "代码无效", selectLang: "语言选择", loading: "同步中...", analyzing: "定位中...", generating: "生成中...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", sendingTo: "发送至:" },
-  hi: { welcome: "बिडर लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "लक्ष्य शहर...", emailPlaceholder: "ईमेल पता", login: "कोड भेजें", verify: "प्रमाणित करें", tagline: "एआई द्वारा बेहतर गंतव्य", authError: "एआई विलंब। पुनः प्रयास करें।", codeError: "अमान्य कोड", selectLang: "भाषा चुनें", loading: "सिंक हो रहा है...", analyzing: "ढूंढ रहे हैं...", generating: "बना रहे हैं...", translating: "अनुवाद कर रहे हैं...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", sendingTo: "भेज रहे हैं:" },
-  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città objetivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "destinazioni migliori tramite AI", authError: "Latenza AI. Riprova.", codeError: "Codice non valido", selectLang: "Lingua", loading: "Sincronizzazione...", analyzing: "Localizzazione...", generating: "Generazione...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Store", sendingTo: "Inviando a:" },
-  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Aceder", tagline: "melhores destinos por IA", authError: "Latência de IA. Tente de nuevo.", codeError: "Código inválido", selectLang: "Idioma", loading: "Sincronizando...", analyzing: "Localizando...", generating: "Gerando...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Loja", sendingTo: "Enviando para:" },
-  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "meilleures destinations par IA", authError: "Latence IA. Réessayez.", codeError: "Code invalide", selectLang: "Langue", loading: "Synchronisation...", analyzing: "Localisation...", generating: "Génération...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", sendingTo: "Envoi à :" },
-  ru: { welcome: "Лог Bidaer:", explorer: "Исследователь", searchPlaceholder: "Город...", emailPlaceholder: "Электронная почта", login: "Отправить код", verify: "Войти", tagline: "лучшие места с помощью ИИ", authError: "Задержка ИИ. Попробуйте еще раз.", codeError: "Неверный код", selectLang: "Язык", loading: "Синхронизация...", analyzing: "Поиск...", generating: "Создание...", translating: "Перевод...", navElite: "Элита", navHub: "Инфо", navVisa: "Паспорт", navStore: "Магазин", sendingTo: "Отправка на:" }
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "AI Latency. Try again.", selectLang: "Language", loading: "Syncing...", analyzing: "Locating...", generating: "Generating...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Sending to:" },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Latencia de IA. Reintenta.", selectLang: "Idioma", loading: "Sincronizando...", analyzing: "Localizando...", generating: "Generando...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando a:" },
+  ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Correu electrònic", login: "Enviar Codi", verify: "Accedir", tagline: "millors destins amb IA", authError: "Latència d'IA. Reintenta.", selectLang: "Idioma", loading: "Sincronitzant...", analyzing: "Localitzant...", generating: "Generant...", translating: "Traduint...", navElite: "Elit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga", sendingTo: "Enviant a:" },
+  eu: { welcome: "Bidaer Loga:", explorer: "Esploratzailea", searchPlaceholder: "Helburuko hiria...", emailPlaceholder: "Posta elektronikoa", login: "Bidali Kodea", verify: "Sartu", tagline: "helmuga hobeak AIarekin", authError: "AI Latentzia. Saiatu berriro.", selectLang: "Hizkuntza", loading: "Sinkronizatzen...", analyzing: "Lokalizatzen...", generating: "Sortzen...", translating: "Itzultzen...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", sendingTo: "Bidaltzen hona:" },
+  ja: { welcome: "ビデアーログ:", explorer: "探検家", searchPlaceholder: "対象都市...", emailPlaceholder: "メールアドレス", login: "コードを送信", verify: "認証する", tagline: "AIによるより良い目的地", authError: "AIの遅延。再試行してください。", selectLang: "言語設定", loading: "同期中...", analyzing: "位置特定中...", generating: "生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "情報", navVisa: "パスポート", navStore: "ストア", sendingTo: "送信先:" },
+  zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "电子邮件", login: "发送代码", verify: "验证身份", tagline: "由AI打造的更佳目的地", authError: "AI 延迟。请重试。", selectLang: "语言选择", loading: "同步中...", analyzing: "定位中...", generating: "生成中...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", sendingTo: "发送至:" },
+  hi: { welcome: "बिडर लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "लक्ष्य शहर...", emailPlaceholder: "ईमेल पता", login: "कोड भेजें", verify: "प्रमाणित करें", tagline: "एआई द्वारा बेहतर गंतव्य", authError: "एआई विलंब। पुनः प्रयास करें।", selectLang: "भाषा चुनें", loading: "सिंक हो रहा है...", analyzing: "ढूंढ रहे हैं...", generating: "बना रहे हैं...", translating: "अनुवाद कर रहे हैं...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", sendingTo: "भेj रहे हैं:" },
+  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "destinazioni migliori tramite AI", authError: "Latenza AI. Riprova.", selectLang: "Lingua", loading: "Sincronizzazione...", analyzing: "Localizzazione...", generating: "Generazione...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Store", sendingTo: "Inviando a:" },
+  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Aceder", tagline: "melhores destinos por IA", authError: "Latência de IA. Tente de novo.", selectLang: "Idioma", loading: "Sincronizando...", analyzing: "Localizando...", generating: "Gerando...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", sendingTo: "Enviando para:" },
+  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "meilleures destinations par IA", authError: "Latence IA. Réessayez.", selectLang: "Langue", loading: "Synchronisation...", analyzing: "Localisation...", generating: "Génération...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", sendingTo: "Envoi à :" },
+  ru: { welcome: "Лог Bidaer:", explorer: "Исследователь", searchPlaceholder: "Город...", emailPlaceholder: "Электронная почта", login: "Отправить код", verify: "Войти", tagline: "лучшие места с помощью ИИ", authError: "Задержка ИИ. Попробуйте еще раз.", selectLang: "Язык", loading: "Синхронизация...", analyzing: "Поиск...", generating: "Создание...", translating: "Перевод...", navElite: "Элита", navHub: "Инфо", navVisa: "Паспорт", navStore: "Магазин", sendingTo: "Отправка на:" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -32,7 +34,6 @@ const GUEST_PROFILE: UserProfile = {
   visitedCities: [], completedTours: [], badges: []
 };
 
-// Fix: Added missing NavButton component definition to satisfy requirements in lines 293-297
 const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
   <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-purple-500 scale-110' : 'text-slate-500 hover:text-slate-300'}`}>
     <i className={`fas ${icon} text-lg`}></i>
@@ -65,10 +66,11 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
 
-  // Memoized translations that react strictly to user.language
-  const t = useMemo(() => {
-    return (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
-  }, [user.language]);
+  // t function is purely reactive to user.language
+  const t = (key: string) => {
+    const dict = TRANSLATIONS[user.language] || TRANSLATIONS['es'];
+    return dict[key] || TRANSLATIONS['es'][key] || key;
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -116,6 +118,8 @@ export default function App() {
 
         setLoadingMessage(t('generating'));
         const generated = await generateToursForCity(officialNames.spanishName, officialNames.country, user);
+        if (!generated || generated.length === 0) throw new Error("Generation Failed");
+        
         setTours(generated); 
         await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, generated);
         setView(AppView.CITY_DETAIL);
@@ -137,14 +141,14 @@ export default function App() {
         if (results && results.length > 1) {
             setSearchOptions(results);
             setIsLoading(false);
-        } else if (results.length === 1) {
+        } else if (results && results.length === 1) {
             await processCitySelection(results[0]);
         } else {
+            // Si no encuentra nada, intentamos generarlo directamente con el input
             await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
         }
     } catch (e: any) {
-        setAuthError(t('authError'));
-        setIsLoading(false);
+        await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
     }
   };
 
@@ -244,7 +248,6 @@ export default function App() {
                           <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl">bdai</span></div>
                           <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
-                      
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
                       
                       <div className="relative mt-8 flex flex-col gap-3">
@@ -261,7 +264,7 @@ export default function App() {
                           </div>
 
                           {searchOptions && (
-                              <div className="mt-2 space-y-3 bg-slate-900 border border-purple-500/30 p-4 rounded-[2.5rem] shadow-2xl max-h-64 overflow-y-auto">
+                              <div className="mt-2 space-y-3 bg-slate-900 border border-purple-500/30 p-4 rounded-[2.5rem] shadow-2xl max-h-64 overflow-y-auto z-[50]">
                                   {searchOptions.map((opt: any, i: number) => (
                                       <button 
                                         key={i} 
