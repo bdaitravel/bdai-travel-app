@@ -27,9 +27,6 @@ const LANGUAGE_RULES: Record<string, string> = {
     eu: `${MASTERCLASS_INSTRUCTION} EUSKARAZ ERANTZUN.`
 };
 
-/**
- * Lógica de reintento mejorada para evitar bloqueos
- */
 async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1500) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -57,12 +54,18 @@ const generateHash = (str: string) => {
   return Math.abs(hash).toString(36);
 };
 
+/**
+ * Mejorada la desambiguación para evitar el error de Córdoba España vs Argentina
+ */
 export const standardizeCityName = async (input: string): Promise<{name: string, spanishName: string, country: string}[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Identifica esta ubicación y devuelve JSON: "${input}".`,
+            contents: `Busca TODAS las ubicaciones globales importantes llamadas: "${input}". 
+            Si es ambiguo (ej: Córdoba), incluye las versiones de España, Argentina y otras relevantes. 
+            Si el usuario especificó país (ej: "Córdoba Argentina"), prioriza esa pero incluye alternativas.
+            Devuelve un JSON array: [{name(EN), spanishName, country}].`,
             config: { 
                 temperature: 0,
                 responseMimeType: "application/json",
@@ -80,25 +83,24 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
                 }
             }
         });
-        return JSON.parse(response.text || "[]");
+        const results = JSON.parse(response.text || "[]");
+        // Si no hay resultados, devolvemos al menos lo que el usuario escribió
+        return results.length > 0 ? results : [{ name: input, spanishName: input, country: "" }];
     } catch (e) { 
         return [{ name: input, spanishName: input, country: "" }]; 
     }
 };
 
-/**
- * GENERACIÓN DE TOURS: Usamos FLASH para máxima velocidad y evitar errores de cuota Pro
- */
 export const generateToursForCity = async (cityInput: string, countryInput: string, userProfile: UserProfile): Promise<Tour[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const targetLang = userProfile.language || 'es';
   const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
   
-  const prompt = `Genera 3 TOURS únicos para ${cityInput}, ${countryInput}. 
-  Cada tour debe tener 8 paradas con coordenadas precisas y descripciones técnicas de 200 palabras cada una.`;
+  const prompt = `Genera 3 TOURS únicos de ALTA DENSIDAD para ${cityInput}, ${countryInput}. 
+  Usa latitud/longitud precisas. Descripciones de 200 palabras con curiosidades reales e ingeniería.`;
 
   const response = await callAiWithRetry(() => ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // CAMBIO A FLASH: Más estable y rápido
+      model: 'gemini-3-flash-preview', 
       contents: prompt,
       config: { 
           systemInstruction: langRule, 
@@ -149,7 +151,7 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
 
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const langRule = `Traduce este contenido al idioma con código "${targetLang}". Mantén el tono cínico y técnico.`;
+    const langRule = `Traduce este contenido al idioma con código "${targetLang}". Mantén el tono cínico y técnico de BDAI.`;
     const response = await callAiWithRetry(() => ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: JSON.stringify(tours),
@@ -164,7 +166,7 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
   if (!cleanText) return "";
-  const cacheKey = `v3_audio_${language}_${generateHash(cleanText)}`;
+  const cacheKey = `v4_audio_${language}_${generateHash(cleanText)}`;
   
   const cached = await getCachedAudio(cacheKey);
   if (cached) return cached;
@@ -202,7 +204,7 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: `Cinematic photography of ${city}. 8k, professional lighting.` }] },
+            contents: { parts: [{ text: `Cinematic travel photography of ${city}. Professional lighting, 8k.` }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
         const part = response.candidates[0].content.parts.find(p => p.inlineData);

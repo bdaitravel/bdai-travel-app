@@ -12,12 +12,14 @@ import { Onboarding } from './components/Onboarding';
 import { FlagIcon } from './components/FlagIcon';
 import { AdminPanel } from './components/AdminPanel';
 import { CommunityBoard } from './components/CommunityBoard';
-import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat, normalizeKey } from './services/supabaseClient';
+import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Access Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "AI Latency. Please try again.", codeError: "Invalid code", selectLang: "System Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Activating Reasoning Cores...", generating: "Generating Masterclass Content...", translating: "Translating Knowledge...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Transmitting code to:" },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Latencia de IA. Reintenta ahora.", codeError: "Código no válido", selectLang: "Idioma del Sistema", loading: "Sincronizando...", loadingTour: "Dai está razonando la ciudad...", analyzing: "Activando Núcleos de Razonamiento...", generating: "Generando Contenido Masterclass...", translating: "Traduciendo Conocimiento...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando código a:" },
-  // ... (otros idiomas omitidos por brevedad, se mantienen igual)
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "AI Latency. Try again.", codeError: "Invalid code", selectLang: "System Language", loading: "Syncing...", analyzing: "Analyzing location...", generating: "Generating Masterclass...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Sending code to:" },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Latencia de IA. Reintenta.", codeError: "Código no válido", selectLang: "Idioma del Sistema", loading: "Sincronizando...", analyzing: "Analizando ubicación...", generating: "Generando Masterclass...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando código a:" },
+  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "better destinations by ai", authError: "Latenza AI. Riprova.", codeError: "Codice non valido", selectLang: "Lingua del Sistema", loading: "Sincronizzazione...", analyzing: "Analisi posizione...", generating: "Generazione Masterclass...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", sendingTo: "Invio codice a:" },
+  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade-alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Aceder", tagline: "better destinations by ai", authError: "Latência de IA. Tente de novo.", codeError: "Código inválido", selectLang: "Idioma do Sistema", loading: "Sincronizando...", analyzing: "Analisando local...", generating: "Gerando Masterclass...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", sendingTo: "Enviando código para:" },
+  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Latence IA. Réessayez.", codeError: "Code invalide", selectLang: "Langue du Système", loading: "Synchronisation...", analyzing: "Analyse du lieu...", generating: "Génération Masterclass...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", sendingTo: "Envoi du code à :" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -80,12 +82,13 @@ export default function App() {
     }
   }, []);
 
-  const t = (key: string) => (TRANSLATIONS[user.language || 'es'] || TRANSLATIONS['es'])[key] || key;
+  // Función de traducción reactiva al cambio de idioma del estado
+  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
   const handleUpdateUser = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
-    syncUserProfile(updatedUser);
+    if (updatedUser.isLoggedIn) syncUserProfile(updatedUser);
   };
 
   const processCitySelection = async (officialNames: {name: string, spanishName: string, country: string}) => {
@@ -115,13 +118,12 @@ export default function App() {
 
         setLoadingMessage(t('generating'));
         const generated = await generateToursForCity(officialNames.spanishName, officialNames.country, user);
-        if (!generated || generated.length === 0) throw new Error("No tours generated");
+        if (!generated || generated.length === 0) throw new Error("No tours");
         
         setTours(generated); 
         await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, generated);
         setView(AppView.CITY_DETAIL);
     } catch (e: any) { 
-        console.error("Critical AI Error:", e);
         setAuthError(t('authError')); 
     } finally { 
         setIsLoading(false); 
@@ -136,13 +138,13 @@ export default function App() {
 
     try {
         const results = await standardizeCityName(cityInput);
-        if (results && results.length > 0) {
-            if (results.length === 1) {
-                await processCitySelection(results[0]);
-            } else {
-                setSearchOptions(results);
-                setIsLoading(false);
-            }
+        // Si hay más de una opción, o si el nombre es ambiguo, forzamos al usuario a elegir
+        if (results && results.length > 1) {
+            setSearchOptions(results);
+            setIsLoading(false);
+        } else if (results.length === 1) {
+            // Si el usuario puso algo muy específico (ej: "Cordoba Argentina") y la IA solo da 1 resultado
+            await processCitySelection(results[0]);
         } else {
             await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
         }
@@ -170,22 +172,14 @@ export default function App() {
     } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
   };
 
-  if (isVerifyingSession) return <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-10"><BdaiLogo className="w-24 h-24 mb-6 animate-pulse" /><p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{t('loading')}</p></div>;
+  if (isVerifyingSession) return <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-10"><BdaiLogo className="w-24 h-24 mb-6 animate-pulse" /><p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">bdai intel core</p></div>;
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
       {isLoading && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-3xl flex flex-col items-center justify-center p-10">
-          <div className="w-24 h-24 relative mb-8">
-            <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <BdaiLogo className="w-10 h-10 animate-pulse" />
-            </div>
-          </div>
-          <p className="text-white font-black uppercase text-[11px] tracking-[0.5em] text-center max-w-xs leading-loose animate-pulse">
-            {loadingMessage || t('loading')}
-          </p>
+          <BdaiLogo className="w-16 h-16 animate-pulse mb-8" />
+          <p className="text-white font-black uppercase text-[11px] tracking-[0.5em] text-center animate-pulse">{loadingMessage || t('loading')}</p>
         </div>
       )}
 
@@ -197,7 +191,7 @@ export default function App() {
                   <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mt-2">{t('tagline')}</p>
               </div>
 
-              <div className="w-full max-w-sm space-y-12">
+              <div className="w-full max-w-sm space-y-8">
                   <div className="space-y-4">
                       <div className="flex items-center gap-3 px-2">
                         <div className="h-[1px] flex-1 bg-white/10"></div>
@@ -219,14 +213,14 @@ export default function App() {
                   </div>
                   
                   <div className="w-full space-y-4 max-w-xs mx-auto">
-                      {authError && <div className="text-red-400 text-[8px] font-black uppercase text-center bg-red-500/10 p-4 rounded-2xl border border-red-500/20 animate-shake">{authError}</div>}
+                      {authError && <div className="text-red-400 text-[8px] font-black uppercase text-center bg-red-500/10 p-4 rounded-2xl border border-red-500/20">{authError}</div>}
                       {loginStep === 'EMAIL' ? (
                           <div className="space-y-4">
-                              <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-2xl py-5 px-6 text-center text-white focus:border-purple-500 outline-none font-bold placeholder:opacity-20 transition-all shadow-inner" />
-                              <button onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl transition-all active:scale-95">{t('login')}</button>
+                              <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-2xl py-5 px-6 text-center text-white outline-none font-bold" />
+                              <button onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all">{t('login')}</button>
                           </div>
                       ) : (
-                          <div className="space-y-6 text-center animate-fade-in">
+                          <div className="space-y-6 text-center">
                               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('sendingTo')} <br/><span className="text-purple-400 lowercase">{email}</span></p>
                               <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-purple-500/30 rounded-3xl py-6 text-center font-black text-3xl text-white tracking-widest outline-none" placeholder="000000" />
                               <button onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all active:scale-95 shadow-xl">{t('verify')}</button>
@@ -234,7 +228,7 @@ export default function App() {
                       )}
                   </div>
               </div>
-              <div className="pb-8 text-center"><span className="text-[7px] font-bold text-slate-700 uppercase tracking-widest">© 2025 BDAI INTEL CORE</span></div>
+              <div className="pb-8 text-center opacity-30"><span className="text-[7px] font-bold text-white uppercase tracking-widest">BDAI INTEL CORE 2.5</span></div>
           </div>
       ) : (
           <div className="flex-1 flex flex-col relative h-full">
@@ -247,40 +241,53 @@ export default function App() {
                       </header>
                       
                       {authError && (
-                        <div className="bg-red-500/20 border border-red-500/30 p-4 rounded-3xl mb-4 animate-fade-in">
-                          <p className="text-red-400 text-[10px] font-black uppercase tracking-widest text-center">{authError}</p>
+                        <div className="bg-red-500/20 border border-red-500/30 p-4 rounded-3xl mb-4 text-center">
+                          <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">{authError}</p>
                         </div>
                       )}
 
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
                       
-                      <div className="relative mt-8 flex gap-3">
-                          <div className="relative flex-1">
-                              <i className="fas fa-location-crosshairs absolute left-6 top-6 text-slate-500"></i>
-                              <input 
-                                  type="text" 
-                                  value={searchVal} 
-                                  onChange={(e) => setSearchVal(e.target.value)} 
-                                  onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} 
-                                  placeholder={t('searchPlaceholder')} 
-                                  className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500 outline-none font-bold" 
-                              />
+                      <div className="relative mt-8 flex flex-col gap-3">
+                          <div className="flex gap-3">
+                              <div className="relative flex-1">
+                                  <i className="fas fa-location-crosshairs absolute left-6 top-6 text-slate-500"></i>
+                                  <input 
+                                      type="text" 
+                                      value={searchVal} 
+                                      onChange={(e) => setSearchVal(e.target.value)} 
+                                      onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} 
+                                      placeholder={t('searchPlaceholder')} 
+                                      className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500 outline-none font-bold" 
+                                  />
+                              </div>
+                              <button 
+                                  onClick={() => handleCitySelect(searchVal)}
+                                  className="w-16 h-16 rounded-[2rem] bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"
+                              >
+                                  <i className="fas fa-search"></i>
+                              </button>
                           </div>
-                          <button 
-                              onClick={() => handleCitySelect(searchVal)}
-                              className="w-16 h-16 rounded-[2rem] bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-[0_10px_30px_rgba(147,51,234,0.4)] active:scale-90 transition-all"
-                          >
-                              <i className="fas fa-search"></i>
-                          </button>
+
+                          {searchOptions && (
+                              <div className="mt-2 space-y-3 animate-fade-in bg-slate-900 border border-purple-500/30 p-4 rounded-[2.5rem] shadow-2xl z-[500] max-h-64 overflow-y-auto no-scrollbar">
+                                  {searchOptions.map((opt: any, i: number) => (
+                                      <button 
+                                        key={i} 
+                                        onClick={() => processCitySelection(opt)} 
+                                        className="w-full p-6 bg-white/5 hover:bg-purple-600 border border-white/5 rounded-3xl flex items-center justify-between group transition-all"
+                                      >
+                                          <div className="flex flex-col items-start text-left">
+                                              <span className="text-white font-black uppercase text-sm">{opt.spanishName}</span>
+                                              <span className="text-[9px] text-slate-500 group-hover:text-purple-200 font-bold uppercase">{opt.country}</span>
+                                          </div>
+                                          <i className="fas fa-chevron-right text-slate-700 group-hover:text-white"></i>
+                                      </button>
+                                  ))}
+                              </div>
+                          )}
                       </div>
 
-                      {searchOptions && (
-                          <div className="mt-6 space-y-3 animate-fade-in bg-white/5 p-4 rounded-[2.5rem] border border-white/5">
-                              {searchOptions.map((opt: any, i: number) => (
-                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-6 bg-slate-900 border border-white/10 rounded-3xl flex items-center justify-between group active:bg-purple-600 transition-all"><div className="flex flex-col items-start"><span className="text-white font-black uppercase text-sm">{opt.spanishName}</span><span className="text-[9px] text-slate-500 font-bold uppercase">{opt.country}</span></div><i className="fas fa-chevron-right text-slate-700"></i></button>
-                              ))}
-                          </div>
-                      )}
                       <TravelServices mode="HOME" language={user.language || 'es'} onCitySelect={(name) => handleCitySelect(name)} />
                   </div>
                 )}
