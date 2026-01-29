@@ -45,12 +45,17 @@ const generateHash = (str: string) => {
   return Math.abs(hash).toString(36);
 };
 
-export const standardizeCityName = async (input: string): Promise<{name: string, country: string}[]> => {
+/**
+ * Nueva versión inteligente: Identifica el nombre oficial en varios idiomas para asegurar el hit en caché.
+ */
+export const standardizeCityName = async (input: string): Promise<{name: string, spanishName: string, country: string}[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await callAiWithRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Identify EXACT location for: "${input}". Return JSON array.`,
+            contents: `Identify location for: "${input}". 
+            Return JSON array of possible matches. 
+            Crucial: Provide the name in English (name) and the name in Spanish (spanishName).`,
             config: { 
                 temperature: 0,
                 responseMimeType: "application/json",
@@ -58,14 +63,18 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
                     type: Type.ARRAY,
                     items: {
                         type: Type.OBJECT,
-                        properties: { name: { type: Type.STRING }, country: { type: Type.STRING } },
-                        required: ["name", "country"]
+                        properties: { 
+                            name: { type: Type.STRING, description: "Official name in English" }, 
+                            spanishName: { type: Type.STRING, description: "Official name in Spanish" },
+                            country: { type: Type.STRING } 
+                        },
+                        required: ["name", "spanishName", "country"]
                     }
                 }
             }
         }));
         return JSON.parse(response.text || "[]");
-    } catch (e) { return [{ name: input, country: "" }]; }
+    } catch (e) { return [{ name: input, spanishName: input, country: "" }]; }
 };
 
 export const generateToursForCity = async (cityInput: string, countryInput: string, userProfile: UserProfile): Promise<Tour[]> => {

@@ -7,49 +7,53 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+/**
+ * Normalización agresiva para coincidir con registros como 'puertoespana' o 'alain'
+ */
 export const normalizeKey = (text: string) => {
     if (!text) return "";
     return text.toLowerCase()
         .trim()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[\s,.-]+/g, "_")
-        .replace(/[^a-z0-9_]/g, "");
+        .replace(/[\u0300-\u036f]/g, "") // Quita tildes
+        .replace(/[^a-z0-9]/g, ""); // QUITA TODO lo que no sea letra o número (espacios, guiones, etc.)
 };
 
-export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
-  if (!email) return null;
-  const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase()).maybeSingle();
-  return (error || !data) ? null : { ...data, isLoggedIn: true } as any;
-};
-
-export const syncUserProfile = async (user: UserProfile) => {
-  if (!user || !user.id || user.id === 'guest') return;
-  await supabase.from('profiles').upsert({
-    id: user.id,
-    email: user.email.toLowerCase(),
-    language: user.language || 'es',
-    miles: user.miles || 0,
-    username: user.username || 'traveler',
-    avatar: user.avatar,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'id' });
-};
-
-export const getCachedTours = async (city: string, country: string, language: string): Promise<Tour[] | null> => {
+/**
+ * Busca un tour en la caché con máxima flexibilidad.
+ */
+export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string} | null> => {
   const nInput = normalizeKey(city);
+  if (!nInput) return null;
   
-  // BUSQUEDA INSTANTÁNEA: Buscamos cualquier ciudad que EMPIECE por lo que el usuario ha escrito
-  // Permite que "Oviedo" encuentre "oviedo_espana" directamente.
-  const { data, error } = await supabase.from('tours_cache')
-    .select('data')
-    .ilike('city', `${nInput}%`)
+  // 1. Intentamos match exacto de IDIOMA y CIUDAD (Sin caracteres especiales)
+  const { data: exactMatch } = await supabase.from('tours_cache')
+    .select('data, language')
+    .ilike('city', nInput)
     .eq('language', language)
+    .maybeSingle();
+
+  if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language };
+
+  // 2. Si no hay match de idioma, buscamos la CIUDAD en cualquier idioma
+  const { data: anyMatch } = await supabase.from('tours_cache')
+    .select('data, language')
+    .ilike('city', nInput)
     .limit(1)
     .maybeSingle();
 
-  if (error) return null;
-  return data ? (data.data as Tour[]) : null;
+  if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language };
+
+  // 3. Búsqueda por prefijo (por si acaso el nombre en la DB es más largo)
+  const { data: prefixMatch } = await supabase.from('tours_cache')
+    .select('data, language')
+    .ilike('city', `${nInput}%`)
+    .limit(1)
+    .maybeSingle();
+
+  if (prefixMatch) return { data: prefixMatch.data as Tour[], langFound: prefixMatch.language };
+
+  return null;
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
@@ -112,4 +116,39 @@ export const addCommunityPost = async (post: any) => {
     city: normalizeKey(post.city), user_id: post.userId, user_name: post.user, avatar: post.avatar,
     content: post.content, type: post.type || 'comment', status: 'approved'
   });
+};
+
+export const getUserProfileByEmail = async (email: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('email', email)
+    .maybeSingle();
+  if (error) return null;
+  return data;
+};
+
+export const syncUserProfile = async (profile: UserProfile) => {
+  if (!profile || profile.id === 'guest') return;
+  await supabase.from('profiles').upsert({
+      id: profile.id,
+      email: profile.email,
+      username: profile.username,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      avatar: profile.avatar,
+      miles: profile.miles,
+      language: profile.language,
+      rank: profile.rank,
+      bio: profile.bio,
+      interests: profile.interests,
+      visitedCities: profile.visitedCities,
+      completedTours: profile.completedTours,
+      stats: profile.stats,
+      badges: profile.badges,
+      socialLinks: profile.socialLinks,
+      city: profile.city,
+      country: profile.country,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
 };

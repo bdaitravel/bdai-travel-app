@@ -15,12 +15,12 @@ import { CommunityBoard } from './components/CommunityBoard';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat, normalizeKey } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Access Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "System Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Standardizing...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Transmitting code to:" },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma del Sistema", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Estandarizando...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando código a:" },
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Access Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "System Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Interpreting location...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Transmitting code to:" },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma del Sistema", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Interpretando localización...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando código a:" },
   pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "E-mail", login: "Enviar Código", verify: "Acessar", tagline: "better destinations by ai", authError: "Verifique seu e-mail", codeError: "Código inválido", selectLang: "Idioma do Sistema", loading: "Sincronizando...", loadingTour: "Dai está analisando...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", sendingTo: "Enviando para:" },
   it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "better destinations by ai", authError: "Controlla email", codeError: "Codice errato", selectLang: "Lingua del Sistema", loading: "Sincronizzazione...", loadingTour: "Dai sta analizzando...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", sendingTo: "Invio a:" },
-  ru: { welcome: "Log Bidaer:", explorer: "Исследователь", searchPlaceholder: "Город...", emailPlaceholder: "Email", login: "Код", verify: "Вход", tagline: "better destinations by ai", authError: "Проверьте почту", codeError: "Ошибка", selectLang: "Язык системы", loading: "Синхронизация...", loadingTour: "Анализ...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", sendingTo: "Отправка на:" },
-  hi: { welcome: "Bidaer Log:", explorer: "खोजकर्ता", searchPlaceholder: "शहर खोजें...", emailPlaceholder: "ईमेल", login: "कोड भेजें", verify: "पहुंच", tagline: "better destinations by ai", authError: "ईमेल जांचें", codeError: "अमान्य कोड", selectLang: "सिस्टम की भाषा", loading: "सिंक हो रहा है...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टور", sendingTo: "कोड भेजा जा रहा है:" },
+  ru: { welcome: "Log Bidaer:", explorer: "Исследователь", searchPlaceholder: "Город...", emailPlaceholder: "Email", login: "Код", verify: "Вход", tagline: "better destinations by ai", authError: "Проверьте почту", selectLang: "Язык системы", loading: "Синхронизация...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", sendingTo: "Отправка на:" },
+  hi: { welcome: "Bidaer Log:", explorer: "खोजकर्ता", searchPlaceholder: "शहर खोजें...", emailPlaceholder: "ईमेल", login: "कोड भेजें", verify: "पहुंच", tagline: "better destinations by ai", authError: "ईमेल जांचें", selectLang: "सिस्टम की भाषा", loading: "सिंक हो रहा है...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टور", sendingTo: "कोड भेजा जा रहा है:" },
   fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville...", emailPlaceholder: "Email", login: "Code", verify: "Accès", tagline: "better destinations by ai", authError: "Vérifiez vos emails", selectLang: "Langue du système", loading: "Sync...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", sendingTo: "Envoi à:" },
   de: { welcome: "Log Bidaer:", explorer: "Entdecker", searchPlaceholder: "Stadt...", emailPlaceholder: "Email", login: "Code", verify: "Zugang", tagline: "better destinations by ai", authError: "Email prüfen", selectLang: "Systemsprache", loading: "Sync...", navElite: "Elite", navHub: "Intel", navVisa: "Pass", navStore: "Shop", sendingTo: "Sende an:" },
   ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat...", emailPlaceholder: "Email", login: "Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa l'email", selectLang: "Idioma del Sistema", loading: "Sincronitzant...", navElite: "Elit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga", sendingTo: "Enviant a:" },
@@ -88,6 +88,85 @@ export default function App() {
     syncUserProfile(updatedUser);
   };
 
+  /**
+   * Procesa la selección de una ciudad intentando maximizar el hit en caché 
+   * mediante el uso de variantes del nombre (español e inglés).
+   */
+  const processCitySelection = async (officialNames: {name: string, spanishName: string, country: string}) => {
+    setIsLoading(true); 
+    setSearchOptions(null); 
+    setLoadingMessage(t('loadingTour'));
+    const targetLang = user.language || 'es';
+    
+    try {
+        setSelectedCity(officialNames.spanishName); // Priorizamos el nombre en español para la UI
+        
+        // 1. INTENTAMOS MATCH EN CACHÉ CON TODAS LAS VARIANTES
+        const variantsToTry = [officialNames.spanishName, officialNames.name];
+        let cachedMatch = null;
+
+        for (const variant of variantsToTry) {
+            const cached = await getCachedTours(variant, officialNames.country, targetLang);
+            if (cached) {
+                cachedMatch = cached;
+                break; 
+            }
+        }
+        
+        if (cachedMatch) {
+            if (cachedMatch.langFound === targetLang) {
+                setTours(cachedMatch.data); setView(AppView.CITY_DETAIL); 
+            } else {
+                setLoadingMessage(t('translating'));
+                const translated = await translateTours(cachedMatch.data, targetLang);
+                setTours(translated);
+                await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, translated);
+                setView(AppView.CITY_DETAIL);
+            }
+            setIsLoading(false); return;
+        }
+
+        // 2. SI NADA FUNCIONA, GENERAMOS (Usamos el nombre en español como base de guardado si estamos en ES)
+        setLoadingMessage(t('generating'));
+        const generated = await generateToursForCity(officialNames.spanishName, officialNames.country, user);
+        setTours(generated); 
+        await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, generated);
+        setView(AppView.CITY_DETAIL);
+    } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
+  };
+
+  const handleCitySelect = async (cityInput: string) => {
+    if (!cityInput.trim() || isLoading) return;
+    setAuthError(null);
+    setIsLoading(true);
+    setLoadingMessage(t('analyzing'));
+
+    try {
+        // 1. PRIMER INTENTO: ¿Existe tal cual lo escribió?
+        const immediateCached = await getCachedTours(cityInput, "", user.language || 'es');
+        if (immediateCached) {
+            await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
+            return;
+        }
+
+        // 2. SEGUNDO INTENTO: Estandarizar con IA (para corregir "Puert Spain" -> "Port of Spain")
+        const results = await standardizeCityName(cityInput);
+        if (results.length === 1) {
+            await processCitySelection(results[0]);
+        } else if (results.length > 1) {
+            // Si hay ambigüedad, mostramos opciones pero guardamos los nombres oficiales
+            setSearchOptions(results as any);
+            setIsLoading(false);
+        } else {
+            setAuthError("Localización no reconocida.");
+            setIsLoading(false);
+        }
+    } catch (e: any) {
+        setAuthError(e.message);
+        setIsLoading(false);
+    }
+  };
+
   const handleSendOtp = async () => {
     if (!email || !validateEmailFormat(email) || isLoading) return;
     setIsLoading(true); setAuthError(null);
@@ -107,23 +186,6 @@ export default function App() {
     } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
   };
 
-  const handleCitySelect = async (cityInput: string) => {
-    if (!cityInput.trim() || isLoading) return;
-    setIsLoading(true); setLoadingMessage(t('analyzing'));
-    try {
-        const dbCached = await getCachedTours(cityInput, "", user.language || 'es');
-        if (dbCached && dbCached.length > 0) {
-            setSelectedCity(cityInput); setTours(dbCached); setView(AppView.CITY_DETAIL); setIsLoading(false); return;
-        }
-        const results = await standardizeCityName(cityInput);
-        if (results.length === 1) { 
-            const generated = await generateToursForCity(results[0].name, results[0].country, user);
-            setTours(generated); await saveToursToCache(results[0].name, results[0].country, user.language || 'es', generated);
-            setSelectedCity(results[0].name); setView(AppView.CITY_DETAIL);
-        } else { setSearchOptions(results); }
-    } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
-  };
-
   if (isVerifyingSession) return <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-10"><BdaiLogo className="w-24 h-24 mb-6 animate-pulse" /><p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">{t('loading')}</p></div>;
 
   return (
@@ -139,7 +201,6 @@ export default function App() {
               </div>
 
               <div className="w-full max-w-sm space-y-12">
-                  {/* SELECTOR DE IDIOMA MINIMALISTA - BANDERAS MINI */}
                   <div className="space-y-4">
                       <div className="flex items-center gap-3 px-2">
                         <div className="h-[1px] flex-1 bg-white/10"></div>
@@ -189,6 +250,13 @@ export default function App() {
                       </header>
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
                       <div className="relative mt-8"><i className="fas fa-search absolute left-6 top-6 text-slate-500"></i><input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500 outline-none font-bold" /></div>
+                      {searchOptions && (
+                          <div className="mt-6 space-y-3 animate-fade-in">
+                              {searchOptions.map((opt: any, i: number) => (
+                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-6 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-between group active:bg-purple-600 transition-all"><div className="flex flex-col items-start"><span className="text-white font-black uppercase text-sm">{opt.spanishName}</span><span className="text-[9px] text-slate-500 font-bold uppercase">{opt.country}</span></div><i className="fas fa-chevron-right text-slate-700"></i></button>
+                              ))}
+                          </div>
+                      )}
                       <TravelServices mode="HOME" language={user.language || 'es'} onCitySelect={(name) => handleCitySelect(name)} />
                   </div>
                 )}
