@@ -55,7 +55,7 @@ export default function App() {
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
-  const [searchOptions, setSearchOptions] = useState<{name: string, country: string}[] | null>(null);
+  const [searchOptions, setSearchOptions] = useState<{name: string, spanishName: string, country: string}[] | null>(null);
   
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('bdai_profile');
@@ -98,15 +98,13 @@ export default function App() {
     
     try {
         setSelectedCity(officialNames.spanishName); 
+        
+        // 1. INTENTAMOS MATCH EN CACHÉ
         const variantsToTry = [officialNames.spanishName, officialNames.name];
         let cachedMatch = null;
-
         for (const variant of variantsToTry) {
             const cached = await getCachedTours(variant, officialNames.country, targetLang);
-            if (cached) {
-                cachedMatch = cached;
-                break; 
-            }
+            if (cached) { cachedMatch = cached; break; }
         }
         
         if (cachedMatch) {
@@ -122,6 +120,7 @@ export default function App() {
             setIsLoading(false); return;
         }
 
+        // 2. GENERACIÓN MAESTRA (Aprovechando Paid Key)
         setLoadingMessage(t('generating'));
         const generated = await generateToursForCity(officialNames.spanishName, officialNames.country, user);
         setTours(generated); 
@@ -137,17 +136,12 @@ export default function App() {
     setLoadingMessage(t('analyzing'));
 
     try {
-        const immediateCached = await getCachedTours(cityInput, "", user.language || 'es');
-        if (immediateCached) {
-            await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
-            return;
-        }
-
+        // Estandarización inteligente (Paso previo para ahorrar API calls y unificar datos)
         const results = await standardizeCityName(cityInput);
         if (results.length === 1) {
             await processCitySelection(results[0]);
         } else if (results.length > 1) {
-            setSearchOptions(results as any);
+            setSearchOptions(results);
             setIsLoading(false);
         } else {
             setAuthError("Localización no reconocida.");
