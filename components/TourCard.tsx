@@ -6,13 +6,11 @@ import { cleanDescriptionText, generateAudio } from '../services/geminiService';
 
 const TEXTS: any = {
     en: { start: "Launch", stop: "Hub", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Sync Successful", prev: "Back", next: "Advance", meters: "m", itinerary: "Sequence", syncing: "Syncing voice...", tooFar: "Too far! Move closer to the spot." },
-    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Secuencia", syncing: "Sincronizando voz...", tooFar: "¡Demasiado lejos! Acércate al punto real." },
-    ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Loguejar Dades", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Avançar", meters: "m", itinerary: "Seqüència", syncing: "Sincronitzant veu...", tooFar: "Massa lluny! Apropa't al punt." }
+    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Secuencia", syncing: "Sincronizando voz...", tooFar: "¡Demasiado lejos! Acércate al punto real." }
 };
 
-// Fórmula de Haversine para validación GPS real
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371000; // Radio de la tierra en metros
+    const R = 6371000;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -24,17 +22,24 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS.es;
-  const duration = tour.stops.length * 20 + "m";
+  if (!tour) return null;
+  
+  // Fallbacks de seguridad para evitar tarjetas vacías
+  const title = tour.title || tour.name || "Tour sin título";
+  const desc = tour.description || "Sin descripción disponible";
+  const theme = tour.theme || "Exploración";
+  const duration = (tour.stops?.length || 0) * 20 + "m";
+
   return (
-    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-md p-7 mb-4 cursor-pointer relative">
+    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-md p-7 mb-4 cursor-pointer relative active:scale-[0.98] transition-all">
       <div className="flex flex-col">
           <div className="mb-4 flex justify-between items-center">
-             <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white">{tour.theme}</span>
+             <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white">{theme}</span>
           </div>
-          <h3 className="text-2xl font-black text-slate-900 mb-3 uppercase tracking-tighter leading-tight">{tour.title}</h3>
-          <p className="text-slate-500 text-xs leading-relaxed line-clamp-2">{tour.description}</p>
+          <h3 className="text-2xl font-black text-slate-900 mb-3 uppercase tracking-tighter leading-tight">{title}</h3>
+          <p className="text-slate-500 text-xs leading-relaxed line-clamp-2">{desc}</p>
           <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-50">
-               <span className="text-slate-900 font-black text-[10px] uppercase tracking-widest"><i className="fas fa-clock mr-2"></i> {duration} • {tour.distance}</span>
+               <span className="text-slate-900 font-black text-[10px] uppercase tracking-widest"><i className="fas fa-clock mr-2"></i> {duration} • {tour.distance || '---'}</span>
                <span className="text-purple-600 font-black text-[10px] uppercase tracking-widest">{tl.start} <i className="fas fa-chevron-right ml-1"></i></span>
           </div>
       </div>
@@ -48,7 +53,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [rewardClaimed, setRewardClaimed] = useState(false);
     const [photoClaimed, setPhotoClaimed] = useState(false);
 
-    // Audio Storytelling Engine
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
@@ -69,20 +73,25 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         preloadedBuffers.current.clear();
         setRewardClaimed(false);
         setPhotoClaimed(false);
-        preloadNextPhrases(0);
+        preloadSpecificPhrase(0);
     }, [currentStop.id]);
+
+    const preloadSpecificPhrase = async (idx: number) => {
+        if (preloadedBuffers.current.has(idx)) return;
+        try {
+            const base64 = await generateAudio(phrases[idx], language, tour.city);
+            if (base64) {
+                const buffer = await decodeBase64ToBuffer(base64);
+                if (buffer) preloadedBuffers.current.set(idx, buffer);
+            }
+        } catch (e) { console.error(e); }
+    };
 
     const preloadNextPhrases = async (startIndex: number) => {
         if (isPreloading.current) return;
         isPreloading.current = true;
-        for (let i = startIndex; i < Math.min(startIndex + 3, phrases.length); i++) {
-            if (!preloadedBuffers.current.has(i)) {
-                const base64 = await generateAudio(phrases[i], language, tour.city);
-                if (base64) {
-                    const buffer = await decodeBase64ToBuffer(base64);
-                    if (buffer) preloadedBuffers.current.set(i, buffer);
-                }
-            }
+        for (let i = startIndex; i < Math.min(startIndex + 2, phrases.length); i++) {
+            await preloadSpecificPhrase(i);
         }
         isPreloading.current = false;
     };
@@ -110,7 +119,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const playPhrase = async (index: number) => {
         if (index >= phrases.length) {
             setIsPlaying(false);
-            // Recompensa automática por escuchar (Millas)
             handleVisitReward();
             return;
         }
@@ -143,32 +151,24 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         }
     };
 
-    // Lógica de validación GPS para Millas (Visita)
     const handleVisitReward = () => {
         if (rewardClaimed || !userLocation) return;
         const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
-        if (dist > 50) return; // Demasiado lejos para loguear visita
-
+        if (dist > 50) return;
         const updatedUser = { ...user, miles: user.miles + 25 };
         onUpdateUser(updatedUser);
         setRewardClaimed(true);
     };
 
-    // Lógica de validación GPS para Puntos de Foto (Ángulo Técnico)
     const handlePhotoReward = () => {
         if (photoClaimed) return;
         if (!userLocation) { alert(tl.tooFar); return; }
-        
         const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
-        if (dist > 50) {
-            alert(`${tl.tooFar} (${Math.round(dist)}m)`);
-            return;
-        }
-
+        if (dist > 50) { alert(`${tl.tooFar} (${Math.round(dist)}m)`); return; }
         const updatedUser = { 
             ...user, 
             photoPoints: (user.photoPoints || 0) + 1,
-            miles: user.miles + 50, // Bonus de millas por foto
+            miles: user.miles + 50,
             stats: { ...user.stats, photosTaken: user.stats.photosTaken + 1 }
         };
         onUpdateUser(updatedUser);

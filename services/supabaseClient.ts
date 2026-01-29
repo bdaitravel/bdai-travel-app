@@ -12,20 +12,11 @@ export const normalizeKey = (text: string) => {
     return text.toLowerCase()
         .trim()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") 
-        .replace(/[^a-z0-9]/g, "");     
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[\s,.-]+/g, "_")
+        .replace(/[^a-z0-9_]/g, "");
 };
 
-/**
- * Genera una clave única que combina ciudad y país para evitar colisiones.
- */
-const getCombinedCityKey = (city: string, country: string) => {
-    const cName = normalizeKey(city);
-    const cCountry = normalizeKey(country);
-    return cCountry ? `${cName}_${cCountry}` : cName;
-};
-
-// --- PERFILES ---
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   if (!email) return null;
   const { data, error } = await supabase.from('profiles').select('*').eq('email', email.toLowerCase()).maybeSingle();
@@ -45,44 +36,32 @@ export const syncUserProfile = async (user: UserProfile) => {
   }, { onConflict: 'id' });
 };
 
-// --- TOURS (EN TABLA) ---
-/**
- * Recupera tours de la caché con sistema de fallback para compatibilidad legacy.
- */
 export const getCachedTours = async (city: string, country: string, language: string): Promise<Tour[] | null> => {
-  const combinedKey = getCombinedCityKey(city, country);
-  const legacyKey = normalizeKey(city);
-
-  // 1. Intento con clave moderna (ciudad_pais)
-  let { data, error } = await supabase.from('tours_cache')
+  const nInput = normalizeKey(city);
+  
+  // BUSQUEDA INSTANTÁNEA: Buscamos cualquier ciudad que EMPIECE por lo que el usuario ha escrito
+  // Permite que "Oviedo" encuentre "oviedo_espana" directamente.
+  const { data, error } = await supabase.from('tours_cache')
     .select('data')
-    .eq('city', combinedKey)
+    .ilike('city', `${nInput}%`)
     .eq('language', language)
-    .limit(1);
-    
-  // 2. Fallback a clave antigua (solo ciudad) para recuperar los 300+ registros existentes
-  if ((!data || data.length === 0) && combinedKey !== legacyKey) {
-    const legacyRes = await supabase.from('tours_cache')
-      .select('data')
-      .eq('city', legacyKey)
-      .eq('language', language)
-      .limit(1);
-    
-    if (!legacyRes.error && legacyRes.data && legacyRes.data.length > 0) {
-      data = legacyRes.data;
-      error = legacyRes.error;
-    }
-  }
-    
-  return (error || !data || data.length === 0) ? null : (data[0].data as Tour[]);
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return null;
+  return data ? (data.data as Tour[]) : null;
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
-  const combinedKey = getCombinedCityKey(city, country);
-  await supabase.from('tours_cache').upsert({ city: combinedKey, language, data: tours }, { onConflict: 'city,language' });
+  const nKey = normalizeKey(city);
+  await supabase.from('tours_cache').upsert({ 
+    city: nKey, 
+    language, 
+    data: tours,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'city,language' });
 };
 
-// --- AUDIOS ---
 export const getCachedAudio = async (key: string): Promise<string | null> => {
   try {
       const fileName = `${normalizeKey(key)}.txt`;
@@ -101,24 +80,18 @@ export const saveAudioToCache = async (key: string, base64: string) => {
   } catch (e) { console.error(e); }
 };
 
-// --- AUTH ORIGINAL ---
 export const sendOtpEmail = async (email: string) => {
     return await supabase.auth.signInWithOtp({ email });
 };
 
 export const verifyOtpCode = async (email: string, token: string) => {
-    return await supabase.auth.verifyOtp({ 
-        email, 
-        token, 
-        type: 'email' 
-    });
+    return await supabase.auth.verifyOtp({ email, token, type: 'email' });
 };
 
 export const validateEmailFormat = (email: string) => {
   return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
 };
 
-// --- RANKING & COMUNIDAD ---
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
   const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
   return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username } as any));

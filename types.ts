@@ -125,32 +125,29 @@ export enum AppView {
 export const LANGUAGES = [
   { code: 'es', name: 'Español' },
   { code: 'en', name: 'English' },
-  { code: 'ca', name: 'Català' },
-  { code: 'eu', name: 'Euskera' },
+  { code: 'pt', name: 'Português' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'hi', name: 'हिन्दी' },
   { code: 'fr', name: 'Français' },
   { code: 'de', name: 'Deutsch' },
   { code: 'ja', name: '日本語' },
   { code: 'zh', name: '中文' },
-  { code: 'ar', name: 'العربية' },
+  { code: 'ca', name: 'Català' },
+  { code: 'eu', name: 'Euskera' }
 ];
 
 export const INTEREST_OPTIONS = [
-  { id: 'history', label: { es: 'Historia', en: 'History', ca: 'Història', eu: 'Historia', fr: 'Histoire', de: 'Geschichte', ja: '歴史', zh: '历史', ar: 'تاريخ' }, icon: '🏛️' },
-  { id: 'food', label: { es: 'Gastro', en: 'Food', ca: 'Gastro', eu: 'Gastro', fr: 'Gastro', de: 'Gastro', ja: 'グルメ', zh: '美食', ar: 'طعام' }, icon: '🍷' },
-  { id: 'authentic_biz', label: { es: 'Negocios Auténticos', en: 'Authentic Biz', ca: 'Negocis Locals', eu: 'Negozio Autentikoak', fr: 'Boutiques Authentiques', de: 'Authentische Läden', ja: '地元の店', zh: '地道商家', ar: 'أعمال أصيلة' }, icon: '🏪' },
-  { id: 'art', label: { es: 'Arte', en: 'Art', ca: 'Art', eu: 'Artea', fr: 'Art', de: 'Kunst', ja: 'アート', zh: '艺术', ar: 'فن' }, icon: '🎨' },
-  { id: 'photo', label: { es: 'Foto', en: 'Photo', ca: 'Foto', eu: 'Argazki', fr: 'Photo', de: 'Foto', ja: '写真', zh: '摄影', ar: 'صورة' }, icon: '📸' },
-  { id: 'nature', label: { es: 'Naturaleza', en: 'Nature', ca: 'Natura', eu: 'Natura', fr: 'Nature', de: 'Natur', ja: '自然', zh: '自然', ar: 'طبيعة' }, icon: '🌿' },
-  { id: 'night', label: { es: 'Ocio Nocturno', en: 'Nightlife', ca: 'Nit', eu: 'Gaua', fr: 'Nuit', de: 'Nachtleben', ja: 'ナイトライフ', zh: '夜生活', ar: 'حياة ليلية' }, icon: '🌙' }
+  { id: 'history', label: { es: 'Historia', en: 'History', pt: 'História', it: 'Storia', ru: 'История', hi: 'इतिहास' }, icon: '🏛️' },
+  { id: 'food', label: { es: 'Gastro', en: 'Food', pt: 'Gastro', it: 'Gastro', ru: 'Гастро', hi: 'खाना' }, icon: '🍷' },
+  { id: 'art', label: { es: 'Arte', en: 'Art', pt: 'Arte', it: 'Arte', ru: 'Искусство', hi: 'कला' }, icon: '🎨' },
+  { id: 'photo', label: { es: 'Foto', en: 'Photo', pt: 'Foto', it: 'Foto', ru: 'Фото', hi: 'फोटो' }, icon: '📸' }
 ];
 
 export const AVATARS = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Spooky",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Patches",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Coco"
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Spooky"
 ];
 
 export const RANK_THRESHOLDS: Record<TravelerRank, number> = {
@@ -162,8 +159,5 @@ export const RANK_THRESHOLDS: Record<TravelerRank, number> = {
 };
 
 export const BADGE_DEFINITIONS: Badge[] = [
-  { id: 'pioneer', name: 'Pioneer', icon: 'fa-shoe-prints', description: 'Realiza tu primera visita verificada con GPS.' },
-  { id: 'city_hopper', name: 'City Hopper', icon: 'fa-map-location-dot', description: 'Has explorado 3 ciudades diferentes.' },
-  { id: 'archivist', name: 'Archivist', icon: 'fa-box-archive', description: 'Has guardado 3 secretos en el Intel Hub.' },
-  { id: 'photo_elite', name: 'Photo Elite', icon: 'fa-camera-retro', description: 'Has reclamado 5 Photo Spots épicos.' }
+  { id: 'pioneer', name: 'Pioneer', icon: 'fa-shoe-prints', description: 'Realiza tu primera visita verificada con GPS.' }
 ];

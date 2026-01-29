@@ -78,8 +78,8 @@ const ONBOARDING_TEXT: any = {
         step0Title: "选择语言",
         stepDaiTitle: "你好，我是 Dai", stepDaiDesc: "我是 bdai 的 AI 声音。我将成为你在每次旅行中的私人专家、向导和伴侣。",
         step1Title: "AI 驱动的智能", step1Desc: "我根据你的身份和喜好创建独特的路线。",
-        step2Title: "探索世界", step2Desc: "世界各地的城市触手可及。我为你翻译文化。",
-        step3Title: "访问证明", step3Desc: "要赚取里程，你必须亲身到达现场。GPS 会验证你的成就。",
+        step2Title: "探索世界", step2Desc: "世界各地的城市触手及。我为你翻译文化。",
+        step3Title: "访问证明", step3Desc: "要赚取里程，你必须亲身到达现场. GPS 会验证你的成就。",
         step4Title: "数字护照", step4Desc: "收集印章并提升全球探险家排名。",
         skip: "跳过", next: "下一步", start: "开始使用", selectInt: "你的兴趣"
     },
@@ -121,17 +121,17 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, on
             <div className="w-full max-w-sm bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-xl relative z-10 shadow-[0_0_80px_rgba(147,51,234,0.1)]">
                 {step === 0 && (
                     <div className="animate-slide-up text-center">
-                        <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tighter">{t.step0Title}</h2>
-                        <div className="flex justify-start gap-4 overflow-x-auto no-scrollbar py-2 px-1 mask-fade-edges">
+                        <h2 className="text-2xl font-black text-white mb-8 uppercase tracking-tighter">{t.step0Title}</h2>
+                        <div className="flex justify-start gap-6 overflow-x-auto no-scrollbar py-6 px-2">
                             {LANGUAGES.map(lang => (
-                                <div key={lang.code} className="flex flex-col items-center gap-2 shrink-0">
+                                <div key={lang.code} className="flex flex-col items-center gap-3 shrink-0">
                                     <button 
                                       onClick={() => handleLanguagePick(lang.code)} 
-                                      className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center shadow-lg ${language === lang.code ? 'bg-purple-600 border-purple-500 scale-110 shadow-purple-500/30' : 'bg-white/5 border-white/10 opacity-60'}`}
+                                      className={`w-16 h-16 rounded-full transition-all border-4 ${language === lang.code ? 'border-purple-500 scale-110 shadow-lg shadow-purple-500/40' : 'border-white/10 opacity-30 grayscale'}`}
                                     >
                                         <FlagIcon code={lang.code} className="w-full h-full" />
                                     </button>
-                                    <span className={`text-[7px] font-black uppercase tracking-widest ${language === lang.code ? 'text-purple-400' : 'text-slate-500'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${language === lang.code ? 'text-purple-400' : 'text-slate-600'}`}>
                                         {lang.name}
                                     </span>
                                 </div>
