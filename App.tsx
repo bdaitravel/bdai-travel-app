@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, standardizeCityName, translateTours } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
@@ -14,8 +14,8 @@ import { CommunityBoard } from './components/CommunityBoard';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Access Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "System Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Interpreting location...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Transmitting code to:", apiError: "AI Authentication error. Check your API Key in Vercel." },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma del Sistema", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Interpretando localización...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando código a:", apiError: "Error de IA. Revisa tu API_KEY en los ajustes de Vercel." }
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", apiError: "AI AUTH ERROR: Check your API_KEY in Vercel settings.", quotaError: "Dai is tired. Too many requests. Wait a bit." },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", apiError: "ERROR DE IA: Tu API_KEY no es válida. Revisa Vercel.", quotaError: "Dai está saturada. Espera unos minutos (Límite Gratuito)." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -116,15 +116,10 @@ export default function App() {
         await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, generated);
         setView(AppView.CITY_DETAIL);
     } catch (e: any) { 
-        console.error("Critical Flow Error:", e);
-        if (e.message?.includes('AUTH_ERROR') || e.message?.includes('MISSING_KEY')) {
-            setAuthError(t('apiError'));
-        } else {
-            setAuthError("Error de sincronización con Dai. Reintenta.");
-        }
-    } finally { 
-        setIsLoading(false); 
-    }
+        if (e.message === 'AUTH_ERROR') setAuthError(t('apiError'));
+        else if (e.message === 'QUOTA_EXCEEDED') setAuthError(t('quotaError'));
+        else setAuthError("Error de conexión. Reintenta.");
+    } finally { setIsLoading(false); }
   };
 
   const handleCitySelect = async (cityInput: string) => {
@@ -136,22 +131,12 @@ export default function App() {
     try {
         const results = await standardizeCityName(cityInput);
         if (results && results.length > 0) {
-            if (results.length === 1) {
-                await processCitySelection(results[0]);
-            } else {
-                setSearchOptions(results);
-                setIsLoading(false);
-            }
-        } else {
-            await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
-        }
+            if (results.length === 1) await processCitySelection(results[0]);
+            else { setSearchOptions(results); setIsLoading(false); }
+        } else await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
     } catch (e: any) {
-        if (e.message?.includes('AUTH_ERROR') || e.message?.includes('MISSING_KEY')) {
-            setAuthError(t('apiError'));
-            setIsLoading(false);
-        } else {
-            await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
-        }
+        if (e.message === 'AUTH_ERROR') { setAuthError(t('apiError')); setIsLoading(false); }
+        else await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
     }
   };
 
@@ -178,7 +163,7 @@ export default function App() {
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      {isLoading && <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-10"><div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-6"></div><p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center">{loadingMessage || t('loading')}</p></div>}
+      {isLoading && <div className="fixed inset-0 z-[9999] bg-slate-950/90 backdrop-blur-xl flex flex-col items-center justify-center p-10"><div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-6"></div><p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center">{loadingMessage || t('loading')}</p></div>}
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative bg-[#020617]">
@@ -189,24 +174,10 @@ export default function App() {
               </div>
 
               <div className="w-full max-w-sm space-y-12">
-                  <div className="space-y-4">
-                      <div className="flex items-center gap-3 px-2">
-                        <div className="h-[1px] flex-1 bg-white/10"></div>
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t('selectLang')}</span>
-                        <div className="h-[1px] flex-1 bg-white/10"></div>
-                      </div>
-                      <div className="flex overflow-x-auto no-scrollbar gap-3 px-2 py-2">
-                        {LANGUAGES.map(lang => (
-                            <button 
-                                key={lang.code}
-                                onClick={() => handleUpdateUser({...user, language: lang.code})} 
-                                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all border ${user.language === lang.code ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/5 text-slate-500 grayscale opacity-60'}`}
-                            >
-                                <FlagIcon code={lang.code} className="w-5 h-5" />
-                                <span className="text-[9px] font-black uppercase whitespace-nowrap">{lang.name}</span>
-                            </button>
-                        ))}
-                      </div>
+                  <div className="flex overflow-x-auto no-scrollbar gap-3 px-2 py-2">
+                    {LANGUAGES.map(lang => (
+                        <button key={lang.code} onClick={() => handleUpdateUser({...user, language: lang.code})} className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all border ${user.language === lang.code ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/5 text-slate-500 grayscale opacity-60'}`}><FlagIcon code={lang.code} className="w-5 h-5" /><span className="text-[9px] font-black uppercase whitespace-nowrap">{lang.name}</span></button>
+                    ))}
                   </div>
                   
                   <div className="w-full space-y-4 max-w-xs mx-auto">
@@ -214,26 +185,26 @@ export default function App() {
                       {loginStep === 'EMAIL' ? (
                           <div className="space-y-4">
                               <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-2xl py-5 px-6 text-center text-white focus:border-purple-500 outline-none font-bold placeholder:opacity-20 transition-all" />
-                              <button onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl transition-all active:scale-95">{t('login')}</button>
+                              <button onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[10px] active:scale-95">{t('login')}</button>
                           </div>
                       ) : (
                           <div className="space-y-6 text-center animate-fade-in">
-                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('sendingTo')} <br/><span className="text-purple-400 lowercase">{email}</span></p>
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-loose">Check <span className="text-purple-400">{email}</span></p>
                               <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-purple-500/30 rounded-3xl py-6 text-center font-black text-3xl text-white tracking-widest outline-none" placeholder="000000" />
                               <button onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all active:scale-95">{t('verify')}</button>
                           </div>
                       )}
                   </div>
               </div>
-              <div className="pb-8 text-center"><span className="text-[7px] font-bold text-slate-700 uppercase tracking-widest">© 2025 BDAI INTEL CORE</span></div>
+              <div className="pb-8 text-center opacity-30"><span className="text-[7px] font-bold text-white uppercase tracking-widest">© 2025 BDAI INTEL CORE</span></div>
           </div>
       ) : (
           <div className="flex-1 flex flex-col relative h-full">
             <div className={`flex-1 overflow-y-auto no-scrollbar relative bg-[#020617] ${view === AppView.TOUR_ACTIVE ? 'pb-0' : 'pb-40'}`}>
                 {view === AppView.HOME && (
-                  <div className="space-y-4 pt-safe-iphone px-8">
+                  <div className="space-y-4 pt-safe-iphone px-8 animate-fade-in">
                       <header className="flex justify-between items-center py-6">
-                          <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl">bdai</span></div>
+                          <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">bdai</span></div>
                           <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
                       
@@ -242,29 +213,14 @@ export default function App() {
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
                       
                       <div className="relative mt-8 flex gap-3">
-                          <div className="relative flex-1">
-                              <i className="fas fa-location-crosshairs absolute left-6 top-6 text-slate-500"></i>
-                              <input 
-                                  type="text" 
-                                  value={searchVal} 
-                                  onChange={(e) => setSearchVal(e.target.value)} 
-                                  onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} 
-                                  placeholder={t('searchPlaceholder')} 
-                                  className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500 outline-none font-bold" 
-                              />
-                          </div>
-                          <button 
-                              onClick={() => handleCitySelect(searchVal)}
-                              className="w-16 h-16 rounded-[2rem] bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"
-                          >
-                              <i className="fas fa-search"></i>
-                          </button>
+                          <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white focus:border-purple-500 outline-none font-bold" />
+                          <button onClick={() => handleCitySelect(searchVal)} className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"><i className="fas fa-search"></i></button>
                       </div>
 
                       {searchOptions && (
-                          <div className="mt-6 space-y-3 animate-fade-in bg-white/5 p-4 rounded-[2.5rem] border border-white/5">
+                          <div className="mt-6 space-y-2 animate-fade-in bg-white/5 p-4 rounded-[2rem] border border-white/5">
                               {searchOptions.map((opt: any, i: number) => (
-                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-6 bg-slate-900 border border-white/10 rounded-3xl flex items-center justify-between group active:bg-purple-600 transition-all"><div className="flex flex-col items-start"><span className="text-white font-black uppercase text-sm">{opt.spanishName}</span><span className="text-[9px] text-slate-500 font-bold uppercase">{opt.country}</span></div><i className="fas fa-chevron-right text-slate-700"></i></button>
+                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl flex items-center justify-between active:bg-purple-600 transition-all text-left"><div><span className="text-white font-black uppercase text-[11px]">{opt.spanishName}</span><br/><span className="text-[8px] text-slate-500 font-bold uppercase">{opt.country}</span></div><i className="fas fa-chevron-right text-[10px] text-slate-700"></i></button>
                               ))}
                           </div>
                       )}
@@ -273,8 +229,8 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 animate-fade-in">
-                      <header className="flex items-center gap-4 mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2></header>
-                      <div className="space-y-6 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
+                      <header className="flex items-center gap-4 mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2></header>
+                      <div className="space-y-4 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
                       <CommunityBoard city={selectedCity} language={user.language || 'es'} user={user} />
                   </div>
                 )}
@@ -285,12 +241,13 @@ export default function App() {
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language || 'es'} onUpdateUser={handleUpdateUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
+            
             {view !== AppView.TOUR_ACTIVE && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-8 pb-safe-iphone mb-4 pointer-events-none">
-                  <nav className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 px-6 py-4 flex justify-between items-center w-full rounded-[3rem] pointer-events-auto shadow-2xl">
+                  <nav className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 px-6 py-4 flex justify-between items-center w-full rounded-[2.5rem] pointer-events-auto shadow-2xl">
                       <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
                       <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
-                      <button onClick={() => setView(AppView.HOME)} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-12 scale-110 rotate-45' : 'bg-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>
+                      <button onClick={() => setView(AppView.HOME)} className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110' : 'bg-white/5'}`}><BdaiLogo className="w-6 h-6" /></button>
                       <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
                       <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
                   </nav>

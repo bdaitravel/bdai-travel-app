@@ -87,7 +87,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const preloadSpecificPhrase = async (idx: number) => {
         if (preloadedBuffers.current.has(idx)) return;
         try {
-            const base64 = await generateAudio(phrases[idx], language, tour.city);
+            // Fix: generateAudio takes max 2 arguments
+            const base64 = await generateAudio(phrases[idx], language);
             if (base64) {
                 const buffer = await decodeBase64ToBuffer(base64);
                 if (buffer) preloadedBuffers.current.set(idx, buffer);
@@ -135,7 +136,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         
         if (!buffer) {
             setIsLoading(true);
-            const base64 = await generateAudio(phrases[index], language, tour.city);
+            // Fix: generateAudio takes max 2 arguments
+            const base64 = await generateAudio(phrases[index], language);
             if (base64) buffer = await decodeBase64ToBuffer(base64);
             setIsLoading(false);
         }
