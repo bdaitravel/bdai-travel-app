@@ -133,6 +133,7 @@ export const LANGUAGES = [
   { code: 'de', name: 'Deutsch' },
   { code: 'ja', name: '日本語' },
   { code: 'zh', name: '中文' },
+  { code: 'ar', name: 'العربية' },
   { code: 'ca', name: 'Català' },
   { code: 'eu', name: 'Euskera' }
 ];

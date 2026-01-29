@@ -15,6 +15,7 @@ const TEXTS: any = {
     de: { start: "Start", stop: "Stopp", of: "von", photoSpot: "Winkel", capture: "Log", rewardReceived: "Erfolgreich", prev: "Zurück", next: "Weiter", meters: "m", itinerary: "Route", syncing: "Stimme wird synchronisiert...", tooFar: "Zu weit weg !" },
     ja: { start: "開始", stop: "目的地", of: "/", photoSpot: "撮影角度", capture: "ログ", rewardReceived: "同期完了", prev: "戻る", next: "進む", meters: "m", itinerary: "シーケンス", syncing: "音声同期中...", tooFar: "遠すぎます！もっと近づいてください。" },
     zh: { start: "启动", stop: "站点", of: "/", photoSpot: "技术角度", capture: "记录", rewardReceived: "同步成功", prev: "返回", next: "前进", meters: "米", itinerary: "顺序", syncing: "语音同步中...", tooFar: "太远了！请靠近一点。" },
+    ar: { start: "إطلاق", stop: "محطة", of: "من", photoSpot: "زاوية تقنية", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "رجوع", next: "تقدم", meters: "م", itinerary: "تسلسل", syncing: "مزامنة الصوت...", tooFar: "بعيد جداً! اقترب من النقطة." },
     ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Registrar", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Avançar", meters: "m", itinerary: "Seqüència", syncing: "Sincronitzant veu...", tooFar: "Massa lluny !" },
     eu: { start: "Abiarazi", stop: "Geldialdia", of: "/", photoSpot: "Angelu Teknikoa", capture: "Erregistratu", rewardReceived: "Sinkronizatuta", prev: "Atzera", next: "Aurrera", meters: "m", itinerary: "Sekuentzia", syncing: "Ahotsa sinkronizatzen...", tooFar: "Urrunegi !" }
 };
@@ -64,14 +65,33 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+
     const phrases = useMemo(() => {
-        return currentStop.description.split(/[.!?]+\s/).filter(p => p.trim().length > 3);
+        // Divisor inteligente compatible con puntuación global (JA, HI, AR, etc.)
+        const raw = currentStop.description.split(/([.!?。।？！؟])\s*/);
+        const result = [];
+        for (let i = 0; i < raw.length; i += 2) {
+            const text = raw[i];
+            const punct = raw[i + 1] || "";
+            if (text && text.trim().length > 2) {
+                const combined = (text + punct).trim();
+                // Si la frase es masiva (>180 caracteres), la fragmentamos para no saturar el TTS
+                if (combined.length > 180) {
+                    const subParts = combined.match(/.{1,180}(\s|$)|.{1,180}/g) || [combined];
+                    result.push(...subParts.map(s => s.trim()).filter(s => s.length > 2));
+                } else {
+                    result.push(combined);
+                }
+            }
+        }
+        return result;
     }, [currentStop.id]);
 
     const audioContextRef = useRef<AudioContext | null>(null);
     const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
     const preloadedBuffers = useRef<Map<number, AudioBuffer>>(new Map());
     const isPreloading = useRef(false);
+    const watchdogRef = useRef<number | null>(null);
 
     useEffect(() => {
         stopAudio();
@@ -85,15 +105,14 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     }, [currentStop.id]);
 
     const preloadSpecificPhrase = async (idx: number) => {
-        if (preloadedBuffers.current.has(idx)) return;
+        if (preloadedBuffers.current.has(idx) || idx >= phrases.length) return;
         try {
-            // Fix: generateAudio takes max 2 arguments
             const base64 = await generateAudio(phrases[idx], language);
             if (base64) {
                 const buffer = await decodeBase64ToBuffer(base64);
                 if (buffer) preloadedBuffers.current.set(idx, buffer);
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error(`Preload error at index ${idx}:`, e); }
     };
 
     const preloadNextPhrases = async (startIndex: number) => {
@@ -106,22 +125,26 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const decodeBase64ToBuffer = async (base64: string): Promise<AudioBuffer | null> => {
-        if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const ctx = audioContextRef.current;
-        const binary = atob(base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const dataInt16 = new Int16Array(bytes.buffer, 0, Math.floor(bytes.byteLength / 2));
-        const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
-        const channelData = buffer.getChannelData(0);
-        for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-        return buffer;
+        try {
+            if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const ctx = audioContextRef.current;
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const dataInt16 = new Int16Array(bytes.buffer, 0, Math.floor(bytes.byteLength / 2));
+            const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
+            const channelData = buffer.getChannelData(0);
+            for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
+            return buffer;
+        } catch (e) { return null; }
     };
 
     const stopAudio = () => {
+        if (watchdogRef.current) { window.clearTimeout(watchdogRef.current); watchdogRef.current = null; }
         if (audioSourceRef.current) {
             audioSourceRef.current.onended = null;
-            audioSourceRef.current.stop();
+            try { audioSourceRef.current.stop(); } catch(e) {}
+            audioSourceRef.current = null;
         }
     };
 
@@ -131,33 +154,48 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             handleVisitReward();
             return;
         }
+
         setCurrentPhraseIndex(index);
         let buffer = preloadedBuffers.current.get(index);
         
         if (!buffer) {
             setIsLoading(true);
-            // Fix: generateAudio takes max 2 arguments
+            // Watchdog: si la frase no carga en 7 segundos, saltamos a la siguiente
+            watchdogRef.current = window.setTimeout(() => {
+                console.warn("Watchdog: Audio load timed out. Skipping phrase.");
+                setIsLoading(false);
+                playPhrase(index + 1);
+            }, 7000);
+
             const base64 = await generateAudio(phrases[index], language);
+            if (watchdogRef.current) { window.clearTimeout(watchdogRef.current); watchdogRef.current = null; }
+            
             if (base64) buffer = await decodeBase64ToBuffer(base64);
             setIsLoading(false);
         }
 
         if (buffer) {
-            const ctx = audioContextRef.current!;
-            if (ctx.state === 'suspended') await ctx.resume();
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
-            source.onended = () => {
-                const nextIdx = index + 1;
-                playPhrase(nextIdx);
-                preloadNextPhrases(nextIdx + 1);
-            };
-            source.start(0);
-            audioSourceRef.current = source;
-            setIsPlaying(true);
+            try {
+                const ctx = audioContextRef.current!;
+                if (ctx.state === 'suspended') await ctx.resume();
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+                source.onended = () => {
+                    const nextIdx = index + 1;
+                    playPhrase(nextIdx);
+                    preloadNextPhrases(nextIdx + 1);
+                };
+                source.start(0);
+                audioSourceRef.current = source;
+                setIsPlaying(true);
+            } catch (e) {
+                console.error("Playback error:", e);
+                playPhrase(index + 1); // Auto-skip on crash
+            }
         } else {
-            setIsPlaying(false);
+            // Si no hay buffer tras intentar cargar, saltamos
+            playPhrase(index + 1);
         }
     };
 
