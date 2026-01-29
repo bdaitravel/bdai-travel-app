@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, standardizeCityName, translateTours } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
@@ -8,18 +8,21 @@ import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
-import { Onboarding } from './components/Onboarding';
 import { FlagIcon } from './components/FlagIcon';
 import { AdminPanel } from './components/AdminPanel';
 import { CommunityBoard } from './components/CommunityBoard';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
-const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "AI Latency. Try again.", codeError: "Invalid code", selectLang: "System Language", loading: "Syncing...", analyzing: "Analyzing location...", generating: "Generating Masterclass...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Sending code to:" },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Latencia de IA. Reintenta.", codeError: "Código no válido", selectLang: "Idioma del Sistema", loading: "Sincronizando...", analyzing: "Analizando ubicación...", generating: "Generando Masterclass...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando código a:" },
-  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "better destinations by ai", authError: "Latenza AI. Riprova.", codeError: "Codice non valido", selectLang: "Lingua del Sistema", loading: "Sincronizzazione...", analyzing: "Analisi posizione...", generating: "Generazione Masterclass...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", sendingTo: "Invio codice a:" },
-  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade-alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Aceder", tagline: "better destinations by ai", authError: "Latência de IA. Tente de novo.", codeError: "Código inválido", selectLang: "Idioma do Sistema", loading: "Sincronizando...", analyzing: "Analisando local...", generating: "Gerando Masterclass...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", sendingTo: "Enviando código para:" },
-  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer Code", verify: "Accéder", tagline: "better destinations by ai", authError: "Latence IA. Réessayez.", codeError: "Code invalide", selectLang: "Langue du Système", loading: "Synchronisation...", analyzing: "Analyse du lieu...", generating: "Génération Masterclass...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", sendingTo: "Envoi du code à :" }
+const TRANSLATIONS: Record<string, any> = {
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "AI Latency. Try again.", codeError: "Invalid code", selectLang: "Language", loading: "Syncing...", analyzing: "Locating...", generating: "Generating...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", sendingTo: "Sending to:" },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Latencia de IA. Reintenta.", codeError: "Código no válido", selectLang: "Idioma", loading: "Sincronizando...", analyzing: "Localizando...", generating: "Generando...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", sendingTo: "Enviando a:" },
+  ja: { welcome: "ビデアーログ:", explorer: "探検家", searchPlaceholder: "対象都市...", emailPlaceholder: "メールアドレス", login: "コードを送信", verify: "認証する", tagline: "AIによるより良い目的地", authError: "AIの遅延。再試行してください。", codeError: "無効なコード", selectLang: "言語設定", loading: "同期中...", analyzing: "位置特定中...", generating: "生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "情報", navVisa: "パスポート", navStore: "ストア", sendingTo: "送信先:" },
+  zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "电子邮件", login: "发送代码", verify: "验证身份", tagline: "由AI打造的更佳目的地", authError: "AI 延迟。请重试。", codeError: "代码无效", selectLang: "语言选择", loading: "同步中...", analyzing: "定位中...", generating: "生成中...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", sendingTo: "发送至:" },
+  hi: { welcome: "बिडर लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "लक्ष्य शहर...", emailPlaceholder: "ईमेल पता", login: "कोड भेजें", verify: "प्रमाणित करें", tagline: "एआई द्वारा बेहतर गंतव्य", authError: "एआई विलंब। पुनः प्रयास करें।", codeError: "अमान्य कोड", selectLang: "भाषा चुनें", loading: "सिंक हो रहा है...", analyzing: "ढूंढ रहे हैं...", generating: "बना रहे हैं...", translating: "अनुवाद कर रहे हैं...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", sendingTo: "भेज रहे हैं:" },
+  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città objetivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "destinazioni migliori tramite AI", authError: "Latenza AI. Riprova.", codeError: "Codice non valido", selectLang: "Lingua", loading: "Sincronizzazione...", analyzing: "Localizzazione...", generating: "Generazione...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Store", sendingTo: "Inviando a:" },
+  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Aceder", tagline: "melhores destinos por IA", authError: "Latência de IA. Tente de nuevo.", codeError: "Código inválido", selectLang: "Idioma", loading: "Sincronizando...", analyzing: "Localizando...", generating: "Gerando...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Loja", sendingTo: "Enviando para:" },
+  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "meilleures destinations par IA", authError: "Latence IA. Réessayez.", codeError: "Code invalide", selectLang: "Langue", loading: "Synchronisation...", analyzing: "Localisation...", generating: "Génération...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", sendingTo: "Envoi à :" },
+  ru: { welcome: "Лог Bidaer:", explorer: "Исследователь", searchPlaceholder: "Город...", emailPlaceholder: "Электронная почта", login: "Отправить код", verify: "Войти", tagline: "лучшие места с помощью ИИ", authError: "Задержка ИИ. Попробуйте еще раз.", codeError: "Неверный код", selectLang: "Язык", loading: "Синхронизация...", analyzing: "Поиск...", generating: "Создание...", translating: "Перевод...", navElite: "Элита", navHub: "Инфо", navVisa: "Паспорт", navStore: "Магазин", sendingTo: "Отправка на:" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -29,10 +32,11 @@ const GUEST_PROFILE: UserProfile = {
   visitedCities: [], completedTours: [], badges: []
 };
 
+// Fix: Added missing NavButton component definition to satisfy requirements in lines 293-297
 const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-purple-500 scale-110' : 'text-slate-500 opacity-50'}`}>
+  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-purple-500 scale-110' : 'text-slate-500 hover:text-slate-300'}`}>
     <i className={`fas ${icon} text-lg`}></i>
-    <span className="text-[8px] font-black uppercase tracking-widest">{label}</span>
+    <span className="text-[7px] font-black uppercase tracking-widest">{label}</span>
   </button>
 );
 
@@ -61,6 +65,11 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
 
+  // Memoized translations that react strictly to user.language
+  const t = useMemo(() => {
+    return (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
+  }, [user.language]);
+
   useEffect(() => {
     const checkAuth = async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -73,22 +82,11 @@ export default function App() {
     };
     checkAuth();
     getGlobalRanking().then(setLeaderboard);
-
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-            null, { enableHighAccuracy: true }
-        );
-    }
   }, []);
-
-  // Función de traducción reactiva al cambio de idioma del estado
-  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
   const handleUpdateUser = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
-    if (updatedUser.isLoggedIn) syncUserProfile(updatedUser);
   };
 
   const processCitySelection = async (officialNames: {name: string, spanishName: string, country: string}) => {
@@ -118,8 +116,6 @@ export default function App() {
 
         setLoadingMessage(t('generating'));
         const generated = await generateToursForCity(officialNames.spanishName, officialNames.country, user);
-        if (!generated || generated.length === 0) throw new Error("No tours");
-        
         setTours(generated); 
         await saveToursToCache(officialNames.spanishName, officialNames.country, targetLang, generated);
         setView(AppView.CITY_DETAIL);
@@ -138,26 +134,32 @@ export default function App() {
 
     try {
         const results = await standardizeCityName(cityInput);
-        // Si hay más de una opción, o si el nombre es ambiguo, forzamos al usuario a elegir
         if (results && results.length > 1) {
             setSearchOptions(results);
             setIsLoading(false);
         } else if (results.length === 1) {
-            // Si el usuario puso algo muy específico (ej: "Cordoba Argentina") y la IA solo da 1 resultado
             await processCitySelection(results[0]);
         } else {
             await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
         }
     } catch (e: any) {
-        await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
+        setAuthError(t('authError'));
+        setIsLoading(false);
     }
   };
 
   const handleSendOtp = async () => {
     if (!email || !validateEmailFormat(email) || isLoading) return;
     setIsLoading(true); setAuthError(null);
-    try { const { error } = await sendOtpEmail(email); if (error) throw error; setLoginStep('CODE'); } 
-    catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
+    try { 
+      const { error } = await sendOtpEmail(email); 
+      if (error) throw error; 
+      setLoginStep('CODE'); 
+    } catch (e: any) { 
+      setAuthError(e.message); 
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const handleVerifyOtp = async () => {
@@ -169,22 +171,26 @@ export default function App() {
       const profile = await getUserProfileByEmail(email);
       handleUpdateUser({ ...(profile || user), id: data.user.id, email, isLoggedIn: true });
       setView(AppView.HOME);
-    } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
+    } catch (e: any) { 
+      setAuthError(e.message); 
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
-  if (isVerifyingSession) return <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-10"><BdaiLogo className="w-24 h-24 mb-6 animate-pulse" /><p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">bdai intel core</p></div>;
+  if (isVerifyingSession) return <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center"><BdaiLogo className="w-24 h-24 mb-6 animate-pulse" /></div>;
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
       {isLoading && (
-        <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-3xl flex flex-col items-center justify-center p-10">
+        <div className="fixed inset-0 z-[9999] bg-slate-950/95 flex flex-col items-center justify-center p-10 backdrop-blur-3xl">
           <BdaiLogo className="w-16 h-16 animate-pulse mb-8" />
-          <p className="text-white font-black uppercase text-[11px] tracking-[0.5em] text-center animate-pulse">{loadingMessage || t('loading')}</p>
+          <p className="text-white font-black uppercase text-[11px] tracking-[0.5em] text-center">{loadingMessage || t('loading')}</p>
         </div>
       )}
 
       {view === AppView.LOGIN ? (
-          <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative bg-[#020617]">
+          <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone bg-[#020617]">
               <div className="text-center pt-12">
                   <BdaiLogo className="w-24 h-24 mx-auto mb-6 animate-pulse-logo" />
                   <h1 className="text-4xl font-black lowercase tracking-tighter text-white">bdai</h1>
@@ -203,7 +209,7 @@ export default function App() {
                             <button 
                                 key={lang.code}
                                 onClick={() => handleUpdateUser({...user, language: lang.code})} 
-                                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all border ${user.language === lang.code ? 'bg-purple-600 border-purple-500 text-white shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 grayscale opacity-60'}`}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${user.language === lang.code ? 'bg-purple-600 border-purple-500 text-white' : 'bg-white/5 border-white/5 text-slate-500 grayscale'}`}
                             >
                                 <FlagIcon code={lang.code} className="w-5 h-5" />
                                 <span className="text-[9px] font-black uppercase whitespace-nowrap">{lang.name}</span>
@@ -228,7 +234,6 @@ export default function App() {
                       )}
                   </div>
               </div>
-              <div className="pb-8 text-center opacity-30"><span className="text-[7px] font-bold text-white uppercase tracking-widest">BDAI INTEL CORE 2.5</span></div>
           </div>
       ) : (
           <div className="flex-1 flex flex-col relative h-full">
@@ -240,45 +245,31 @@ export default function App() {
                           <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
                       
-                      {authError && (
-                        <div className="bg-red-500/20 border border-red-500/30 p-4 rounded-3xl mb-4 text-center">
-                          <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">{authError}</p>
-                        </div>
-                      )}
-
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
                       
                       <div className="relative mt-8 flex flex-col gap-3">
                           <div className="flex gap-3">
-                              <div className="relative flex-1">
-                                  <i className="fas fa-location-crosshairs absolute left-6 top-6 text-slate-500"></i>
-                                  <input 
-                                      type="text" 
-                                      value={searchVal} 
-                                      onChange={(e) => setSearchVal(e.target.value)} 
-                                      onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} 
-                                      placeholder={t('searchPlaceholder')} 
-                                      className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 pl-16 pr-8 text-white focus:border-purple-500 outline-none font-bold" 
-                                  />
-                              </div>
-                              <button 
-                                  onClick={() => handleCitySelect(searchVal)}
-                                  className="w-16 h-16 rounded-[2rem] bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"
-                              >
-                                  <i className="fas fa-search"></i>
-                              </button>
+                              <input 
+                                  type="text" 
+                                  value={searchVal} 
+                                  onChange={(e) => setSearchVal(e.target.value)} 
+                                  onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} 
+                                  placeholder={t('searchPlaceholder')} 
+                                  className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] py-6 px-16 text-white outline-none font-bold" 
+                              />
+                              <button onClick={() => handleCitySelect(searchVal)} className="w-16 h-16 rounded-[2rem] bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"><i className="fas fa-search"></i></button>
                           </div>
 
                           {searchOptions && (
-                              <div className="mt-2 space-y-3 animate-fade-in bg-slate-900 border border-purple-500/30 p-4 rounded-[2.5rem] shadow-2xl z-[500] max-h-64 overflow-y-auto no-scrollbar">
+                              <div className="mt-2 space-y-3 bg-slate-900 border border-purple-500/30 p-4 rounded-[2.5rem] shadow-2xl max-h-64 overflow-y-auto">
                                   {searchOptions.map((opt: any, i: number) => (
                                       <button 
                                         key={i} 
                                         onClick={() => processCitySelection(opt)} 
                                         className="w-full p-6 bg-white/5 hover:bg-purple-600 border border-white/5 rounded-3xl flex items-center justify-between group transition-all"
                                       >
-                                          <div className="flex flex-col items-start text-left">
-                                              <span className="text-white font-black uppercase text-sm">{opt.spanishName}</span>
+                                          <div className="text-left">
+                                              <span className="text-white font-black uppercase text-sm block">{opt.spanishName}</span>
                                               <span className="text-[9px] text-slate-500 group-hover:text-purple-200 font-bold uppercase">{opt.country}</span>
                                           </div>
                                           <i className="fas fa-chevron-right text-slate-700 group-hover:text-white"></i>
@@ -287,22 +278,21 @@ export default function App() {
                               </div>
                           )}
                       </div>
-
-                      <TravelServices mode="HOME" language={user.language || 'es'} onCitySelect={(name) => handleCitySelect(name)} />
+                      <TravelServices mode="HOME" language={user.language} onCitySelect={(name) => handleCitySelect(name)} />
                   </div>
                 )}
                 {view === AppView.CITY_DETAIL && (
-                  <div className="pt-safe-iphone px-6 animate-fade-in">
+                  <div className="pt-safe-iphone px-6">
                       <header className="flex items-center gap-4 mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-3xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2></header>
-                      <div className="space-y-6 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
-                      <CommunityBoard city={selectedCity} language={user.language || 'es'} user={user} />
+                      <div className="space-y-6 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language} />)}</div>
+                      <CommunityBoard city={selectedCity} language={user.language} user={user} />
                   </div>
                 )}
-                {view === AppView.TOUR_ACTIVE && activeTour && <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={handleUpdateUser} language={user.language || 'es'} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} />}
-                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language || 'es'} />}
-                {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language || 'es'} onCitySelect={(name) => handleCitySelect(name)} />}
+                {view === AppView.TOUR_ACTIVE && activeTour && <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={handleUpdateUser} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} />}
+                {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} />}
+                {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={(name) => handleCitySelect(name)} />}
                 {view === AppView.SHOP && <Shop user={user} onPurchase={(reward) => handleUpdateUser({...user, miles: user.miles + reward})} />}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language || 'es'} onUpdateUser={handleUpdateUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language} onUpdateUser={handleUpdateUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
             {view !== AppView.TOUR_ACTIVE && (

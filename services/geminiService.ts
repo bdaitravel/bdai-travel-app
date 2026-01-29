@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile } from '../types';
-import { getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
+import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const MASTERCLASS_INSTRUCTION = `
 Eres Dai, el motor de BDAI. Genera TOURS de "Alta Densidad Informativa".
@@ -27,14 +27,12 @@ const LANGUAGE_RULES: Record<string, string> = {
     eu: `${MASTERCLASS_INSTRUCTION} EUSKARAZ ERANTZUN.`
 };
 
-async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1500) {
+async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1000) {
     for (let i = 0; i < retries; i++) {
         try {
             const res = await fn();
-            if (!res) throw new Error("Respuesta vacía de la IA");
             return res;
         } catch (error: any) {
-            console.warn(`Intento ${i + 1} fallido:`, error.message);
             if (i === retries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
         }
@@ -46,26 +44,12 @@ export const cleanDescriptionText = (text: string): string => {
     return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/##/g, '').replace(/#/g, '').trim();
 };
 
-const generateHash = (str: string) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-  }
-  return Math.abs(hash).toString(36);
-};
-
-/**
- * Mejorada la desambiguación para evitar el error de Córdoba España vs Argentina
- */
 export const standardizeCityName = async (input: string): Promise<{name: string, spanishName: string, country: string}[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Busca TODAS las ubicaciones globales importantes llamadas: "${input}". 
-            Si es ambiguo (ej: Córdoba), incluye las versiones de España, Argentina y otras relevantes. 
-            Si el usuario especificó país (ej: "Córdoba Argentina"), prioriza esa pero incluye alternativas.
-            Devuelve un JSON array: [{name(EN), spanishName, country}].`,
+            contents: `Identify global locations named: "${input}". Provide multiple results if ambiguous (e.g. Cordoba in Spain vs Argentina). Return JSON array: [{name(EN), spanishName, country}].`,
             config: { 
                 temperature: 0,
                 responseMimeType: "application/json",
@@ -83,9 +67,7 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
                 }
             }
         });
-        const results = JSON.parse(response.text || "[]");
-        // Si no hay resultados, devolvemos al menos lo que el usuario escribió
-        return results.length > 0 ? results : [{ name: input, spanishName: input, country: "" }];
+        return JSON.parse(response.text || "[]");
     } catch (e) { 
         return [{ name: input, spanishName: input, country: "" }]; 
     }
@@ -96,8 +78,8 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
   const targetLang = userProfile.language || 'es';
   const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
   
-  const prompt = `Genera 3 TOURS únicos de ALTA DENSIDAD para ${cityInput}, ${countryInput}. 
-  Usa latitud/longitud precisas. Descripciones de 200 palabras con curiosidades reales e ingeniería.`;
+  const prompt = `Genera 3 TOURS TEMÁTICOS de ALTA DENSIDAD para ${cityInput}, ${countryInput}. 
+  Cada tour debe tener 8 paradas con coordenadas precisas. Formato JSON.`;
 
   const response = await callAiWithRetry(() => ai.models.generateContent({
       model: 'gemini-3-flash-preview', 
@@ -144,14 +126,14 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
           ...s, 
           id: `s_gen_${Date.now()}_${idx}_${sIdx}`, 
           visited: false,
-          photoSpot: { angle: "Perspectiva Técnica", milesReward: 50, secretLocation: s.name }
+          photoSpot: { angle: "Vista de Ingeniería", milesReward: 50, secretLocation: s.name }
       }))
   }));
 };
 
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const langRule = `Traduce este contenido al idioma con código "${targetLang}". Mantén el tono cínico y técnico de BDAI.`;
+    const langRule = `Traduce este contenido JSON al idioma con código "${targetLang}". Mantén el estilo técnico y cínico de BDAI. No cambies la estructura JSON.`;
     const response = await callAiWithRetry(() => ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: JSON.stringify(tours),
@@ -166,24 +148,18 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
 export const generateAudio = async (text: string, language: string = 'es', city: string = 'global'): Promise<string> => {
   const cleanText = cleanDescriptionText(text);
   if (!cleanText) return "";
-  const cacheKey = `v4_audio_${language}_${generateHash(cleanText)}`;
-  
-  const cached = await getCachedAudio(cacheKey);
-  if (cached) return cached;
   
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const response = await callAiWithRetry(() => ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: cleanText }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
       },
-    }));
-    const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    if (audioData) saveAudioToCache(cacheKey, audioData).catch(console.error);
-    return audioData;
+    });
+    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
   } catch (e) { return ""; }
 };
 
@@ -192,7 +168,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `¿Es seguro este mensaje? "${text}" (RESPONDE SOLO: SAFE o UNSAFE)`,
+            contents: `Is this content safe? "${text}" (SAFE/UNSAFE)`,
             config: { temperature: 0 }
         });
         return response.text?.toUpperCase().includes('SAFE');
@@ -204,7 +180,7 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: `Cinematic travel photography of ${city}. Professional lighting, 8k.` }] },
+            contents: { parts: [{ text: `Cinematic photography of ${city}. 8k resolution.` }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
         const part = response.candidates[0].content.parts.find(p => p.inlineData);
