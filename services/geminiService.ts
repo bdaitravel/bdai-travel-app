@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile } from '../types';
-import { getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
+import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const MASTERCLASS_INSTRUCTION = `
 Eres Dai, el motor analítico de BDAI. Tu misión es generar TOURS de "Alta Densidad Informativa".
@@ -28,12 +28,16 @@ const LANGUAGE_RULES: Record<string, string> = {
     eu: `${MASTERCLASS_INSTRUCTION} EUSKARAZ ERANTZUN.`
 };
 
-async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1000) {
+async function callAiWithRetry(fn: () => Promise<any>, retries = 3, delay = 1500) {
     for (let i = 0; i < retries; i++) {
         try {
             return await fn();
         } catch (error: any) {
-            console.error(`AI Retry ${i+1}:`, error);
+            console.error(`AI Error (Intento ${i+1}):`, error.message);
+            // Si el error es de autenticación, no reintentamos
+            if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('401') || error.message?.includes('403')) {
+                throw new Error("AUTH_ERROR: La API Key de Google es inválida o está bloqueada.");
+            }
             if (i === retries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
         }
@@ -54,6 +58,7 @@ const generateHash = (str: string) => {
 };
 
 export const standardizeCityName = async (input: string): Promise<{name: string, spanishName: string, country: string}[]> => {
+    if (!process.env.API_KEY) throw new Error("MISSING_KEY: No se encontró la API_KEY en Vercel.");
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await ai.models.generateContent({
@@ -87,10 +92,7 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
   const targetLang = userProfile.language || 'es';
   const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
   
-  const prompt = `Genera 3 TOURS únicos para ${cityInput}, ${countryInput}. 
-  Cada tour: 10 paradas con latitud/longitud precisas. 
-  Descripciones: +300 palabras por parada, densas en ingeniería y secretos.
-  Formato JSON.`;
+  const prompt = `Genera 3 TOURS únicos para ${cityInput}, ${countryInput}. Cada tour: 10 paradas con latitud/longitud precisas. Descripciones: +300 palabras por parada, densas en ingeniería y secretos. Formato JSON.`;
 
   const response = await callAiWithRetry(() => ai.models.generateContent({
       model: 'gemini-3-flash-preview', 
@@ -98,8 +100,7 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
       config: { 
           systemInstruction: langRule, 
           responseMimeType: "application/json", 
-          maxOutputTokens: 20000,
-          thinkingConfig: { thinkingBudget: 4000 } // Máximo razonamiento para pago
+          maxOutputTokens: 20000
       }
   }));
 
@@ -125,8 +126,7 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
         contents: `Translate to ${targetLang} keeping the cynical/expert tone: ${JSON.stringify(tours)}`,
         config: { 
             systemInstruction: langRule, 
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingBudget: 2000 }
+            responseMimeType: "application/json"
         }
     }));
     return JSON.parse(response.text || "[]");
