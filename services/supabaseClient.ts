@@ -9,7 +9,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Normalización para claves de caché.
- * Ahora es obligatorio pasar ciudad y opcional país para discriminar correctamente.
  */
 export const normalizeKey = (city: string, country?: string) => {
     const raw = country ? `${city}_${country}` : city;
@@ -20,27 +19,37 @@ export const normalizeKey = (city: string, country?: string) => {
         .replace(/[^a-z0-9]/g, ""); 
 };
 
-export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string} | null> => {
+export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
   if (!nInput) return null;
   
-  // 1. Match exacto de idioma y localización (ciudad+país)
+  // 1. Match exacto de idioma y localización
   const { data: exactMatch } = await supabase.from('tours_cache')
-    .select('data, language')
+    .select('data, language, city')
     .eq('city', nInput)
     .eq('language', language)
     .maybeSingle();
 
-  if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language };
+  if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
 
-  // 2. Fallback a cualquier idioma para la misma localización
+  // 2. Búsqueda difusa (si no hay país especificado, buscamos algo que empiece por el nombre de la ciudad)
+  const { data: fuzzyMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .ilike('city', `${nInput}%`)
+    .eq('language', language)
+    .limit(1)
+    .maybeSingle();
+
+  if (fuzzyMatch) return { data: fuzzyMatch.data as Tour[], langFound: language, cityName: fuzzyMatch.city };
+
+  // 3. Fallback a cualquier idioma para la misma localización (exacta)
   const { data: anyMatch } = await supabase.from('tours_cache')
-    .select('data, language')
+    .select('data, language, city')
     .eq('city', nInput)
     .limit(1)
     .maybeSingle();
 
-  if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language };
+  if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: anyMatch.city };
 
   return null;
 };

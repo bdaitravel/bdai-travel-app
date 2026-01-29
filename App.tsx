@@ -17,7 +17,7 @@ const TRANSLATIONS: any = {
   en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", apiError: "AI AUTH ERROR: Check your API_KEY.", quotaError: "Dai is tired. Wait a bit.", genError: "Sync error. Try again." },
   es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", apiError: "ERROR DE IA: Revisa tu API_KEY.", quotaError: "Dai está saturada. Espera unos minutos.", genError: "Error de sincronización. Reintenta." },
   pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Autenticar", tagline: "better destinations by ai", authError: "Verifique o email", codeError: "Código inválido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está gerando...", analyzing: "Localizando cidade...", generating: "Gerando tours...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", apiError: "Erro de IA.", quotaError: "Dai cansada. Espere.", genError: "Erro de sincronização." },
-  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Autentica", tagline: "better destinations by ai", authError: "Controlla email", codeError: "Codice non valido", selectLang: "Lingua", loading: "Sincronizzazione...", loadingTour: "Dai sta analizzando...", analyzing: "Localizzazione città...", generating: "Generazione tour...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", apiError: "Errore IA.", quotaError: "Dai è stanca. Aspetta.", genError: "Errore di sincronizzazione." },
+  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Autentica", tagline: "better destinations by ai", authError: "Controlla email", codeError: "Codice non valido", selectLang: "Lingua", loading: "Sincronizzazione...", loadingTour: "Dai sta analizando...", analyzing: "Localizzazione città...", generating: "Generazione tour...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", apiError: "Errore IA.", quotaError: "Dai è stanca. Aspetta.", genError: "Errore di sincronizzazione." },
   fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails", codeError: "Code invalide", selectLang: "Langue", loading: "Synchronisation...", loadingTour: "Dai analyse...", analyzing: "Localisation...", generating: "Génération...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", apiError: "Erreur IA.", quotaError: "Dai est fatiguée.", genError: "Erreur de synchro." },
   de: { welcome: "Log Bidaer:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "E-Mail", login: "Code senden", verify: "Anmelden", tagline: "better destinations by ai", authError: "E-Mail prüfen", codeError: "Falscher Code", selectLang: "Sprache", loading: "Synchronisierung...", loadingTour: "Dai analysiert...", analyzing: "Lokalisiere...", generating: "Generiere...", translating: "Übersetze...", navElite: "Elite", navHub: "Intel", navVisa: "Reisepass", navStore: "Shop", apiError: "KI-Fehler.", quotaError: "Dai ist müde.", genError: "Synchro-Fehler." },
   ru: { welcome: "Лог Bidaer:", explorer: "Исследователь", searchPlaceholder: "Целевой город...", emailPlaceholder: "Email", login: "Отправить код", verify: "Войти", tagline: "better destinations by ai", authError: "Проверьте почту", codeError: "Неверный код", selectLang: "Язык", loading: "Синхронизация...", loadingTour: "Дай анализирует...", analyzing: "Локация...", generating: "Генерация...", translating: "Перевод...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", apiError: "Ошибка ИИ.", quotaError: "Дай устала.", genError: "Ошибка синхронизации." },
@@ -147,6 +147,21 @@ export default function App() {
     setLoadingMessage(t('analyzing'));
 
     try {
+        const targetLang = user.language || 'es';
+        
+        // 1. INTENTO INSTANTÁNEO EN BASE DE DATOS (Fuzzy Search)
+        // Buscamos si ya hay algo guardado que coincida con el texto
+        const cached = await getCachedTours(cityInput, "", targetLang);
+        if (cached) {
+            // Si lo encontramos en caché, lo usamos directamente. No hay que llamar a la IA de estandarización.
+            setSelectedCity(cityInput); 
+            setTours(cached.data);
+            setView(AppView.CITY_DETAIL);
+            setIsLoading(false);
+            return;
+        }
+
+        // 2. SI NO EXISTE EN CACHÉ, ENTONCES USAMOS IA PARA ESTANDARIZAR Y GENERAR
         const results = await standardizeCityName(cityInput);
         if (results && results.length > 0) {
             if (results.length === 1) await processCitySelection(results[0]);

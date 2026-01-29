@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 
 export const FlagIcon = ({ code, className }: { code: string; className?: string }) => {
+  const [hasError, setHasError] = useState(false);
+
   const flags: Record<string, string> = {
     es: "https://flagcdn.com/w160/es.png",
     en: "https://flagcdn.com/w160/gb.png",
@@ -13,19 +15,27 @@ export const FlagIcon = ({ code, className }: { code: string; className?: string
     de: "https://flagcdn.com/w160/de.png",
     ja: "https://flagcdn.com/w160/jp.png",
     zh: "https://flagcdn.com/w160/cn.png",
+    ar: "https://flagcdn.com/w160/sa.png",
     ca: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Flag_of_Catalonia.svg/160px-Flag_of_Catalonia.svg.png",
     eu: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Flag_of_the_Basque_Country.svg/160px-Flag_of_the_Basque_Country.svg.png"
   };
+
+  // Si hay error o no existe el código, mostramos las iniciales
+  if (hasError || !flags[code]) {
+    return (
+      <div className={`${className} rounded-full flex items-center justify-center bg-slate-800 border border-purple-500/30 aspect-square shrink-0 shadow-sm`}>
+        <span className="text-[10px] font-black text-purple-400 uppercase">{code.slice(0, 2)}</span>
+      </div>
+    );
+  }
   
   return (
     <div className={`${className} rounded-full overflow-hidden flex items-center justify-center bg-slate-800 border border-white/20 aspect-square shrink-0 shadow-sm`}>
       <img 
-        src={flags[code] || flags['es']} 
+        src={flags[code]} 
         alt={`Flag ${code}`} 
         className="w-full h-full object-cover scale-110" 
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = flags['es'];
-        }}
+        onError={() => setHasError(true)}
       />
     </div>
   );
