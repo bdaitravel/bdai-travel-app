@@ -12,13 +12,16 @@ interface LeaderboardProps {
 const TEXTS: any = {
     en: { title: "Elite Travelers", you: "Your Status", subtitle: "Global explorer rankings" },
     es: { title: "Ranking Global", you: "Tu Estado", subtitle: "Exploradores de élite" },
-    ca: { title: "Ranking Global", you: "El Teu Estat", subtitle: "Exploradors d'elit" },
-    eu: { title: "Sailkapen Orokorra", you: "Zure Egoera", subtitle: "Esploratzaile eliteak" },
+    pt: { title: "Ranking Global", you: "Seu Status", subtitle: "Exploradores de elite" },
+    it: { title: "Classifica Mondiale", you: "Tuo Stato", subtitle: "Esploratori d'élite" },
+    ru: { title: "Рейтинг", you: "Ваш статус", subtitle: "Элитные исследователи" },
+    hi: { title: "वैश्विक रैंकिंग", you: "आपकी स्थिति", subtitle: "अभिजात वर्ग के खोजकर्ता" },
     fr: { title: "Classement Mondial", you: "Votre Statut", subtitle: "Voyageurs d'élite" },
     de: { title: "Bestenliste", you: "Dein Status", subtitle: "Globale Entdecker-Rankings" },
-    ja: { title: "リーダーボード", you: "あなたのステータス", subtitle: "グローバルランキング" },
-    zh: { title: "排行榜", you: "您的状态", subtitle: "全球探险家排名" },
-    ar: { title: "لوحة المتصدرين", you: "حالتك", subtitle: "تصنيفات المستكشفين العالميين" }
+    ja: { title: "リーダーボード", you: "あなたのステータス", subtitle: "エリート探検家" },
+    zh: { title: "全球排行榜", you: "您的状态", subtitle: "精英探险家" },
+    ca: { title: "Ranking Global", you: "El Teu Estat", subtitle: "Exploradors d'elit" },
+    eu: { title: "Sailkapen Orokorra", you: "Zure Egoera", subtitle: "Esploratzaile eliteak" }
 };
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, onUserClick, language }) => {

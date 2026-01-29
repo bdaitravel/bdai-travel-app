@@ -3,85 +3,31 @@ import React, { useState } from 'react';
 
 const UI_LABELS: any = {
     en: { hubTitle: "Explore the World", hubSub: "Smart Global Destinations", homeTitle: "Explore Spain", homeSub: "Major Capitals", villagesTitle: "Charming Villages", villagesSub: "Spanish Rural Gems", catVisited: "Global Icons", catGrowth: "Rising Stars", catExotic: "Exotic", loading: "Syncing...", 
-          themes: { 
-            'Madrid': 'Historical Capital', 'Barcelona': 'Living Modernism', 'Sevilla': 'Mudejar Essence', 
-            'Albarracín': 'Medieval Treasure', 'Cudillero': 'Marine Amphitheater', 'Ronda': 'The Dream City', 'Santillana del Mar': 'Medieval Town',
-            'París': 'The City of Light', 'Tokio': 'Cyberpunk Reality', 'Nueva York': 'The Center of the World',
-            'Tiflis': 'Avant-garde Caucasus', 'Medellín': 'Tropical Innovation', 'Da Nang': 'Future of Vietnam',
-            'Socotra': 'Forgotten Planet', 'Petra': 'Stone City', 'Wadi Rum': 'Valley of the Moon'
-          }
+          themes: { 'Madrid': 'Historical Capital', 'Barcelona': 'Living Modernism', 'Sevilla': 'Mudejar Essence', 'Albarracín': 'Medieval Treasure', 'Cudillero': 'Marine Amphitheater', 'Ronda': 'The Dream City', 'Santillana del Mar': 'Medieval Town', 'París': 'The City of Light', 'Tokio': 'Cyberpunk Reality', 'Nueva York': 'The Center of the World', 'Tiflis': 'Avant-garde Caucasus', 'Medellín': 'Tropical Innovation', 'Da Nang': 'Future of Vietnam', 'Socotra': 'Forgotten Planet', 'Petra': 'Stone City', 'Wadi Rum': 'Valley of the Moon' }
     },
     es: { hubTitle: "Explora el Mundo", hubSub: "Destinos Globales Inteligentes", homeTitle: "Explora España", homeSub: "Grandes Capitales", villagesTitle: "Pueblos con Encanto", villagesSub: "Joyas Rurales de España", catVisited: "Iconos Mundiales", catGrowth: "Joyas en Auge", catExotic: "Exóticos", loading: "Sincronizando...",
-          themes: { 
-            'Madrid': 'Capital Histórica', 'Barcelona': 'Modernismo Vivo', 'Sevilla': 'Esencia Mudéjar', 
-            'Albarracín': 'Tesoro Medieval', 'Cudillero': 'Anfiteatro Marino', 'Ronda': 'La Ciudad Soñada', 'Santillana del Mar': 'Villa Medieval',
-            'París': 'La Ciudad de la Luz', 'Tokio': 'Cyberpunk Real', 'Nueva York': 'El Centro del Mundo',
-            'Tiflis': 'Cáucaso Vanguardista', 'Medellín': 'Innovación Tropical', 'Da Nang': 'Futuro de Vietnam',
-            'Socotra': 'Planeta Olvidado', 'Petra': 'Ciudad de Piedra', 'Wadi Rum': 'Valle de la Luna'
-          }
+          themes: { 'Madrid': 'Capital Histórica', 'Barcelona': 'Modernismo Vivo', 'Sevilla': 'Esencia Mudéjar', 'Albarracín': 'Tesoro Medieval', 'Cudillero': 'Anfiteatro Marino', 'Ronda': 'La Ciudad Soñada', 'Santillana del Mar': 'Villa Medieval', 'París': 'La Ciudad de la Luz', 'Tokio': 'Cyberpunk Real', 'Nueva York': 'El Centro del Mundo', 'Tiflis': 'Cáucaso Vanguardista', 'Medellín': 'Innovación Tropical', 'Da Nang': 'Futuro de Vietnam', 'Socotra': 'Planeta Olvidado', 'Petra': 'Ciudad de Piedra', 'Wadi Rum': 'Valle de la Luna' }
     },
-    ca: { hubTitle: "Explora el Món", hubSub: "Destins Globals", homeTitle: "Explora Espanya", homeSub: "Grans Capitals", villagesTitle: "Pobles amb Encant", villagesSub: "Joies Rurals", catVisited: "Icones", catGrowth: "En Auge", catExotic: "Exòtics", loading: "Carregant...",
-          themes: { 
-            'Madrid': 'Capital Històrica', 'Barcelona': 'Modernisme Viu', 'Sevilla': 'Essència Mudèjar', 
-            'Albarracín': 'Tresor Medieval', 'Cudillero': 'Amfiteatre Marí', 'Ronda': 'La Ciutat Somiada', 'Santillana del Mar': 'Vila Medieval',
-            'París': 'La Ciutat de la Llum', 'Tokio': 'Cyberpunk Real', 'Nueva York': 'El Centre del Món',
-            'Tiflis': 'Caucas Avantguardista', 'Medellín': 'Innovació Tropical', 'Da Nang': 'Futur de Vietnam',
-            'Socotra': 'Planeta Oblidat', 'Petra': 'Ciutat de Pedra', 'Wadi Rum': 'Vall de la Lluna'
-          }
+    pt: { hubTitle: "Explorar o Mundo", hubSub: "Destinos Globais Inteligentes", homeTitle: "Explorar Espanha", homeSub: "Grandes Capitais", villagesTitle: "Vilas Charmosas", villagesSub: "Joias Rurais", catVisited: "Ícones Globais", catGrowth: "Estrelas em Ascensão", catExotic: "Exóticos", loading: "Sincronizando...",
+          themes: { 'Madrid': 'Capital Histórica', 'Barcelona': 'Modernismo Vivo', 'Sevilla': 'Essência Mudéjar', 'Albarracín': 'Tesouro Medieval', 'Cudillero': 'Anfiteatro Marinho', 'Ronda': 'Cidade dos Sonhos', 'Santillana del Mar': 'Vila Medieval', 'París': 'Cidade Luz', 'Tokio': 'Realidade Cyberpunk', 'Nueva York': 'Centro do Mundo', 'Tiflis': 'Vanguarda do Cáucaso', 'Medellín': 'Inovação Tropical', 'Da Nang': 'Futuro do Vietnã', 'Socotra': 'Planeta Esquecido', 'Petra': 'Cidade de Pedra', 'Wadi Rum': 'Vale da Lua' }
     },
-    eu: { hubTitle: "Mundua Esploratu", hubSub: "Helmuga Adimentsuak", homeTitle: "Espainia Esploratu", homeSub: "Hiriburuak", villagesTitle: "Herri Xarmangarriak", villagesSub: "Bitxiak", catVisited: "Ikonikoak", catGrowth: "Goraka", catExotic: "Exotikoak", loading: "Sinkronizatzen...",
-          themes: { 
-            'Madrid': 'Hiriburu Historikoa', 'Barcelona': 'Modernismo Bizia', 'Sevilla': 'Mudejar Esentzia', 
-            'Albarracín': 'Erdi Aroko Altxorra', 'Cudillero': 'Itsas Anfiteatroa', 'Ronda': 'Amestutako Hiria', 'Santillana del Mar': 'Erdi Aroko Hiria',
-            'París': 'Argiaren Hiria', 'Tokio': 'Cyberpunk Erreala', 'Nueva York': 'Munduaren Erdigunea',
-            'Tiflis': 'Kaukaso Abangoardista', 'Medellín': 'Berrikuntza Tropikala', 'Da Nang': 'Vietnamgo Etorkizuna',
-            'Socotra': 'Ahaztutako Planeta', 'Petra': 'Harrizko Hiria', 'Wadi Rum': 'Ilargiaren Harana'
-          }
+    it: { hubTitle: "Esplora il Mondo", hubSub: "Destinazioni Intelligenti", homeTitle: "Esplora la Spagna", homeSub: "Grandi Capitali", villagesTitle: "Borghi Incantevoli", villagesSub: "Gemme Rurali", catVisited: "Icone Mondiali", catGrowth: "Stelle Nascenti", catExotic: "Esotici", loading: "Sincronizzazione...",
+          themes: { 'Madrid': 'Capitale Storica', 'Barcelona': 'Modernismo Vivo', 'Sevilla': 'Essenza Mudéjar', 'Albarracín': 'Tesoro Medievale', 'Cudillero': 'Anfiteatro Marino', 'Ronda': 'Città dei Sogni', 'Santillana del Mar': 'Borgo Medievale', 'París': 'Città della Luce', 'Tokio': 'Realtà Cyberpunk', 'Nueva York': 'Centro del Mondo', 'Tiflis': 'Avanguardia del Caucaso', 'Medellín': 'Innovazione Tropicale', 'Da Nang': 'Futuro del Vietnam', 'Socotra': 'Pianeta Dimenticato', 'Petra': 'Città di Pietra', 'Wadi Rum': 'Valle della Luna' }
     },
-    fr: { hubTitle: "Explorer le Monde", hubSub: "Destinations Globales", homeTitle: "Explorer l'Espagne", homeSub: "Grandes Capitales", villagesTitle: "Villages de Charme", villagesSub: "Joyaux Ruraux", catVisited: "Icônes", catGrowth: "En Vogue", catExotic: "Exotiques", loading: "Synchronisation...",
-          themes: { 
-            'Madrid': 'Capitale Historique', 'Barcelona': 'Modernisme Vivant', 'Sevilla': 'Essence Mudéjar', 
-            'Albarracín': 'Trésor Médiéval', 'Cudillero': 'Amphithéâtre Marin', 'Ronda': 'La Ville Rêvée', 'Santillana del Mar': 'Ville Médiévale',
-            'París': 'La Ville Lumière', 'Tokio': 'Réalité Cyberpunk', 'Nueva York': 'Le Centre du Monde',
-            'Tiflis': 'Caucase Avant-gardiste', 'Medellín': 'Innovation Tropicale', 'Da Nang': 'Futur du Vietnam',
-            'Socotra': 'Planète Oubliée', 'Petra': 'Cité de Pierre', 'Wadi Rum': 'Vallée de la Lune'
-          }
+    ru: { hubTitle: "Мир", hubSub: "Умные направления", homeTitle: "Испания", homeSub: "Столицы", villagesTitle: "Деревни", villagesSub: "Сельские жемчужины", catVisited: "Иконы", catGrowth: "Звезды", catExotic: "Экзотика", loading: "Загрузка...",
+          themes: { 'Madrid': 'Историческая столица', 'Barcelona': 'Живой модернизм', 'Sevilla': 'Суть мудехара', 'Albarracín': 'Средневековое сокровище', 'Cudillero': 'Морской амфитеатр', 'Ronda': 'Город мечты', 'Santillana del Mar': 'Средневековая вилла', 'París': 'Город света', 'Tokio': 'Киберпанк', 'Nueva York': 'Центр мира' }
     },
-    de: { hubTitle: "Welt erkunden", hubSub: "KI-Reiseziele", homeTitle: "Spanien erkunden", homeSub: "Hauptstädte", villagesTitle: "Schöne Dörfer", villagesSub: "Ländliche Perlen", catVisited: "Ikonen", catGrowth: "Aufsteiger", catExotic: "Exotisch", loading: "Synchronisiere...",
-          themes: { 
-            'Madrid': 'Historische Hauptstadt', 'Barcelona': 'Lebendiger Modernismus', 'Sevilla': 'Mudejar-Essenz', 
-            'Albarracín': 'Mittelalterlicher Schatz', 'Cudillero': 'Meeres-Amphitheater', 'Ronda': 'Die Traumstadt', 'Santillana del Mar': 'Mittelalterliche Stadt',
-            'París': 'Stadt der Lichter', 'Tokio': 'Cyberpunk-Realität', 'Nueva York': 'Zentrum der Welt',
-            'Tiflis': 'Avantgardistischer Kaukasus', 'Medellín': 'Tropische Innovation', 'Da Nang': 'Zukunft Vietnams',
-            'Socotra': 'Vergessener Planet', 'Petra': 'Felsenstadt', 'Wadi Rum': 'Mondtal'
-          }
-    },
-    ja: { hubTitle: "世界を探索", hubSub: "AIスマート目的地", homeTitle: "スペインを探索", homeSub: "主要都市", villagesTitle: "魅力的な村", villagesSub: "田舎の宝石", catVisited: "アイコン", catGrowth: "注目スポット", catExotic: "エキゾチック", loading: "同期中...",
-          themes: { 
-            'Madrid': '歴史的な首都', 'Barcelona': '生きたモダニズム', 'Sevilla': 'ムデハルの本質', 
-            'Albarracín': '中世の宝物', 'Cudillero': '海の円形劇場', 'Ronda': '夢の街', 'Santillana del Mar': '中世の町',
-            'París': '光の街', 'Tokio': 'サイバーパンクの現実', 'Nueva York': '世界の中心',
-            'Tiflis': 'アバンギャルドなコーカサス', 'Medellín': '熱帯のイノベーション', 'Da Nang': 'ベトナムの未来',
-            'Socotra': '忘れられた惑星', 'Petra': '石の街', 'Wadi Rum': '月の谷'
-          }
+    ja: { hubTitle: "世界を探索", hubSub: "スマート目的地", homeTitle: "スペインを探索", homeSub: "主要都市", villagesTitle: "魅力的な村", villagesSub: "田舎の宝石", catVisited: "世界のアイコン", catGrowth: "注目スポット", catExotic: "エキゾチック", loading: "同期中...",
+          themes: { 'Madrid': '歴史的な首都', 'Barcelona': '生きたモダニズム', 'Sevilla': 'ムデハルの本質', 'Albarracín': '中世の宝物', 'Cudillero': '海の円形劇場', 'Ronda': '夢の街', 'Santillana del Mar': '中世の町', 'París': '光の街', 'Tokio': 'サイバーパンク', 'Nueva York': '世界の中心' }
     },
     zh: { hubTitle: "探索世界", hubSub: "智能全球目的地", homeTitle: "探索西班牙", homeSub: "主要省会", villagesTitle: "迷人村庄", villagesSub: "乡村明珠", catVisited: "全球图标", catGrowth: "新兴之星", catExotic: "异域风情", loading: "同步中...",
-          themes: { 
-            'Madrid': '历史首都', 'Barcelona': '活着的现代主义', 'Sevilla': '穆德哈尔精华', 
-            'Albarracín': '中世珍宝', 'Cudillero': '海上剧场', 'Ronda': '梦想之城', 'Santillana del Mar': '中世古镇',
-            'París': '光之城', 'Tokio': '赛博朋克现实', 'Nueva York': '世界中心',
-            'Tiflis': '前卫高加索', 'Medellín': '热带创新', 'Da Nang': '越南的未来',
-            'Socotra': '被遗忘的星球', 'Petra': '石头城', 'Wadi Rum': '月亮谷'
-          }
+          themes: { 'Madrid': '历史首都', 'Barcelona': '活着的现代主义', 'Sevilla': '穆德哈尔精华', 'Albarracín': '中世珍宝', 'Cudillero': '海上剧场', 'Ronda': '梦想之城', 'Santillana del Mar': '中世古镇', 'París': '光之城', 'Tokio': '赛博朋克', 'Nueva York': '世界中心' }
     },
-    ar: { hubTitle: "استكشف العالم", hubSub: "وجهات عالمية ذكية", homeTitle: "استكشف إسبانيا", homeSub: "العواصم الكبرى", villagesTitle: "قرى ساحرة", villagesSub: "جواهر ريفية", catVisited: "أيقونات عالمية", catGrowth: "نجوم صاعدة", catExotic: "غريب", loading: "مزامنة...",
-          themes: { 
-            'Madrid': 'عاصمة تاريخية', 'Barcelona': 'حداثة حية', 'Sevilla': 'جوهر مدجن', 
-            'Albarracín': 'كنز من العصور الوسطى', 'Cudillero': 'مدرج بحري', 'Ronda': 'مدينة الأحلام', 'Santillana del Mar': 'قرية من العصور الوسطى',
-            'París': 'مدينة الأنوار', 'Tokio': 'واقع سايبربانك', 'Nueva York': 'مركز العالم',
-            'Tiflis': 'قوقاز متطور', 'Medellín': 'ابتكار استوائي', 'Da Nang': 'مستقبل فيتنام',
-            'Socotra': 'كوكب منسي', 'Petra': 'المدينة الوردية', 'Wadi Rum': 'وادي القمر'
-          }
+    ca: { hubTitle: "Explora el Món", hubSub: "Destins Globals", homeTitle: "Explora Espanya", homeSub: "Grans Capitals", villagesTitle: "Pobles amb Encant", villagesSub: "Joies Rurals", catVisited: "Icones", catGrowth: "En Auge", catExotic: "Exòtics", loading: "Sincronitzant...",
+          themes: { 'Madrid': 'Capital Històrica', 'Barcelona': 'Modernisme Viu', 'Sevilla': 'Essència Mudèjar', 'Albarracín': 'Tresor Medieval', 'Cudillero': 'Amfiteatre Marí', 'Ronda': 'La Ciutat Somiada', 'Santillana del Mar': 'Vila Medieval', 'París': 'La Ciutat de la Llum', 'Tokio': 'Cyberpunk Real', 'Nueva York': 'El Centre del Món' }
+    },
+    eu: { hubTitle: "Mundua Esploratu", hubSub: "Helmuga Adimentsuak", homeTitle: "Espainia Esploratu", homeSub: "Hiriburuak", villagesTitle: "Herri Xarmangarriak", villagesSub: "Bitxiak", catVisited: "Ikonikoak", catGrowth: "Goraka", catExotic: "Exotikoak", loading: "Sinkronizatzen...",
+          themes: { 'Madrid': 'Hiriburu Historikoa', 'Barcelona': 'Modernismo Bizia', 'Sevilla': 'Esentzia Mudéjar', 'Albarracín': 'Erdi Aroko Altxorra', 'Cudillero': 'Itsas Anfiteatroa', 'Ronda': 'Amestutako Hiria', 'Santillana del Mar': 'Erdi Aroko Hiria' }
     }
 };
 

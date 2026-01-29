@@ -5,13 +5,16 @@ import { generateCityPostcard } from '../services/geminiService';
 const TEXTS: any = {
     en: { title: "Your AI Postcard", desc: "For you", share: "Share", close: "Close", loading: "Painting...", error: "Error generating image." },
     es: { title: "Tu Postal IA", desc: "Especial para ti", share: "Compartir", close: "Cerrar", loading: "Pintando...", error: "No se pudo generar." },
-    ca: { title: "La teva Postal IA", desc: "Per a tu", share: "Compartir", close: "Tancar", loading: "Pintant...", error: "Error." },
-    eu: { title: "Zure AI Postala", desc: "Zuretzat", share: "Partekatu", close: "Itxi", loading: "Margotzen...", error: "Errorea." },
+    pt: { title: "Seu Cartão IA", desc: "Para você", share: "Compartilhar", close: "Fechar", loading: "Pintando...", error: "Erro." },
+    it: { title: "Tua Cartolina IA", desc: "Per te", share: "Condividi", close: "Chiudi", loading: "Dipingendo...", error: "Errore." },
+    ru: { title: "Ваша открытка", desc: "Для вас", share: "Поделиться", close: "Закрыть", loading: "Рисую...", error: "Ошибка." },
+    hi: { title: "आपकी AI पोस्टकार्ड", desc: "आपके लिए", share: "साझा करें", close: "बंद करें", loading: "चित्रकारी...", error: "त्रुटि।" },
     fr: { title: "Votre Carte IA", desc: "Pour vous", share: "Partager", close: "Fermer", loading: "Peinture...", error: "Erreur." },
     de: { title: "Deine KI-Postkarte", desc: "Für dich", share: "Teilen", close: "Schließen", loading: "Malen...", error: "Fehler." },
     ja: { title: "AIポストカード", desc: "あなた専用", share: "共有", close: "閉じる", loading: "作成中...", error: "エラー。" },
     zh: { title: "AI明信片", desc: "为您定制", share: "分享", close: "关闭", loading: "绘画中...", error: "生成失败。" },
-    ar: { title: "بطاقتك بالذكاء الاصطناعي", desc: "لك", share: "مشاركة", close: "إغلاق", loading: "جاري الرسم...", error: "خطأ." }
+    ca: { title: "La teva Postal IA", desc: "Per a tu", share: "Compartir", close: "Tancar", loading: "Pintant...", error: "Error." },
+    eu: { title: "Zure AI Postala", desc: "Zuretzat", share: "Partekatu", close: "Itxi", loading: "Margotzen...", error: "Errorea." }
 };
 
 export const PostcardModal: React.FC<any> = ({ city, interests, language, onClose }) => {

@@ -15,87 +15,18 @@ interface ProfileModalProps {
 }
 
 const MODAL_TEXTS: any = {
-    en: {
-        title: "bdai Global Passport", subtitle: "Digital Nomad Credential",
-        surname: "Surname", givenNames: "Given Names", city: "City of Origin", country: "Country",
-        birthday: "Date of Birth", age: "Age", social: "Social Matrix", interests: "Interest Profile",
-        visas: "Verified Visas", entry: "ENTRY", verified: "VERIFIED", noVisas: "Ready for stamps",
-        save: "Save Passport", edit: "Edit Identity", logout: "Logout",
-        username: "Username", audioMemory: "Listen Memory", linked: "Linked",
-        language: "Current Language", rank: "Traveler Rank", miles: "Total Miles"
-    },
-    es: {
-        title: "Pasaporte Global bdai", subtitle: "Credencial Nómada Digital",
-        surname: "Apellidos", givenNames: "Nombres", city: "Ciudad Origen", country: "País",
-        birthday: "F. Nacimiento", age: "Edad", social: "Social Matrix", interests: "Perfil de Intereses",
-        visas: "Visados Verificados", entry: "ENTRADA", verified: "VERIFICADO", noVisas: "Listo para sellos",
-        save: "Guardar Pasaporte", edit: "Editar Identidad", logout: "Cerrar Sesión",
-        username: "Usuario", audioMemory: "Escuchar Recuerdo", linked: "Vinculado",
-        language: "Idioma Actual", rank: "Rango del Viajero", miles: "Millas Totales"
-    },
-    ca: {
-        title: "Passaport Global bdai", subtitle: "Credencial Nòmada Digital",
-        surname: "Cognoms", givenNames: "Noms", city: "Ciutat Origen", country: "País",
-        birthday: "F. Naixement", age: "Edat", social: "Social Matrix", interests: "Perfil d'Interessos",
-        visas: "Visats Verificats", entry: "ENTRADA", verified: "VERIFICAT", noVisas: "Llest per a segells",
-        save: "Desar Passaport", edit: "Editar Identitat", logout: "Tancar Sessió",
-        username: "Usuari", audioMemory: "Escolta el Record", linked: "Vinculat",
-        language: "Idioma Actual", rank: "Rang del Viatger", miles: "Milles Totals"
-    },
-    eu: {
-        title: "Pasaporte Global bdai", subtitle: "Nomada Digital Agiria",
-        surname: "Abizenak", givenNames: "Izenak", city: "Jatorrizko Hiria", country: "Herrialdea",
-        birthday: "Jaiotze-data", age: "Adina", social: "Social Matrix", interests: "Interesen Profila",
-        visas: "Egiaztatutako Visatuak", entry: "SARRERA", verified: "EGIAZTATUA", noVisas: "Zigiluak jasotzeko prest",
-        save: "Pasaportea Gorde", edit: "Nortasuna Editatu", logout: "Saioa Itxi",
-        username: "Erabiltzailea", audioMemory: "Oroitzapena Entzun", linked: "Lotuta",
-        language: "Hizkuntza", rank: "Bidaiari Maila", miles: "Milia Guztiak"
-    },
-    fr: {
-        title: "Passeport Global bdai", subtitle: "Identifiant Nomade Numérique",
-        surname: "Nom", givenNames: "Prénoms", city: "Ville d'Origine", country: "Pays",
-        birthday: "Date de Naissance", age: "Âge", social: "Social Matrix", interests: "Profil d'Intérêts",
-        visas: "Visas Vérifiés", entry: "ENTRÉE", verified: "VÉRIFIÉ", noVisas: "Prêt pour les tampons",
-        save: "Enregistrer Passeport", edit: "Modifier l'Identité", logout: "Déconnexion",
-        username: "Utilisateur", audioMemory: "Écouter le Souvenir", linked: "Lié",
-        language: "Langue Actuelle", rank: "Rang Voyageur", miles: "Total des Miles"
-    },
-    de: {
-        title: "bdai Globaler Reisepass", subtitle: "Digital Nomad Credential",
-        surname: "Nachname", givenNames: "Vorname", city: "Herkunftsstadt", country: "Land",
-        birthday: "Geburtsdatum", age: "Alter", social: "Social Matrix", interests: "Interessenprofil",
-        visas: "Verifizierte Visa", entry: "EINTRITT", verified: "VERIFIZIERT", noVisas: "Bereit für Stempel",
-        save: "Pass speichern", edit: "Identität bearbeiten", logout: "Ausloggen",
-        username: "Benutzername", audioMemory: "Erinnerung anhören", linked: "Verbunden",
-        language: "Sprache", rank: "Rang", miles: "Meilen"
-    },
-    ja: {
-        title: "bdai グローバルパスポート", subtitle: "デジタルノマド証明書",
-        surname: "姓", givenNames: "名", city: "出身都市", country: "国",
-        birthday: "生年月日", age: "年齢", social: "ソーシャル・マトリックス", interests: "興味プロファイル",
-        visas: "確認済みビザ", entry: "入国", verified: "確認済み", noVisas: "スタンプの準備完了",
-        save: "パスポートを保存", edit: "身元を編集", logout: "ログアウト",
-        username: "ユーザー名", audioMemory: "思い出を聴く", linked: "リンク済み",
-        language: "現在の言語", rank: "ランク", miles: "合計マイル"
-    },
-    zh: {
-        title: "bdai 全球护照", subtitle: "数字游民凭证",
-        surname: "姓", givenNames: "名", city: "籍贯城市", country: "国家",
-        birthday: "出生日期", age: "年龄", social: "社交矩阵", interests: "兴趣分析",
-        visas: "已验证签证", entry: "入境", verified: "已验证", noVisas: "等待盖章",
-        save: "保存护照", edit: "编辑身份", logout: "注销",
-        username: "用户名", audioMemory: "收听回忆", linked: "已链接",
-        language: "当前语言", rank: "等级", miles: "总里程"
-    },
-    ar: {
-        title: "جواز سفر bdai العالمي", subtitle: "وثيقة الرحالة الرقمي",
-        surname: "اللقب", givenNames: "الأسماء", city: "مدينة الأصل", country: "البلد",
-        birthday: "تاريخ الميلاد", age: "العمر", social: "المصفوفة الاجتماعية", interests: "ملف الاهتمامات",
-        visas: "تأشيرات تم التحقق منها", entry: "دخول", verified: "تم التحقق", noVisas: "جاهز للأختام",
-        save: "حفظ الجواز", edit: "تعد일 الهوية", logout: "تسجيل الخروج",
-        username: "اسم المستخدم", audioMemory: "استمع للذكرى", linked: "مرتبط",
-        language: "اللغة الحالية", rank: "الرتبة", miles: "إجمالي الأميال"
-    }
+    en: { title: "bdai Global Passport", subtitle: "Digital Nomad Credential", surname: "Surname", givenNames: "Given Names", city: "City of Origin", country: "Country", birthday: "Date of Birth", age: "Age", social: "Social Matrix", interests: "Interest Profile", visas: "Verified Visas", entry: "ENTRY", verified: "VERIFIED", noVisas: "Ready for stamps", save: "Save Passport", edit: "Edit Identity", logout: "Logout", username: "Username", audioMemory: "Listen Memory", linked: "Linked", language: "Current Language", rank: "Traveler Rank", miles: "Total Miles" },
+    es: { title: "Pasaporte Global bdai", subtitle: "Credencial Nómada Digital", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad Origen", country: "País", birthday: "F. Nacimiento", age: "Edad", social: "Social Matrix", interests: "Perfil de Intereses", visas: "Visados Verificados", entry: "ENTRADA", verified: "VERIFICADO", noVisas: "Listo para sellos", save: "Guardar Pasaporte", edit: "Editar Identidad", logout: "Cerrar Sesión", username: "Usuario", audioMemory: "Escuchar Recuerdo", linked: "Vinculado", language: "Idioma Actual", rank: "Rango del Viajero", miles: "Millas Totales" },
+    pt: { title: "Passaporte Global bdai", subtitle: "Credencial Nômade Digital", surname: "Sobrenome", givenNames: "Nomes", city: "Cidade de Origem", country: "País", birthday: "Data de Nasc.", age: "Idade", social: "Social Matrix", interests: "Perfil de Interesses", visas: "Vistos Verificados", entry: "ENTRADA", verified: "VERIFICADO", noVisas: "Pronto para selos", save: "Salvar Passaporte", edit: "Editar Identidade", logout: "Sair", username: "Usuário", audioMemory: "Ouvir Memória", linked: "Vinculado", language: "Idioma Atual", rank: "Nível", miles: "Milhas Totais" },
+    it: { title: "Passaporto Globale bdai", subtitle: "Credenziale Nomade Digitale", surname: "Cognome", givenNames: "Nomi", city: "Città d'Origine", country: "Paese", birthday: "Data di Nascita", age: "Età", social: "Social Matrix", interests: "Profilo Interessi", visas: "Visti Verificati", entry: "ENTRATA", verified: "VERIFICATO", noVisas: "Pronto per timbri", save: "Salva Passaporto", edit: "Modifica Identità", logout: "Esci", username: "Username", audioMemory: "Ascolta Ricordo", linked: "Vincolato", language: "Lingua Attuale", rank: "Rango", miles: "Miglia Totali" },
+    ru: { title: "Глобальный паспорт bdai", subtitle: "Цифровой кочевник", surname: "Фамилия", givenNames: "Имя", city: "Город", country: "Страна", birthday: "Дата рождения", age: "Возраст", social: "Социальная сеть", interests: "Интересы", visas: "Визы", entry: "ВЪЕЗД", verified: "ПОДТВЕРЖДЕНО", noVisas: "Ждет штампов", save: "Сохранить", edit: "Изменить", logout: "Выйти", username: "Логин", audioMemory: "Слушать", linked: "Связано", language: "Язык", rank: "Ранг", miles: "Мили" },
+    hi: { title: "bdai वैश्विक पासपोर्ट", subtitle: "डिजिटल घुमंतू क्रेडेंशियल", surname: "कुलनाम", givenNames: "नाम", city: "मूल शहर", country: "देश", birthday: "जन्म तिथि", age: "आयु", social: "सोशल मैट्रिक्स", interests: "रुचि प्रोफ़ाइल", visas: "सत्यापित वीज़ा", entry: "प्रवेश", verified: "सत्यापित", noVisas: "टिकटों के लिए तैयार", save: "पासपोर्ट सहेजें", edit: "पहचान संपादित करें", logout: "लॉग आउट", username: "उपयोगकर्ता नाम", audioMemory: "स्मृति सुनें", linked: "जुड़े हुए", language: "वर्तमान भाषा", rank: "रैंक", miles: "कुल मील" },
+    fr: { title: "Passeport Global bdai", subtitle: "Identifiant Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville d'Origine", country: "Pays", birthday: "Date de Naissance", age: "Âge", social: "Social Matrix", interests: "Profil d'Intérêts", visas: "Visas Vérifiés", entry: "ENTRÉE", verified: "VÉRIFIÉ", noVisas: "Prêt pour les tampons", save: "Enregistrer Passeport", edit: "Modifier l'Identité", logout: "Déconnexion", username: "Utilisateur", audioMemory: "Écouter le Souvenir", linked: "Lié", language: "Langue Actuelle", rank: "Rang Voyageur", miles: "Total des Miles" },
+    de: { title: "bdai Globaler Reisepass", subtitle: "Digital Nomad Credential", surname: "Nachname", givenNames: "Vorname", city: "Herkunftsstadt", country: "Land", birthday: "Geburtsdatum", age: "Alter", social: "Social Matrix", interests: "Interessenprofil", visas: "Verifizierte Visa", entry: "EINTRITT", verified: "VERIFIZIERT", noVisas: "Bereit für Stempel", save: "Pass speichern", edit: "Identität bearbeiten", logout: "Ausloggen", username: "Benutzername", audioMemory: "Erinnerung anhören", linked: "Verbunden", language: "Sprache", rank: "Rang", miles: "Meilen" },
+    ja: { title: "bdai グローバルパスポート", subtitle: "デジタルノマド証明書", surname: "姓", givenNames: "名", city: "出身都市", country: "国", birthday: "生年月日", age: "年齢", social: "ソーシャル・マトリックス", interests: "興味プロファイル", visas: "確認済みビザ", entry: "入国", verified: "確認済み", noVisas: "スタンプの準備完了", save: "保存", edit: "編集", logout: "ログアウト", username: "ユーザー名", audioMemory: "思い出を聴く", linked: "リンク済み", language: "言語", rank: "ランク", miles: "合計マイル" },
+    zh: { title: "bdai 全球护照", subtitle: "数字游民凭证", surname: "姓", givenNames: "名", city: "籍贯城市", country: "国家", birthday: "出生日期", age: "年龄", social: "社交矩阵", interests: "兴趣分析", visas: "已验证签证", entry: "入境", verified: "已验证", noVisas: "等待盖章", save: "保存", edit: "编辑", logout: "注销", username: "用户名", audioMemory: "收听回忆", linked: "已链接", language: "当前语言", rank: "等级", miles: "总里程" },
+    ca: { title: "Passaport Global bdai", subtitle: "Credencial Nòmada Digital", surname: "Cognoms", givenNames: "Noms", city: "Ciutat Origen", country: "País", birthday: "F. Naixement", age: "Edat", social: "Social Matrix", interests: "Perfil d'Interessos", visas: "Visats Verificats", entry: "ENTRADA", verified: "VERIFICAT", noVisas: "Llest per a segells", save: "Desar Passaport", edit: "Editar Identitat", logout: "Tancar Sessió", username: "Usuari", audioMemory: "Escolta el Record", linked: "Vinculat", language: "Idioma Actual", rank: "Rang", miles: "Milles Totals" },
+    eu: { title: "Pasaporte Global bdai", subtitle: "Nomada Digital Agiria", surname: "Abizenak", givenNames: "Izenak", city: "Jatorrizko Hiria", country: "Herrialdea", birthday: "Jaiotze-data", age: "Adina", social: "Social Matrix", interests: "Interesen Profila", visas: "Egiaztatutako Visatuak", entry: "SARRERA", verified: "EGIAZTATUA", noVisas: "Zigiluak jasotzeko prest", save: "Pasaportea Gorde", edit: "Nortasuna Editatu", logout: "Saioa Itxi", username: "Erabiltzailea", audioMemory: "Oroitzapena Entzun", linked: "Lotuta", language: "Hizkuntza", rank: "Maila", miles: "Milia Guztiak" }
 };
 
 const getCountryFlag = (country: string): string => {
@@ -129,9 +60,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // EMAIL DEL ADMINISTRADOR
   const isAdmin = user.email === 'travelbdai@gmail.com';
-
   const pt = (key: string) => (MODAL_TEXTS[user.language] || MODAL_TEXTS['es'])[key] || key;
 
   const [formData, setFormData] = useState({
@@ -162,9 +91,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       }
   };
 
-  /**
-   * Fallback de síntesis de voz nativa para el pasaporte
-   */
   const speakLocally = (text: string) => {
       const synth = window.speechSynthesis;
       if (!synth) return;
@@ -213,7 +139,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
               speakLocally(welcomeText);
           }
       } catch (e) { 
-        console.warn("Passport audio error, fallback to local:", e);
         setPlayingCityAudio(city);
         speakLocally(welcomeText);
       } finally { 
@@ -260,17 +185,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-10 pb-32">
-            
-            {isAdmin && (
-                <button 
-                    onClick={onOpenAdmin}
-                    className="w-full py-4 bg-purple-600/10 border-2 border-dashed border-purple-500/50 rounded-2xl flex items-center justify-center gap-3 group active:scale-95 transition-all"
-                >
-                    <i className="fas fa-tools text-purple-500 group-hover:rotate-45 transition-transform"></i>
-                    <span className="text-[10px] font-black uppercase text-purple-400 tracking-[0.2em]">Acceder a Sala de Máquinas</span>
-                </button>
-            )}
-
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/60 border-2 border-dashed border-[#d4cfbd] rounded-2xl p-4 flex flex-col items-center justify-center shadow-inner">
                     <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest mb-1">{pt('rank')}</p>
@@ -365,9 +279,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                                     <p className="text-[12px] font-black uppercase text-center leading-none tracking-tighter">{city}</p>
                                     <p className="text-[6px] font-black uppercase mt-1 tracking-widest">{pt('entry')}</p>
                                 </div>
-                                <button onClick={() => handlePlayCityAudio(city)} className={`text-[8px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${isPlaying ? 'text-purple-600' : 'text-slate-400'}`}>
-                                    <i className={`fas ${isPlaying ? 'fa-stop-circle' : 'fa-play-circle'}`}></i> {pt('audioMemory')}
-                                </button>
                             </div>
                         );
                     }) : <div className="col-span-2 py-8 bg-slate-200/50 rounded-2xl border-2 border-dashed border-slate-300 text-center"><p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{pt('noVisas')}</p></div>}

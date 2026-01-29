@@ -6,7 +6,17 @@ import { cleanDescriptionText, generateAudio } from '../services/geminiService';
 
 const TEXTS: any = {
     en: { start: "Launch", stop: "Hub", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Sync Successful", prev: "Back", next: "Advance", meters: "m", itinerary: "Sequence", syncing: "Syncing voice...", tooFar: "Too far! Move closer to the spot." },
-    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Secuencia", syncing: "Sincronizando voz...", tooFar: "¡Demasiado lejos! Acércate al punto real." }
+    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Secuencia", syncing: "Sincronizando voz...", tooFar: "¡Demasiado lejos! Acércate al punto real." },
+    pt: { start: "Iniciar", stop: "Parada", of: "de", photoSpot: "Ângulo Técnico", capture: "Registrar", rewardReceived: "Sincronizado", prev: "Voltar", next: "Avançar", meters: "m", itinerary: "Sequência", syncing: "Sincronizando voz...", tooFar: "Muito longe! Aproxime-se do local." },
+    it: { start: "Avvia", stop: "Tappa", of: "di", photoSpot: "Angolo Tecnico", capture: "Registra", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Sequenza", syncing: "Sincronizzazione...", tooFar: "Troppo lontano! Avvicinati al punto." },
+    ru: { start: "Начать", stop: "Остановка", of: "из", photoSpot: "Угол съемки", capture: "Лог", rewardReceived: "Успешно", prev: "Назад", next: "Далее", meters: "м", itinerary: "Маршрут", syncing: "Синхронизация...", tooFar: "Слишком далеко!" },
+    hi: { start: "लॉन्च", stop: "स्टॉप", of: "का", photoSpot: "तकनीकी कोण", capture: "डेटा लॉग करें", rewardReceived: "सफल", prev: "पीछे", next: "आगे", meters: "मीटर", itinerary: "अनुक्रम", syncing: "आवाज़ सिंक हो रही है...", tooFar: "बहुत दूर! पास आएँ।" },
+    fr: { start: "Lancer", stop: "Arrêt", of: "de", photoSpot: "Angle Technique", capture: "Enregistrer", rewardReceived: "Synchronisé", prev: "Retour", next: "Avancer", meters: "m", itinerary: "Séquence", syncing: "Synchronisation...", tooFar: "Trop loin !" },
+    de: { start: "Start", stop: "Stopp", of: "von", photoSpot: "Winkel", capture: "Log", rewardReceived: "Erfolgreich", prev: "Zurück", next: "Weiter", meters: "m", itinerary: "Route", syncing: "Stimme wird synchronisiert...", tooFar: "Zu weit weg !" },
+    ja: { start: "開始", stop: "目的地", of: "/", photoSpot: "撮影角度", capture: "ログ", rewardReceived: "同期完了", prev: "戻る", next: "進む", meters: "m", itinerary: "シーケンス", syncing: "音声同期中...", tooFar: "遠すぎます！もっと近づいてください。" },
+    zh: { start: "启动", stop: "站点", of: "/", photoSpot: "技术角度", capture: "记录", rewardReceived: "同步成功", prev: "返回", next: "前进", meters: "米", itinerary: "顺序", syncing: "语音同步中...", tooFar: "太远了！请靠近一点。" },
+    ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Registrar", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Avançar", meters: "m", itinerary: "Seqüència", syncing: "Sincronitzant veu...", tooFar: "Massa lluny !" },
+    eu: { start: "Abiarazi", stop: "Geldialdia", of: "/", photoSpot: "Angelu Teknikoa", capture: "Erregistratu", rewardReceived: "Sinkronizatuta", prev: "Atzera", next: "Aurrera", meters: "m", itinerary: "Sekuentzia", syncing: "Ahotsa sinkronizatzen...", tooFar: "Urrunegi !" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -23,10 +33,8 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS.es;
   if (!tour) return null;
-  
-  // Fallbacks de seguridad para evitar tarjetas vacías
-  const title = tour.title || tour.name || "Tour sin título";
-  const desc = tour.description || "Sin descripción disponible";
+  const title = tour.title || tour.name || "Tour";
+  const desc = tour.description || "";
   const theme = tour.theme || "Exploración";
   const duration = (tour.stops?.length || 0) * 20 + "m";
 

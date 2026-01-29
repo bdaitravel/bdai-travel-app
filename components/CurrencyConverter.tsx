@@ -6,13 +6,16 @@ const FLAGS: Record<string, string> = { 'EUR': '🇪🇺', 'USD': '🇺🇸', 'G
 const UI_TEXTS: any = {
     en: { title: "Currency Converter", amount: "Amount", info: "*Rates verified for current session.", refreshing: "Refreshing..." },
     es: { title: "Conversor de Moneda", amount: "Cantidad", info: "*Tipos verificados para la sesión.", refreshing: "Actualizando..." },
-    ca: { title: "Conversor", amount: "Quantitat", info: "*Verificat.", refreshing: "Actualitzant..." },
-    eu: { title: "Moneta Bihurtzailea", amount: "Zenbatekoa", info: "*Egiaztatuta.", refreshing: "Eguneratzen..." },
+    pt: { title: "Conversor de Moeda", amount: "Quantia", info: "*Taxas verificadas.", refreshing: "Atualizando..." },
+    it: { title: "Convertitore di Valuta", amount: "Importo", info: "*Tassi verificati.", refreshing: "Aggiornamento..." },
+    ru: { title: "Конвертер валют", amount: "Сумма", info: "*Курсы подтверждены.", refreshing: "Обновление..." },
+    hi: { title: "मुद्रा परिवर्तक", amount: "राशि", info: "*सत्र के लिए दरें सत्यापित।", refreshing: "ताज़ा कर रहा है..." },
     fr: { title: "Convertisseur", amount: "Montant", info: "*Vérifié.", refreshing: "Mise à jour..." },
     de: { title: "Währungsrechner", amount: "Betrag", info: "*Kurse verifiziert.", refreshing: "Aktualisiere..." },
     ja: { title: "通貨換算", amount: "金額", info: "*レート確認済み。", refreshing: "更新中..." },
     zh: { title: "汇率换算", amount: "金额", info: "*汇率已验证。", refreshing: "刷新中..." },
-    ar: { title: "محول العملات", amount: "المبلغ", info: "*تم التحقق من الأسعار.", refreshing: "جاري التحديث..." }
+    ca: { title: "Conversor", amount: "Quantitat", info: "*Verificat.", refreshing: "Actualitzant..." },
+    eu: { title: "Moneta Bihurtzailea", amount: "Zenbatekoa", info: "*Egiaztatuta.", refreshing: "Eguneratzen..." }
 };
 
 export const CurrencyConverter: React.FC<any> = ({ language = 'es' }) => {

@@ -17,13 +17,16 @@ const STOP_ICONS: Record<string, string> = {
 const TEXTS: any = {
     en: { guide: "Walking to stop", openInMaps: "GPS Nav" },
     es: { guide: "Caminando a la parada", openInMaps: "Ir con GPS" },
-    ca: { guide: "Caminant a la parada", openInMaps: "Anar amb GPS" },
-    eu: { guide: "Geldialdirantz oinez", openInMaps: "GPSarekin joan" },
+    pt: { guide: "Caminhando para parada", openInMaps: "Navegação GPS" },
+    it: { guide: "Camminando verso tappa", openInMaps: "Nav GPS" },
+    ru: { guide: "Идем к остановке", openInMaps: "GPS Нав" },
+    hi: { guide: "स्टॉप की ओर बढ़ रहे हैं", openInMaps: "GPS नेविगेशन" },
     fr: { guide: "Marche vers l'arrêt", openInMaps: "Nav GPS" },
     de: { guide: "Weg zum Stopp", openInMaps: "Navi" },
     ja: { guide: "目的地へ徒歩", openInMaps: "地図で開く" },
     zh: { guide: "步行至站点", openInMaps: "导航" },
-    ar: { guide: "المشي إلى المحطة", openInMaps: "توجيه" }
+    ca: { guide: "Caminant a la parada", openInMaps: "Anar amb GPS" },
+    eu: { guide: "Geldialdirantz oinez", openInMaps: "GPSarekin joan" }
 };
 
 export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, onPlayAudio, audioPlayingId, audioLoadingId, userLocation }) => {
@@ -48,12 +51,9 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     return () => { if (mapInstanceRef.current) mapInstanceRef.current.remove(); };
   }, []);
 
-  // Marcador de Usuario y Línea GPS
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !L || !userLocation) return;
-    
-    // Punto Azul Usuario
     if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
     const userIcon = L.divIcon({
         className: '',
@@ -62,8 +62,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         iconAnchor: [12, 12]
     });
     userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
-
-    // LÍNEA DE DISTANCIA (Polyline)
     if (polylineRef.current) map.removeLayer(polylineRef.current);
     if (currentStop) {
         polylineRef.current = L.polyline(
@@ -73,7 +71,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     }
   }, [userLocation, currentStop]);
 
-  // Marcadores de Paradas e Iconos
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !L) return;
