@@ -70,10 +70,10 @@ export const addCommunityPost = async (post: any) => { await supabase.from('comm
 
 export const getUserProfileByEmail = async (email: string) => {
   const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-  if (error) return null;
+  if (error) { console.error("Fetch Error:", error); return null; }
   if (!data) return null;
 
-  // MAPEAMOS DE SNAKE_CASE (DB) A CAMELCASE (APP)
+  // MAPEAMOS DE SNAKE_CASE (DB) A CAMELCASE (APP) SEGÚN TUS CAPTURAS
   return {
     id: data.id,
     email: data.email,
@@ -98,14 +98,16 @@ export const getUserProfileByEmail = async (email: string) => {
     age: data.age || 25,
     birthday: data.birthday,
     passportNumber: data.passport_number,
-    name: data.name
+    name: data.name,
+    savedIntel: data.saved_intel || [],
+    joinDate: data.join_date
   };
 };
 
 export const syncUserProfile = async (profile: UserProfile) => {
   if (!profile || profile.id === 'guest' || !profile.isLoggedIn) return;
   
-  // MAPEAMOS DE CAMELCASE (APP) A SNAKE_CASE (DB) PARA QUE SUPABASE LO ENTIENDA
+  // MAPEAMOS DE CAMELCASE (APP) A SNAKE_CASE (DB) PARA QUE COINCIDA CON TUS COLUMNAS
   const payload = {
     id: profile.id,
     email: profile.email,
@@ -131,12 +133,16 @@ export const syncUserProfile = async (profile: UserProfile) => {
     birthday: profile.birthday || '',
     passport_number: profile.passportNumber || '',
     name: profile.name || '',
+    saved_intel: profile.savedIntel || [],
+    join_date: profile.joinDate || new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
 
   const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
   
   if (error) {
-    console.error("SYNC ERROR:", error.message);
+    console.error("SYNC FAILED - VERIFY COLUMNS:", error.message);
+  } else {
+    console.log("SYNC SUCCESS: Profile pushed to Supabase.");
   }
 };
