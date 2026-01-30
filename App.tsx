@@ -21,8 +21,8 @@ const TRANSLATIONS: any = {
   fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails", codeError: "Code invalide", selectLang: "Langue", loading: "Synchronisation...", loadingTour: "Dai analyse...", analyzing: "Localisation...", generating: "Génération...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", apiError: "Erreur IA.", quotaError: "Dai est fatiguée.", genError: "Erreur de synchro." },
   de: { welcome: "Log Bidaer:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "E-Mail", login: "Code senden", verify: "Anmelden", tagline: "better destinations by ai", authError: "E-Mail prüfen", codeError: "Falscher Code", selectLang: "Sprache", loading: "Synchronisierung...", loadingTour: "Dai analysiert...", analyzing: "Lokalisiere...", generating: "Generiere...", translating: "Übersetze...", navElite: "Elite", navHub: "Intel", navVisa: "Reisepass", navStore: "Shop", apiError: "KI-Fehler.", quotaError: "Dai ist müde.", genError: "Synchro-Fehler." },
   ru: { welcome: "Лог Bidaer:", explorer: "Исследователь", searchPlaceholder: "Целевой город...", emailPlaceholder: "Email", login: "Отправить код", verify: "Войти", tagline: "better destinations by ai", authError: "Проверьте почту", codeError: "Неверный код", selectLang: "Язык", loading: "Синхронизация...", loadingTour: "Дай анализирует...", analyzing: "Локация...", generating: "Генерация...", translating: "Перевод...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", apiError: "Ошибка ИИ.", quotaError: "Дай устала.", genError: "Ошибка синхронизации." },
-  hi: { welcome: "Bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "लक्ष्य शहर...", emailPlaceholder: "ईमेल", login: "कोड भेजें", verify: "लॉगिन", tagline: "better destinations by ai", authError: "ईमेल जाँचें", codeError: "अमान्य कोड", selectLang: "भाषा", loading: "सिंक हो रहा है...", loadingTour: "दाई विश्लेषण कर रही है...", analyzing: "खोज...", generating: "बनाना...", translating: "अनुवाद...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", apiError: "IA त्रुटि", quotaError: "दाई थक गई है।", genError: "सिंक त्रुटि।" },
-  ja: { welcome: "Bidaer ログ:", explorer: "探検家", searchPlaceholder: "目的の都市...", emailPlaceholder: "メール", login: "コード送信", verify: "ログイン", tagline: "better destinations by ai", authError: "メールを確認", codeError: "無効なコード", selectLang: "言語", loading: "同期中...", loadingTour: "ダイが分析中...", analyzing: "場所...", generating: "生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", apiError: "IAエラー", quotaError: "ダイは疲れています。", genError: "同期エラー。" },
+  hi: { welcome: "Bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "लक्ष्य शहर...", emailPlaceholder: "ईमेल", login: "कोड भेजें", verify: "लॉगिन", tagline: "better destinations by ai", authError: "ईमेल जाँचें", codeError: "अमान्य कोड", selectLang: "भाषा", loading: "सिंक हो रहा है...", loadingTour: "दाई विश्लेषण कर रही है...", analyzing: "खोज...", generating: "बनाना...", translating: "अनुवाद...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टores", apiError: "IA त्रुटि", quotaError: "दाई थक गई है।", genError: "सिंक त्रुटि।" },
+  ja: { welcome: "Bidaer ログ:", explorer: "探検家", searchPlaceholder: "目的の都市...", emailPlaceholder: "メール", login: "कोड送信", verify: "ログイン", tagline: "better destinations by ai", authError: "メールを確認", codeError: "無効なコード", selectLang: "言語", loading: "同期中...", loadingTour: "ダイが分析中...", analyzing: "場所...", generating: "生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", apiError: "IAエラー", quotaError: "ダイは疲れています。", genError: "同期エラー。" },
   zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "邮箱", login: "发送代码", verify: "登录", tagline: "better destinations by ai", authError: "检查邮箱", codeError: "验证码错误", selectLang: "语言", loading: "同步中...", loadingTour: "戴正在分析...", analyzing: "定位中...", generating: "生成中...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", apiError: "IA错误", quotaError: "戴累了。", genError: "同步错误。" },
   ar: { welcome: "سجل بيداير:", explorer: "المستكشف", searchPlaceholder: "المدينة المستهدفة...", emailPlaceholder: "البريد الإلكتروني", login: "إرسال الكود", verify: "دخول", tagline: "better destinations by ai", authError: "تحقق من بريدك", codeError: "كود خاطئ", selectLang: "اللغة", loading: "جاري المزامنة...", loadingTour: "داي تحلل المدينة...", analyzing: "جاري البحث...", generating: "جاري التوليد...", translating: "جاري الترجمة...", navElite: "النخبة", navHub: "المعلومات", navVisa: "الجواز", navStore: "المتجر", apiError: "خطأ IA", quotaError: "داي متعبة.", genError: "خطأ مزامنة." },
   ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa l'email", codeError: "Codi no vàlid", selectLang: "Idioma", loading: "Sincronitzant...", loadingTour: "Dai està analitzant...", analyzing: "Localitzant ciutat...", generating: "Generant tours...", translating: "Traduint...", navElite: "Elit", navHub: "Intel", navVisa: "Pasaport", navStore: "Botiga", apiError: "Error d'IA.", quotaError: "Dai està saturada.", genError: "Error de sincronització." },
@@ -73,9 +73,19 @@ export default function App() {
     const checkAuth = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+            // SI HAY SESIÓN, PRIORIZAMOS LOS DATOS DE SUPABASE SOBRE EL LOCALSTORAGE
             const profile = await getUserProfileByEmail(session.user.email || '');
-            const newUser = { ...(profile || user), id: session.user.id, email: session.user.email, isLoggedIn: true };
-            setUser(newUser as any); setView(AppView.HOME);
+            if (profile) {
+              const newUser = { ...profile, id: session.user.id, isLoggedIn: true };
+              setUser(newUser as any);
+              localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+            } else {
+              // Si no hay perfil en la DB pero sí sesión, lo creamos
+              const newUser = { ...user, id: session.user.id, email: session.user.email, isLoggedIn: true };
+              setUser(newUser as any);
+              syncUserProfile(newUser as any);
+            }
+            setView(AppView.HOME);
         }
         setIsVerifyingSession(false);
     };
@@ -95,6 +105,7 @@ export default function App() {
   const handleUpdateUser = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
+    // IMPORTANTE: syncUserProfile ahora informará de errores por consola si la tabla no es correcta
     syncUserProfile(updatedUser);
   };
 
@@ -107,9 +118,7 @@ export default function App() {
     try {
         setSelectedCity(official.spanishName); 
         setSelectedCountry(official.country);
-
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
-        
         if (cached) {
             if (cached.langFound === targetLang) {
                 setTours(cached.data); setView(AppView.CITY_DETAIL);
@@ -123,12 +132,9 @@ export default function App() {
                 setIsLoading(false); return;
             }
         }
-
         setLoadingMessage(t('generating'));
         const generated = await generateToursForCity(official.spanishName, official.country, user);
-        
         if (!generated || generated.length === 0) throw new Error("GEN_FAILED");
-
         setTours(generated); 
         await saveToursToCache(official.spanishName, official.country, targetLang, generated);
         setView(AppView.CITY_DETAIL);
@@ -145,23 +151,16 @@ export default function App() {
     setAuthError(null);
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
-
     try {
         const targetLang = user.language || 'es';
-        
-        // 1. INTENTO INSTANTÁNEO EN BASE DE DATOS (Fuzzy Search)
-        // Buscamos si ya hay algo guardado que coincida con el texto
         const cached = await getCachedTours(cityInput, "", targetLang);
         if (cached) {
-            // Si lo encontramos en caché, lo usamos directamente. No hay que llamar a la IA de estandarización.
             setSelectedCity(cityInput); 
             setTours(cached.data);
             setView(AppView.CITY_DETAIL);
             setIsLoading(false);
             return;
         }
-
-        // 2. SI NO EXISTE EN CACHÉ, ENTONCES USAMOS IA PARA ESTANDARIZAR Y GENERAR
         const results = await standardizeCityName(cityInput);
         if (results && results.length > 0) {
             if (results.length === 1) await processCitySelection(results[0]);
@@ -187,7 +186,10 @@ export default function App() {
       const { data, error } = await verifyOtpCode(email, otpCode);
       if (error || !data?.user) throw error;
       const profile = await getUserProfileByEmail(email);
-      handleUpdateUser({ ...(profile || user), id: data.user.id, email, isLoggedIn: true });
+      const newUser = { ...(profile || user), id: data.user.id, email, isLoggedIn: true };
+      setUser(newUser as any);
+      localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+      if (!profile) syncUserProfile(newUser as any);
       setView(AppView.HOME);
     } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
   };
@@ -205,7 +207,6 @@ export default function App() {
                   <h1 className="text-4xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mt-2">{t('tagline')}</p>
               </div>
-
               <div className="w-full max-w-sm space-y-12">
                   <div className="flex flex-col gap-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 text-center">{t('selectLang')}</p>
@@ -218,7 +219,6 @@ export default function App() {
                         ))}
                     </div>
                   </div>
-                  
                   <div className="w-full space-y-4 max-w-xs mx-auto">
                       {authError && <div className="text-red-400 text-[8px] font-black uppercase text-center bg-red-500/10 p-3 rounded-2xl border border-red-500/20">{authError}</div>}
                       {loginStep === 'EMAIL' ? (
@@ -246,16 +246,12 @@ export default function App() {
                           <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">bdai</span></div>
                           <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
-                      
                       {authError && <div className="text-red-400 text-[10px] font-black uppercase text-center bg-red-500/10 p-4 rounded-3xl border border-red-500/20 mb-6">{authError}</div>}
-
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
-                      
                       <div className="relative mt-8 flex gap-3">
                           <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white focus:border-purple-500 outline-none font-bold" />
                           <button onClick={() => handleCitySelect(searchVal)} className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"><i className="fas fa-search"></i></button>
                       </div>
-
                       {searchOptions && (
                           <div className="mt-6 space-y-2 animate-fade-in bg-white/5 p-4 rounded-[2rem] border border-white/5">
                               {searchOptions.map((opt: any, i: number) => (
@@ -280,7 +276,6 @@ export default function App() {
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} isOwnProfile={true} language={user.language || 'es'} onUpdateUser={handleUpdateUser} onLogout={() => { localStorage.removeItem('bdai_profile'); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
-            
             {view !== AppView.TOUR_ACTIVE && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-8 pb-safe-iphone mb-4 pointer-events-none">
                   <nav className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 px-6 py-4 flex justify-between items-center w-full rounded-[2.5rem] pointer-events-auto shadow-2xl">
