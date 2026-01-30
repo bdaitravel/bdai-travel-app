@@ -3,21 +3,21 @@
   "name": "bdai",
   "short_name": "bdai",
   "description": "Better Destinations AI - Free tours por todo el mundo",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png"
     },
     {
-      "src": "https://api.dicebear.com/7.x/initials/svg?seed=bdai&backgroundColor=5e17eb",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
     }
   ]
 }
