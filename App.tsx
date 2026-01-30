@@ -11,22 +11,13 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { FlagIcon } from './components/FlagIcon';
 import { AdminPanel } from './components/AdminPanel';
 import { CommunityBoard } from './components/CommunityBoard';
+import { Onboarding } from './components/Onboarding';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
   en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", apiError: "AI AUTH ERROR: Check your API_KEY.", quotaError: "Dai is tired. Wait a bit.", genError: "Sync error. Try again." },
   es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", apiError: "ERROR DE IA: Revisa tu API_KEY.", quotaError: "Dai está saturada. Espera unos minutos.", genError: "Error de sincronización. Reintenta." },
-  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Autenticar", tagline: "better destinations by ai", authError: "Verifique o email", codeError: "Código inválido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está gerando...", analyzing: "Localizando cidade...", generating: "Gerando tours...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", apiError: "Erro de IA.", quotaError: "Dai cansada. Espere.", genError: "Erro de sincronização." },
-  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Autentica", tagline: "better destinations by ai", authError: "Controlla email", codeError: "Codice non valido", selectLang: "Lingua", loading: "Sincronizzazione...", loadingTour: "Dai sta analizando...", analyzing: "Localizzazione città...", generating: "Generazione tour...", translating: "Traduzione...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", apiError: "Errore IA.", quotaError: "Dai è stanca. Aspetta.", genError: "Errore di sincronizzazione." },
-  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos e-mails", codeError: "Code invalide", selectLang: "Langue", loading: "Synchronisation...", loadingTour: "Dai analyse...", analyzing: "Localisation...", generating: "Génération...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", apiError: "Erreur IA.", quotaError: "Dai est fatiguée.", genError: "Erreur de synchro." },
-  de: { welcome: "Log Bidaer:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "E-Mail", login: "Code senden", verify: "Anmelden", tagline: "better destinations by ai", authError: "E-Mail prüfen", codeError: "Falscher Code", selectLang: "Sprache", loading: "Synchronisierung...", loadingTour: "Dai analysiert...", analyzing: "Lokalisiere...", generating: "Generiere...", translating: "Übersetze...", navElite: "Elite", navHub: "Intel", navVisa: "Reisepass", navStore: "Shop", apiError: "KI-Fehler.", quotaError: "Dai ist müde.", genError: "Synchro-Fehler." },
-  ru: { welcome: "Лог Bidaer:", explorer: "Исследователь", searchPlaceholder: "Целевой город...", emailPlaceholder: "Email", login: "Отправить код", verify: "Войти", tagline: "better destinations by ai", authError: "Проверьте почту", codeError: "Неверный код", selectLang: "Язык", loading: "Синхронизация...", loadingTour: "Дай анализирует...", analyzing: "Локация...", generating: "Генерация...", translating: "Перевод...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", apiError: "Ошибка ИИ.", quotaError: "Дай устала.", genError: "Ошибка синхронизации." },
-  hi: { welcome: "Bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "लक्ष्य शहर...", emailPlaceholder: "ईमेल", login: "कोड भेजें", verify: "लॉगिन", tagline: "better destinations by ai", authError: "ईमेल जाँचें", codeError: "अमान्य कोड", selectLang: "भाषा", loading: "सिंक हो रहा है...", loadingTour: "दाई विश्लेषण कर रही है...", analyzing: "खोज...", generating: "बनाना...", translating: "अनुवाद...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टores", apiError: "IA त्रुटि", quotaError: "दाई थक गई है।", genError: "सिंक त्रुटि।" },
-  ja: { welcome: "Bidaer ログ:", explorer: "探検家", searchPlaceholder: "目的の都市...", emailPlaceholder: "メール", login: "कोड送信", verify: "ログイン", tagline: "better destinations by ai", authError: "メールを確認", codeError: "無効なコード", selectLang: "言語", loading: "同期中...", loadingTour: "ダイが分析中...", analyzing: "場所...", generating: "生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", apiError: "IAエラー", quotaError: "ダイは疲れています。", genError: "同期エラー。" },
-  zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "邮箱", login: "发送代码", verify: "登录", tagline: "better destinations by ai", authError: "检查邮箱", codeError: "验证码错误", selectLang: "语言", loading: "同步中...", loadingTour: "戴正在分析...", analyzing: "定位中...", generating: "生成中...", translating: "翻译中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", apiError: "IA错误", quotaError: "戴累了。", genError: "同步错误。" },
-  ar: { welcome: "سجل بيداير:", explorer: "المستكشف", searchPlaceholder: "المدينة المستهدفة...", emailPlaceholder: "البريد الإلكتروني", login: "إرسال الكود", verify: "دخول", tagline: "better destinations by ai", authError: "تحقق من بريدك", codeError: "كود خاطئ", selectLang: "اللغة", loading: "جاري المزامنة...", loadingTour: "داي تحلل المدينة...", analyzing: "جاري البحث...", generating: "جاري التوليد...", translating: "جاري الترجمة...", navElite: "النخبة", navHub: "المعلومات", navVisa: "الجواز", navStore: "المتجر", apiError: "خطأ IA", quotaError: "داي متعبة.", genError: "خطأ مزامنة." },
-  ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa l'email", codeError: "Codi no vàlid", selectLang: "Idioma", loading: "Sincronitzant...", loadingTour: "Dai està analitzant...", analyzing: "Localitzant ciutat...", generating: "Generant tours...", translating: "Traduint...", navElite: "Elit", navHub: "Intel", navVisa: "Pasaport", navStore: "Botiga", apiError: "Error d'IA.", quotaError: "Dai està saturada.", genError: "Error de sincronització." },
-  eu: { welcome: "Log Bidaer:", explorer: "Esploratzailea", searchPlaceholder: "Helmuga...", emailPlaceholder: "Emaila", login: "Kodea Bidali", verify: "Sartu", tagline: "better destinations by ai", authError: "Egiaztatu emaila", codeError: "Kode okerra", selectLang: "Hizkuntza", loading: "Sinkronizatzen...", loadingTour: "Dai aztertzen ari da...", analyzing: "Hiria kokatzen...", generating: "Tourrak sortzen...", translating: "Itzultzen...", navElite: "Elite", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", apiError: "IA errorea.", quotaError: "Dai nekatuta dago.", genError: "Sinkronizazio errorea." }
+  // ... otros idiomas
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -47,6 +38,7 @@ export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   const [loginStep, setLoginStep] = useState<'EMAIL' | 'CODE'>('EMAIL');
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -73,17 +65,17 @@ export default function App() {
     const checkAuth = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-            // SI HAY SESIÓN, PRIORIZAMOS LOS DATOS DE SUPABASE SOBRE EL LOCALSTORAGE
             const profile = await getUserProfileByEmail(session.user.email || '');
             if (profile) {
               const newUser = { ...profile, id: session.user.id, isLoggedIn: true };
               setUser(newUser as any);
               localStorage.setItem('bdai_profile', JSON.stringify(newUser));
             } else {
-              // Si no hay perfil en la DB pero sí sesión, lo creamos
               const newUser = { ...user, id: session.user.id, email: session.user.email, isLoggedIn: true };
               setUser(newUser as any);
               syncUserProfile(newUser as any);
+              // Si es nuevo perfil, forzamos onboarding
+              setShowOnboarding(true);
             }
             setView(AppView.HOME);
         }
@@ -105,8 +97,13 @@ export default function App() {
   const handleUpdateUser = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
-    // IMPORTANTE: syncUserProfile ahora informará de errores por consola si la tabla no es correcta
     syncUserProfile(updatedUser);
+  };
+
+  const handleOnboardingComplete = (interests: string[]) => {
+    const updated = { ...user, interests };
+    handleUpdateUser(updated);
+    setShowOnboarding(false);
   };
 
   const processCitySelection = async (official: {name: string, spanishName: string, country: string}) => {
@@ -189,7 +186,10 @@ export default function App() {
       const newUser = { ...(profile || user), id: data.user.id, email, isLoggedIn: true };
       setUser(newUser as any);
       localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-      if (!profile) syncUserProfile(newUser as any);
+      if (!profile) {
+          syncUserProfile(newUser as any);
+          setShowOnboarding(true);
+      }
       setView(AppView.HOME);
     } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
   };
@@ -198,6 +198,8 @@ export default function App() {
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
+      {showOnboarding && <Onboarding language={user.language} onComplete={handleOnboardingComplete} />}
+      
       {isLoading && <div className="fixed inset-0 z-[9999] bg-slate-950/90 backdrop-blur-xl flex flex-col items-center justify-center p-10"><div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-6"></div><p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center">{loadingMessage || t('loading')}</p></div>}
 
       {view === AppView.LOGIN ? (
