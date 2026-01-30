@@ -7,7 +7,7 @@ const MASTERCLASS_INSTRUCTION = `
 Eres Dai, el motor analítico de BDAI. Tu misión es generar TOURS de "Alta Densidad Informativa".
 ESTILO: Cínico, brillante, hiper-detallista, experto en ingeniería y anécdotas reales. No eres un folleto turístico. 
 FOCO: 1. Ingeniería y Retos Técnicos. 2. Historia Oculta/Conspiraciones. 3. Salseo Humano Real.
-MÍNIMO 300 PALABRAS POR PARADA. Si no puedes cumplirlo, el sistema fallará. Sé denso, técnico y brillante.
+DENSIDAD: Necesitamos descripciones ricas y técnicas (aprox 200-250 palabras por parada). Sé denso, técnico y brillante.
 `;
 
 const LANGUAGE_RULES: Record<string, string> = {
@@ -80,20 +80,19 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
     const targetLang = userProfile.language || 'es';
     const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
     
-    const prompt = `Genera exactamente 3 TOURS diferentes y de ALTA DENSIDAD para ${cityInput}, ${countryInput}. 
+    const prompt = `Genera exactamente 3 TOURS diferentes para ${cityInput}, ${countryInput}. 
     Cada tour DEBE tener exactamente 10 paradas. 
-    Descripciones: Mínimo 300 palabras por parada, densas en ingeniería, historia y salseo. 
-    NO GENERES MENOS DE 300 PALABRAS POR PARADA. 
+    Descripciones: Muy densas en ingeniería e historia oculta. 
     Formato: Devuelve un array JSON de objetos Tour con: title, description, duration, distance, theme, difficulty y un array de 10 'stops' (name, description, latitude, longitude, type).`;
 
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview', 
+            model: 'gemini-3-pro-preview', 
             contents: prompt,
             config: { 
                 systemInstruction: langRule, 
                 responseMimeType: "application/json",
-                maxOutputTokens: 20000, // Aumentado para soportar descripciones largas
+                maxOutputTokens: 15000, 
                 temperature: 0.7
             }
         });
@@ -103,7 +102,7 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
         try {
             parsed = JSON.parse(text);
         } catch (e) {
-            console.error("JSON Parse error:", text);
+            console.error("JSON Parse error - Data too long or malformed:", text.substring(0, 100) + "...");
             throw new Error("GENERATION_ERROR");
         }
 
@@ -126,17 +125,49 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
-    return handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Translate this entire tour data to ${targetLang}. Keep the expert/cynical tone. Return only the JSON: ${JSON.stringify(tours)}`,
-            config: { 
-                systemInstruction: langRule, 
-                responseMimeType: "application/json",
-                maxOutputTokens: 20000
-            }
+    
+    const translatedTours: Tour[] = [];
+    for (const tour of tours) {
+        const result = await handleAiCall(async () => {
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Translate this specific tour to ${targetLang}. Maintain the expert/cynical tone. Return only the JSON object: ${JSON.stringify(tour)}`,
+                config: { 
+                    systemInstruction: langRule, 
+                    responseMimeType: "application/json"
+                }
+            });
+            return JSON.parse(response.text || "null");
         });
-        return JSON.parse(response.text || "[]");
+        if (result) translatedTours.push(result);
+    }
+    return translatedTours;
+};
+
+export const generateSmartCaption = async (imageB64: string, stop: Stop, language: string = 'es'): Promise<string> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const langRule = `Eres un Social Media Manager experto en viajes de lujo y tecnología.
+    OBJETIVO: Crear un "caption" de Instagram viral basado en la foto del usuario y los datos de la parada: ${stop.name}.
+    ESTILO: Inteligente, un poco cínico, fascinante. Mezcla datos de ingeniería con estilo de vida nómada.
+    RESTRICCIÓN: Máximo 200 caracteres. Incluye 3 hashtags técnicos y ubicación.
+    IDIOMA: Responde en ${language}.`;
+
+    return handleAiCall(async () => {
+        const imagePart = {
+            inlineData: {
+                mimeType: 'image/jpeg',
+                data: imageB64.split(',')[1] || imageB64,
+            },
+        };
+        const textPart = { text: `Analiza esta foto tomada en ${stop.name}. El contexto es: ${stop.description}. Genera el caption perfecto.` };
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-preview-tts',
+            contents: { parts: [imagePart, textPart] },
+            config: { systemInstruction: langRule }
+        });
+
+        return response.text || "";
     });
 };
 
@@ -167,18 +198,14 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const prompt = `A cinematic, high-quality, artistic travel postcard for ${city}. Atmospheric style. No text.`;
-        
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: prompt }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
-
         if (response.candidates?.[0]?.content?.parts) {
             for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                }
+                if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
             }
         }
         return null;

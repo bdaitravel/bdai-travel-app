@@ -73,7 +73,6 @@ export const getUserProfileByEmail = async (email: string) => {
   if (error) { console.error("Fetch Error:", error); return null; }
   if (!data) return null;
 
-  // MAPEAMOS DE SNAKE_CASE (DB) A CAMELCASE (APP) SEGÚN TUS CAPTURAS
   return {
     id: data.id,
     email: data.email,
@@ -100,6 +99,7 @@ export const getUserProfileByEmail = async (email: string) => {
     passportNumber: data.passport_number,
     name: data.name,
     savedIntel: data.saved_intel || [],
+    capturedMoments: data.captured_moments || [],
     joinDate: data.join_date
   };
 };
@@ -107,7 +107,6 @@ export const getUserProfileByEmail = async (email: string) => {
 export const syncUserProfile = async (profile: UserProfile) => {
   if (!profile || profile.id === 'guest' || !profile.isLoggedIn) return;
   
-  // MAPEAMOS DE CAMELCASE (APP) A SNAKE_CASE (DB) PARA QUE COINCIDA CON TUS COLUMNAS
   const payload = {
     id: profile.id,
     email: profile.email,
@@ -134,6 +133,7 @@ export const syncUserProfile = async (profile: UserProfile) => {
     passport_number: profile.passportNumber || '',
     name: profile.name || '',
     saved_intel: profile.savedIntel || [],
+    captured_moments: profile.capturedMoments || [],
     join_date: profile.joinDate || new Date().toISOString(),
     updated_at: new Date().toISOString()
   };

@@ -1,4 +1,14 @@
 
+export interface CapturedMoment {
+  id: string;
+  stopId: string;
+  stopName: string;
+  city: string;
+  imageUrl: string;
+  caption: string;
+  timestamp: string;
+}
+
 export interface Badge {
   id: string;
   name: string;
@@ -60,6 +70,7 @@ export interface UserProfile {
   visitedCities: string[]; 
   completedTours: string[];
   savedIntel?: HubIntel[];
+  capturedMoments?: CapturedMoment[];
   stats: UserStats;
   badges: Badge[];
   socialLinks?: SocialLinks;
