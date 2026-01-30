@@ -96,6 +96,8 @@ export const getUserProfileByEmail = async (email: string) => {
     isPublic: data.is_public || false,
     age: data.age || 25,
     birthday: data.birthday,
+    city: data.city,
+    country: data.country,
     passportNumber: data.passport_number,
     name: data.name,
     savedIntel: data.saved_intel || [],
@@ -104,8 +106,8 @@ export const getUserProfileByEmail = async (email: string) => {
   };
 };
 
-export const syncUserProfile = async (profile: UserProfile) => {
-  if (!profile || profile.id === 'guest' || !profile.isLoggedIn) return;
+export const syncUserProfile = async (profile: UserProfile): Promise<{success: boolean, error?: string}> => {
+  if (!profile || profile.id === 'guest' || !profile.isLoggedIn) return { success: false, error: 'Not logged in' };
   
   const payload = {
     id: profile.id,
@@ -130,6 +132,8 @@ export const syncUserProfile = async (profile: UserProfile) => {
     is_public: profile.isPublic || false,
     age: profile.age || 25,
     birthday: profile.birthday || '',
+    city: profile.city || '',
+    country: profile.country || '',
     passport_number: profile.passportNumber || '',
     name: profile.name || '',
     saved_intel: profile.savedIntel || [],
@@ -141,8 +145,10 @@ export const syncUserProfile = async (profile: UserProfile) => {
   const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
   
   if (error) {
-    console.error("SYNC FAILED - VERIFY COLUMNS:", error.message);
+    console.error("SYNC FAILED:", error.message);
+    return { success: false, error: error.message };
   } else {
     console.log("SYNC SUCCESS: Profile pushed to Supabase.");
+    return { success: true };
   }
 };
