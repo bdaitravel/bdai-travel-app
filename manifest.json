@@ -2,22 +2,24 @@
 {
   "name": "bdai",
   "short_name": "bdai",
-  "description": "Better Destinations AI - Free tours por todo el mundo",
-  "start_url": ".",
+  "description": "Better Destinations AI - Tours de alta densidad informativa",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "/logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
