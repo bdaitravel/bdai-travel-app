@@ -106,14 +106,10 @@ export const getUserProfileByEmail = async (email: string) => {
   };
 };
 
-/**
- * Función de sincronización RESILIENTE.
- * Si fallan columnas específicas, intenta guardar lo básico y avisa al usuario.
- */
-export const syncUserProfile = async (profile: UserProfile): Promise<{success: boolean, error?: string, needsMigration?: boolean}> => {
+export const syncUserProfile = async (profile: UserProfile): Promise<{success: boolean, error?: string}> => {
   if (!profile || profile.id === 'guest' || !profile.isLoggedIn) return { success: false, error: 'Not logged in' };
   
-  const fullPayload = {
+  const payload = {
     id: profile.id,
     email: profile.email,
     username: profile.username || 'traveler',
@@ -146,33 +142,13 @@ export const syncUserProfile = async (profile: UserProfile): Promise<{success: b
     updated_at: new Date().toISOString()
   };
 
-  const { error } = await supabase.from('profiles').upsert(fullPayload, { onConflict: 'id' });
+  const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
   
   if (error) {
-    console.warn("FULL SYNC FAILED, attempting basic sync:", error.message);
-    
-    // Si el error es por columnas faltantes, intentamos guardar lo mínimo indispensable
-    const basicPayload = {
-      id: profile.id,
-      email: profile.email,
-      username: profile.username || 'traveler',
-      avatar: profile.avatar,
-      language: profile.language || 'es',
-      updated_at: new Date().toISOString()
-    };
-
-    const { error: basicError } = await supabase.from('profiles').upsert(basicPayload, { onConflict: 'id' });
-
-    if (basicError) {
-        return { success: false, error: basicError.message };
-    }
-
-    return { 
-        success: true, 
-        error: "Perfil guardado parcialmente. Faltan columnas en tu tabla 'profiles' de Supabase (ej: captured_moments).", 
-        needsMigration: true 
-    };
+    console.error("SYNC FAILED:", error.message);
+    return { success: false, error: error.message };
+  } else {
+    console.log("SYNC SUCCESS: Profile pushed to Supabase.");
+    return { success: true };
   }
-
-  return { success: true };
 };
