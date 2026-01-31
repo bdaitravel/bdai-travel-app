@@ -38,7 +38,9 @@ export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   const [loginStep, setLoginStep] = useState<'EMAIL' | 'CODE'>('EMAIL');
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return localStorage.getItem('bdai_onboarding_v2') !== 'seen';
+  });
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -74,8 +76,6 @@ export default function App() {
               const newUser = { ...user, id: session.user.id, email: session.user.email, isLoggedIn: true };
               setUser(newUser as any);
               syncUserProfile(newUser as any);
-              // Si es nuevo perfil, forzamos onboarding
-              setShowOnboarding(true);
             }
             setView(AppView.HOME);
         }
@@ -100,9 +100,8 @@ export default function App() {
     syncUserProfile(updatedUser);
   };
 
-  const handleOnboardingComplete = (interests: string[]) => {
-    const updated = { ...user, interests };
-    handleUpdateUser(updated);
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('bdai_onboarding_v2', 'seen');
     setShowOnboarding(false);
   };
 
@@ -186,10 +185,7 @@ export default function App() {
       const newUser = { ...(profile || user), id: data.user.id, email, isLoggedIn: true };
       setUser(newUser as any);
       localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-      if (!profile) {
-          syncUserProfile(newUser as any);
-          setShowOnboarding(true);
-      }
+      if (!profile) syncUserProfile(newUser as any);
       setView(AppView.HOME);
     } catch (e: any) { setAuthError(e.message); } finally { setIsLoading(false); }
   };
@@ -236,6 +232,9 @@ export default function App() {
                           </div>
                       )}
                   </div>
+                  {/* Botón para volver a ver la introducción */}
+                  {/* Fixed language reference to user.language */}
+                  <button onClick={() => setShowOnboarding(true)} className="w-full text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">{user.language === 'es' ? '¿Qué es bdai?' : 'What is bdai?'}</button>
               </div>
               <div className="pb-8 text-center opacity-30"><span className="text-[7px] font-bold text-white uppercase tracking-widest">© 2025 BDAI INTEL CORE</span></div>
           </div>
