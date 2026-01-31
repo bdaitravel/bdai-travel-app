@@ -12,6 +12,7 @@ import { FlagIcon } from './components/FlagIcon';
 import { AdminPanel } from './components/AdminPanel';
 import { CommunityBoard } from './components/CommunityBoard';
 import { Onboarding } from './components/Onboarding';
+import { STATIC_TOURS } from './data/toursData';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
@@ -124,9 +125,10 @@ export default function App() {
     try {
         setSelectedCity(official.spanishName); 
         setSelectedCountry(official.country);
+        
+        // 1. Intentar cargar desde caché de Supabase
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
         
-        // Si hay caché y el idioma es el correcto, lo usamos directamente
         if (cached && cached.langFound === targetLang) {
             setTours(cached.data); 
             setView(AppView.CITY_DETAIL);
@@ -134,20 +136,35 @@ export default function App() {
             return;
         } 
         
-        // Si hay caché pero en otro idioma, o no hay caché, generamos/traducimos
-        if (cached) {
-            setLoadingMessage(t('translating'));
-            const translated = await translateTours(cached.data, targetLang);
-            setTours(translated);
-            await saveToursToCache(official.spanishName, official.country, targetLang, translated);
+        // 2. Si no hay caché o está en otro idioma, intentar generar con Dai
+        try {
+            if (cached) {
+                setLoadingMessage(t('translating'));
+                const translated = await translateTours(cached.data, targetLang);
+                setTours(translated);
+                await saveToursToCache(official.spanishName, official.country, targetLang, translated);
+            } else {
+                setLoadingMessage(t('generating'));
+                const generated = await generateToursForCity(official.spanishName, official.country, user);
+                if (!generated || generated.length === 0) throw new Error("GEN_FAILED");
+                setTours(generated); 
+                await saveToursToCache(official.spanishName, official.country, targetLang, generated);
+            }
             setView(AppView.CITY_DETAIL);
-        } else {
-            setLoadingMessage(t('generating'));
-            const generated = await generateToursForCity(official.spanishName, official.country, user);
-            if (!generated || generated.length === 0) throw new Error("GEN_FAILED");
-            setTours(generated); 
-            await saveToursToCache(official.spanishName, official.country, targetLang, generated);
-            setView(AppView.CITY_DETAIL);
+        } catch (aiErr) {
+            console.warn("AI Service unavailable, checking safety data...");
+            // 3. Fallback: Si la IA falla, buscar en datos estáticos
+            const staticMatch = STATIC_TOURS.filter(tour => 
+                tour.city.toLowerCase().includes(official.spanishName.toLowerCase()) || 
+                official.spanishName.toLowerCase().includes(tour.city.toLowerCase())
+            );
+            
+            if (staticMatch.length > 0) {
+                setTours(staticMatch);
+                setView(AppView.CITY_DETAIL);
+            } else {
+                throw new Error("No data found even in safety net.");
+            }
         }
     } catch (e: any) { 
         console.error("Critical Flow Error:", e);
@@ -161,13 +178,13 @@ export default function App() {
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
     try {
-        const targetLang = user.language || 'es';
         const results = await standardizeCityName(cityInput);
         if (results && results.length > 0) {
             if (results.length === 1) await processCitySelection(results[0]);
             else { setSearchOptions(results); setIsLoading(false); }
         } else await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
     } catch (e: any) {
+        // Fallback si falla el servicio de estandarización
         await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
     }
   };
