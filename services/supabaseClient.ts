@@ -8,62 +8,43 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const normalizeKey = (city: string, country?: string) => {
-    // Eliminamos acentos y caracteres especiales para máxima compatibilidad
-    const clean = (str: string) => str.toLowerCase()
+    const raw = country ? `${city}_${country}` : city;
+    return raw.toLowerCase()
         .trim()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "") 
-        .replace(/[^a-z0-9]/g, "");
-
-    const nCity = clean(city);
-    const nCountry = country ? clean(country) : "";
-    
-    // Si tenemos país, generamos la llave compuesta, si no, solo la ciudad
-    return nCountry ? `${nCity}_${nCountry}` : nCity;
+        .replace(/[^a-z0-9]/g, ""); 
 };
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
-  const nWithCountry = normalizeKey(city, country);
-  const nJustCity = normalizeKey(city);
+  const nInput = normalizeKey(city, country);
+  if (!nInput) return null;
   
-  // Intentamos buscar por la llave completa (ciudad_pais) o solo por la ciudad
-  const targetKeys = [nWithCountry];
-  if (nJustCity !== nWithCountry) targetKeys.push(nJustCity);
-
-  for (const key of targetKeys) {
-      if (!key) continue;
-
-      // 1. Buscamos coincidencia exacta de ciudad e idioma
-      const { data: exactMatch } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .eq('city', key)
-        .eq('language', language)
-        .maybeSingle();
-        
-      if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
-      
-      // 2. Si no hay idioma exacto, buscamos CUALQUIER versión para traducir
-      const { data: anyMatch } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .eq('city', key)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-        
-      if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: anyMatch.city };
-  }
+  // 1. Buscamos coincidencia exacta de ciudad e idioma
+  const { data: exactMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .eq('city', nInput)
+    .eq('language', language)
+    .maybeSingle();
+    
+  if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
+  
+  // 2. Si no hay idioma exacto, buscamos CUALQUIER versión de esa ciudad para traducirla después
+  const { data: anyMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .eq('city', nInput)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+    
+  if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: anyMatch.city };
   
   return null;
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
   const nKey = normalizeKey(city, country);
-  await supabase.from('tours_cache').upsert({ 
-    city: nKey, 
-    language, 
-    data: tours, 
-    updated_at: new Date().toISOString() 
-  }, { onConflict: 'city,language' });
+  await supabase.from('tours_cache').upsert({ city: nKey, language, data: tours, updated_at: new Date().toISOString() }, { onConflict: 'city,language' });
 };
 
 export const getCachedAudio = async (key: string): Promise<string | null> => {
@@ -131,7 +112,7 @@ export const getUserProfileByEmail = async (email: string) => {
     birthday: data.birthday,
     city: data.city,
     country: data.country,
-    passport_number: data.passport_number,
+    passportNumber: data.passport_number,
     name: data.name,
     savedIntel: data.saved_intel || [],
     capturedMoments: data.captured_moments || [],

@@ -15,12 +15,9 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     }, []);
 
     const fetchSummary = async () => {
-        // Obtenemos todos los tours cacheados para analizar la cobertura de idiomas
         const { data, error } = await supabase.from('tours_cache').select('city, language');
         if (data) {
             const allRows = data as any[];
-            
-            // Agrupamos por ciudad normalizada para ver qué idiomas faltan
             const bucketLangs: Record<string, Set<string>> = {};
             const bestKeyForBucket: Record<string, string> = {};
 
@@ -40,7 +37,6 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
             const gaps = [];
             for (const base in bucketLangs) {
                 const langs = Array.from(bucketLangs[base]);
-                // Si tenemos el original en español, podemos traducir al resto
                 if (langs.includes('es')) {
                     const missing = LANGUAGES.map(l => l.code).filter(c => !langs.includes(c));
                     if (missing.length > 0) {
@@ -68,9 +64,8 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
 
         for (let i = 0; i < missingTranslations.length; i++) {
             const item = missingTranslations[i];
-            setProgress(prev => ({ ...prev, current: i + 1, log: `Analizando ${item.city}...` }));
-
-            // Obtenemos el tour original en español (nuestra fuente de verdad)
+            
+            // Obtenemos el tour original en español
             const { data: esData } = await supabase.from('tours_cache')
                 .select('data')
                 .eq('city', item.city)
@@ -78,14 +73,20 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 .maybeSingle();
 
             if (esData && esData.data) {
-                for (const langCode of item.missing) {
+                for (let j = 0; j < item.missing.length; j++) {
+                    const langCode = item.missing[j];
+                    setProgress(prev => ({ 
+                        ...prev, 
+                        current: i + 1, 
+                        log: `[Dai] Procesando ${item.city} (${j + 1}/${item.missing.length}) al ${langCode.toUpperCase()}...` 
+                    }));
+
                     try {
-                        setProgress(prev => ({ ...prev, log: `[Dai] Traduciendo ${item.city} al ${langCode.toUpperCase()}...` }));
+                        // Throttling preventivo: esperamos 2 segundos entre traducciones para no saturar la cuota
+                        await new Promise(resolve => setTimeout(resolve, 2000));
                         
-                        // Usamos Gemini 3 Flash para la traducción masiva
                         const translated = await translateTours(esData.data as Tour[], langCode);
                         
-                        // Guardado seguro (Upsert)
                         await supabase.from('tours_cache').upsert({
                             city: item.city,
                             language: langCode,
@@ -93,16 +94,19 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                             updated_at: new Date().toISOString()
                         }, { onConflict: 'city,language' });
 
-                        console.log(`Sincronización completa: ${item.city} -> ${langCode}`);
-                    } catch (e) {
-                        console.error(`Fallo en traducción de ${item.city} a ${langCode}:`, e);
+                        console.log(`OK: ${item.city} -> ${langCode}`);
+                    } catch (e: any) {
+                        console.error(`Error en ${item.city} -> ${langCode}:`, e);
+                        setProgress(prev => ({ ...prev, log: `[ERROR] Cuota excedida. Reintentando en breve...` }));
+                        // Si falla por cuota, esperamos un poco más antes de seguir con el siguiente
+                        await new Promise(resolve => setTimeout(resolve, 5000));
                     }
                 }
             }
         }
 
         setIsProcessing(false);
-        setProgress(prev => ({ ...prev, log: '¡Mundo 100% Sincronizado!' }));
+        setProgress(prev => ({ ...prev, log: 'Sincronización finalizada.' }));
         fetchSummary();
     };
 
@@ -171,11 +175,11 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                     onClick={startMassiveTranslation}
                     className="w-full py-6 bg-white text-slate-950 rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all disabled:opacity-30"
                 >
-                    {isProcessing ? 'PROCESANDO TOUR EN CASCADA...' : 'SINCRONIZAR TODO EL MUNDO'}
+                    {isProcessing ? 'SINC EN CURSO (CON COOLDOWN)...' : 'SINCRONIZAR TODO EL MUNDO'}
                 </button>
             </div>
             
-            <p className="text-[8px] text-slate-600 text-center uppercase tracking-widest">Dai utiliza Gemini 3 Flash para traducciones de alta velocidad.</p>
+            <p className="text-[8px] text-slate-600 text-center uppercase tracking-widest">Se ha implementado una pausa de 2s entre llamadas para proteger la cuota de la API.</p>
         </div>
     );
 };

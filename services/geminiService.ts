@@ -31,20 +31,34 @@ const LANGUAGE_RULES: Record<string, string> = {
     eu: `${MASTERCLASS_INSTRUCTION} BETI EUSKARAZ ERANTZUN.`
 };
 
-async function handleAiCall(fn: () => Promise<any>) {
-    try {
-        if (!process.env.API_KEY) throw new Error("MISSING_KEY");
-        return await fn();
-    } catch (error: any) {
-        console.error("AI Service Error:", error.message);
-        if (error.message?.includes('401') || error.message?.includes('403') || error.message?.includes('API_KEY_INVALID')) {
-            throw new Error("AUTH_ERROR");
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function handleAiCall(fn: () => Promise<any>, retries = 3) {
+    let lastError: any;
+    for (let i = 0; i < retries; i++) {
+        try {
+            if (!process.env.API_KEY) throw new Error("MISSING_KEY");
+            return await fn();
+        } catch (error: any) {
+            lastError = error;
+            console.error(`AI Service Attempt ${i + 1} Error:`, error.message);
+            
+            // Si es un error de cuota (429), esperamos y reintentamos con backoff exponencial
+            if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+                const waitTime = Math.pow(2, i) * 2000; // 2s, 4s, 8s...
+                console.warn(`Quota exceeded. Retrying in ${waitTime}ms...`);
+                await sleep(waitTime);
+                continue;
+            }
+            
+            if (error.message?.includes('401') || error.message?.includes('403') || error.message?.includes('API_KEY_INVALID')) {
+                throw new Error("AUTH_ERROR");
+            }
+            
+            throw error;
         }
-        if (error.message?.includes('429')) {
-            throw new Error("QUOTA_EXCEEDED");
-        }
-        throw error;
     }
+    throw lastError;
 }
 
 export const cleanDescriptionText = (text: string): string => {
@@ -135,7 +149,6 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
 
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // Refuerzo extremo del idioma
     const langNames: Record<string, string> = {
         es: "Español", en: "English", pt: "Português", it: "Italiano", ru: "Русский",
         hi: "हिन्दी", fr: "Français", de: "Deutsch", ja: "日本語", zh: "中文", 
@@ -185,7 +198,7 @@ export const generateSmartCaption = async (imageB64: string, stop: Stop, languag
         const textPart = { text: `Analiza esta foto tomada en ${stop.name}. Contexto: ${stop.description}. Genera el caption.` };
         
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-preview-tts',
+            model: 'gemini-3-flash-preview',
             contents: { parts: [imagePart, textPart] },
             config: { systemInstruction: langRule }
         });
