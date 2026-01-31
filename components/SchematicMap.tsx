@@ -17,9 +17,19 @@ const STOP_ICONS: Record<string, string> = {
 const TEXTS: any = {
     en: { guide: "Walking to stop", openInMaps: "GPS Nav" },
     es: { guide: "Caminando a la parada", openInMaps: "Ir con GPS" },
+    pt: { guide: "Caminhando para parada", openInMaps: "Navegação GPS" },
+    it: { guide: "Camminando verso tappa", openInMaps: "Nav GPS" },
+    ru: { guide: "Идем к остановке", openInMaps: "GPS Нав" },
+    hi: { guide: "स्टॉप की ओर बढ़ रहे हैं", openInMaps: "GPS नेविगेशन" },
+    fr: { guide: "Marche vers l'arrêt", openInMaps: "Nav GPS" },
+    de: { guide: "Weg zum Stopp", openInMaps: "Navi" },
+    ja: { guide: "目的地へ徒歩", openInMaps: "地図で開く" },
+    zh: { guide: "步行至站点", openInMaps: "导航" },
+    ca: { guide: "Caminant a la parada", openInMaps: "Anar amb GPS" },
+    eu: { guide: "Geldialdirantz oinez", openInMaps: "GPSarekin joan" }
 };
 
-export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, onPlayAudio, audioPlaying, audioLoading, userLocation }) => {
+export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, onPlayAudio, audioPlayingId, audioLoadingId, userLocation }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -29,6 +39,8 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const tl = TEXTS[language] || TEXTS.es;
 
   const currentStop = stops[currentStopIndex];
+  const isPlaying = audioPlayingId === currentStop?.id;
+  const isLoading = audioLoadingId === currentStop?.id;
 
   useEffect(() => {
     if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
@@ -50,7 +62,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         iconAnchor: [12, 12]
     });
     userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
-    
     if (polylineRef.current) map.removeLayer(polylineRef.current);
     if (currentStop) {
         polylineRef.current = L.polyline(
@@ -84,8 +95,8 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         {currentStop && (
             <div className="absolute top-[env(safe-area-inset-top,20px)] left-0 right-0 z-[450] flex justify-center p-4 pointer-events-none">
                 <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-3 rounded-[2rem] shadow-2xl flex items-center gap-3 pointer-events-auto w-full max-w-sm">
-                    <button onClick={onPlayAudio} className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${audioPlaying ? 'bg-red-600' : 'bg-purple-600'} text-white`}>
-                        {audioLoading ? <i className="fas fa-spinner fa-spin"></i> : audioPlaying ? <i className="fas fa-stop"></i> : <i className="fas fa-play ml-0.5"></i>}
+                    <button onClick={() => onPlayAudio?.(currentStop.id, currentStop.description)} className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isPlaying ? 'bg-red-600' : 'bg-purple-600'} text-white`}>
+                        {isLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlaying ? <i className="fas fa-stop"></i> : <i className="fas fa-play ml-0.5"></i>}
                     </button>
                     <div className="flex-1 min-w-0">
                         <p className="text-[7px] font-black text-purple-400 uppercase tracking-widest">{tl.guide}</p>

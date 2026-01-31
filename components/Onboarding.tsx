@@ -1,160 +1,131 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { LANGUAGES, INTEREST_OPTIONS } from '../types';
+import { FlagIcon } from './FlagIcon';
 import { BdaiLogo } from './BdaiLogo';
 
 interface OnboardingProps {
-    onComplete: () => void;
+    onComplete: (interests: string[]) => void;
     language: string;
 }
 
-const STORY_DATA: any = {
-    en: [
-        { 
-            title: "Welcome to bdai", 
-            subtitle: "The Global Masterclass",
-            desc: "Travel is more than photos. It's understanding the invisible architecture and history of our world.",
-            icon: "fa-globe-americas",
-            color: "from-blue-600/40"
-        },
-        { 
-            title: "I am Dai", 
-            subtitle: "Your Analytical Core",
-            desc: "I am your AI guide. I don't read brochures; I analyze engineering, power structures, and hidden salseo.",
-            icon: "fa-microchip",
-            color: "from-purple-600/40"
-        },
-        { 
-            title: "High Density Info", 
-            subtitle: "Expert Intelligence",
-            desc: "Get deep technical insights about any spot. From Roman concrete to modern cyberpunk skyscrapers.",
-            icon: "fa-brain",
-            color: "from-emerald-600/40"
-        },
-        { 
-            title: "Verified Exploration", 
-            subtitle: "Miles for your GPS",
-            desc: "Your movement has value. Reach the spots physically and earn miles to climb the global elite ranking.",
-            icon: "fa-satellite-dish",
-            color: "from-orange-600/40"
-        }
-    ],
-    es: [
-        { 
-            title: "Bienvenido a bdai", 
-            subtitle: "La Masterclass Global",
-            desc: "Viajar es más que fotos. Es entender la arquitectura invisible y la historia real de nuestro mundo.",
-            icon: "fa-globe-americas",
-            color: "from-blue-600/40"
-        },
-        { 
-            title: "Soy Dai", 
-            subtitle: "Tu Motor Analítico",
-            desc: "Soy tu guía IA. No leo folletos; analizo ingeniería, estructuras de poder y salseo histórico.",
-            icon: "fa-microchip",
-            color: "from-purple-600/40"
-        },
-        { 
-            title: "Alta Densidad", 
-            subtitle: "Inteligencia Experta",
-            desc: "Accede a datos técnicos profundos. Desde el hormigón romano hasta los rascacielos cyberpunk.",
-            icon: "fa-brain",
-            color: "from-emerald-600/40"
-        },
-        { 
-            title: "Exploración Real", 
-            subtitle: "Millas por tu GPS",
-            desc: "Tu movimiento tiene valor. Llega físicamente a los puntos y gana millas para el ranking de élite.",
-            icon: "fa-satellite-dish",
-            color: "from-orange-600/40"
-        }
-    ]
+const ONBOARDING_TEXT: any = {
+    en: { 
+        step1Title: "Welcome to bdai", step1Desc: "Travel is more than photos. It's understanding the invisible. Welcome to High Density Information.", 
+        step2Title: "I am Dai", step2Desc: "Your analytical core. I'm not a brochure; I'm an expert in engineering, history, and secrets. I'll be your voice.",
+        step3Title: "Global Translation", step3Desc: "Any city in the world. Any detail. Translated instantly to your cultural profile.",
+        step4Title: "Verified Miles", step4Desc: "Earn miles by physically reaching spots. Your GPS is your proof of exploration.",
+        step5Title: "Your Interests", step5Desc: "Select what fascinates you so I can calibrate your experience.",
+        next: "Next", start: "Explore Now"
+    },
+    es: { 
+        step1Title: "Bienvenido a bdai", step1Desc: "Viajar es más que fotos. Es entender lo invisible. Bienvenido a la Alta Densidad Informativa.", 
+        step2Title: "Soy Dai", step2Desc: "Tu motor analítico. No soy un folleto; soy experta en ingeniería, historia y secretos. Seré tu voz.",
+        step3Title: "Traducción Global", step3Desc: "Cualquier ciudad del mundo. Cualquier detalle. Traducido al instante para tu perfil cultural.",
+        step4Title: "Millas Verificadas", step4Desc: "Gana millas llegando físicamente a los puntos. Tu GPS es tu prueba de exploración.",
+        step5Title: "Tus Intereses", step5Desc: "Selecciona qué te fascina para que pueda calibrar tu experiencia.",
+        next: "Siguiente", start: "Empezar a Explorar"
+    }
 };
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language }) => {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [progress, setProgress] = useState(0);
-    const stories = STORY_DATA[language] || STORY_DATA['es'];
-    const current = stories[currentIndex];
+    const [step, setStep] = useState(1);
+    const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
-    // Auto-advance logic like Instagram stories
-    useEffect(() => {
-        setProgress(0);
-        const timer = setInterval(() => {
-            setProgress(prev => {
-                if (prev >= 100) {
-                    if (currentIndex < stories.length - 1) {
-                        setCurrentIndex(prevIdx => prevIdx + 1);
-                        return 0;
-                    } else {
-                        clearInterval(timer);
-                        return 100;
-                    }
-                }
-                return prev + 1;
-            });
-        }, 50); // 5 seconds per slide (50ms * 100)
+    const t = ONBOARDING_TEXT[language] || ONBOARDING_TEXT['es'];
 
-        return () => clearInterval(timer);
-    }, [currentIndex]);
+    const toggleInterest = (id: string) => {
+        setSelectedInterests(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
 
     const handleNext = () => {
-        if (currentIndex < stories.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-        } else {
-            onComplete();
-        }
+        if (step < 5) setStep(step + 1);
+        else onComplete(selectedInterests);
     };
 
     return (
-        <div className="fixed inset-0 z-[10000] bg-slate-950 flex flex-col font-sans overflow-hidden">
-            {/* Background gradients */}
-            <div className={`absolute inset-0 bg-gradient-to-b ${current.color} to-slate-950 transition-colors duration-1000`}></div>
+        <div className="fixed inset-0 z-[9999] bg-slate-950 flex flex-col items-center justify-center p-6 animate-fade-in font-sans overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-slate-950 to-slate-950 pointer-events-none"></div>
             
-            {/* Progress Bars */}
-            <div className="absolute top-12 left-6 right-6 flex gap-2 z-20">
-                {stories.map((_: any, idx: number) => (
-                    <div key={idx} className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-white transition-all duration-100 ease-linear"
-                            style={{ 
-                                width: idx < currentIndex ? '100%' : idx === currentIndex ? `${progress}%` : '0%' 
-                            }}
-                        ></div>
-                    </div>
-                ))}
-            </div>
+            {/* Animación de fondo circular */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-            {/* Content Card */}
-            <div className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
-                <div className="w-full max-w-sm flex flex-col items-center text-center animate-fade-in" key={currentIndex}>
-                    <div className="w-24 h-24 mb-10 relative">
-                        <div className="absolute inset-0 bg-white/20 rounded-[2.5rem] blur-2xl animate-pulse"></div>
-                        <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 w-full h-full rounded-[2.5rem] flex items-center justify-center text-white text-4xl shadow-2xl">
-                            <i className={`fas ${current.icon}`}></i>
-                        </div>
-                    </div>
-
-                    <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.5em] mb-4">{current.subtitle}</p>
-                    <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-none mb-8">{current.title}</h2>
-                    <p className="text-slate-300 text-lg font-medium leading-relaxed px-4 opacity-80">{current.desc}</p>
-                </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="p-10 pb-16 relative z-10 flex flex-col gap-6">
-                <button 
-                    onClick={handleNext} 
-                    className="w-full py-6 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all"
-                >
-                    {currentIndex === stories.length - 1 ? (language === 'es' ? 'Comenzar' : 'Start') : (language === 'es' ? 'Siguiente' : 'Next')}
-                </button>
+            <div className="w-full max-w-sm flex flex-col items-center relative z-10">
                 
-                <button 
-                    onClick={onComplete}
-                    className="text-white/30 text-[9px] font-black uppercase tracking-widest text-center"
-                >
-                    {language === 'es' ? 'Saltar Introducción' : 'Skip Intro'}
-                </button>
+                <div className="mb-12 transition-all duration-700 transform">
+                    {step === 1 && (
+                        <div className="flex flex-col items-center animate-slide-up">
+                            <div className="w-24 h-24 mb-8"><BdaiLogo className="w-full h-full animate-pulse-logo" /></div>
+                            <h2 className="text-4xl font-black text-white text-center uppercase tracking-tighter leading-none">{t.step1Title}</h2>
+                            <p className="mt-6 text-slate-400 text-sm text-center leading-relaxed font-medium px-4">{t.step1Desc}</p>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="flex flex-col items-center animate-slide-up">
+                            <div className="w-20 h-20 bg-purple-600 rounded-[2rem] flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(147,51,234,0.4)] mb-8 border border-white/20">
+                                <i className="fas fa-microchip"></i>
+                            </div>
+                            <h2 className="text-4xl font-black text-white text-center uppercase tracking-tighter">{t.step2Title}</h2>
+                            <p className="mt-6 text-slate-300 text-sm text-center leading-relaxed font-medium italic px-4">"{t.step2Desc}"</p>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="flex flex-col items-center animate-slide-up">
+                            <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(37,99,235,0.4)] mb-8 border border-white/20">
+                                <i className="fas fa-globe-americas"></i>
+                            </div>
+                            <h2 className="text-4xl font-black text-white text-center uppercase tracking-tighter">{t.step3Title}</h2>
+                            <p className="mt-6 text-slate-400 text-sm text-center leading-relaxed font-medium px-4">{t.step3Desc}</p>
+                        </div>
+                    )}
+
+                    {step === 4 && (
+                        <div className="flex flex-col items-center animate-slide-up">
+                            <div className="w-20 h-20 bg-emerald-600 rounded-[2rem] flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(16,185,129,0.4)] mb-8 border border-white/20">
+                                <i className="fas fa-satellite"></i>
+                            </div>
+                            <h2 className="text-4xl font-black text-white text-center uppercase tracking-tighter">{t.step4Title}</h2>
+                            <p className="mt-6 text-slate-400 text-sm text-center leading-relaxed font-medium px-4">{t.step4Desc}</p>
+                        </div>
+                    )}
+
+                    {step === 5 && (
+                        <div className="flex flex-col items-center animate-slide-up w-full">
+                            <h2 className="text-3xl font-black text-white text-center uppercase tracking-tighter mb-4">{t.step5Title}</h2>
+                            <p className="text-slate-500 text-[10px] text-center font-bold uppercase tracking-widest mb-8">{t.step5Desc}</p>
+                            
+                            <div className="grid grid-cols-2 gap-3 w-full">
+                                {INTEREST_OPTIONS.map(opt => (
+                                    <button 
+                                        key={opt.id} 
+                                        onClick={() => toggleInterest(opt.id)} 
+                                        className={`p-5 rounded-[2rem] flex flex-col items-center gap-2 border-2 transition-all ${selectedInterests.includes(opt.id) ? 'bg-purple-600 border-purple-500 text-white shadow-xl scale-[1.02]' : 'bg-white/5 border-white/10 text-white/40'}`}
+                                    >
+                                        <span className="text-2xl">{opt.icon}</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{(opt.label as any)[language] || (opt.label as any)['es']}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="w-full space-y-6">
+                    <button 
+                        onClick={handleNext} 
+                        className="w-full py-6 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-widest text-[11px] shadow-[0_20px_40px_rgba(255,255,255,0.1)] active:scale-95 transition-all"
+                    >
+                        {step === 5 ? t.start : t.next}
+                    </button>
+                    
+                    <div className="flex justify-center gap-2">
+                        {[1,2,3,4,5].map(i => (
+                            <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i === step ? 'w-8 bg-purple-500' : 'w-2 bg-white/10'}`}></div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

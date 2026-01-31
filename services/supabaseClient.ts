@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
@@ -18,24 +19,12 @@ export const normalizeKey = (city: string, country?: string) => {
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
   if (!nInput) return null;
-  
-  const { data: exactMatch } = await supabase.from('tours_cache')
-    .select('data, language, city')
-    .eq('city', nInput)
-    .eq('language', language)
-    .maybeSingle();
-    
+  const { data: exactMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language).maybeSingle();
   if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
-  
-  const { data: anyMatch } = await supabase.from('tours_cache')
-    .select('data, language, city')
-    .eq('city', nInput)
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-    
+  const { data: fuzzyMatch } = await supabase.from('tours_cache').select('data, language, city').ilike('city', `${nInput}%`).eq('language', language).limit(1).maybeSingle();
+  if (fuzzyMatch) return { data: fuzzyMatch.data as Tour[], langFound: language, cityName: fuzzyMatch.city };
+  const { data: anyMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).limit(1).maybeSingle();
   if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: anyMatch.city };
-  
   return null;
 };
 
@@ -71,9 +60,18 @@ export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
   return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username || 'Traveler' } as any));
 };
 
+export const getCommunityPosts = async (city: string) => {
+  const normCity = normalizeKey(city);
+  const { data } = await supabase.from('community_posts').select('*').eq('city', normCity).order('created_at', { ascending: false });
+  return (data || []).map(d => ({ id: d.id, user: d.user_name || 'Explorer', avatar: d.avatar, content: d.content, time: d.created_at ? new Date(d.created_at).toLocaleDateString() : '...', likes: d.likes || 0, type: d.type || 'comment', status: d.status || 'approved', userId: d.user_id }));
+};
+
+export const addCommunityPost = async (post: any) => { await supabase.from('community_posts').insert({ city: normalizeKey(post.city), user_id: post.userId, user_name: post.user, avatar: post.avatar, content: post.content, type: post.type || 'comment', status: 'approved' }); };
+
 export const getUserProfileByEmail = async (email: string) => {
   const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-  if (error || !data) return null;
+  if (error) { console.error("Fetch Error:", error); return null; }
+  if (!data) return null;
 
   return {
     id: data.id,
@@ -88,24 +86,28 @@ export const getUserProfileByEmail = async (email: string) => {
     bio: data.bio || '',
     interests: data.interests || [],
     visitedCities: data.visited_cities || [],
+    completedTours: data.completed_tours || [],
+    stats: data.stats || {},
+    badges: data.badges || [],
     culturePoints: data.culture_points || 0,
     foodPoints: data.food_points || 0,
     photoPoints: data.photo_points || 0,
-    historyPoints: data.history_points || 0,
-    naturePoints: data.nature_points || 0,
-    artPoints: data.art_points || 0,
-    archPoints: data.arch_points || 0,
+    accessibility: data.accessibility || 'standard',
+    isPublic: data.is_public || false,
     age: data.age || 25,
     birthday: data.birthday,
     city: data.city,
     country: data.country,
-    stats: data.stats || {},
-    badges: data.badges || []
+    passportNumber: data.passport_number,
+    name: data.name,
+    savedIntel: data.saved_intel || [],
+    capturedMoments: data.captured_moments || [],
+    joinDate: data.join_date
   };
 };
 
 export const syncUserProfile = async (profile: UserProfile): Promise<{success: boolean, error?: string}> => {
-  if (!profile || profile.id === 'guest') return { success: false };
+  if (!profile || profile.id === 'guest' || !profile.isLoggedIn) return { success: false, error: 'Not logged in' };
   
   const payload = {
     id: profile.id,
@@ -120,52 +122,33 @@ export const syncUserProfile = async (profile: UserProfile): Promise<{success: b
     bio: profile.bio || '',
     interests: profile.interests || [],
     visited_cities: profile.visitedCities || [],
+    completed_tours: profile.completedTours || [],
+    stats: profile.stats || {},
+    badges: profile.badges || [],
     culture_points: profile.culturePoints || 0,
     food_points: profile.foodPoints || 0,
     photo_points: profile.photoPoints || 0,
-    history_points: profile.historyPoints || 0,
-    nature_points: profile.naturePoints || 0,
-    art_points: profile.artPoints || 0,
-    arch_points: profile.archPoints || 0,
+    accessibility: profile.accessibility || 'standard',
+    is_public: profile.isPublic || false,
     age: profile.age || 25,
     birthday: profile.birthday || '',
     city: profile.city || '',
     country: profile.country || '',
+    passport_number: profile.passportNumber || '',
+    name: profile.name || '',
+    saved_intel: profile.savedIntel || [],
+    captured_moments: profile.capturedMoments || [],
+    join_date: profile.joinDate || new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
 
   const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
-  return error ? { success: false, error: error.message } : { success: true };
-};
-
-// Fix: Added getCommunityPosts to fetch shared tips from the community_posts table
-export const getCommunityPosts = async (city: string) => {
-  const { data } = await supabase
-    .from('community_posts')
-    .select('*')
-    .eq('city', city)
-    .order('created_at', { ascending: false });
   
-  return (data || []).map(post => ({
-    id: post.id,
-    user: post.user_name || 'Explorer',
-    avatar: post.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-    content: post.content,
-    time: post.created_at ? new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00',
-    likes: post.likes || 0
-  }));
-};
-
-// Fix: Added addCommunityPost to allow travelers to share new insights
-export const addCommunityPost = async (post: { city: string, userId: string, user: string, avatar: string, content: string, type: string }) => {
-  const { error } = await supabase.from('community_posts').insert({
-    city: post.city,
-    user_id: post.userId,
-    user_name: post.user,
-    avatar_url: post.avatar,
-    content: post.content,
-    post_type: post.type,
-    created_at: new Date().toISOString()
-  });
-  return !error;
+  if (error) {
+    console.error("SYNC FAILED:", error.message);
+    return { success: false, error: error.message };
+  } else {
+    console.log("SYNC SUCCESS: Profile pushed to Supabase.");
+    return { success: true };
+  }
 };
