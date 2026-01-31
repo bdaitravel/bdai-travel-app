@@ -62,13 +62,8 @@ export default function App() {
   const [searchOptions, setSearchOptions] = useState<{name: string, spanishName: string, country: string}[] | null>(null);
   
   const [user, setUser] = useState<UserProfile>(() => {
-    try {
-        const saved = localStorage.getItem('bdai_profile');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            return parsed ? { ...GUEST_PROFILE, ...parsed } : GUEST_PROFILE;
-        }
-    } catch (e) { console.error("Profile load error:", e); }
+    const saved = localStorage.getItem('bdai_profile');
+    if (saved) return { ...GUEST_PROFILE, ...JSON.parse(saved) };
     return GUEST_PROFILE;
   });
 
@@ -80,26 +75,24 @@ export default function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                const profile = await getUserProfileByEmail(session.user.email || '');
-                if (profile) {
-                  const newUser = { ...profile, id: session.user.id, isLoggedIn: true };
-                  setUser(newUser as any);
-                  localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-                } else {
-                  const newUser = { ...user, id: session.user.id, email: session.user.email, isLoggedIn: true };
-                  setUser(newUser as any);
-                  syncUserProfile(newUser as any);
-                }
-                setView(AppView.HOME);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+            const profile = await getUserProfileByEmail(session.user.email || '');
+            if (profile) {
+              const newUser = { ...profile, id: session.user.id, isLoggedIn: true };
+              setUser(newUser as any);
+              localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+            } else {
+              const newUser = { ...user, id: session.user.id, email: session.user.email, isLoggedIn: true };
+              setUser(newUser as any);
+              syncUserProfile(newUser as any);
             }
-        } catch (e) { console.error("Auth init error:", e); }
+            setView(AppView.HOME);
+        }
         setIsVerifyingSession(false);
     };
     checkAuth();
-    getGlobalRanking().then(res => setLeaderboard(Array.isArray(res) ? res : []));
+    getGlobalRanking().then(setLeaderboard);
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -123,7 +116,6 @@ export default function App() {
   };
 
   const processCitySelection = async (official: {name: string, spanishName: string, country: string}) => {
-    if (!official) return;
     setIsLoading(true); 
     setSearchOptions(null); 
     setLoadingMessage(t('loadingTour'));
@@ -134,30 +126,27 @@ export default function App() {
         setSelectedCountry(official.country);
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
         
-        if (cached && cached.langFound === targetLang && Array.isArray(cached.data)) {
+        // Si hay caché y el idioma es el correcto, lo usamos directamente
+        if (cached && cached.langFound === targetLang) {
             setTours(cached.data); 
             setView(AppView.CITY_DETAIL);
             setIsLoading(false); 
             return;
         } 
         
-        if (cached && Array.isArray(cached.data)) {
+        // Si hay caché pero en otro idioma, o no hay caché, generamos/traducimos
+        if (cached) {
             setLoadingMessage(t('translating'));
             const translated = await translateTours(cached.data, targetLang);
-            if (Array.isArray(translated) && translated.length > 0) {
-                setTours(translated);
-                await saveToursToCache(official.spanishName, official.country, targetLang, translated);
-                setView(AppView.CITY_DETAIL);
-            } else {
-                throw new Error("TRANSLATION_EMPTY");
-            }
+            setTours(translated);
+            await saveToursToCache(official.spanishName, official.country, targetLang, translated);
+            setView(AppView.CITY_DETAIL);
         } else {
             setLoadingMessage(t('generating'));
             const generated = await generateToursForCity(official.spanishName, official.country, user);
-            const genArray = Array.isArray(generated) ? generated : [];
-            if (genArray.length === 0) throw new Error("GEN_FAILED");
-            setTours(genArray); 
-            await saveToursToCache(official.spanishName, official.country, targetLang, genArray);
+            if (!generated || generated.length === 0) throw new Error("GEN_FAILED");
+            setTours(generated); 
+            await saveToursToCache(official.spanishName, official.country, targetLang, generated);
             setView(AppView.CITY_DETAIL);
         }
     } catch (e: any) { 
@@ -167,16 +156,16 @@ export default function App() {
   };
 
   const handleCitySelect = async (cityInput: string) => {
-    if (!cityInput || !cityInput.trim() || isLoading) return;
+    if (!cityInput.trim() || isLoading) return;
     setAuthError(null);
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
     try {
+        const targetLang = user.language || 'es';
         const results = await standardizeCityName(cityInput);
-        const resultsArray = Array.isArray(results) ? results : [];
-        if (resultsArray.length > 0) {
-            if (resultsArray.length === 1) await processCitySelection(resultsArray[0]);
-            else { setSearchOptions(resultsArray); setIsLoading(false); }
+        if (results && results.length > 0) {
+            if (results.length === 1) await processCitySelection(results[0]);
+            else { setSearchOptions(results); setIsLoading(false); }
         } else await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
     } catch (e: any) {
         await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
@@ -266,7 +255,7 @@ export default function App() {
                           <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white focus:border-purple-500 outline-none font-bold" />
                           <button onClick={() => handleCitySelect(searchVal)} className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"><i className="fas fa-search"></i></button>
                       </div>
-                      {searchOptions && Array.isArray(searchOptions) && (
+                      {searchOptions && (
                           <div className="mt-6 space-y-2 animate-fade-in bg-white/5 p-4 rounded-[2rem] border border-white/5">
                               {searchOptions.map((opt: any, i: number) => (
                                   <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl flex items-center justify-between active:bg-purple-600 transition-all text-left"><div><span className="text-white font-black uppercase text-[11px]">{opt.spanishName}</span><br/><span className="text-[8px] text-slate-500 font-bold uppercase">{opt.country}</span></div><i className="fas fa-chevron-right text-[10px] text-slate-700"></i></button>
@@ -279,9 +268,7 @@ export default function App() {
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 animate-fade-in">
                       <header className="flex items-center gap-4 mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity} <span className="text-slate-500 text-[10px] ml-2 tracking-widest">{selectedCountry}</span></h2></header>
-                      <div className="space-y-4 pb-12">
-                        {Array.isArray(tours) && tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}
-                      </div>
+                      <div className="space-y-4 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
                       <CommunityBoard city={selectedCity} language={user.language || 'es'} user={user} />
                   </div>
                 )}

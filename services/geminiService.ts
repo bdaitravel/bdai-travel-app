@@ -47,17 +47,6 @@ async function handleAiCall(fn: () => Promise<any>) {
     }
 }
 
-// Función auxiliar para extraer arrays de respuestas que puedan venir envueltas en objetos
-const extractArray = (data: any): any[] => {
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === 'object') {
-        const values = Object.values(data);
-        const firstArray = values.find(v => Array.isArray(v));
-        if (firstArray) return firstArray as any[];
-    }
-    return [];
-};
-
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
     return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/##/g, '').replace(/#/g, '').trim();
@@ -92,8 +81,7 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
                 }
             }
         });
-        const parsed = JSON.parse(response.text || "[]");
-        return extractArray(parsed);
+        return JSON.parse(response.text || "[]");
     });
 };
 
@@ -121,26 +109,25 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
         });
 
         const text = response.text || "[]";
-        let parsed: any = [];
+        let parsed = [];
         try {
             parsed = JSON.parse(text);
         } catch (e) {
-            console.error("JSON Parse error:", text.substring(0, 100));
+            console.error("JSON Parse error - Data too long or malformed:", text.substring(0, 100) + "...");
             throw new Error("GENERATION_ERROR");
         }
 
-        const toursArray = extractArray(parsed);
-        if (toursArray.length === 0) throw new Error("EMPTY_RESPONSE");
+        if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("EMPTY_RESPONSE");
 
-        return toursArray.map((t: any, idx: number) => ({
+        return parsed.map((t: any, idx: number) => ({
             ...t, 
             id: `tour_${Date.now()}_${idx}`, 
             city: cityInput,
-            stops: (extractArray(t.stops)).map((s: any, sIdx: number) => ({ 
+            stops: (t.stops || []).map((s: any, sIdx: number) => ({ 
                 ...s, 
                 id: `s_${Date.now()}_${idx}_${sIdx}`, 
                 visited: false,
-                photoSpot: { angle: "Vista de Arquitecto", milesReward: 50, secretLocation: s.name || "Punto de interés" }
+                photoSpot: { angle: "Vista de Arquitecto", milesReward: 50, secretLocation: s.name }
             }))
         }));
     });
@@ -148,6 +135,7 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
 
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Refuerzo extremo del idioma
     const langNames: Record<string, string> = {
         es: "Español", en: "English", pt: "Português", it: "Italiano", ru: "Русский",
         hi: "हिन्दी", fr: "Français", de: "Deutsch", ja: "日本語", zh: "中文", 
@@ -174,7 +162,7 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
             });
             return JSON.parse(response.text || "null");
         });
-        if (result && typeof result === 'object') translatedTours.push(result);
+        if (result) translatedTours.push(result);
     }
     return translatedTours;
 };
@@ -223,10 +211,7 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
             },
         });
-        
-        const candidate = response.candidates?.[0];
-        const audioData = candidate?.content?.parts?.find(p => p.inlineData)?.inlineData?.data || "";
-        
+        const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
         if (audioData) saveAudioToCache(cacheKey, audioData).catch(console.error);
         return audioData;
     });
@@ -241,10 +226,8 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
             contents: { parts: [{ text: prompt }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
-        
-        const candidate = response.candidates?.[0];
-        if (candidate?.content?.parts) {
-            for (const part of candidate.content.parts) {
+        if (response.candidates?.[0]?.content?.parts) {
+            for (const part of response.candidates[0].content.parts) {
                 if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
             }
         }
@@ -260,6 +243,6 @@ export const moderateContent = async (text: string): Promise<boolean> => {
             contents: `Safe for travel community? "${text}" (SAFE/UNSAFE)`,
             config: { temperature: 0 }
         });
-        return response.text?.toUpperCase().includes('SAFE') ?? true;
+        return response.text?.toUpperCase().includes('SAFE');
     } catch (e) { return true; } 
 };

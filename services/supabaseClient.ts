@@ -9,7 +9,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const normalizeKey = (city: string, country?: string) => {
     const raw = country ? `${city}_${country}` : city;
-    if (!raw) return "";
     return raw.toLowerCase()
         .trim()
         .normalize("NFD")
@@ -21,31 +20,30 @@ export const getCachedTours = async (city: string, country: string, language: st
   const nInput = normalizeKey(city, country);
   if (!nInput) return null;
   
-  try {
-      const { data: exactMatch } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .eq('city', nInput)
-        .eq('language', language)
-        .maybeSingle();
-        
-      if (exactMatch && exactMatch.data) return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
-      
-      const { data: anyMatch } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .eq('city', nInput)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-        
-      if (anyMatch && anyMatch.data) return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: anyMatch.city };
-  } catch (e) { console.error("Cache fetch error:", e); }
+  // 1. Buscamos coincidencia exacta de ciudad e idioma
+  const { data: exactMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .eq('city', nInput)
+    .eq('language', language)
+    .maybeSingle();
+    
+  if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
+  
+  // 2. Si no hay idioma exacto, buscamos CUALQUIER versión de esa ciudad para traducirla después
+  const { data: anyMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .eq('city', nInput)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+    
+  if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: anyMatch.city };
   
   return null;
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
   const nKey = normalizeKey(city, country);
-  if (!nKey || !tours) return;
   await supabase.from('tours_cache').upsert({ city: nKey, language, data: tours, updated_at: new Date().toISOString() }, { onConflict: 'city,language' });
 };
 
@@ -72,117 +70,106 @@ export const verifyOtpCode = async (email: string, token: string) => { return aw
 export const validateEmailFormat = (email: string) => { return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); };
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
-  try {
-    const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
-    return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username || 'Traveler', miles: d.miles || 0 } as any));
-  } catch (e) { return []; }
+  const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
+  return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username || 'Traveler' } as any));
 };
 
 export const getCommunityPosts = async (city: string) => {
   const normCity = normalizeKey(city);
-  if (!normCity) return [];
-  try {
-      const { data } = await supabase.from('community_posts').select('*').eq('city', normCity).order('created_at', { ascending: false });
-      return (data || []).map(d => ({ id: d.id, user: d.user_name || 'Explorer', avatar: d.avatar, content: d.content, time: d.created_at ? new Date(d.created_at).toLocaleDateString() : '...', likes: d.likes || 0, type: d.type || 'comment', status: d.status || 'approved', userId: d.user_id }));
-  } catch (e) { return []; }
+  const { data } = await supabase.from('community_posts').select('*').eq('city', normCity).order('created_at', { ascending: false });
+  return (data || []).map(d => ({ id: d.id, user: d.user_name || 'Explorer', avatar: d.avatar, content: d.content, time: d.created_at ? new Date(d.created_at).toLocaleDateString() : '...', likes: d.likes || 0, type: d.type || 'comment', status: d.status || 'approved', userId: d.user_id }));
 };
 
-export const addCommunityPost = async (post: any) => { 
-    if (!post.city) return;
-    await supabase.from('community_posts').insert({ city: normalizeKey(post.city), user_id: post.userId, user_name: post.user, avatar: post.avatar, content: post.content, type: post.type || 'comment', status: 'approved' }); 
-};
+export const addCommunityPost = async (post: any) => { await supabase.from('community_posts').insert({ city: normalizeKey(post.city), user_id: post.userId, user_name: post.user, avatar: post.avatar, content: post.content, type: post.type || 'comment', status: 'approved' }); };
 
 export const getUserProfileByEmail = async (email: string) => {
-  try {
-      const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-      if (error || !data) return null;
+  const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+  if (error) { console.error("Fetch Error:", error); return null; }
+  if (!data) return null;
 
-      return {
-        id: data.id,
-        email: data.email,
-        username: data.username || 'traveler',
-        firstName: data.first_name || '',
-        lastName: data.last_name || '',
-        avatar: data.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-        miles: data.miles || 0,
-        language: data.language || 'es',
-        rank: data.rank || 'Turist',
-        bio: data.bio || '',
-        interests: data.interests || [],
-        visitedCities: data.visited_cities || [],
-        completedTours: data.completed_tours || [],
-        stats: data.stats || { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 },
-        badges: data.badges || [],
-        culturePoints: data.culture_points || 0,
-        foodPoints: data.food_points || 0,
-        photoPoints: data.photo_points || 0,
-        accessibility: data.accessibility || 'standard',
-        isPublic: data.is_public || false,
-        age: data.age || 25,
-        birthday: data.birthday,
-        city: data.city,
-        country: data.country,
-        passportNumber: data.passport_number,
-        name: data.name || '',
-        savedIntel: data.saved_intel || [],
-        capturedMoments: data.captured_moments || [],
-        joinDate: data.join_date
-      };
-  } catch (e) { console.error("Profile fetch error:", e); return null; }
+  return {
+    id: data.id,
+    email: data.email,
+    username: data.username,
+    firstName: data.first_name,
+    lastName: data.last_name,
+    avatar: data.avatar,
+    miles: data.miles || 0,
+    language: data.language || 'es',
+    rank: data.rank || 'Turist',
+    bio: data.bio || '',
+    interests: data.interests || [],
+    visitedCities: data.visited_cities || [],
+    completedTours: data.completed_tours || [],
+    stats: data.stats || {},
+    badges: data.badges || [],
+    culturePoints: data.culture_points || 0,
+    foodPoints: data.food_points || 0,
+    photoPoints: data.photo_points || 0,
+    accessibility: data.accessibility || 'standard',
+    isPublic: data.is_public || false,
+    age: data.age || 25,
+    birthday: data.birthday,
+    city: data.city,
+    country: data.country,
+    passportNumber: data.passport_number,
+    name: data.name,
+    savedIntel: data.saved_intel || [],
+    capturedMoments: data.captured_moments || [],
+    joinDate: data.join_date
+  };
 };
 
 export const syncUserProfile = async (profile: UserProfile): Promise<{success: boolean, error?: string, needsMigration?: boolean}> => {
   if (!profile || profile.id === 'guest' || !profile.isLoggedIn) return { success: false, error: 'Not logged in' };
   
-  try {
-      const fullPayload = {
-        id: profile.id,
-        email: profile.email,
-        username: profile.username || 'traveler',
-        first_name: profile.firstName || '',
-        last_name: profile.lastName || '',
-        avatar: profile.avatar,
-        miles: profile.miles || 0,
-        language: profile.language || 'es',
-        rank: profile.rank || 'Turist',
-        bio: profile.bio || '',
-        interests: profile.interests || [],
-        visited_cities: profile.visitedCities || [],
-        completed_tours: profile.completedTours || [],
-        stats: profile.stats || {},
-        badges: profile.badges || [],
-        culture_points: profile.culturePoints || 0,
-        food_points: profile.foodPoints || 0,
-        photo_points: profile.photoPoints || 0,
-        accessibility: profile.accessibility || 'standard',
-        is_public: profile.isPublic || false,
-        age: profile.age || 25,
-        birthday: profile.birthday || '',
-        city: profile.city || '',
-        country: profile.country || '',
-        passport_number: profile.passportNumber || '',
-        name: profile.name || '',
-        saved_intel: profile.savedIntel || [],
-        captured_moments: profile.capturedMoments || [],
-        join_date: profile.joinDate || new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+  const fullPayload = {
+    id: profile.id,
+    email: profile.email,
+    username: profile.username || 'traveler',
+    first_name: profile.firstName || '',
+    last_name: profile.lastName || '',
+    avatar: profile.avatar,
+    miles: profile.miles || 0,
+    language: profile.language || 'es',
+    rank: profile.rank || 'Turist',
+    bio: profile.bio || '',
+    interests: profile.interests || [],
+    visited_cities: profile.visitedCities || [],
+    completed_tours: profile.completedTours || [],
+    stats: profile.stats || {},
+    badges: profile.badges || [],
+    culture_points: profile.culturePoints || 0,
+    food_points: profile.foodPoints || 0,
+    photo_points: profile.photoPoints || 0,
+    accessibility: profile.accessibility || 'standard',
+    is_public: profile.isPublic || false,
+    age: profile.age || 25,
+    birthday: profile.birthday || '',
+    city: profile.city || '',
+    country: profile.country || '',
+    passport_number: profile.passportNumber || '',
+    name: profile.name || '',
+    saved_intel: profile.savedIntel || [],
+    captured_moments: profile.capturedMoments || [],
+    join_date: profile.joinDate || new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
 
-      const { error } = await supabase.from('profiles').upsert(fullPayload, { onConflict: 'id' });
-      
-      if (error) {
-        const basicPayload = {
-          id: profile.id,
-          email: profile.email,
-          username: profile.username || 'traveler',
-          avatar: profile.avatar,
-          language: profile.language || 'es',
-          updated_at: new Date().toISOString()
-        };
-        const { error: basicError } = await supabase.from('profiles').upsert(basicPayload, { onConflict: 'id' });
-        if (basicError) return { success: false, error: basicError.message };
-        return { success: true, needsMigration: true };
-      }
-      return { success: true };
-  } catch (e: any) { return { success: false, error: e.message }; }
+  const { error } = await supabase.from('profiles').upsert(fullPayload, { onConflict: 'id' });
+  
+  if (error) {
+    const basicPayload = {
+      id: profile.id,
+      email: profile.email,
+      username: profile.username || 'traveler',
+      avatar: profile.avatar,
+      language: profile.language || 'es',
+      updated_at: new Date().toISOString()
+    };
+    const { error: basicError } = await supabase.from('profiles').upsert(basicPayload, { onConflict: 'id' });
+    if (basicError) return { success: false, error: basicError.message };
+    return { success: true, needsMigration: true };
+  }
+  return { success: true };
 };
