@@ -14,7 +14,8 @@ const SHOP_TEXTS: any = {
     ja: { title: "bdai マーケット", subtitle: "トラベラーギアとデジタル資産", buy: "Etsyで購入", download: "Hotmartで入手", official: "公式ストア", cats: { 'Digital': 'デジタル商品', 'Merch': 'フィジカルギア' } },
     zh: { title: "bdai 市场", subtitle: "旅行装备与数字资产", buy: "在 Etsy 购买", download: "在 Hotmart 获取", official: "官方商店", cats: { 'Digital': '数字产品', 'Merch': '实体装备' } },
     ca: { title: "mercat bdai", subtitle: "Equip per a Viatgers", buy: "Comprar a Etsy", download: "Baixar a Hotmart", official: "Botigues Oficials", cats: { 'Digital': 'Productes Digitals', 'Merch': 'Roba' } },
-    eu: { title: "bdai merkatua", subtitle: "Bidaiarientzako Ekipoa", buy: "Etsy-n erosi", download: "Hotmart-en deskargatu", official: "Denda Ofizialak", cats: { 'Digital': 'Produktu Digitalak', 'Merch': 'Arropa' } }
+    eu: { title: "bdai merkatua", subtitle: "Bidaiarientzako Ekipoa", buy: "Etsy-n erosi", download: "Hotmart-en deskargatu", official: "Denda Ofizialak", cats: { 'Digital': 'Produktu Digitalak', 'Merch': 'Arropa' } },
+    ar: { title: "سوق bdai", subtitle: "معدات المسافرين والأصول الرقمية", buy: "شراء من Etsy", download: "تحميل من Hotmart", official: "متاجرنا الرسمية", cats: { 'Digital': 'بضائع رقمية', 'Merch': 'ملابس وأدوات' } }
 };
 
 const EXTERNAL_STORES = [
@@ -25,15 +26,11 @@ const EXTERNAL_STORES = [
 ];
 
 const ITEMS = [
-    { id: 'd1', name: 'Guía de Viaje 1–3 días', price: '9.90€', cat: 'Digital', icon: 'fa-map-location-dot', color: 'bg-purple-600', note: 'Optimizado con IA', link: 'https://www.etsy.com/es/shop/BdaiShop' },
-    { id: 'd2', name: 'Recetarios Digitales', price: '12.50€', cat: 'Digital', icon: 'fa-utensils', color: 'bg-emerald-600', note: 'Sabores del mundo', link: 'https://www.etsy.com/es/shop/BdaiShop' },
-    { id: 'd3', name: 'Plantillas Notion Travel', price: '19.00€', cat: 'Digital', icon: 'fa-clapperboard', color: 'bg-slate-800', note: 'Organización Pro', link: 'https://www.etsy.com/es/shop/BdaiShop' },
-    { id: 'd4', name: 'Álbumes de Fotos IA', price: '7.00€', cat: 'Digital', icon: 'fa-wand-magic-sparkles', color: 'bg-indigo-600', note: 'Retención de recuerdos', link: 'https://www.etsy.com/es/shop/BdaiShop' },
-    { id: 'p1', name: 'Tote Bag Premium', price: '22.00€', cat: 'Merch', icon: 'fa-bag-shopping', color: 'bg-amber-600', note: 'Estilo Nómada', link: 'https://www.etsy.com/es/shop/BdaiShop' },
-    { id: 'p2', name: 'Camisetas Explorer', price: '32.00€', cat: 'Merch', icon: 'fa-shirt', color: 'bg-blue-600', note: 'Algodón Premium', link: 'https://www.etsy.com/es/shop/BdaiShop' },
-    { id: 'p3', name: 'Láminas / Posters IA', price: '24.00€', cat: 'Merch', icon: 'fa-image', color: 'bg-rose-600', note: 'Arte Generativo', link: 'https://www.etsy.com/es/shop/BdaiShop' },
-    { id: 'p4', name: 'Libretas y Journals', price: '20.00€', cat: 'Merch', icon: 'fa-book-open', color: 'bg-slate-700', note: 'Papel de alta calidad', link: 'https://www.etsy.com/es/shop/BdaiShop' },
-    { id: 'p5', name: 'Recetario Impreso', price: '28.00€', cat: 'Merch', icon: 'fa-mortar-pestle', color: 'bg-orange-700', note: 'Edición Tapa Dura', link: 'https://www.etsy.com/es/shop/BdaiShop' }
+    { id: 'd1', name: 'Travel Guide 1–3 days', price: '9.90€', cat: 'Digital', icon: 'fa-map-location-dot', color: 'bg-purple-600', note: 'AI Optimized', link: 'https://www.etsy.com/es/shop/BdaiShop' },
+    { id: 'd2', name: 'Digital Recipes', price: '12.50€', cat: 'Digital', icon: 'fa-utensils', color: 'bg-emerald-600', note: 'Global flavors', link: 'https://www.etsy.com/es/shop/BdaiShop' },
+    { id: 'd3', name: 'Notion Travel Templates', price: '19.00€', cat: 'Digital', icon: 'fa-clapperboard', color: 'bg-slate-800', note: 'Pro Organization', link: 'https://www.etsy.com/es/shop/BdaiShop' },
+    { id: 'p1', name: 'Premium Tote Bag', price: '22.00€', cat: 'Merch', icon: 'fa-bag-shopping', color: 'bg-amber-600', note: 'Nomad Style', link: 'https://www.etsy.com/es/shop/BdaiShop' },
+    { id: 'p2', name: 'Explorer T-Shirt', price: '32.00€', cat: 'Merch', icon: 'fa-shirt', color: 'bg-blue-600', note: 'Premium Cotton', link: 'https://www.etsy.com/es/shop/BdaiShop' }
 ];
 
 export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) => void }> = ({ user, onPurchase }) => {
@@ -47,10 +44,10 @@ export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) =>
     return (
         <div className="pb-44 animate-fade-in bg-[#020617] min-h-full">
             <header className="bg-gradient-to-b from-purple-900/40 to-slate-950 p-10 rounded-b-[4rem] border-b border-purple-500/20">
-                <h2 className="text-4xl font-black text-white tracking-tighter uppercase">{t.title}</h2>
-                <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mb-8">{t.subtitle}</p>
-                <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-4">{t.official}</p>
-                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                <h2 className={`text-4xl font-black text-white tracking-tighter uppercase ${user.language === 'ar' ? 'text-right' : ''}`}>{t.title}</h2>
+                <p className={`text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mb-8 ${user.language === 'ar' ? 'text-right' : ''}`}>{t.subtitle}</p>
+                <p className={`text-[8px] font-black text-white/40 uppercase tracking-widest mb-4 ${user.language === 'ar' ? 'text-right' : ''}`}>{t.official}</p>
+                <div className={`flex gap-3 overflow-x-auto no-scrollbar pb-2 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
                     {EXTERNAL_STORES.map(store => (
                         <button key={store.id} onClick={() => openStore(store.url)} className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-3 rounded-2xl active:scale-95 transition-all">
                             <div className={`w-8 h-8 rounded-lg ${store.color} flex items-center justify-center text-white text-xs shadow-lg`}>
@@ -61,7 +58,7 @@ export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) =>
                     ))}
                 </div>
             </header>
-            <nav className="px-8 mt-10 flex gap-3">
+            <nav className={`px-8 mt-10 flex gap-3 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
                 {Object.keys(t.cats).map(c => (
                     <button key={c} onClick={() => setActiveCat(c)} className={`px-6 py-4 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border ${activeCat === c ? 'bg-white text-slate-950 border-white' : 'bg-white/5 text-white/40 border-white/5'}`}>
                         {t.cats[c]}
@@ -70,20 +67,20 @@ export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) =>
             </nav>
             <div className="p-8 grid grid-cols-1 gap-4">
                 {ITEMS.filter(i => i.cat === activeCat).map(item => (
-                    <div key={item.id} onClick={() => openStore(item.link)} className="bg-white/5 border border-white/10 rounded-[2.5rem] p-6 flex items-center justify-between group active:scale-95 transition-all cursor-pointer">
-                        <div className="flex items-center gap-5">
+                    <div key={item.id} onClick={() => openStore(item.link)} className={`bg-white/5 border border-white/10 rounded-[2.5rem] p-6 flex items-center justify-between group active:scale-95 transition-all cursor-pointer ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                        <div className={`flex items-center gap-5 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
                             <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center text-white text-xl shadow-lg`}>
                                 <i className={`fas ${item.icon}`}></i>
                             </div>
-                            <div>
+                            <div className={user.language === 'ar' ? 'text-right' : ''}>
                                 <h4 className="text-white font-black text-xs uppercase">{item.name}</h4>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className={`flex items-center gap-2 mt-1 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
                                     <p className="text-[11px] font-black text-purple-400">{item.price}</p>
                                     <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">{item.note}</span>
                                 </div>
                             </div>
                         </div>
-                        <i className="fas fa-chevron-right text-slate-700 group-hover:text-purple-500"></i>
+                        <i className={`fas fa-chevron-right text-slate-700 group-hover:text-purple-500 ${user.language === 'ar' ? 'rotate-180' : ''}`}></i>
                     </div>
                 ))}
             </div>

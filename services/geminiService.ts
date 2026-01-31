@@ -5,244 +5,156 @@ import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const MASTERCLASS_INSTRUCTION = `
 Eres Dai, el motor analítico de BDAI. Tu misión es generar TOURS de "Alta Densidad Informativa".
-ESTILO: Cínico, brillante, hiper-detallista, experto en ingeniería y anécdotas reales. No eres un folleto turístico. 
+ESTILO: Cínico, brillante, hiper-detallista, experto en ingeniería y anécdotas reales.
 FOCO: 1. Ingeniería y Retos Técnicos. 2. Historia Oculta/Conspiraciones. 3. Salseo Humano Real.
-DENSIDAD: Necesitamos descripciones ricas y técnicas (aprox 200-250 palabras por parada). Sé denso, técnico y brillante.
-
-REGLA CRÍTICA DE CATEGORIZACIÓN:
-Para el campo 'type' de cada parada, SOLO puedes usar uno de estos valores exactos:
-'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'. 
-No inventes otros tipos.
+DENSIDAD: Necesitamos descripciones ricas y técnicas (aprox 200-250 palabras por parada).
+REGLA: Usa tipos: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
 `;
 
-const LANGUAGE_RULES: Record<string, string> = {
-    es: `${MASTERCLASS_INSTRUCTION} RESPONDE SIEMPRE EN ESPAÑOL.`,
-    en: `${MASTERCLASS_INSTRUCTION} ALWAYS RESPOND IN ENGLISH.`,
-    pt: `${MASTERCLASS_INSTRUCTION} RESPONDA EM PORTUGUÊS.`,
-    it: `${MASTERCLASS_INSTRUCTION} RISPONDI IN ITALIANO.`,
-    ru: `${MASTERCLASS_INSTRUCTION} ОТВЕЧАЙТЕ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.`,
-    hi: `${MASTERCLASS_INSTRUCTION} हमेशा हिंदी में उत्तर दें।`,
-    fr: `${MASTERCLASS_INSTRUCTION} RÉPONDEZ TOUJOURS EN FRANÇAIS.`,
-    de: `${MASTERCLASS_INSTRUCTION} ANTWORTEN SIE IMMER AUF DEUTSCH.`,
-    ja: `${MASTERCLASS_INSTRUCTION} 常に日本語で回答してください。`,
-    zh: `${MASTERCLASS_INSTRUCTION} 始终用中文回答。`,
-    ar: `${MASTERCLASS_INSTRUCTION} أجِب دائماً باللغة العربية.`,
-    ca: `${MASTERCLASS_INSTRUCTION} RESPON SEMPRE EN CATALÀ.`,
-    eu: `${MASTERCLASS_INSTRUCTION} BETI EUSKARAZ ERANTZUN.`
-};
-
-async function handleAiCall(fn: () => Promise<any>) {
+async function handleAiCall<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
     try {
-        if (!process.env.API_KEY) throw new Error("MISSING_KEY");
         return await fn();
-    } catch (error: any) {
-        console.error("AI Service Error:", error.message);
-        if (error.message?.includes('401') || error.message?.includes('403') || error.message?.includes('API_KEY_INVALID')) {
-            throw new Error("AUTH_ERROR");
+    } catch (e: any) {
+        if ((e.message?.includes('429') || e.status === 429) && retries > 0) {
+            console.warn(`Rate limit hit (429). Retrying in ${delay}ms...`);
+            await new Promise(res => setTimeout(res, delay));
+            return handleAiCall(fn, retries - 1, delay * 2);
         }
-        if (error.message?.includes('429')) {
-            throw new Error("QUOTA_EXCEEDED");
-        }
-        throw error;
+        throw e;
     }
 }
 
-export const cleanDescriptionText = (text: string): string => {
-    if (!text) return "";
-    return text.replace(/\*\*/g, '').replace(/###/g, '').replace(/##/g, '').replace(/#/g, '').trim();
-};
-
-const generateHash = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    return Math.abs(hash).toString(36);
-};
-
 export const standardizeCityName = async (input: string): Promise<{name: string, spanishName: string, country: string}[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Initializing GoogleGenAI with the required named parameter and environment API key.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Identify location accurately: "${input}". Return a JSON array of objects with 'name' (local), 'spanishName', and 'country'. Limit to 5 results.`,
-            config: { 
-                temperature: 0,
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: { 
-                            name: { type: Type.STRING }, 
-                            spanishName: { type: Type.STRING },
-                            country: { type: Type.STRING } 
-                        },
-                        required: ["name", "spanishName", "country"]
-                    }
-                }
-            }
+            model: "gemini-3-flash-preview",
+            contents: `Identify this city: "${input}". Return JSON array of objects with keys: name (English), spanishName (Spanish), country (English). If unsure, return empty array. Only use valid cities.`,
+            config: { responseMimeType: "application/json" }
         });
+        // Accessing the .text property directly as per guidelines.
         return JSON.parse(response.text || "[]");
     });
 };
 
-export const generateToursForCity = async (cityInput: string, countryInput: string, userProfile: UserProfile): Promise<Tour[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const targetLang = userProfile.language || 'es';
-    const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
+export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    const langRule = `RESPOND IN ${user.language.toUpperCase()}.`;
     
-    const prompt = `Genera exactamente 3 TOURS diferentes para ${cityInput}, ${countryInput}. 
-    Cada tour DEBE tener exactamente 10 paradas. 
-    Descripciones: Muy densas en ingeniería e historia oculta. 
-    Tipos de parada permitidos: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
-    Formato: Devuelve un array JSON de objetos Tour con: title, description, duration, distance, theme, difficulty y un array de 10 'stops' (name, description, latitude, longitude, type).`;
-
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview', 
-            contents: prompt,
-            config: { 
-                systemInstruction: langRule, 
-                responseMimeType: "application/json",
-                maxOutputTokens: 15000, 
-                temperature: 0.7
-            }
+            model: "gemini-3-flash-preview",
+            contents: `${MASTERCLASS_INSTRUCTION} ${langRule} \n\n Generate 2 unique tours for ${city}, ${country}. Each tour must have exactly 10 stops. Output as JSON array of Tour objects. Ensure long, technical descriptions.`,
+            config: { responseMimeType: "application/json" }
         });
-
-        const text = response.text || "[]";
-        let parsed = [];
-        try {
-            parsed = JSON.parse(text);
-        } catch (e) {
-            console.error("JSON Parse error - Data too long or malformed:", text.substring(0, 100) + "...");
-            throw new Error("GENERATION_ERROR");
-        }
-
-        if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("EMPTY_RESPONSE");
-
-        return parsed.map((t: any, idx: number) => ({
-            ...t, 
-            id: `tour_${Date.now()}_${idx}`, 
-            city: cityInput,
-            stops: (t.stops || []).map((s: any, sIdx: number) => ({ 
-                ...s, 
-                id: `s_${Date.now()}_${idx}_${sIdx}`, 
-                visited: false,
-                photoSpot: { angle: "Vista de Arquitecto", milesReward: 50, secretLocation: s.name }
-            }))
+        const tours = JSON.parse(response.text || "[]");
+        return tours.map((t: any, i: number) => ({
+            ...t,
+            id: `tour_${city}_${i}_${Date.now()}`,
+            city,
+            stops: t.stops.map((s: any, j: number) => ({ ...s, id: `stop_${city}_${i}_${j}_${Date.now()}`, visited: false }))
         }));
     });
 };
 
-export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // Refuerzo extremo del idioma
-    const langNames: Record<string, string> = {
-        es: "Español", en: "English", pt: "Português", it: "Italiano", ru: "Русский",
-        hi: "हिन्दी", fr: "Français", de: "Deutsch", ja: "日本語", zh: "中文", 
-        ar: "العربية", ca: "Català", eu: "Euskera"
-    };
-    const targetLangName = langNames[targetLang] || "Español";
-    
-    const translationInstruction = `
-    ORACIÓN ABSOLUTA: Traduce TODO el contenido al ${targetLangName}. 
-    MANDATARIO: Ignora el idioma original. Si el original está en árabe, chino o cualquier otro, CONVIÉRTELO COMPLETAMENTE al ${targetLangName}.
-    No dejes ni una palabra en otro idioma. Mantén el tono experto y cínico.
-    `;
-
-    const translatedTours: Tour[] = [];
-    for (const tour of tours) {
-        const result = await handleAiCall(async () => {
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: `Translate this specific tour object to ${targetLangName}. RETURN ONLY THE JSON. TOUR: ${JSON.stringify(tour)}`,
-                config: { 
-                    systemInstruction: translationInstruction, 
-                    responseMimeType: "application/json"
-                }
-            });
-            return JSON.parse(response.text || "null");
-        });
-        if (result) translatedTours.push(result);
-    }
-    return translatedTours;
-};
-
-export const generateSmartCaption = async (imageB64: string, stop: Stop, language: string = 'es'): Promise<string> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const langRule = `Eres un Social Media Manager experto en viajes de lujo y tecnología.
-    OBJETIVO: Crear un "caption" de Instagram viral basado en la foto del usuario y los datos de la parada: ${stop.name}.
-    ESTILO: Inteligente, un poco cínico, fascinante. Mezcla datos de ingeniería con estilo de vida nómada.
-    RESTRICCIÓN: Máximo 200 caracteres. Incluye 3 hashtags técnicos y ubicación.
-    IDIOMA: Responde OBLIGATORIAMENTE en ${language}. No uses otro idioma.`;
-
-    return handleAiCall(async () => {
-        const imagePart = {
-            inlineData: {
-                mimeType: 'image/jpeg',
-                data: imageB64.split(',')[1] || imageB64,
-            },
-        };
-        const textPart = { text: `Analiza esta foto tomada en ${stop.name}. Contexto: ${stop.description}. Genera el caption.` };
-        
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-preview-tts',
-            contents: { parts: [imagePart, textPart] },
-            config: { systemInstruction: langRule }
-        });
-
-        return response.text || "";
-    });
-};
-
-export const generateAudio = async (text: string, language: string = 'es'): Promise<string> => {
-    const cleanText = cleanDescriptionText(text);
-    if (!cleanText) return "";
-    const cacheKey = `audio_${language}_${generateHash(cleanText)}`;
+export const generateAudio = async (text: string, language: string): Promise<string | null> => {
+    const cacheKey = `audio_${text.slice(0, 30)}_${language}`;
     const cached = await getCachedAudio(cacheKey);
     if (cached) return cached;
-    
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: `Say clearly and with expert tone: ${cleanText}` }] }],
+            contents: [{ parts: [{ text: text.slice(0, 500) }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
             },
         });
-        const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-        if (audioData) saveAudioToCache(cacheKey, audioData).catch(console.error);
-        return audioData;
+        const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+        if (base64) await saveAudioToCache(cacheKey, base64);
+        return base64;
+    } catch (e) {
+        console.error("TTS Error", e);
+        return null;
+    }
+};
+
+export const generateSmartCaption = async (base64: string, stop: Stop, language: string): Promise<string> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    return handleAiCall(async () => {
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: {
+                parts: [
+                    { inlineData: { data: base64.split(',')[1], mimeType: 'image/jpeg' } },
+                    { text: `Based on this photo taken at ${stop.name} (${stop.type}), generate a smart, witty caption for a traveler's log in ${language}. MAX 15 words.` }
+                ]
+            }
+        });
+        return response.text || "Capturing the moment.";
     });
 };
 
-export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
+// Fix: Added moderateContent to filter community posts for safety
+export const moderateContent = async (content: string): Promise<boolean> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `A cinematic, high-quality, artistic travel postcard for ${city}. Atmospheric style. No text.`;
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Analyze if this message is appropriate for a public travel board. It must be safe for all audiences and contain no hate speech or harassment. Return exactly "SAFE" or "TOXIC". Message: "${content}"`,
+        });
+        const result = response.text?.trim().toUpperCase();
+        return result === "SAFE";
+    });
+};
+
+// Fix: Added generateCityPostcard using the gemini-2.5-flash-image model
+export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    return handleAiCall(async () => {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: prompt }] },
-            config: { imageConfig: { aspectRatio: "9:16" } }
+            contents: {
+                parts: [
+                    {
+                        text: `A cinematic, high-quality travel postcard for ${city} highlighting interests like ${interests.join(', ')}. Artistic, vibrant, and evocative of discovery.`,
+                    },
+                ],
+            },
+            config: {
+                imageConfig: {
+                    aspectRatio: "9:16",
+                },
+            },
         });
+        
+        // Iterate through all parts to find the image part as recommended.
         if (response.candidates?.[0]?.content?.parts) {
             for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                if (part.inlineData) {
+                    const base64EncodeString: string = part.inlineData.data;
+                    return `data:image/png;base64,${base64EncodeString}`;
+                }
             }
         }
         return null;
     });
 };
 
-export const moderateContent = async (text: string): Promise<boolean> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    try {
+// Fix: Added translateTours for massive translation in AdminPanel
+export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    return handleAiCall(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Safe for travel community? "${text}" (SAFE/UNSAFE)`,
-            config: { temperature: 0 }
+            model: "gemini-3-flash-preview",
+            contents: `Translate the following array of tour objects to ${targetLang}. Maintain the persona of "Dai" (technical, cynical, detailed). Return the result as a valid JSON array of Tour objects. Tours: ${JSON.stringify(tours)}`,
+            config: {
+                responseMimeType: "application/json"
+            }
         });
-        return response.text?.toUpperCase().includes('SAFE');
-    } catch (e) { return true; } 
+        return JSON.parse(response.text || "[]");
+    });
 };

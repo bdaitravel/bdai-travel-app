@@ -17,6 +17,18 @@ const UI_LABELS: any = {
     ru: { hubTitle: "Мир", hubSub: "Умные направления", homeTitle: "Испания", homeSub: "Столицы", villagesTitle: "Деревни", villagesSub: "Сельские жемчужины", catVisited: "Иконы", catGrowth: "Звезды", catExotic: "Экзотика", loading: "Загрузка...",
           themes: { 'Madrid': 'Историческая столица', 'Barcelona': 'Живой модернизм', 'Sevilla': 'Суть мудехара', 'Albarracín': 'Средневековое сокровище', 'Cudillero': 'Морской амфитеатр', 'Ronda': 'Город мечты', 'Santillana del Mar': 'Средневековая вилла', 'París': 'Город света', 'Tokio': 'Киберпанк', 'Nueva York': 'Центр мира' }
     },
+    fr: { hubTitle: "Explorer le Monde", hubSub: "Destinations Intelligentes", homeTitle: "Explorer l'Espagne", homeSub: "Grandes Capitales", villagesTitle: "Villages de Charme", villagesSub: "Joyaux Ruraux", catVisited: "Icônes", catGrowth: "Étoiles Montantes", catExotic: "Exotique", loading: "Sync...",
+          themes: { 'Madrid': 'Capitale Historique', 'Barcelona': 'Modernisme Vivant', 'Sevilla': 'Essence Mudéjar', 'París': 'Ville Lumière', 'Tokio': 'Réalité Cyberpunk', 'Nueva York': 'Centre du Monde' }
+    },
+    de: { hubTitle: "Welt Erkunden", hubSub: "Intelligente Reiseziele", homeTitle: "Spanien Erkunden", homeSub: "Große Hauptstädte", villagesTitle: "Charmante Dörfer", villagesSub: "Ländliche Juwelen", catVisited: "Globale Ikonen", catGrowth: "Aufstrebende Sterne", catExotic: "Exotisch", loading: "Sync...",
+          themes: { 'Madrid': 'Historische Hauptstadt', 'Barcelona': 'Lebendiger Modernismus', 'Sevilla': 'Mudéjar-Essenz', 'París': 'Stadt der Lichter', 'Tokio': 'Cyberpunk-Realität', 'Nueva York': 'Zentrum der Welt' }
+    },
+    hi: { hubTitle: "दुनिया का अन्वेषण करें", hubSub: "स्मार्ट ग्लोबल गंतव्य", homeTitle: "स्पेन का अन्वेषण करें", homeSub: "प्रमुख राजधानियाँ", villagesTitle: "आकर्षक गाँव", villagesSub: "स्पेनिश ग्रामीण रत्न", catVisited: "वैश्विक प्रतीक", catGrowth: "उभरते सितारे", catExotic: "विदेशी", loading: "सिंक हो रहा है...",
+          themes: { 'Madrid': 'ऐतिहासिक राजधानी', 'Barcelona': 'जीवित आधुनिकतावाद', 'Sevilla': 'मुदेजर सार', 'París': 'रोशनी का शहर', 'Tokio': 'साइबरपंक रियलिटी', 'Nueva York': 'दुनिया का केंद्र' }
+    },
+    ar: { hubTitle: "استكشف العالم", hubSub: "وجهات عالمية ذكية", homeTitle: "استكشف إسبانيا", homeSub: "العواصم الكبرى", villagesTitle: "قرى ساحرة", villagesSub: "جواهر ريفية", catVisited: "أيقونات عالمية", catGrowth: "نجوم صاعدة", catExotic: "غريب", loading: "مزامنة...",
+          themes: { 'Madrid': 'عاصمة تاريخية', 'Barcelona': 'حداثة حية', 'Sevilla': 'جوهر مدجن', 'París': 'مدينة النور', 'Tokio': 'واقع سايبربانك', 'Nueva York': 'مركز العالم' }
+    },
     ja: { hubTitle: "世界を探索", hubSub: "スマート目的地", homeTitle: "スペインを探索", homeSub: "主要都市", villagesTitle: "魅力的な村", villagesSub: "田舎の宝石", catVisited: "世界のアイコン", catGrowth: "注目スポット", catExotic: "エキゾチック", loading: "同期中...",
           themes: { 'Madrid': '歴史的な首都', 'Barcelona': '生きたモダニズム', 'Sevilla': 'ムデハルの本質', 'Albarracín': '中世の宝物', 'Cudillero': '海の円形劇場', 'Ronda': '夢の街', 'Santillana del Mar': '中世の町', 'París': '光の街', 'Tokio': 'サイバーパンク', 'Nueva York': '世界の中心' }
     },

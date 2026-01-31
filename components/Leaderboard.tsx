@@ -21,7 +21,8 @@ const TEXTS: any = {
     ja: { title: "リーダーボード", you: "あなたのステータス", subtitle: "エリート探検家" },
     zh: { title: "全球排行榜", you: "您的状态", subtitle: "精英探险家" },
     ca: { title: "Ranking Global", you: "El Teu Estat", subtitle: "Exploradors d'elit" },
-    eu: { title: "Sailkapen Orokorra", you: "Zure Egoera", subtitle: "Esploratzaile eliteak" }
+    eu: { title: "Sailkapen Orokorra", you: "Zure Egoera", subtitle: "Esploratzaile eliteak" },
+    ar: { title: "التصنيف العالمي", you: "حالتك", subtitle: "مستكشفو النخبة" }
 };
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, onUserClick, language }) => {
@@ -36,7 +37,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
             <h2 className="text-5xl font-black text-white lowercase tracking-tighter mb-2">{t.title}</h2>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-purple-400 opacity-60">{t.subtitle}</p>
         </div>
-        <div className="flex justify-center items-end gap-3 mb-16 px-6 h-80 relative">
+        <div className={`flex justify-center items-end gap-3 mb-16 px-6 h-80 relative ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             {top3[1] && (
                 <div className="flex flex-col items-center w-28 animate-slide-up" style={{ animationDelay: '0.2s' }}>
                     <div className="relative mb-4 group cursor-pointer" onClick={() => onUserClick(top3[1])}>
@@ -57,7 +58,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                     </div>
                     <div className="w-full h-40 bg-gradient-to-b from-purple-600/30 to-slate-900/80 border border-purple-500/40 rounded-t-[2.5rem] flex flex-col items-center justify-center p-4 backdrop-blur-2xl shadow-2xl">
                         <p className="text-xs font-black truncate w-full text-center mb-1 text-white">{top3[0].name}</p>
-                        <p className="text-[11px] text-yellow-400 font-black tracking-widest">{top3[0].miles.toLocaleString()} MILES</p>
+                        <p className="text-[11px] text-yellow-400 font-black tracking-widest uppercase">{top3[0].miles.toLocaleString()} MILES</p>
                     </div>
                 </div>
             )}
@@ -76,29 +77,18 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
         </div>
         <div className="flex-1 px-6 space-y-3 pb-10">
             {rest.map((user, idx) => (
-                <div key={user.id} onClick={() => onUserClick(user)} className="flex items-center p-5 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-all cursor-pointer group">
+                <div key={user.id} onClick={() => onUserClick(user)} className={`flex items-center p-5 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-all cursor-pointer group ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                     <span className="w-10 text-sm font-black text-slate-600 group-hover:text-purple-400">{idx + 4}</span>
                     <img src={user.avatar} className="w-12 h-12 rounded-2xl border border-white/10 object-cover" />
-                    <div className="ml-5 flex-1">
+                    <div className={`ml-5 flex-1 ${language === 'ar' ? 'mr-5 ml-0 text-right' : ''}`}>
                         <p className="font-black text-sm text-slate-100">{user.name}</p>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{user.miles.toLocaleString()} miles</p>
                     </div>
-                    <i className="fas fa-chevron-right text-[10px] text-slate-700"></i>
+                    <i className={`fas fa-chevron-right text-[10px] text-slate-700 ${language === 'ar' ? 'rotate-180' : ''}`}></i>
                 </div>
             ))}
         </div>
         <div className="px-6 mt-2 pb-6">
-            <div className="bg-purple-600 p-6 rounded-[3rem] flex items-center shadow-2xl border border-white/20">
+            <div className={`bg-purple-600 p-6 rounded-[3rem] flex items-center shadow-2xl border border-white/20 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                 <div className="relative shrink-0">
-                    <img src={currentUser.avatar} className="w-14 h-14 rounded-3xl border-2 border-white/30 object-cover" />
-                </div>
-                <div className="ml-5 flex-1 min-w-0">
-                    <p className="font-black text-base uppercase text-white truncate">{t.you}</p>
-                    <p className="text-[11px] font-bold text-purple-100 truncate">{currentUser.miles.toLocaleString()} miles</p>
-                </div>
-                <div className="w-14 h-14 rounded-3xl bg-white/20 flex items-center justify-center text-3xl shrink-0">🗺️</div>
-            </div>
-        </div>
-    </div>
-  );
-};
+                    <img src={currentUser
