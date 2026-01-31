@@ -19,7 +19,7 @@ const TEXTS: any = {
     es: { guide: "Caminando a la parada", openInMaps: "Ir con GPS" },
 };
 
-export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, onPlayAudio, audioPlayingId, audioLoadingId, userLocation }) => {
+export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, onPlayAudio, audioPlaying, audioLoading, userLocation }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -29,8 +29,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const tl = TEXTS[language] || TEXTS.es;
 
   const currentStop = stops[currentStopIndex];
-  const isPlaying = audioPlayingId === currentStop?.id;
-  const isLoading = audioLoadingId === currentStop?.id;
 
   useEffect(() => {
     if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
@@ -52,6 +50,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         iconAnchor: [12, 12]
     });
     userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon }).addTo(map);
+    
     if (polylineRef.current) map.removeLayer(polylineRef.current);
     if (currentStop) {
         polylineRef.current = L.polyline(
@@ -69,7 +68,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     const validStops = stops.filter((s:any) => s.latitude && s.longitude);
     validStops.forEach((stop: any, idx: number) => {
         const isActive = idx === currentStopIndex;
-        // Mapeo seguro de iconos
         const iconName = STOP_ICONS[stop.type] || 'fa-location-dot';
         const iconHtml = `<div class="w-10 h-10 rounded-full border-4 border-white shadow-2xl flex items-center justify-center text-[11px] font-black ${isActive ? 'bg-purple-600 text-white scale-125 z-[5000]' : 'bg-slate-900 text-white opacity-50'} transition-all duration-300"><i class="fas ${iconName}"></i></div>`;
         const marker = L.marker([stop.latitude, stop.longitude], { icon: L.divIcon({ className: '', html: iconHtml, iconSize: [40, 40], iconAnchor: [20, 20] }) }).addTo(map);
@@ -86,8 +84,8 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         {currentStop && (
             <div className="absolute top-[env(safe-area-inset-top,20px)] left-0 right-0 z-[450] flex justify-center p-4 pointer-events-none">
                 <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-3 rounded-[2rem] shadow-2xl flex items-center gap-3 pointer-events-auto w-full max-w-sm">
-                    <button onClick={() => onPlayAudio?.(currentStop.id, currentStop.description)} className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isPlaying ? 'bg-red-600' : 'bg-purple-600'} text-white`}>
-                        {isLoading ? <i className="fas fa-spinner fa-spin"></i> : isPlaying ? <i className="fas fa-stop"></i> : <i className="fas fa-play ml-0.5"></i>}
+                    <button onClick={onPlayAudio} className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${audioPlaying ? 'bg-red-600' : 'bg-purple-600'} text-white`}>
+                        {audioLoading ? <i className="fas fa-spinner fa-spin"></i> : audioPlaying ? <i className="fas fa-stop"></i> : <i className="fas fa-play ml-0.5"></i>}
                     </button>
                     <div className="flex-1 min-w-0">
                         <p className="text-[7px] font-black text-purple-400 uppercase tracking-widest">{tl.guide}</p>

@@ -12,11 +12,11 @@ import { FlagIcon } from './components/FlagIcon';
 import { AdminPanel } from './components/AdminPanel';
 import { CommunityBoard } from './components/CommunityBoard';
 import { Onboarding } from './components/Onboarding';
-import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat, normalizeKey } from './services/supabaseClient';
+import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", apiError: "AI AUTH ERROR: Check your API_KEY.", quotaError: "Dai is tired. Wait a bit.", genError: "Sync error. Try again." },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", apiError: "ERROR DE IA: Revisa tu API_KEY.", quotaError: "Dai está saturada. Espera unos minutos.", genError: "Error de sincronización. Reintenta." }
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "techtravel by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", genError: "Sync error. Try again." },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "techtravel by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Selecciona Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", genError: "Error de sincronización. Reintenta." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -78,7 +78,7 @@ export default function App() {
     getGlobalRanking().then(setLeaderboard);
 
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
+        navigator.geolocation.watchPosition(
             (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
             null, { enableHighAccuracy: true }
         );
@@ -87,30 +87,19 @@ export default function App() {
 
   const t = (key: string) => (TRANSLATIONS[user.language || 'es'] || TRANSLATIONS['es'])[key] || key;
 
-  // Added handleSendOtp to handle sending OTP via email
   const handleSendOtp = async () => {
-    if (!validateEmailFormat(email)) {
-      alert(t('authError'));
-      return;
-    }
+    if (!validateEmailFormat(email)) { alert(t('authError')); return; }
     setIsLoading(true);
-    setLoadingMessage(t('loading'));
     try {
       const { error } = await sendOtpEmail(email);
       if (error) throw error;
       setLoginStep('CODE');
-    } catch (e) {
-      alert(t('authError'));
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (e) { alert(t('authError')); } finally { setIsLoading(false); }
   };
 
-  // Added handleVerifyOtp to handle OTP verification and profile synchronization
   const handleVerifyOtp = async () => {
     if (!otpCode) return;
     setIsLoading(true);
-    setLoadingMessage(t('loading'));
     try {
       const { data, error } = await verifyOtpCode(email, otpCode);
       if (error) throw error;
@@ -119,17 +108,12 @@ export default function App() {
         const newUser = profile 
           ? { ...profile, id: data.session.user.id, isLoggedIn: true }
           : { ...GUEST_PROFILE, id: data.session.user.id, email: email, isLoggedIn: true };
-        
         setUser(newUser as any);
         localStorage.setItem('bdai_profile', JSON.stringify(newUser));
         if (!profile) await syncUserProfile(newUser as any);
         setView(AppView.HOME);
       }
-    } catch (e) {
-      alert(t('codeError'));
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (e) { alert(t('codeError')); } finally { setIsLoading(false); }
   };
 
   const processCitySelection = async (official: {name: string, spanishName: string, country: string}) => {
@@ -142,7 +126,7 @@ export default function App() {
         setSelectedCity(official.spanishName); 
         setSelectedCountry(official.country);
         
-        // CACHE FIRST: Si existe en Supabase con el idioma correcto, cargamos YA.
+        // CACHE FIRST: Si existe en Supabase, lo cargamos sin pensar.
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
         if (cached && cached.langFound === targetLang) {
             setTours(cached.data); 
@@ -150,8 +134,8 @@ export default function App() {
             setIsLoading(false); 
             return;
         } 
-        
-        // Si hay que traducir o generar (IA):
+
+        // Si existe pero en otro idioma, traducimos (rápido)
         if (cached) {
             setLoadingMessage(t('translating'));
             const translated = await translateTours(cached.data, targetLang);
@@ -159,6 +143,7 @@ export default function App() {
             await saveToursToCache(official.spanishName, official.country, targetLang, translated);
             setView(AppView.CITY_DETAIL);
         } else {
+            // Si no existe, generación completa
             setLoadingMessage(t('generating'));
             const generated = await generateToursForCity(official.spanishName, official.country, user);
             setTours(generated); 
@@ -172,17 +157,15 @@ export default function App() {
 
   const handleCitySelect = async (cityInput: string) => {
     if (!cityInput.trim() || isLoading) return;
-    setAuthError(null);
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
     try {
-        // Primero intentamos estandarizar (desambiguación)
         const results = await standardizeCityName(cityInput);
         if (results && results.length > 0) {
             if (results.length === 1) {
                 await processCitySelection(results[0]);
             } else {
-                setSearchOptions(results);
+                setSearchOptions(results); // DESAMBIGUACIÓN ACTIVA
                 setIsLoading(false);
             }
         } else {
@@ -204,15 +187,17 @@ export default function App() {
           <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative bg-[#020617]">
               <div className="text-center pt-12">
                   <BdaiLogo className="w-24 h-24 mx-auto mb-6" />
-                  <h1 className="text-4xl font-black lowercase tracking-tighter text-white">bdai</h1>
+                  <h1 className="text-4xl font-black lowercase tracking-tighter text-white">techtravel</h1>
+                  <p className="text-[10px] font-black uppercase tracking-[0.5em] text-purple-500 mt-2">{t('tagline')}</p>
               </div>
               <div className="w-full max-w-sm space-y-12">
                   <div className="flex flex-col gap-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 text-center">{t('selectLang')}</p>
-                    <div className="flex justify-center gap-6 overflow-x-auto no-scrollbar py-2">
+                    <div className="flex justify-center gap-6 overflow-x-auto no-scrollbar py-2 px-4">
                         {LANGUAGES.map(lang => (
-                            <button key={lang.code} onClick={() => setUser({...user, language: lang.code})} className="flex flex-col items-center gap-2">
-                                <FlagIcon code={lang.code} className={`w-10 h-10 ${user.language === lang.code ? 'ring-4 ring-purple-500/20' : 'opacity-40 grayscale'}`} />
+                            <button key={lang.code} onClick={() => setUser({...user, language: lang.code})} className="flex flex-col items-center gap-2 shrink-0">
+                                <FlagIcon code={lang.code} className={`w-12 h-12 ${user.language === lang.code ? 'ring-4 ring-purple-500/40' : 'opacity-40 grayscale'}`} />
+                                <span className={`text-[8px] font-black uppercase tracking-widest ${user.language === lang.code ? 'text-white' : 'text-slate-600'}`}>{lang.name}</span>
                             </button>
                         ))}
                     </div>
@@ -238,7 +223,7 @@ export default function App() {
                 {view === AppView.HOME && (
                   <div className="space-y-4 pt-safe-iphone px-8 animate-fade-in">
                       <header className="flex justify-between items-center py-6">
-                          <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">bdai</span></div>
+                          <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">techtravel</span></div>
                           <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
@@ -247,12 +232,13 @@ export default function App() {
                           <button onClick={() => handleCitySelect(searchVal)} className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"><i className="fas fa-search"></i></button>
                       </div>
                       {searchOptions && (
-                          <div className="mt-6 space-y-2 animate-fade-in bg-white/5 p-4 rounded-[2rem] border border-white/5">
+                          <div className="mt-6 space-y-2 animate-fade-in bg-slate-900/80 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
+                              <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-4">Múltiples localizaciones encontradas:</p>
                               {searchOptions.map((opt, i) => (
-                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-4 bg-slate-900 border border-white/10 rounded-2xl flex items-center justify-between transition-all text-left">
+                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-5 bg-white/5 border border-white/5 hover:border-purple-500/50 rounded-2xl flex items-center justify-between transition-all text-left group">
                                     <div>
-                                        <span className="text-white font-black uppercase text-[11px]">{opt.spanishName}</span>
-                                        <br/><span className="text-[8px] text-slate-500 font-bold uppercase">{opt.country}</span>
+                                        <span className="text-white font-black uppercase text-[12px] group-hover:text-purple-400 transition-colors">{opt.spanishName}</span>
+                                        <br/><span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{opt.country}</span>
                                     </div>
                                     <i className="fas fa-chevron-right text-[10px] text-slate-700"></i>
                                   </button>
