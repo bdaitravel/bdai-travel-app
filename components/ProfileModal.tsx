@@ -16,15 +16,7 @@ interface ProfileModalProps {
 
 const MODAL_TEXTS: any = {
     en: { title: "bdai Global Passport", subtitle: "Digital Nomad Credential", surname: "Surname", givenNames: "Given Names", city: "City of Origin", country: "Country", birthday: "Date of Birth", age: "Age", social: "Social Matrix", interests: "Interest Profile", visas: "Verified Visas", entry: "ENTRY", verified: "VERIFIED", noVisas: "Ready for stamps", save: "Save Passport", edit: "Edit Identity", logout: "Logout", username: "Username", language: "Current Language", rank: "Traveler Rank", miles: "Total Miles", progress: "Progress to next rank", categoryPoints: "Activity Matrix", admin: "Engine Room" },
-    es: { title: "Pasaporte Global bdai", subtitle: "Credencial Nómada Digital", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad Origen", country: "País", birthday: "F. Nacimiento", age: "Edad", social: "Social Matrix", interests: "Perfil de Intereses", visas: "Visados Verificados", entry: "ENTRADA", verified: "VERIFICADO", noVisas: "Listo para sellos", save: "Guardar Pasaporte", edit: "Editar Identidad", logout: "Cerrar Sesión", username: "Usuario", language: "Idioma Actual", rank: "Rango del Viajero", miles: "Millas Totales", progress: "Progreso al siguiente rango", categoryPoints: "Matriz de Actividad", admin: "Sala de Máquinas" },
-    pt: { title: "Passaporte Global bdai", subtitle: "Credencial Nômade Digital", surname: "Sobrenome", givenNames: "Nomes", city: "Cidade", country: "País", birthday: "Nascimento", age: "Idade", social: "Social Matrix", interests: "Interesses", visas: "Vistos Verificados", entry: "ENTRADA", verified: "VERIFICADO", noVisas: "Pronto para selos", save: "Salvar", edit: "Editar", logout: "Sair", username: "Usuário", language: "Idioma", rank: "Classificação", miles: "Milhas", progress: "Progresso", categoryPoints: "Matriz de Atividade", admin: "Sala de Máquinas" },
-    it: { title: "Passaporto Global bdai", subtitle: "Credenziale Nomade Digitale", surname: "Cognome", givenNames: "Nomi", city: "Città", country: "Paese", birthday: "Nascita", age: "Età", social: "Social Matrix", interests: "Interessi", visas: "Visti Verificati", entry: "ENTRATA", verified: "VERIFICATO", noVisas: "Pronto per timbri", save: "Salva", edit: "Modifica", logout: "Esci", username: "Utente", language: "Lingua", rank: "Rango", miles: "Miglia", progress: "Progresso", categoryPoints: "Matrice di Attività", admin: "Sala Macchine" },
-    fr: { title: "Passeport Global bdai", subtitle: "Identifiant Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", birthday: "Naissance", age: "Âge", social: "Social Matrix", interests: "Intérêts", visas: "Visas Vérifiés", entry: "ENTRÉE", verified: "VÉRIFIÉ", noVisas: "Prêt pour timbres", save: "Enregistrer", edit: "Modifier", logout: "Déconnexion", username: "Utilisateur", language: "Langue", rank: "Rang", miles: "Milles", progress: "Progression", categoryPoints: "Matrice d'Activité", admin: "Salle des Machines" },
-    de: { title: "bdai Global Reisepass", subtitle: "Digitaler Nomade", surname: "Nachname", givenNames: "Vorname", city: "Stadt", country: "Land", birthday: "Geburtsdatum", age: "Alter", social: "Social Matrix", interests: "Interessen", visas: "Verifizierte Visa", entry: "EINTRITT", verified: "VERIFIZIERT", noVisas: "Bereit für Stempel", save: "Speichern", edit: "Bearbeiten", logout: "Abmelden", username: "Benutzername", language: "Sprache", rank: "Rang", miles: "Meilen", progress: "Fortschritt", categoryPoints: "Aktivitätsmatrix", admin: "Maschinenraum" },
-    ru: { title: "Глобальный паспорт bdai", subtitle: "Цифровой кочевник", surname: "Фамилия", givenNames: "Имя", city: "Город", country: "Страна", birthday: "Дата рождения", age: "Возраст", social: "Social Matrix", interests: "Интересы", visas: "Визы", entry: "ВХОД", verified: "ПОДТВЕРЖДЕНО", noVisas: "Готов к штампам", save: "Сохранить", edit: "Изменить", logout: "Выйти", username: "Никнейм", language: "Язык", rank: "Ранг", miles: "Мили", progress: "Прогресс", categoryPoints: "Матрица активности", admin: "Машинный зал" },
-    ja: { title: "bdai グローバルパスポート", subtitle: "デジタルノマド資格", surname: "姓", givenNames: "名", city: "都市", country: "国", birthday: "生年月日", age: "年齢", social: "Social Matrix", interests: "興味", visas: "ビザ", entry: "入場", verified: "認証済み", noVisas: "スタンプ準備完了", save: "保存", edit: "編集", logout: "ログアウト", username: "ユーザー名", language: "言語", rank: "ランク", miles: "マイル", progress: "進捗", categoryPoints: "活動マトリックス", admin: "エンジンルーム" },
-    zh: { title: "bdai 全球护照", subtitle: "数字游民凭证", surname: "姓", givenNames: "名", city: "城市", country: "国家", birthday: "出生日期", age: "年龄", social: "Social Matrix", interests: "兴趣", visas: "已验证签证", entry: "入境", verified: "已验证", noVisas: "准备盖章", save: "保存", edit: "编辑", logout: "登出", username: "用户名", language: "语言", rank: "等级", miles: "里程", progress: "进度", categoryPoints: "活动矩阵", admin: "机房" },
-    ar: { title: "جواز سفر bdai العالمي", subtitle: "هوية البدوي الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", birthday: "تاريخ الميلاد", age: "العمر", social: "Social Matrix", interests: "الاهتمامات", visas: "تأشيرات مؤكدة", entry: "دخول", verified: "مؤكد", noVisas: "جاهز للأختام", save: "حفظ", edit: "تعديل", logout: "خروج", username: "اسم المستخدم", language: "اللغة", rank: "الرتبة", miles: "الأميال", progress: "التقدم", categoryPoints: "مصفوفة النشاط", admin: "غرفة المحركات" }
+    es: { title: "Pasaporte Global bdai", subtitle: "Credencial Nómada Digital", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad Origen", country: "País", birthday: "F. Nacimiento", age: "Edad", social: "Social Matrix", interests: "Perfil de Intereses", visas: "Visados Verificados", entry: "ENTRADA", verified: "VERIFICADO", noVisas: "Listo para sellos", save: "Guardar Pasaporte", edit: "Editar Identidad", logout: "Cerrar Sesión", username: "Usuario", language: "Idioma Actual", rank: "Rango del Viajero", miles: "Millas Totales", progress: "Progreso al siguiente rango", categoryPoints: "Matriz de Actividad", admin: "Sala de Máquinas" }
 };
 
 const ADMIN_EMAILS = ['admin@bdai.com', 'tu-email@gmail.com']; 
@@ -45,8 +37,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
       avatar: user.avatar || AVATARS[0],
       birthday: user.birthday || '1995-01-01',
       language: user.language || 'es',
-      interests: user.interests || [],
-      socialLinks: user.socialLinks || { instagram: '', tiktok: '', x: '', facebook: '' }
+      interests: user.interests || []
   });
 
   const handleSave = async () => {
@@ -203,23 +194,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, isOwn
                     )}
                 </div>
                 <div>
-                    <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('age')}</p>
-                    <p className="font-bold text-slate-800 text-sm">{user.age || '--'}</p>
-                </div>
-                <div>
                     <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('city')}</p>
                     {isEditing ? (
                         <input value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded-lg px-2 py-1 text-xs" />
                     ) : (
                         <p className="font-bold text-slate-800 text-sm uppercase">{formData.city || '---'}</p>
-                    )}
-                </div>
-                <div>
-                    <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('country')}</p>
-                    {isEditing ? (
-                        <input value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded-lg px-2 py-1 text-xs" />
-                    ) : (
-                        <p className="font-bold text-slate-800 text-sm uppercase">{formData.country || '---'}</p>
                     )}
                 </div>
             </div>

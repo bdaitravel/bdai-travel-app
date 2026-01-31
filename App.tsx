@@ -15,16 +15,19 @@ import { Onboarding } from './components/Onboarding';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", genError: "Sync error. Try again." },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Selecciona Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", genError: "Error de sincronización. Reintenta." },
-  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Aceder", tagline: "better destinations by ai", authError: "Verifique o seu email", codeError: "Código inválido", selectLang: "Selecionar Idioma", loading: "Sincronizando...", loadingTour: "Dai está a analisar...", analyzing: "Localizando cidade...", generating: "Gerando tours...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", genError: "Erro de sincronização." },
-  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "better destinations by ai", authError: "Controlla la tua email", codeError: "Codice non valido", selectLang: "Seleziona Lingua", loading: "Sincronizzazione...", loadingTour: "Dai sta analizzando...", analyzing: "Localizzazione...", generating: "Generando tour...", translating: "Traducendo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", genError: "Errore di sincronizzazione." },
-  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos emails", codeError: "Code invalide", selectLang: "Choisir la langue", loading: "Synchronisation...", loadingTour: "Dai analyse la ville...", analyzing: "Localisation...", generating: "Génération de tours...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", genError: "Erreur de synchro." },
-  de: { welcome: "Log Bidaer:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "E-Mail", login: "Code senden", verify: "Anmelden", tagline: "better destinations by ai", authError: "E-Mail/Spam prüfen", codeError: "Ungültiger Code", selectLang: "Sprache wählen", loading: "Synchronisierung...", loadingTour: "Dai analysiert...", analyzing: "Ortung...", generating: "Generierung...", translating: "Übersetzung...", navElite: "Elite", navHub: "Intel", navVisa: "Reisepass", navStore: "Shop", genError: "Synchronisierungsfehler." },
-  ru: { welcome: "Log Bidaer:", explorer: "Исследователь", searchPlaceholder: "Целевой город...", emailPlaceholder: "Email", login: "Отправить код", verify: "Войти", tagline: "better destinations by ai", authError: "Проверьте email", codeError: "Неверный код", selectLang: "Выбрать язык", loading: "Синхронизация...", loadingTour: "Dai анализирует...", analyzing: "Поиск...", generating: "Создание...", translating: "Перевод...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", genError: "Ошибка синхронизации." },
-  ja: { welcome: "Log Bidaer:", explorer: "探検家", searchPlaceholder: "目的地...", emailPlaceholder: "メール", login: "コードを送信", verify: "認証", tagline: "better destinations by ai", authError: "メールを確認してください", codeError: "無効なコード", selectLang: "言語を選択", loading: "同期中...", loadingTour: "Daiが分析中...", analyzing: "位置特定中...", generating: "ツアー生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "情報", navVisa: "パスポート", navStore: "ストア", genError: "同期エラー。" },
-  zh: { welcome: "Log Bidaer:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "电子邮件", login: "发送代码", verify: "登录", tagline: "better destinations by ai", authError: "请检查电子邮件", codeError: "代码无效", selectLang: "选择语言", loading: "同步中...", loadingTour: "Dai 正在分析...", analyzing: "正在定位...", generating: "正在生成...", translating: "正在翻译...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", genError: "同步错误。" },
-  ar: { welcome: "سجل بيدير:", explorer: "المستكشف", searchPlaceholder: "المدينة المستهدفة...", emailPlaceholder: "البريد الإلكتروني", login: "إرسال الرمز", verify: "دخول", tagline: "better destinations by ai", authError: "تحقق من بريدك", codeError: "رمز غير صالح", selectLang: "اختر اللغة", loading: "مزامنة...", loadingTour: "داي يحلل...", analyzing: "تحديد الموقع...", generating: "جاري التوليد...", translating: "جاري الترجمة...", navElite: "النخبة", navHub: "المعلومات", navVisa: "جواز السفر", navStore: "المتجر", genError: "خطأ في المزامنة." }
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", genError: "Sync error. Try again.", disambig: "Multiple locations found:" },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Selecciona Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", genError: "Error de sincronización. Reintenta.", disambig: "Múltiples localizaciones encontradas:" },
+  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Aceder", tagline: "better destinations by ai", authError: "Verifique o seu email", codeError: "Código inválido", selectLang: "Selecionar Idioma", loading: "Sincronizando...", loadingTour: "Dai está a analisar...", analyzing: "Localizando cidade...", generating: "Gerando tours...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", genError: "Erro de sincronização.", disambig: "Várias localizações encontradas:" },
+  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "better destinations by ai", authError: "Controlla la tua email", codeError: "Codice non valido", selectLang: "Seleziona Lingua", loading: "Sincronizzazione...", loadingTour: "Dai sta analizzando...", analyzing: "Localizzazione...", generating: "Generando tour...", translating: "Traducendo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", genError: "Errore di sincronizzazione.", disambig: "Più posizioni trovate:" },
+  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos emails", codeError: "Code invalide", selectLang: "Choisir la langue", loading: "Synchronisation...", loadingTour: "Dai analyse la ville...", analyzing: "Localisation...", generating: "Génération de tours...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", genError: "Erreur de synchro.", disambig: "Plusieurs lieux trouvés:" },
+  de: { welcome: "Log Bidaer:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "E-Mail", login: "Code senden", verify: "Anmelden", tagline: "better destinations by ai", authError: "E-Mail/Spam prüfen", codeError: "Ungültiger Code", selectLang: "Sprache wählen", loading: "Synchronisierung...", loadingTour: "Dai analysiert...", analyzing: "Ortung...", generating: "Generierung...", translating: "Übersetzung...", navElite: "Elite", navHub: "Intel", navVisa: "Reisepass", navStore: "Shop", genError: "Synchronisierungsfehler.", disambig: "Mehrere Orte gefunden:" },
+  ru: { welcome: "Log Bidaer:", explorer: "Исследователь", searchPlaceholder: "Целевой город...", emailPlaceholder: "Email", login: "Отправить код", verify: "Войти", tagline: "better destinations by ai", authError: "Проверьте email", codeError: "Неверный код", selectLang: "Выбрать язык", loading: "Синхронизация...", loadingTour: "Dai анализирует...", analyzing: "Поиск...", generating: "Создание...", translating: "Перевод...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", genError: "Ошибка синхронизации.", disambig: "Найдено несколько мест:" },
+  hi: { welcome: "बीडायर लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "लक्ष्य शहर...", emailPlaceholder: "ईमेल", login: "कोड भेजें", verify: "प्रमाणित करें", tagline: "better destinations by ai", authError: "ईमेल/स्पैम जांचें", codeError: "अमान्य कोड", selectLang: "भाषा चुनें", loading: "सिंक हो रहा है...", loadingTour: "दाई विश्लेषण कर रहा है...", analyzing: "शहर ढूंढ रहा है...", generating: "दौरे उत्पन्न कर रहा है...", translating: "अनुवाद कर रहा है...", navElite: "एलिट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", genError: "सिंक त्रुटि।", disambig: "एकाधिक स्थान मिले:" },
+  ja: { welcome: "Bidaer ログ:", explorer: "探検家", searchPlaceholder: "目的地...", emailPlaceholder: "メール", login: "コードを送信", verify: "認証", tagline: "better destinations by ai", authError: "メールを確認してください", codeError: "無効なコード", selectLang: "言語を選択", loading: "同期中...", loadingTour: "Daiが分析中...", analyzing: "位置特定中...", generating: "ツアー生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "情報", navVisa: "パスポート", navStore: "ストア", genError: "同期エラー。", disambig: "複数の場所が見つかりました:" },
+  zh: { welcome: "Bidaer 日志:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "电子邮件", login: "发送代码", verify: "登录", tagline: "better destinations by ai", authError: "请检查电子邮件", codeError: "代码无效", selectLang: "选择语言", loading: "同步中...", loadingTour: "Dai 正在分析...", analyzing: "正在定位...", generating: "正在生成...", translating: "正在翻译...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", genError: "同步错误。", disambig: "找到多个地点:" },
+  ar: { welcome: "سجل بيدير:", explorer: "المستكشف", searchPlaceholder: "المدينة المستهدفة...", emailPlaceholder: "البريد الإلكتروني", login: "إرسال الرمز", verify: "دخول", tagline: "better destinations by ai", authError: "تحقق من بريدك", codeError: "رمز غير صالح", selectLang: "اختر اللغة", loading: "مزامنة...", loadingTour: "داي يحلل...", analyzing: "تحديد الموقع...", generating: "جاري التوليد...", translating: "جاري الترجمة...", navElite: "النخبة", navHub: "المعلومات", navVisa: "جواز السفر", navStore: "المتجر", genError: "خطأ في المزامنة.", disambig: "تم العثور على مواقع متعددة:" },
+  ca: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciutat objectiu...", emailPlaceholder: "Email", login: "Enviar Codi", verify: "Accedir", tagline: "better destinations by ai", authError: "Revisa el teu email", codeError: "Codi no vàlid", selectLang: "Selecciona Idioma", loading: "Sincronitzant...", loadingTour: "Dai està analitzant la ciutat...", analyzing: "Localitzant ciutat...", generating: "Generant tours...", translating: "Traduint...", navElite: "Èlit", navHub: "Intel", navVisa: "Passaport", navStore: "Botiga", genError: "Error de sincronització.", disambig: "Múltiples localitzacions trobades:" },
+  eu: { welcome: "Bidaer Loga:", explorer: "Esploratzailea", searchPlaceholder: "Helburu hiria...", emailPlaceholder: "Emaila", login: "Kodea Bidali", verify: "Sartu", tagline: "better destinations by ai", authError: "Rebisatu zure emaila", codeError: "Kode okerra", selectLang: "Hizkuntza Hautatu", loading: "Sinkronizatzen...", loadingTour: "Dai hiria aztertzen ari da...", analyzing: "Hiria kokatzen...", generating: "Tourrak sortzen...", translating: "Itzultzen...", navElite: "Elitea", navHub: "Intel", navVisa: "Pasaportea", navStore: "Denda", genError: "Sinkronizazio errorea.", disambig: "Kokaleku anitz aurkitu dira:" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -133,7 +136,7 @@ export default function App() {
         setSelectedCity(official.spanishName); 
         setSelectedCountry(official.country);
         
-        // CACHE FIRST
+        // CACHE FIRST - Ultra rápido
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
         if (cached && cached.langFound === targetLang) {
             setTours(cached.data); 
@@ -170,7 +173,7 @@ export default function App() {
             if (results.length === 1) {
                 await processCitySelection(results[0]);
             } else {
-                setSearchOptions(results); 
+                setSearchOptions(results); // PANEL DE DESAMBIGUACIÓN
                 setIsLoading(false);
             }
         } else {
@@ -190,18 +193,18 @@ export default function App() {
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative bg-[#020617]">
-              <div className="text-center pt-12">
-                  <BdaiLogo className="w-24 h-24 mx-auto mb-6" />
+              <div className="text-center pt-8">
+                  <BdaiLogo className="w-20 h-20 mx-auto mb-4" />
                   <h1 className="text-4xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-[10px] font-black uppercase tracking-[0.5em] text-purple-500 mt-2">{t('tagline')}</p>
               </div>
-              <div className="w-full max-w-sm space-y-12">
+              <div className="w-full max-w-sm space-y-8">
                   <div className="flex flex-col gap-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 text-center">{t('selectLang')}</p>
-                    <div className="flex justify-center gap-6 overflow-x-auto no-scrollbar py-2 px-4">
+                    <div className="flex justify-center gap-4 overflow-x-auto no-scrollbar py-2 px-4 max-w-full">
                         {LANGUAGES.map(lang => (
                             <button key={lang.code} onClick={() => setUser({...user, language: lang.code})} className="flex flex-col items-center gap-2 shrink-0">
-                                <FlagIcon code={lang.code} className={`w-12 h-12 ${user.language === lang.code ? 'ring-4 ring-purple-500/40' : 'opacity-40 grayscale'}`} />
+                                <FlagIcon code={lang.code} className={`w-10 h-10 ${user.language === lang.code ? 'ring-4 ring-purple-500/40' : 'opacity-40 grayscale'}`} />
                                 <span className={`text-[8px] font-black uppercase tracking-widest ${user.language === lang.code ? 'text-white' : 'text-slate-600'}`}>{lang.name}</span>
                             </button>
                         ))}
@@ -210,12 +213,12 @@ export default function App() {
                   <div className="w-full space-y-4 max-w-xs mx-auto">
                       {loginStep === 'EMAIL' ? (
                           <div className="space-y-4">
-                              <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-2xl py-5 px-6 text-center text-white outline-none" />
+                              <input type="email" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-2xl py-4 px-6 text-center text-white outline-none" />
                               <button onClick={handleSendOtp} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[10px]">{t('login')}</button>
                           </div>
                       ) : (
                           <div className="space-y-6 text-center animate-fade-in">
-                              <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-purple-500/30 rounded-3xl py-6 text-center font-black text-3xl text-white outline-none" placeholder="000000" />
+                              <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/5 border border-purple-500/30 rounded-3xl py-5 text-center font-black text-3xl text-white outline-none" placeholder="000000" />
                               <button onClick={handleVerifyOtp} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest">{t('verify')}</button>
                           </div>
                       )}
@@ -226,20 +229,21 @@ export default function App() {
           <div className="flex-1 flex flex-col relative h-full">
             <div className={`flex-1 overflow-y-auto no-scrollbar relative bg-[#020617] ${view === AppView.TOUR_ACTIVE ? 'pb-0' : 'pb-40'}`}>
                 {view === AppView.HOME && (
-                  <div className="space-y-4 pt-safe-iphone px-8 animate-fade-in">
-                      <header className="flex justify-between items-center py-6">
+                  <div className="space-y-4 pt-safe-iphone px-6 animate-fade-in">
+                      <header className="flex justify-between items-center py-4">
                           <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">bdai</span></div>
                           <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
                       <div className="relative mt-8 flex gap-3">
-                          <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/10 rounded-[2rem] py-5 px-8 text-white outline-none font-bold" />
+                          <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySelect(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/10 rounded-[2rem] py-4 px-6 text-white outline-none font-bold" />
                           <button onClick={() => handleCitySelect(searchVal)} className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-all"><i className="fas fa-search"></i></button>
                       </div>
                       {searchOptions && (
                           <div className="mt-6 space-y-2 animate-fade-in bg-slate-900/80 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
+                              <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-4">{t('disambig')}</p>
                               {searchOptions.map((opt, i) => (
-                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-5 bg-white/5 border border-white/5 hover:border-purple-500/50 rounded-2xl flex items-center justify-between transition-all text-left group">
+                                  <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-4 bg-white/5 border border-white/5 hover:border-purple-500/50 rounded-2xl flex items-center justify-between transition-all text-left group">
                                     <div>
                                         <span className="text-white font-black uppercase text-[12px] group-hover:text-purple-400 transition-colors">{opt.spanishName}</span>
                                         <br/><span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{opt.country}</span>
@@ -254,7 +258,7 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 animate-fade-in">
-                      <header className="flex items-center gap-4 mb-8 py-6 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity} <span className="text-slate-500 text-[10px] ml-2 tracking-widest">{selectedCountry}</span></h2></header>
+                      <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left"></i></button><h2 className="text-2xl font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity} <span className="text-slate-500 text-[10px] ml-2 tracking-widest">{selectedCountry}</span></h2></header>
                       <div className="space-y-4 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
                       <CommunityBoard city={selectedCity} language={user.language || 'es'} user={user} />
                   </div>

@@ -87,11 +87,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const handleCheckIn = () => {
-        if (!userLocation) { alert("GPS Lock Signal required..."); return; }
+        if (!userLocation) { alert("Buscando señal GPS..."); return; }
         const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
         
-        if (dist > 300) { 
-            alert(`${tl.tooFar} (Distance: ${Math.round(dist)}m)`);
+        if (dist > 300) { // Tolerancia de 300 metros
+            alert(`${tl.tooFar} (Distancia: ${Math.round(dist)}m)`);
             return;
         }
 
@@ -111,7 +111,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        alert("Image Logged! Dai is analyzing technical features... +25 miles.");
+        alert("¡Foto analizada por Dai! +25 millas por Log de Datos.");
         onUpdateUser({ ...user, miles: user.miles + 25, photoPoints: (user.photoPoints || 0) + 1 });
     };
 
@@ -120,12 +120,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={onFileChange} />
 
              <div className="bg-white border-b border-slate-100 px-6 py-6 flex items-center justify-between z-[6000] shrink-0 pt-safe-iphone shadow-sm">
-                <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950"><i className="fas fa-arrow-left"></i></button>
+                <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950"><i className="fas fa-arrow-left"></i></button>
                 <div className="text-center">
                     <p className="text-[8px] font-black text-purple-600 uppercase tracking-widest">{tl.stop} {currentStopIndex + 1} {tl.of} {tour.stops.length}</p>
-                    <h2 className="text-sm font-black text-slate-900 uppercase truncate max-w-[150px]">{currentStop.name}</h2>
+                    <h2 className="text-sm font-black text-slate-900 uppercase truncate max-w-[120px]">{currentStop.name}</h2>
                 </div>
-                <button onClick={() => setShowItinerary(!showItinerary)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${showItinerary ? 'bg-purple-600 text-white' : 'bg-slate-50 text-slate-950'}`}>
+                <button onClick={() => setShowItinerary(!showItinerary)} className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${showItinerary ? 'bg-purple-600 text-white' : 'bg-slate-50 text-slate-950'}`}>
                     <i className="fas fa-list-ul"></i>
                 </button>
              </div>
@@ -182,7 +182,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                                 <i className="fas fa-star"></i> {tl.bonus}
                              </h5>
                              <p className="text-slate-700 text-xs font-bold mb-1">{currentStop.photoSpot.angle}</p>
-                             <p className="text-slate-400 text-[9px] leading-tight">+{currentStop.photoSpot.milesReward} bonus miles for logging this view.</p>
+                             <p className="text-slate-400 text-[9px] leading-tight">+{currentStop.photoSpot.milesReward} millas extra por logear esta vista.</p>
                         </div>
                     )}
 
@@ -194,8 +194,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 </div>
              </div>
              <div className="bg-white/80 backdrop-blur-2xl border-t border-slate-100 p-6 flex gap-3 z-[6000] shrink-0 pb-safe-iphone">
-                <button onClick={onPrev} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest disabled:opacity-0">Atrás</button>
-                <button onClick={onNext} disabled={currentStopIndex === tour.stops.length - 1} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl">{tl.next}</button>
+                <button onClick={onPrev} disabled={currentStopIndex === 0} className="flex-1 py-4 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest disabled:opacity-0">Atrás</button>
+                <button onClick={onNext} disabled={currentStopIndex === tour.stops.length - 1} className="flex-[2] py-4 bg-slate-950 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl">{tl.next}</button>
              </div>
         </div>
     );
