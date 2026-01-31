@@ -37,6 +37,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
             <h2 className="text-5xl font-black text-white lowercase tracking-tighter mb-2">{t.title}</h2>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-purple-400 opacity-60">{t.subtitle}</p>
         </div>
+        
         <div className={`flex justify-center items-end gap-3 mb-16 px-6 h-80 relative ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             {top3[1] && (
                 <div className="flex flex-col items-center w-28 animate-slide-up" style={{ animationDelay: '0.2s' }}>
@@ -75,6 +76,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                 </div>
             )}
         </div>
+
         <div className="flex-1 px-6 space-y-3 pb-10">
             {rest.map((user, idx) => (
                 <div key={user.id} onClick={() => onUserClick(user)} className={`flex items-center p-5 bg-white/5 rounded-3xl border border-white/5 hover:bg-white/10 transition-all cursor-pointer group ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
@@ -88,7 +90,22 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                 </div>
             ))}
         </div>
+
         <div className="px-6 mt-2 pb-6">
             <div className={`bg-purple-600 p-6 rounded-[3rem] flex items-center shadow-2xl border border-white/20 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
                 <div className="relative shrink-0">
-                    <img src={currentUser
+                    <img src={currentUser.avatar} className="w-14 h-14 rounded-2xl border-2 border-white/20 object-cover" />
+                </div>
+                <div className={`ml-4 flex-1 ${language === 'ar' ? 'mr-4 ml-0 text-right' : ''}`}>
+                    <p className="text-[8px] font-black text-white/60 uppercase tracking-widest mb-1">{t.you}</p>
+                    <p className="font-black text-white uppercase text-sm leading-none">{currentUser.username}</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-xl font-black text-white tracking-tighter">{currentUser.miles.toLocaleString()}</p>
+                    <p className="text-[7px] font-black text-white/50 uppercase tracking-widest">MILES</p>
+                </div>
+            </div>
+        </div>
+    </div>
+  );
+};
