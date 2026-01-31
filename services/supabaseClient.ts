@@ -19,12 +19,26 @@ export const normalizeKey = (city: string, country?: string) => {
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
   if (!nInput) return null;
-  const { data: exactMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language).maybeSingle();
+  
+  // 1. Buscamos coincidencia exacta de ciudad e idioma
+  const { data: exactMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .eq('city', nInput)
+    .eq('language', language)
+    .maybeSingle();
+    
   if (exactMatch) return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
-  const { data: fuzzyMatch } = await supabase.from('tours_cache').select('data, language, city').ilike('city', `${nInput}%`).eq('language', language).limit(1).maybeSingle();
-  if (fuzzyMatch) return { data: fuzzyMatch.data as Tour[], langFound: language, cityName: fuzzyMatch.city };
-  const { data: anyMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).limit(1).maybeSingle();
+  
+  // 2. Si no hay idioma exacto, buscamos CUALQUIER versión de esa ciudad para traducirla después
+  const { data: anyMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .eq('city', nInput)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+    
   if (anyMatch) return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: anyMatch.city };
+  
   return null;
 };
 
@@ -106,10 +120,10 @@ export const getUserProfileByEmail = async (email: string) => {
   };
 };
 
-export const syncUserProfile = async (profile: UserProfile): Promise<{success: boolean, error?: string}> => {
+export const syncUserProfile = async (profile: UserProfile): Promise<{success: boolean, error?: string, needsMigration?: boolean}> => {
   if (!profile || profile.id === 'guest' || !profile.isLoggedIn) return { success: false, error: 'Not logged in' };
   
-  const payload = {
+  const fullPayload = {
     id: profile.id,
     email: profile.email,
     username: profile.username || 'traveler',
@@ -142,13 +156,20 @@ export const syncUserProfile = async (profile: UserProfile): Promise<{success: b
     updated_at: new Date().toISOString()
   };
 
-  const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+  const { error } = await supabase.from('profiles').upsert(fullPayload, { onConflict: 'id' });
   
   if (error) {
-    console.error("SYNC FAILED:", error.message);
-    return { success: false, error: error.message };
-  } else {
-    console.log("SYNC SUCCESS: Profile pushed to Supabase.");
-    return { success: true };
+    const basicPayload = {
+      id: profile.id,
+      email: profile.email,
+      username: profile.username || 'traveler',
+      avatar: profile.avatar,
+      language: profile.language || 'es',
+      updated_at: new Date().toISOString()
+    };
+    const { error: basicError } = await supabase.from('profiles').upsert(basicPayload, { onConflict: 'id' });
+    if (basicError) return { success: false, error: basicError.message };
+    return { success: true, needsMigration: true };
   }
+  return { success: true };
 };

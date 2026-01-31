@@ -14,6 +14,8 @@ export interface Badge {
   name: string;
   icon: string;
   description: string;
+  category: string;
+  requiredPoints: number;
   earnedAt?: string;
 }
 
@@ -60,6 +62,10 @@ export interface UserProfile {
   culturePoints: number;
   foodPoints: number;
   photoPoints: number;
+  historyPoints?: number;
+  naturePoints?: number;
+  artPoints?: number;
+  archPoints?: number;
   rank: TravelerRank;
   interests: string[];
   accessibility: 'standard' | 'wheelchair' | 'low_walking';
@@ -171,5 +177,11 @@ export const RANK_THRESHOLDS: Record<TravelerRank, number> = {
 };
 
 export const BADGE_DEFINITIONS: Badge[] = [
-  { id: 'pioneer', name: 'Pioneer', icon: 'fa-shoe-prints', description: 'Realiza tu primera visita verificada con GPS.' }
+  { id: 'pioneer', name: 'Pioneer', icon: 'fa-shoe-prints', description: 'Realiza tu primera visita verificada con GPS.', category: 'general', requiredPoints: 1 },
+  { id: 'historian', name: 'Historiador', icon: 'fa-monument', description: 'Visita 20 paradas de categoría histórica.', category: 'historical', requiredPoints: 20 },
+  { id: 'gourmet', name: 'Gourmet', icon: 'fa-utensils', description: 'Descubre 20 paradas de categoría gastronómica.', category: 'food', requiredPoints: 20 },
+  { id: 'art_lover', name: 'Crítico de Arte', icon: 'fa-palette', description: 'Visita 20 paradas de categoría artística.', category: 'art', requiredPoints: 20 },
+  { id: 'architect', name: 'Arquitecto', icon: 'fa-archway', description: 'Analiza 20 paradas de categoría arquitectura.', category: 'architecture', requiredPoints: 20 },
+  { id: 'paparazzi', name: 'Paparazzi IA', icon: 'fa-camera-retro', description: 'Genera 20 momentos inteligentes con Dai.', category: 'photo', requiredPoints: 20 },
+  { id: 'native', name: 'Local Hero', icon: 'fa-handshake', description: 'Visita 20 paradas de categoría cultura local.', category: 'culture', requiredPoints: 20 }
 ];
