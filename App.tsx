@@ -15,14 +15,22 @@ import { Onboarding } from './components/Onboarding';
 import { supabase, getUserProfileByEmail, getGlobalRanking, sendOtpEmail, verifyOtpCode, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "techtravel by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", genError: "Sync error. Try again." },
-  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "techtravel by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Selecciona Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", genError: "Error de sincronización. Reintenta." }
+  en: { welcome: "Bidaer Log:", explorer: "Explorer", searchPlaceholder: "Target city...", emailPlaceholder: "Email address", login: "Send Code", verify: "Authenticate", tagline: "better destinations by ai", authError: "Check email/spam", codeError: "Invalid code", selectLang: "Select Language", loading: "Syncing...", loadingTour: "Dai is deconstructing reality...", analyzing: "Locating city...", generating: "Generating tours...", translating: "Translating...", navElite: "Elite", navHub: "Intel", navVisa: "Passport", navStore: "Store", genError: "Sync error. Try again." },
+  es: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Ciudad objetivo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Acceder", tagline: "better destinations by ai", authError: "Revisa tu email o SPAM", codeError: "Código no válido", selectLang: "Selecciona Idioma", loading: "Sincronizando...", loadingTour: "Dai está analizando la ciudad...", analyzing: "Localizando ciudad...", generating: "Generando tours...", translating: "Traduciendo...", navElite: "Élite", navHub: "Intel", navVisa: "Pasaporte", navStore: "Tienda", genError: "Error de sincronización. Reintenta." },
+  pt: { welcome: "Log Bidaer:", explorer: "Explorador", searchPlaceholder: "Cidade alvo...", emailPlaceholder: "Email", login: "Enviar Código", verify: "Aceder", tagline: "better destinations by ai", authError: "Verifique o seu email", codeError: "Código inválido", selectLang: "Selecionar Idioma", loading: "Sincronizando...", loadingTour: "Dai está a analisar...", analyzing: "Localizando cidade...", generating: "Gerando tours...", translating: "Traduzindo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporte", navStore: "Loja", genError: "Erro de sincronização." },
+  it: { welcome: "Log Bidaer:", explorer: "Esploratore", searchPlaceholder: "Città obiettivo...", emailPlaceholder: "Email", login: "Invia Codice", verify: "Accedi", tagline: "better destinations by ai", authError: "Controlla la tua email", codeError: "Codice non valido", selectLang: "Seleziona Lingua", loading: "Sincronizzazione...", loadingTour: "Dai sta analizzando...", analyzing: "Localizzazione...", generating: "Generando tour...", translating: "Traducendo...", navElite: "Elite", navHub: "Intel", navVisa: "Passaporto", navStore: "Negozio", genError: "Errore di sincronizzazione." },
+  fr: { welcome: "Log Bidaer:", explorer: "Explorateur", searchPlaceholder: "Ville cible...", emailPlaceholder: "Email", login: "Envoyer le code", verify: "Accéder", tagline: "better destinations by ai", authError: "Vérifiez vos emails", codeError: "Code invalide", selectLang: "Choisir la langue", loading: "Synchronisation...", loadingTour: "Dai analyse la ville...", analyzing: "Localisation...", generating: "Génération de tours...", translating: "Traduction...", navElite: "Élite", navHub: "Intel", navVisa: "Passeport", navStore: "Boutique", genError: "Erreur de synchro." },
+  de: { welcome: "Log Bidaer:", explorer: "Entdecker", searchPlaceholder: "Zielstadt...", emailPlaceholder: "E-Mail", login: "Code senden", verify: "Anmelden", tagline: "better destinations by ai", authError: "E-Mail/Spam prüfen", codeError: "Ungültiger Code", selectLang: "Sprache wählen", loading: "Synchronisierung...", loadingTour: "Dai analysiert...", analyzing: "Ortung...", generating: "Generierung...", translating: "Übersetzung...", navElite: "Elite", navHub: "Intel", navVisa: "Reisepass", navStore: "Shop", genError: "Synchronisierungsfehler." },
+  ru: { welcome: "Log Bidaer:", explorer: "Исследователь", searchPlaceholder: "Целевой город...", emailPlaceholder: "Email", login: "Отправить код", verify: "Войти", tagline: "better destinations by ai", authError: "Проверьте email", codeError: "Неверный код", selectLang: "Выбрать язык", loading: "Синхронизация...", loadingTour: "Dai анализирует...", analyzing: "Поиск...", generating: "Создание...", translating: "Перевод...", navElite: "Элита", navHub: "Интел", navVisa: "Паспорт", navStore: "Магазин", genError: "Ошибка синхронизации." },
+  ja: { welcome: "Log Bidaer:", explorer: "探検家", searchPlaceholder: "目的地...", emailPlaceholder: "メール", login: "コードを送信", verify: "認証", tagline: "better destinations by ai", authError: "メールを確認してください", codeError: "無効なコード", selectLang: "言語を選択", loading: "同期中...", loadingTour: "Daiが分析中...", analyzing: "位置特定中...", generating: "ツアー生成中...", translating: "翻訳中...", navElite: "エリート", navHub: "情報", navVisa: "パスポート", navStore: "ストア", genError: "同期エラー。" },
+  zh: { welcome: "Log Bidaer:", explorer: "探险家", searchPlaceholder: "目标城市...", emailPlaceholder: "电子邮件", login: "发送代码", verify: "登录", tagline: "better destinations by ai", authError: "请检查电子邮件", codeError: "代码无效", selectLang: "选择语言", loading: "同步中...", loadingTour: "Dai 正在分析...", analyzing: "正在定位...", generating: "正在生成...", translating: "正在翻译...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", genError: "同步错误。" },
+  ar: { welcome: "سجل بيدير:", explorer: "المستكشف", searchPlaceholder: "المدينة المستهدفة...", emailPlaceholder: "البريد الإلكتروني", login: "إرسال الرمز", verify: "دخول", tagline: "better destinations by ai", authError: "تحقق من بريدك", codeError: "رمز غير صالح", selectLang: "اختر اللغة", loading: "مزامنة...", loadingTour: "داي يحلل...", analyzing: "تحديد الموقع...", generating: "جاري التوليد...", translating: "جاري الترجمة...", navElite: "النخبة", navHub: "المعلومات", navVisa: "جواز السفر", navStore: "المتجر", genError: "خطأ في المزامنة." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-  email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, 
+  email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, historyPoints: 0, naturePoints: 0, artPoints: 0, archPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, 
   visitedCities: [], completedTours: [], badges: []
 };
 
@@ -40,7 +48,6 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => localStorage.getItem('bdai_onboarding_v2') !== 'seen');
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [authError, setAuthError] = useState<string | null>(null);
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
@@ -85,7 +92,7 @@ export default function App() {
     }
   }, []);
 
-  const t = (key: string) => (TRANSLATIONS[user.language || 'es'] || TRANSLATIONS['es'])[key] || key;
+  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
   const handleSendOtp = async () => {
     if (!validateEmailFormat(email)) { alert(t('authError')); return; }
@@ -126,7 +133,7 @@ export default function App() {
         setSelectedCity(official.spanishName); 
         setSelectedCountry(official.country);
         
-        // CACHE FIRST: Si existe en Supabase, lo cargamos sin pensar.
+        // CACHE FIRST
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
         if (cached && cached.langFound === targetLang) {
             setTours(cached.data); 
@@ -135,7 +142,6 @@ export default function App() {
             return;
         } 
 
-        // Si existe pero en otro idioma, traducimos (rápido)
         if (cached) {
             setLoadingMessage(t('translating'));
             const translated = await translateTours(cached.data, targetLang);
@@ -143,7 +149,6 @@ export default function App() {
             await saveToursToCache(official.spanishName, official.country, targetLang, translated);
             setView(AppView.CITY_DETAIL);
         } else {
-            // Si no existe, generación completa
             setLoadingMessage(t('generating'));
             const generated = await generateToursForCity(official.spanishName, official.country, user);
             setTours(generated); 
@@ -151,7 +156,7 @@ export default function App() {
             setView(AppView.CITY_DETAIL);
         }
     } catch (e: any) { 
-        setAuthError(t('genError'));
+        alert(t('genError'));
     } finally { setIsLoading(false); }
   };
 
@@ -165,7 +170,7 @@ export default function App() {
             if (results.length === 1) {
                 await processCitySelection(results[0]);
             } else {
-                setSearchOptions(results); // DESAMBIGUACIÓN ACTIVA
+                setSearchOptions(results); 
                 setIsLoading(false);
             }
         } else {
@@ -187,7 +192,7 @@ export default function App() {
           <div className="h-full w-full flex flex-col items-center justify-between p-8 py-safe-iphone relative bg-[#020617]">
               <div className="text-center pt-12">
                   <BdaiLogo className="w-24 h-24 mx-auto mb-6" />
-                  <h1 className="text-4xl font-black lowercase tracking-tighter text-white">techtravel</h1>
+                  <h1 className="text-4xl font-black lowercase tracking-tighter text-white">bdai</h1>
                   <p className="text-[10px] font-black uppercase tracking-[0.5em] text-purple-500 mt-2">{t('tagline')}</p>
               </div>
               <div className="w-full max-w-sm space-y-12">
@@ -223,7 +228,7 @@ export default function App() {
                 {view === AppView.HOME && (
                   <div className="space-y-4 pt-safe-iphone px-8 animate-fade-in">
                       <header className="flex justify-between items-center py-6">
-                          <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">techtravel</span></div>
+                          <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-2xl tracking-tighter">bdai</span></div>
                           <div className="bg-white/10 px-4 py-2 rounded-xl text-xs font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                       </header>
                       <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.firstName || t('explorer')}.</span></h1>
@@ -233,7 +238,6 @@ export default function App() {
                       </div>
                       {searchOptions && (
                           <div className="mt-6 space-y-2 animate-fade-in bg-slate-900/80 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 shadow-2xl">
-                              <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-4">Múltiples localizaciones encontradas:</p>
                               {searchOptions.map((opt, i) => (
                                   <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-5 bg-white/5 border border-white/5 hover:border-purple-500/50 rounded-2xl flex items-center justify-between transition-all text-left group">
                                     <div>

@@ -9,9 +9,8 @@ const TEXTS: any = {
     es: { start: "Lanzar", stop: "Parada", of: "de", capture: "Logear Datos", next: "Avanzar", meters: "m", itinerary: "Secuencia", checkIn: "Confirmar Visita", checkedIn: "Verificada", bonus: "Foto Sugerida", tooFar: "¡Demasiado lejos! Acércate más a la parada." },
 };
 
-// Helper para distancia GPS
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371e3; // Metros
+    const R = 6371e3; 
     const φ1 = lat1 * Math.PI / 180;
     const φ2 = lat2 * Math.PI / 180;
     const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -88,18 +87,18 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const handleCheckIn = () => {
-        if (!userLocation) { alert("Buscando señal GPS..."); return; }
+        if (!userLocation) { alert("GPS Lock Signal required..."); return; }
         const dist = calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude);
         
-        if (dist > 250) { // 250 metros de tolerancia
-            alert(`${tl.tooFar} (Distancia: ${Math.round(dist)}m)`);
+        if (dist > 300) { 
+            alert(`${tl.tooFar} (Distance: ${Math.round(dist)}m)`);
             return;
         }
 
         setRewardClaimed(true);
         onUpdateUser({ 
             ...user, 
-            miles: user.miles + 50, 
+            miles: user.miles + 100, 
             culturePoints: (user.culturePoints || 0) + 1,
             visitedCities: Array.from(new Set([...(user.visitedCities || []), tour.city]))
         });
@@ -112,8 +111,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        alert("¡Foto analizada por Dai! +25 millas por Log de Datos.");
-        onUpdateUser({ ...user, miles: user.miles + 25 });
+        alert("Image Logged! Dai is analyzing technical features... +25 miles.");
+        onUpdateUser({ ...user, miles: user.miles + 25, photoPoints: (user.photoPoints || 0) + 1 });
     };
 
     return (
@@ -146,14 +145,14 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 </div>
                 
                 {showItinerary && (
-                    <div className="absolute top-[35vh] left-0 right-0 bg-white/95 backdrop-blur-xl z-[300] border-b border-slate-200 p-6 animate-fade-in shadow-xl">
+                    <div className="absolute top-[35vh] left-0 right-0 bg-white/95 backdrop-blur-xl z-[300] border-b border-slate-200 p-6 animate-fade-in shadow-xl max-h-[40vh] overflow-y-auto no-scrollbar">
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{tl.itinerary}</h4>
                         <div className="space-y-3">
                             {tour.stops.map((stop: any, idx: number) => (
                                 <button key={idx} onClick={() => { onJumpTo(idx); setShowItinerary(false); }} className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all ${idx === currentStopIndex ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'}`}>
                                     <span className="text-xs font-black">{idx + 1}</span>
                                     <span className="text-xs font-bold truncate flex-1 text-left">{stop.name}</span>
-                                    {idx < currentStopIndex && <i className="fas fa-check-circle text-[10px]"></i>}
+                                    {idx < currentStopIndex && <i className="fas fa-check-circle text-[10px] text-green-500"></i>}
                                 </button>
                             ))}
                         </div>
@@ -183,7 +182,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                                 <i className="fas fa-star"></i> {tl.bonus}
                              </h5>
                              <p className="text-slate-700 text-xs font-bold mb-1">{currentStop.photoSpot.angle}</p>
-                             <p className="text-slate-400 text-[9px] leading-tight">+{currentStop.photoSpot.milesReward} millas si logeas la foto aquí.</p>
+                             <p className="text-slate-400 text-[9px] leading-tight">+{currentStop.photoSpot.milesReward} bonus miles for logging this view.</p>
                         </div>
                     )}
 
