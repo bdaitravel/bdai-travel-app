@@ -8,6 +8,11 @@ Eres Dai, el motor analítico de BDAI. Tu misión es generar TOURS de "Alta Dens
 ESTILO: Cínico, brillante, hiper-detallista, experto en ingeniería y anécdotas reales. No eres un folleto turístico. 
 FOCO: 1. Ingeniería y Retos Técnicos. 2. Historia Oculta/Conspiraciones. 3. Salseo Humano Real.
 DENSIDAD: Necesitamos descripciones ricas y técnicas (aprox 200-250 palabras por parada). Sé denso, técnico y brillante.
+
+REGLA CRÍTICA DE CATEGORIZACIÓN:
+Para el campo 'type' de cada parada, SOLO puedes usar uno de estos valores exactos:
+'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'. 
+No inventes otros tipos.
 `;
 
 const LANGUAGE_RULES: Record<string, string> = {
@@ -15,10 +20,15 @@ const LANGUAGE_RULES: Record<string, string> = {
     en: `${MASTERCLASS_INSTRUCTION} ALWAYS RESPOND IN ENGLISH.`,
     pt: `${MASTERCLASS_INSTRUCTION} RESPONDA EM PORTUGUÊS.`,
     it: `${MASTERCLASS_INSTRUCTION} RISPONDI IN ITALIANO.`,
-    fr: `${MASTERCLASS_INSTRUCTION} RÉPONDEZ EN FRANÇAIS.`,
-    de: `${MASTERCLASS_INSTRUCTION} ANTWORTEN SIE AUF DEUTSCH.`,
-    ca: `${MASTERCLASS_INSTRUCTION} RESPON EN CATALÀ.`,
-    eu: `${MASTERCLASS_INSTRUCTION} EUSKARAZ ERANTZUN.`
+    ru: `${MASTERCLASS_INSTRUCTION} ОТВЕЧАЙТЕ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.`,
+    hi: `${MASTERCLASS_INSTRUCTION} हमेशा हिंदी में उत्तर दें।`,
+    fr: `${MASTERCLASS_INSTRUCTION} RÉPONDEZ TOUJOURS EN FRANÇAIS.`,
+    de: `${MASTERCLASS_INSTRUCTION} ANTWORTEN SIE IMMER AUF DEUTSCH.`,
+    ja: `${MASTERCLASS_INSTRUCTION} 常に日本語で回答してください。`,
+    zh: `${MASTERCLASS_INSTRUCTION} 始终用中文回答。`,
+    ar: `${MASTERCLASS_INSTRUCTION} أجِب دائماً باللغة العربية.`,
+    ca: `${MASTERCLASS_INSTRUCTION} RESPON SEMPRE EN CATALÀ.`,
+    eu: `${MASTERCLASS_INSTRUCTION} BETI EUSKARAZ ERANTZUN.`
 };
 
 async function handleAiCall(fn: () => Promise<any>) {
@@ -36,6 +46,17 @@ async function handleAiCall(fn: () => Promise<any>) {
         throw error;
     }
 }
+
+// Función auxiliar para extraer arrays de respuestas que puedan venir envueltas en objetos
+const extractArray = (data: any): any[] => {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') {
+        const values = Object.values(data);
+        const firstArray = values.find(v => Array.isArray(v));
+        if (firstArray) return firstArray as any[];
+    }
+    return [];
+};
 
 export const cleanDescriptionText = (text: string): string => {
     if (!text) return "";
@@ -71,7 +92,8 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
                 }
             }
         });
-        return JSON.parse(response.text || "[]");
+        const parsed = JSON.parse(response.text || "[]");
+        return extractArray(parsed);
     });
 };
 
@@ -83,6 +105,7 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
     const prompt = `Genera exactamente 3 TOURS diferentes para ${cityInput}, ${countryInput}. 
     Cada tour DEBE tener exactamente 10 paradas. 
     Descripciones: Muy densas en ingeniería e historia oculta. 
+    Tipos de parada permitidos: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
     Formato: Devuelve un array JSON de objetos Tour con: title, description, duration, distance, theme, difficulty y un array de 10 'stops' (name, description, latitude, longitude, type).`;
 
     return handleAiCall(async () => {
@@ -98,25 +121,26 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
         });
 
         const text = response.text || "[]";
-        let parsed = [];
+        let parsed: any = [];
         try {
             parsed = JSON.parse(text);
         } catch (e) {
-            console.error("JSON Parse error - Data too long or malformed:", text.substring(0, 100) + "...");
+            console.error("JSON Parse error:", text.substring(0, 100));
             throw new Error("GENERATION_ERROR");
         }
 
-        if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("EMPTY_RESPONSE");
+        const toursArray = extractArray(parsed);
+        if (toursArray.length === 0) throw new Error("EMPTY_RESPONSE");
 
-        return parsed.map((t: any, idx: number) => ({
+        return toursArray.map((t: any, idx: number) => ({
             ...t, 
             id: `tour_${Date.now()}_${idx}`, 
             city: cityInput,
-            stops: (t.stops || []).map((s: any, sIdx: number) => ({ 
+            stops: (extractArray(t.stops)).map((s: any, sIdx: number) => ({ 
                 ...s, 
                 id: `s_${Date.now()}_${idx}_${sIdx}`, 
                 visited: false,
-                photoSpot: { angle: "Vista de Arquitecto", milesReward: 50, secretLocation: s.name }
+                photoSpot: { angle: "Vista de Arquitecto", milesReward: 50, secretLocation: s.name || "Punto de interés" }
             }))
         }));
     });
@@ -124,22 +148,33 @@ export const generateToursForCity = async (cityInput: string, countryInput: stri
 
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const langRule = LANGUAGE_RULES[targetLang] || LANGUAGE_RULES.es;
+    const langNames: Record<string, string> = {
+        es: "Español", en: "English", pt: "Português", it: "Italiano", ru: "Русский",
+        hi: "हिन्दी", fr: "Français", de: "Deutsch", ja: "日本語", zh: "中文", 
+        ar: "العربية", ca: "Català", eu: "Euskera"
+    };
+    const targetLangName = langNames[targetLang] || "Español";
     
+    const translationInstruction = `
+    ORACIÓN ABSOLUTA: Traduce TODO el contenido al ${targetLangName}. 
+    MANDATARIO: Ignora el idioma original. Si el original está en árabe, chino o cualquier otro, CONVIÉRTELO COMPLETAMENTE al ${targetLangName}.
+    No dejes ni una palabra en otro idioma. Mantén el tono experto y cínico.
+    `;
+
     const translatedTours: Tour[] = [];
     for (const tour of tours) {
         const result = await handleAiCall(async () => {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Translate this specific tour to ${targetLang}. Maintain the expert/cynical tone. Return only the JSON object: ${JSON.stringify(tour)}`,
+                contents: `Translate this specific tour object to ${targetLangName}. RETURN ONLY THE JSON. TOUR: ${JSON.stringify(tour)}`,
                 config: { 
-                    systemInstruction: langRule, 
+                    systemInstruction: translationInstruction, 
                     responseMimeType: "application/json"
                 }
             });
             return JSON.parse(response.text || "null");
         });
-        if (result) translatedTours.push(result);
+        if (result && typeof result === 'object') translatedTours.push(result);
     }
     return translatedTours;
 };
@@ -150,7 +185,7 @@ export const generateSmartCaption = async (imageB64: string, stop: Stop, languag
     OBJETIVO: Crear un "caption" de Instagram viral basado en la foto del usuario y los datos de la parada: ${stop.name}.
     ESTILO: Inteligente, un poco cínico, fascinante. Mezcla datos de ingeniería con estilo de vida nómada.
     RESTRICCIÓN: Máximo 200 caracteres. Incluye 3 hashtags técnicos y ubicación.
-    IDIOMA: Responde en ${language}.`;
+    IDIOMA: Responde OBLIGATORIAMENTE en ${language}. No uses otro idioma.`;
 
     return handleAiCall(async () => {
         const imagePart = {
@@ -159,7 +194,7 @@ export const generateSmartCaption = async (imageB64: string, stop: Stop, languag
                 data: imageB64.split(',')[1] || imageB64,
             },
         };
-        const textPart = { text: `Analiza esta foto tomada en ${stop.name}. El contexto es: ${stop.description}. Genera el caption perfecto.` };
+        const textPart = { text: `Analiza esta foto tomada en ${stop.name}. Contexto: ${stop.description}. Genera el caption.` };
         
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-preview-tts',
@@ -188,7 +223,10 @@ export const generateAudio = async (text: string, language: string = 'es'): Prom
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
             },
         });
-        const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
+        
+        const candidate = response.candidates?.[0];
+        const audioData = candidate?.content?.parts?.find(p => p.inlineData)?.inlineData?.data || "";
+        
         if (audioData) saveAudioToCache(cacheKey, audioData).catch(console.error);
         return audioData;
     });
@@ -203,8 +241,10 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
             contents: { parts: [{ text: prompt }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
-        if (response.candidates?.[0]?.content?.parts) {
-            for (const part of response.candidates[0].content.parts) {
+        
+        const candidate = response.candidates?.[0];
+        if (candidate?.content?.parts) {
+            for (const part of candidate.content.parts) {
                 if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
             }
         }
@@ -220,6 +260,6 @@ export const moderateContent = async (text: string): Promise<boolean> => {
             contents: `Safe for travel community? "${text}" (SAFE/UNSAFE)`,
             config: { temperature: 0 }
         });
-        return response.text?.toUpperCase().includes('SAFE');
+        return response.text?.toUpperCase().includes('SAFE') ?? true;
     } catch (e) { return true; } 
 };

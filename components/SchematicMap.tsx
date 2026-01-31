@@ -17,16 +17,6 @@ const STOP_ICONS: Record<string, string> = {
 const TEXTS: any = {
     en: { guide: "Walking to stop", openInMaps: "GPS Nav" },
     es: { guide: "Caminando a la parada", openInMaps: "Ir con GPS" },
-    pt: { guide: "Caminhando para parada", openInMaps: "Navegação GPS" },
-    it: { guide: "Camminando verso tappa", openInMaps: "Nav GPS" },
-    ru: { guide: "Идем к остановке", openInMaps: "GPS Нав" },
-    hi: { guide: "स्टॉप की ओर बढ़ रहे हैं", openInMaps: "GPS नेविगेशन" },
-    fr: { guide: "Marche vers l'arrêt", openInMaps: "Nav GPS" },
-    de: { guide: "Weg zum Stopp", openInMaps: "Navi" },
-    ja: { guide: "目的地へ徒歩", openInMaps: "地図で開く" },
-    zh: { guide: "步行至站点", openInMaps: "导航" },
-    ca: { guide: "Caminant a la parada", openInMaps: "Anar amb GPS" },
-    eu: { guide: "Geldialdirantz oinez", openInMaps: "GPSarekin joan" }
 };
 
 export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, onPlayAudio, audioPlayingId, audioLoadingId, userLocation }) => {
@@ -79,6 +69,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     const validStops = stops.filter((s:any) => s.latitude && s.longitude);
     validStops.forEach((stop: any, idx: number) => {
         const isActive = idx === currentStopIndex;
+        // Mapeo seguro de iconos
         const iconName = STOP_ICONS[stop.type] || 'fa-location-dot';
         const iconHtml = `<div class="w-10 h-10 rounded-full border-4 border-white shadow-2xl flex items-center justify-center text-[11px] font-black ${isActive ? 'bg-purple-600 text-white scale-125 z-[5000]' : 'bg-slate-900 text-white opacity-50'} transition-all duration-300"><i class="fas ${iconName}"></i></div>`;
         const marker = L.marker([stop.latitude, stop.longitude], { icon: L.divIcon({ className: '', html: iconHtml, iconSize: [40, 40], iconAnchor: [20, 20] }) }).addTo(map);
