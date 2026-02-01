@@ -15,8 +15,11 @@ async function handleAiCall<T>(fn: () => Promise<T>, retries = 3, delay = 1000):
     try {
         return await fn();
     } catch (e: any) {
-        if ((e.message?.includes('429') || e.status === 429) && retries > 0) {
-            console.warn(`Rate limit hit (429). Retrying in ${delay}ms...`);
+        const isRateLimit = e.message?.includes('429') || e.status === 429;
+        const isNetworkError = e instanceof TypeError && e.message?.includes('fetch');
+        
+        if ((isRateLimit || isNetworkError) && retries > 0) {
+            console.warn(`AI Call failed (${e.message}). Retrying in ${delay}ms...`);
             await new Promise(res => setTimeout(res, delay));
             return handleAiCall(fn, retries - 1, delay * 2);
         }
@@ -25,8 +28,8 @@ async function handleAiCall<T>(fn: () => Promise<T>, retries = 3, delay = 1000):
 }
 
 export const standardizeCityName = async (input: string): Promise<{name: string, spanishName: string, country: string}[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Identify this city: "${input}". Return JSON array of objects with keys: name (English), spanishName (Spanish), country (English). If unsure, return empty array. Only use valid cities.`,
@@ -37,10 +40,10 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
 };
 
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     const langRule = `RESPOND IN ${user.language.toUpperCase()}.`;
     
     return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `${MASTERCLASS_INSTRUCTION} ${langRule} \n\n Generate 2 unique tours for ${city}, ${country}. Each tour must have exactly 10 stops. Output as JSON array of Tour objects. Ensure long, technical descriptions.`,
@@ -61,28 +64,30 @@ export const generateAudio = async (text: string, language: string): Promise<str
     const cached = await getCachedAudio(cacheKey);
     if (cached) return cached;
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: text.slice(0, 500) }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
-            },
-        });
-        const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
-        if (base64) await saveAudioToCache(cacheKey, base64);
-        return base64;
-    } catch (e) {
-        console.error("TTS Error", e);
-        return null;
-    }
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        try {
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash-preview-tts",
+                contents: [{ parts: [{ text: text.slice(0, 500) }] }],
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
+                },
+            });
+            const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+            if (base64) await saveAudioToCache(cacheKey, base64);
+            return base64;
+        } catch (e) {
+            console.error("TTS Error", e);
+            return null;
+        }
+    });
 };
 
 export const generateSmartCaption = async (base64: string, stop: Stop, language: string): Promise<string> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: {
@@ -101,8 +106,8 @@ export const generateSmartCaption = async (base64: string, stop: Stop, language:
 };
 
 export const moderateContent = async (content: string): Promise<boolean> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Analyze if this message is appropriate for a public travel board. It must be safe for all audiences and contain no hate speech or harassment. Return exactly "SAFE" or "TOXIC". Message: "${content}"`,
@@ -113,8 +118,8 @@ export const moderateContent = async (content: string): Promise<boolean> => {
 };
 
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: {
@@ -144,8 +149,8 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
 };
 
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Translate the following array of tour objects to ${targetLang}. Maintain the persona of "Dai" (technical, cynical, detailed). Return the result as a valid JSON array of Tour objects. Tours: ${JSON.stringify(tours)}`,

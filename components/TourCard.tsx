@@ -7,6 +7,12 @@ import { generateAudio, generateSmartCaption } from '../services/geminiService';
 const TEXTS: any = {
     es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Verificar por Foto", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil" },
     en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Verify by Photo", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS" },
+    it: { start: "Avvia", stop: "Tappa", of: "di", photoSpot: "Angolo Tecnico", capture: "Log Dati", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Itinerario", syncing: "Sincronizzazione...", tooFar: "GPS Incerto", generateStory: "Verifica con Foto", checkIn: "Check-in GPS", checkedIn: "Verificato", shareInsta: "Copia Didascalia", distance: "a", refreshGps: "Aggiorna GPS", gpsOk: "GPS OK", gpsLow: "GPS Debole" },
+    pt: { start: "Iniciar", stop: "Parada", of: "de", photoSpot: "Ângulo Técnico", capture: "Log Dados", rewardReceived: "Sincronizado", prev: "Voltar", next: "Avançar", meters: "m", itinerary: "Itinerário", syncing: "Sincronizando...", tooFar: "GPS Incerto", generateStory: "Verificar por Foto", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Legenda", distance: "a", refreshGps: "Atualizar GPS", gpsOk: "GPS OK", gpsLow: "GPS Fraco" },
+    fr: { start: "Lancer", stop: "Arrêt", of: "de", photoSpot: "Angle Technique", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Retour", next: "Suivant", meters: "m", itinerary: "Itinéraire", syncing: "Sync...", tooFar: "GPS Incertain", generateStory: "Vérifier par Photo", checkIn: "Check-in GPS", checkedIn: "Vérifié", shareInsta: "Copier Légende", distance: "à", refreshGps: "Actualiser GPS", gpsOk: "GPS OK", gpsLow: "GPS Faible" },
+    de: { start: "Starten", stop: "Stopp", of: "von", photoSpot: "Technischer Winkel", capture: "Daten Loggen", rewardReceived: "Synchronisiert", prev: "Zurück", next: "Weiter", meters: "m", itinerary: "Route", syncing: "Synchronisiere...", tooFar: "GPS Unsicher", generateStory: "Per Foto verifizieren", checkIn: "GPS Check-in", checkedIn: "Verifiziert", shareInsta: "Text kopieren", distance: "bei", refreshGps: "GPS erneuern", gpsOk: "GPS OK", gpsLow: "GPS Schwach" },
+    ja: { start: "開始", stop: "停留所", of: "/", photoSpot: "テクニカルアングル", capture: "データをログ", rewardReceived: "同期済み", prev: "戻る", next: "次へ", meters: "m", itinerary: "旅程", syncing: "同期中...", tooFar: "GPS不安定", generateStory: "写真で確認", checkIn: "GPSチェックイン", checkedIn: "確認済み", shareInsta: "キャプションをコピー", distance: "まで", refreshGps: "GPS更新", gpsOk: "GPS良好", gpsLow: "GPS弱" },
+    ru: { start: "Запуск", stop: "Остановка", of: "из", photoSpot: "Технический угол", capture: "Лог данных", rewardReceived: "Синхронизировано", prev: "Назад", next: "Вперед", meters: "м", itinerary: "Маршрут", syncing: "Синхронизация...", tooFar: "GPS неточен", generateStory: "Проверить по фото", checkIn: "GPS Регистрация", checkedIn: "Подтверждено", shareInsta: "Копировать текст", distance: "в", refreshGps: "Обновить GPS", gpsOk: "GPS OK", gpsLow: "Слабый GPS" },
     ar: { start: "إطلاق", stop: "محطة", of: "من", photoSpot: "زاوية تقنية", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "رجوع", next: "التالي", meters: "م", itinerary: "المسار", syncing: "جاري المزامنة...", tooFar: "GPS غير دقيق", generateStory: "تأكيد بالصورة", checkIn: "تأكيد GPS", checkedIn: "تم التأكيد", shareInsta: "نسخ النص", distance: "على بعد", refreshGps: "تحديث GPS", gpsOk: "GPS جيد", gpsLow: "GPS ضعيف" }
 };
 
@@ -58,13 +64,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Distancia calculada
     const distToTarget = useMemo(() => {
         if (!userLocation) return null;
         return Math.round(calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
     }, [userLocation, currentStop]);
 
-    // Rango de validación (1km)
     const IS_IN_RANGE = distToTarget !== null && distToTarget <= 1000;
 
     useEffect(() => {
@@ -130,8 +134,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const handlePhotoReward = () => {
-        // Permitimos abrir cámara siempre, incluso si el GPS falla, 
-        // porque la IA validará si la foto es correcta
         fileInputRef.current?.click();
     };
 
@@ -143,9 +145,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         reader.onloadend = async () => {
             const base64 = reader.result as string;
             try {
-                // Dai analizará si la foto es del sitio correcto
                 const caption = await generateSmartCaption(base64, currentStop, language);
-                
                 const moment = { 
                     id: `m_${Date.now()}`, 
                     stopId: currentStop.id, 
@@ -155,15 +155,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     caption, 
                     timestamp: new Date().toISOString() 
                 };
-
                 setStoryMoment(moment);
                 setShowStoryModal(true);
                 setPhotoClaimed(true);
-                
-                // IMPORTANTE: Al validar por foto, también damos las millas del Check-in si no se habían dado
-                const milesBonus = rewardClaimed ? 100 : 150; // 100 de foto + 50 de check-in implícito
+                const milesBonus = rewardClaimed ? 100 : 150;
                 setRewardClaimed(true);
-
                 onUpdateUser({ 
                     ...user, 
                     miles: user.miles + milesBonus, 
@@ -238,8 +234,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col relative">
                 <div className="h-[32vh] w-full relative z-[100] shrink-0 border-b border-slate-100 bg-slate-200">
                     <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={(i: number) => { onJumpTo(i); stopAudio(); }} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} />
-                    
-                    {/* Botón flotante para refrescar GPS en el mapa */}
                     <button onClick={handleRefreshGps} className="absolute bottom-4 right-4 z-[500] w-10 h-10 bg-white rounded-full shadow-xl flex items-center justify-center text-purple-600 border border-purple-100 active:scale-90 transition-all">
                         <i className={`fas fa-location-crosshairs ${isRefreshingGps ? 'animate-spin' : ''}`}></i>
                     </button>

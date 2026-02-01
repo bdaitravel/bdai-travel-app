@@ -8,38 +8,17 @@ const UI_LABELS: any = {
     es: { hubTitle: "Explora el Mundo", hubSub: "Destinos Globales Inteligentes", homeTitle: "Explora España", homeSub: "Grandes Capitales", villagesTitle: "Pueblos con Encanto", villagesSub: "Joyas Rurales de España", catVisited: "Iconos Mundiales", catGrowth: "Joyas en Auge", catExotic: "Exóticos", loading: "Sincronizando...",
           themes: { 'Madrid': 'Capital Histórica', 'Barcelona': 'Modernismo Vivo', 'Sevilla': 'Esencia Mudéjar', 'Albarracín': 'Tesoro Medieval', 'Cudillero': 'Anfiteatro Marino', 'Ronda': 'La Ciudad Soñada', 'Santillana del Mar': 'Villa Medieval', 'París': 'La Ciudad de la Luz', 'Tokio': 'Cyberpunk Real', 'Nueva York': 'El Centro del Mundo', 'Tiflis': 'Cáucaso Vanguardista', 'Medellín': 'Innovación Tropical', 'Da Nang': 'Futuro de Vietnam', 'Socotra': 'Planeta Olvidado', 'Petra': 'Ciudad de Piedra', 'Wadi Rum': 'Valle de la Luna' }
     },
+    it: { hubTitle: "Esplora il Mondo", hubSub: "Destinazioni Globali", homeTitle: "Esplora la Spagna", homeSub: "Grandi Capitali", villagesTitle: "Borghi Incantevoli", villagesSub: "Gemme Rurali", catVisited: "Icone Mondiali", catGrowth: "Stelle Nascenti", catExotic: "Esotici", loading: "Sincronizzazione...",
+          themes: { 'Madrid': 'Capitale Storica', 'Barcelona': 'Modernismo Vivo', 'Sevilla': 'Essenza Mudéjar', 'Albarracín': 'Tesoro Medievale', 'Cudillero': 'Anfiteatro Marino', 'Ronda': 'La Città dei Sogni', 'Santillana del Mar': 'Borgo Medievale', 'París': 'Città della Luce', 'Tokio': 'Cyberpunk Reale', 'Nueva York': 'Centro del Mondo', 'Tiflis': 'Avanguardia Caucasica', 'Medellín': 'Innovazione Tropicale', 'Da Nang': 'Futuro del Vietnam', 'Socotra': 'Pianeta Dimenticato', 'Petra': 'Città di Pietra', 'Wadi Rum': 'Valle della Luna' }
+    },
     pt: { hubTitle: "Explorar o Mundo", hubSub: "Destinos Globais Inteligentes", homeTitle: "Explorar Espanha", homeSub: "Grandes Capitais", villagesTitle: "Vilas Charmosas", villagesSub: "Joias Rurais", catVisited: "Ícones Globais", catGrowth: "Estrelas em Ascensão", catExotic: "Exóticos", loading: "Sincronizando...",
           themes: { 'Madrid': 'Capital Histórica', 'Barcelona': 'Modernismo Vivo', 'Sevilla': 'Essência Mudéjar', 'Albarracín': 'Tesouro Medieval', 'Cudillero': 'Anfiteatro Marinho', 'Ronda': 'Cidade dos Sonhos', 'Santillana del Mar': 'Vila Medieval', 'París': 'Cidade Luz', 'Tokio': 'Realidade Cyberpunk', 'Nueva York': 'Centro do Mundo', 'Tiflis': 'Vanguarda do Cáucaso', 'Medellín': 'Inovação Tropical', 'Da Nang': 'Futuro do Vietnã', 'Socotra': 'Planeta Esquecido', 'Petra': 'Cidade de Pedra', 'Wadi Rum': 'Vale da Lua' }
-    },
-    it: { hubTitle: "Esplora il Mondo", hubSub: "Destinazioni Intelligenti", homeTitle: "Esplora la Spagna", homeSub: "Grandi Capitali", villagesTitle: "Borghi Incantevoli", villagesSub: "Gemme Rurali", catVisited: "Icone Mondiali", catGrowth: "Stelle Nascenti", catExotic: "Esotici", loading: "Sincronizzazione...",
-          themes: { 'Madrid': 'Capitale Storica', 'Barcelona': 'Modernismo Vivo', 'Sevilla': 'Essenza Mudéjar', 'Albarracín': 'Tesoro Medievale', 'Cudillero': 'Anfiteatro Marino', 'Ronda': 'Città dei Sogni', 'Santillana del Mar': 'Borgo Medievale', 'París': 'Città della Luce', 'Tokio': 'Realtà Cyberpunk', 'Nueva York': 'Centro del Mondo', 'Tiflis': 'Avanguardia del Caucaso', 'Medellín': 'Innovazione Tropicale', 'Da Nang': 'Futuro del Vietnam', 'Socotra': 'Pianeta Dimenticato', 'Petra': 'Città di Pietra', 'Wadi Rum': 'Valle della Luna' }
-    },
-    ru: { hubTitle: "Мир", hubSub: "Умные направления", homeTitle: "Испания", homeSub: "Столицы", villagesTitle: "Деревни", villagesSub: "Сельские жемчужины", catVisited: "Иконы", catGrowth: "Звезды", catExotic: "Экзотика", loading: "Загрузка...",
-          themes: { 'Madrid': 'Историческая столица', 'Barcelona': 'Живой модернизм', 'Sevilla': 'Суть мудехара', 'Albarracín': 'Средневековое сокровище', 'Cudillero': 'Морской амфитеатр', 'Ronda': 'Город мечты', 'Santillana del Mar': 'Средневековая вилла', 'París': 'Город света', 'Tokio': 'Киберпанк', 'Nueva York': 'Центр мира' }
     },
     fr: { hubTitle: "Explorer le Monde", hubSub: "Destinations Intelligentes", homeTitle: "Explorer l'Espagne", homeSub: "Grandes Capitales", villagesTitle: "Villages de Charme", villagesSub: "Joyaux Ruraux", catVisited: "Icônes", catGrowth: "Étoiles Montantes", catExotic: "Exotique", loading: "Sync...",
           themes: { 'Madrid': 'Capitale Historique', 'Barcelona': 'Modernisme Vivant', 'Sevilla': 'Essence Mudéjar', 'París': 'Ville Lumière', 'Tokio': 'Réalité Cyberpunk', 'Nueva York': 'Centre du Monde' }
     },
     de: { hubTitle: "Welt Erkunden", hubSub: "Intelligente Reiseziele", homeTitle: "Spanien Erkunden", homeSub: "Große Hauptstädte", villagesTitle: "Charmante Dörfer", villagesSub: "Ländliche Juwelen", catVisited: "Globale Ikonen", catGrowth: "Aufstrebende Sterne", catExotic: "Exotisch", loading: "Sync...",
           themes: { 'Madrid': 'Historische Hauptstadt', 'Barcelona': 'Lebendiger Modernismus', 'Sevilla': 'Mudéjar-Essenz', 'París': 'Stadt der Lichter', 'Tokio': 'Cyberpunk-Realität', 'Nueva York': 'Zentrum der Welt' }
-    },
-    hi: { hubTitle: "दुनिया का अन्वेषण करें", hubSub: "स्मार्ट ग्लोबल गंतव्य", homeTitle: "स्पेन का अन्वेषण करें", homeSub: "प्रमुख राजधानियाँ", villagesTitle: "आकर्षक गाँव", villagesSub: "स्पेनिश ग्रामीण रत्न", catVisited: "वैश्विक प्रतीक", catGrowth: "उभरते सितारे", catExotic: "विदेशी", loading: "सिंक हो रहा है...",
-          themes: { 'Madrid': 'ऐतिहासिक राजधानी', 'Barcelona': 'जीवित आधुनिकतावाद', 'Sevilla': 'मुदेजर सार', 'París': 'रोशनी का शहर', 'Tokio': 'साइबरपंक रियलिटी', 'Nueva York': 'दुनिया का केंद्र' }
-    },
-    ar: { hubTitle: "استكشف العالم", hubSub: "وجهات عالمية ذكية", homeTitle: "استكشف إسبانيا", homeSub: "العواصم الكبرى", villagesTitle: "قرى ساحرة", villagesSub: "جواهر ريفية", catVisited: "أيقونات عالمية", catGrowth: "نجوم صاعدة", catExotic: "غريب", loading: "مزامنة...",
-          themes: { 'Madrid': 'عاصمة تاريخية', 'Barcelona': 'حداثة حية', 'Sevilla': 'جوهر مدجن', 'París': 'مدينة النور', 'Tokio': 'واقع سايبربانك', 'Nueva York': 'مركز العالم' }
-    },
-    ja: { hubTitle: "世界を探索", hubSub: "スマート目的地", homeTitle: "スペインを探索", homeSub: "主要都市", villagesTitle: "魅力的な村", villagesSub: "田舎の宝石", catVisited: "世界のアイコン", catGrowth: "注目スポット", catExotic: "エキゾチック", loading: "同期中...",
-          themes: { 'Madrid': '歴史的な首都', 'Barcelona': '生きたモダニズム', 'Sevilla': 'ムデハルの本質', 'Albarracín': '中世の宝物', 'Cudillero': '海の円形劇場', 'Ronda': '夢の街', 'Santillana del Mar': '中世の町', 'París': '光の街', 'Tokio': 'サイバーパンク', 'Nueva York': '世界の中心' }
-    },
-    zh: { hubTitle: "探索世界", hubSub: "智能全球目的地", homeTitle: "探索西班牙", homeSub: "主要省会", villagesTitle: "迷人村庄", villagesSub: "乡村明珠", catVisited: "全球图标", catGrowth: "新兴之星", catExotic: "异域风情", loading: "同步中...",
-          themes: { 'Madrid': '历史首都', 'Barcelona': '活着的现代主义', 'Sevilla': '穆德哈尔精华', 'Albarracín': '中世珍宝', 'Cudillero': '海上剧场', 'Ronda': '梦想之城', 'Santillana del Mar': '中世古镇', 'París': '光之城', 'Tokio': '赛博朋克', 'Nueva York': '世界中心' }
-    },
-    ca: { hubTitle: "Explora el Món", hubSub: "Destins Globals", homeTitle: "Explora Espanya", homeSub: "Grans Capitals", villagesTitle: "Pobles amb Encant", villagesSub: "Joies Rurals", catVisited: "Icones", catGrowth: "En Auge", catExotic: "Exòtics", loading: "Sincronitzant...",
-          themes: { 'Madrid': 'Capital Històrica', 'Barcelona': 'Modernisme Viu', 'Sevilla': 'Essència Mudèjar', 'Albarracín': 'Tresor Medieval', 'Cudillero': 'Amfiteatre Marí', 'Ronda': 'La Ciutat Somiada', 'Santillana del Mar': 'Vila Medieval', 'París': 'La Ciutat de la Llum', 'Tokio': 'Cyberpunk Real', 'Nueva York': 'El Centre del Món' }
-    },
-    eu: { hubTitle: "Mundua Esploratu", hubSub: "Helmuga Adimentsuak", homeTitle: "Espainia Esploratu", homeSub: "Hiriburuak", villagesTitle: "Herri Xarmangarriak", villagesSub: "Bitxiak", catVisited: "Ikonikoak", catGrowth: "Goraka", catExotic: "Exotikoak", loading: "Sinkronizatzen...",
-          themes: { 'Madrid': 'Hiriburu Historikoa', 'Barcelona': 'Modernismo Bizia', 'Sevilla': 'Esentzia Mudéjar', 'Albarracín': 'Erdi Aroko Altxorra', 'Cudillero': 'Itsas Anfiteatroa', 'Ronda': 'Amestutako Hiria', 'Santillana del Mar': 'Erdi Aroko Hiria' }
     }
 };
 
