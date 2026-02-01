@@ -99,7 +99,9 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Identify the global city and country for the input: "${input}". Provide the result in the schema provided.`,
+            contents: `Identify up to 5 prominent cities worldwide that match or are similar to the name: "${input}". 
+            If the name exists in multiple countries (like Santiago, Paris, London, Cordoba), you MUST list all of them. 
+            Return the results in the schema provided.`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -107,9 +109,9 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            name: { type: Type.STRING },
-                            spanishName: { type: Type.STRING },
-                            country: { type: Type.STRING }
+                            name: { type: Type.STRING, description: "International English name" },
+                            spanishName: { type: Type.STRING, description: "Common name in Spanish" },
+                            country: { type: Type.STRING, description: "Full country name" }
                         },
                         required: ["name", "spanishName", "country"]
                     }

@@ -26,7 +26,7 @@ const TRANSLATIONS: any = {
   ja: { welcome: "ログイン:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール", userPlaceholder: "名前", login: "リクエスト", verify: "確認", tagline: "better destinations by ai", authError: "無効", codeError: "8桁", selectLang: "言語", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", changeEmail: "変更", sentTo: "送信先", loadingTour: "読み込み中...", analyzing: "分析中..." },
   ru: { welcome: "вход:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "email", userPlaceholder: "имя", login: "доступ", verify: "ок", tagline: "better destinations by ai", authError: "ошибка", codeError: "8 цифр", selectLang: "язык", loading: "синх...", navElite: "элита", navHub: "инфо", navVisa: "паспорт", navStore: "магазин", changeEmail: "исправить", sentTo: "отправлено", loadingTour: "загрузка...", analyzing: "анализ..." },
   ar: { welcome: "دخول:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك", userPlaceholder: "المستخدم", login: "طلب", verify: "تحقق", tagline: "better destinations by ai", authError: "خطأ", codeError: "٨ أرقام", selectLang: "اللغة", loading: "مزامنة...", navElite: "النخبة", navHub: "معلومات", navVisa: "جواز", navStore: "متجر", changeEmail: "تعديل", sentTo: "أرسل", loadingTour: "تحميل...", analyzing: "تحليل..." },
-  hi: { welcome: "लॉगिन:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "ईमेल", userPlaceholder: "नाम", login: "अनुरود", verify: "पुष्टि", tagline: "better destinations by ai", authError: "अमान्य", codeError: "8 अंक", selectLang: "भाषा", loading: "सिंक...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", changeEmail: "बदलें", sentTo: "भेजा गया", loadingTour: "लोड हो रहा है...", analyzing: "विश्लेषण..." },
+  hi: { welcome: "लॉगिन:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "ईमेल", userPlaceholder: "नाम", login: "अनुरود", verify: "पुष्टि", tagline: "better destinations by ai", authError: "अमान्य", codeError: "8 अंक", selectLang: "भाषा", loading: "सिंक...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासポート", navStore: "स्टोर", changeEmail: "बदलें", sentTo: "भेजा गया", loadingTour: "लोड हो रहा है...", analyzing: "विश्लेषण..." },
   ko: { welcome: "로그 bidaer:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일", userPlaceholder: "사용자", login: "액세스 요청", verify: "확인", tagline: "better destinations by ai", authError: "잘못된 이메일", codeError: "8자리 숫자", selectLang: "언어", loading: "동기화 중...", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", changeEmail: "수정", sentTo: "보낸 곳", loadingTour: "로드 중...", analyzing: "분석 중..." },
   tr: { welcome: "log bidaer:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "e-posta", userPlaceholder: "kullanıcı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", authError: "geçersiz", codeError: "8 rakam", selectLang: "dil seçin", loading: "senkronize...", navElite: "elit", navHub: "istihbarat", navVisa: "pasaport", navStore: "mağaza", changeEmail: "değiştir", sentTo: "gönderildi", loadingTour: "yükleniyor...", analyzing: "analiz ediliyor..." }
 };
@@ -120,19 +120,28 @@ export default function App() {
     setLoadingMessage(t('analyzing'));
     const targetLang = user.language || 'es';
     setTours([]);
+    setSearchOptions(null);
     
     try {
-        const cached = await getCachedTours(cityInput, "", targetLang);
-        if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
-            setTours(cached.data);
-            setSelectedCity(cached.cityName || cityInput);
-            setView(AppView.CITY_DETAIL);
-            setIsLoading(false);
+        // Si el input contiene una coma, es una búsqueda específica (ej: "Paris, France")
+        if (cityInput.includes(',')) {
+            const [cityPart, countryPart] = cityInput.split(',').map(s => s.trim());
+            await processCitySelection({ name: cityPart, spanishName: cityPart, country: countryPart });
             return;
         }
+
+        // Para búsquedas de una sola palabra, forzamos la obtención de candidatos de IA
+        // para asegurar que el usuario vea todos los países posibles (Chile, España, etc.)
         const results = await standardizeCityName(cityInput);
-        if (results && results.length > 0) setSearchOptions(results);
-        else await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
+        
+        if (results && results.length > 0) {
+            // Si solo hay un resultado y es extremadamente exacto, podríamos pasar, 
+            // pero mejor mostrarlo como opción para que el usuario confirme el país.
+            setSearchOptions(results);
+        } else {
+            // Fallback si la IA no encuentra nada
+            await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
+        }
     } catch (e: any) { 
         console.error("Search error:", e);
         await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" }); 
@@ -280,8 +289,29 @@ export default function App() {
                   <div className="space-y-4 pt-safe-iphone px-6 max-w-md mx-auto">
                       <header className="flex justify-between items-center py-4"><div className="flex items-center gap-3"><BdaiLogo className="w-8 h-8"/><span className="font-black text-lg tracking-tighter">bdai</span></div><div className="bg-white/10 px-3 py-1.5 rounded-xl text-[8px] font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div></header>
                       <h1 className="text-2xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.username || t('explorer')}.</span></h1>
-                      <div className="relative mt-6 flex gap-3"><input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySearch(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-white outline-none font-bold text-xs" /><button onClick={() => handleCitySearch(searchVal)} className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg"><i className="fas fa-search text-sm"></i></button></div>
-                      {searchOptions && (<div className="mt-4 space-y-1 bg-slate-900/95 backdrop-blur-xl p-3 rounded-3xl border border-white/5 shadow-2xl">{searchOptions.map((opt, i) => (<button key={i} onClick={() => processCitySelection(opt)} className="w-full p-3 bg-white/5 rounded-xl flex items-center justify-between transition-all text-left active:bg-purple-600/20"><div><span className="text-white font-black uppercase text-[10px]">{opt.spanishName}</span><br/><span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">{opt.country}</span></div><i className="fas fa-chevron-right text-[8px] text-slate-800"></i></button>))}</div>)}
+                      <div className="relative mt-6 flex gap-3">
+                          <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySearch(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-white outline-none font-bold text-xs" />
+                          <button onClick={() => handleCitySearch(searchVal)} className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg"><i className="fas fa-search text-sm"></i></button>
+                      </div>
+                      {searchOptions && (
+                        <div className="mt-4 space-y-2 bg-slate-900/98 backdrop-blur-2xl p-4 rounded-[2rem] border border-white/10 shadow-2xl animate-fade-in">
+                            <p className="text-[7px] font-black text-purple-400 uppercase tracking-widest px-2 mb-2">Selecciona Ubicación Precisa</p>
+                            {searchOptions.map((opt, i) => (
+                                <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-4 bg-white/5 rounded-2xl flex items-center justify-between transition-all text-left active:bg-purple-600/20 border border-transparent hover:border-white/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center border border-white/5">
+                                            <i className="fas fa-map-marker-alt text-purple-500 text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <span className="text-white font-black uppercase text-[10px] leading-tight block">{opt.spanishName}</span>
+                                            <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">{opt.country}</span>
+                                        </div>
+                                    </div>
+                                    <i className="fas fa-chevron-right text-[8px] text-slate-700"></i>
+                                </button>
+                            ))}
+                        </div>
+                      )}
                       <TravelServices mode="HOME" language={user.language || 'es'} onCitySelect={(name: string) => handleCitySearch(name)} />
                   </div>
                 )}
