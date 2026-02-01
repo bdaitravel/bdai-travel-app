@@ -19,6 +19,24 @@ const UI_LABELS: any = {
     },
     de: { hubTitle: "Welt Erkunden", hubSub: "Intelligente Reiseziele", homeTitle: "Spanien Erkunden", homeSub: "Große Hauptstädte", villagesTitle: "Charmante Dörfer", villagesSub: "Ländliche Juwelen", catVisited: "Globale Ikonen", catGrowth: "Aufstrebende Sterne", catExotic: "Exotisch", loading: "Sync...",
           themes: { 'Madrid': 'Historische Hauptstadt', 'Barcelona': 'Lebendiger Modernismus', 'Sevilla': 'Mudéjar-Essenz', 'París': 'Stadt der Lichter', 'Tokio': 'Cyberpunk-Realität', 'Nueva York': 'Zentrum der Welt' }
+    },
+    zh: { hubTitle: "探索世界", hubSub: "全球智能目的地", homeTitle: "探索西班牙", homeSub: "主要首都", villagesTitle: "迷人村庄", villagesSub: "西班牙乡村瑰宝", catVisited: "全球图标", catGrowth: "新星", catExotic: "异域风情", loading: "同步中...",
+          themes: { 'Madrid': '历史之都', 'Barcelona': '生活现代主义', 'Sevilla': '穆德哈尔精华', 'Albarracín': '中世纪珍宝', 'Cudillero': '海上剧场', 'Ronda': '梦想之城', 'Santillana del Mar': '中世纪小镇', 'París': '光之城', 'Tokio': '赛博朋克现实', 'Nueva York': '世界中心', 'Tiflis': '前卫高加索', 'Medellín': '热带创新', 'Da Nang': '越南未来', 'Socotra': '被遗忘的星球', 'Petra': '石城', 'Wadi Rum': '月亮峡谷' }
+    },
+    ca: { hubTitle: "Explora el Món", hubSub: "Destinacions Globals", homeTitle: "Explora Espanya", homeSub: "Grans Capitals", villagesTitle: "Pobles amb Encant", villagesSub: "Joies Rurals", catVisited: "Icones Mundials", catGrowth: "Joies en Auge", catExotic: "Exòtics", loading: "Sincronitzant...",
+          themes: { 'Madrid': 'Capital Històrica', 'Barcelona': 'Modernisme Viu', 'Sevilla': 'Essència Mudèjar', 'Albarracín': 'Tresor Medieval', 'Cudillero': 'Amfiteatre Marí', 'Ronda': 'La Ciutat Somiada', 'Santillana del Mar': 'Vila Medieval', 'París': 'La Ciutat de la Llum', 'Tokio': 'Cyberpunk Real', 'Nueva York': 'El Centre del Món' }
+    },
+    eu: { hubTitle: "Mundua Esploratu", hubSub: "Destino Globalak", homeTitle: "Espainia Esploratu", homeSub: "Hiriburu Nagusiak", villagesTitle: "Herri Xarmangarriak", villagesSub: "Landa Bitxiak", catVisited: "Munduko Ikonoak", catGrowth: "Goraka doazen Bitxiak", catExotic: "Exotikoak", loading: "Sinkronizatzen...",
+          themes: { 'Madrid': 'Hiriburu Historikoa', 'Barcelona': 'Modernismo Bizia', 'Sevilla': 'Mudejar Esentzia', 'Albarracín': 'Erdi Aroko Altxorra', 'Cudillero': 'Itsas Anfiteatroa', 'Ronda': 'Amestutako Hiria', 'Santillana del Mar': 'Erdi Aroko Hiribildua', 'París': 'Argiaren Hiria', 'Tokio': 'Cyberpunk Errealitatea', 'Nueva York': 'Munduaren Erdigunea' }
+    },
+    ar: { hubTitle: "استكشف العالم", hubSub: "وجهات عالمية ذكية", homeTitle: "استكشف إسبانيا", homeSub: "العواصم الكبرى", villagesTitle: "قرى ساحرة", villagesSub: "جواهر ريفية", catVisited: "أيقونات عالمية", catGrowth: "نجوم صاعدة", catExotic: "وجهات غريبة", loading: "جاري المزامنة...",
+          themes: { 'Madrid': 'عاصمة تاريخية', 'Barcelona': 'حداثة حية', 'Sevilla': 'جوهر مدجن', 'París': 'مدينة الأنوار', 'Tokio': 'واقع سايبربانك', 'Nueva York': 'مركز العالم' }
+    },
+    ja: { hubTitle: "世界を探索する", hubSub: "スマートなグローバル目的地", homeTitle: "スペインを探索する", homeSub: "主要な首都", villagesTitle: "魅力的な村", villagesSub: "スペインの田舎の宝石", catVisited: "世界のアイコン", catGrowth: "新星", catExotic: "エキゾチック", loading: "同期中...",
+          themes: { 'Madrid': '歴史的な首都', 'Barcelona': '生きたモダニズム', 'Sevilla': 'ムデハルの本質', 'París': '光の街', 'Tokio': 'サイバーパンクの現実', 'Nueva York': '世界の中心' }
+    },
+    ru: { hubTitle: "Исследуй мир", hubSub: "Умные глобальные направления", homeTitle: "Исследуй Испанию", homeSub: "Главные столицы", villagesTitle: "Очаровательные деревни", villagesSub: "Сельские жемчужины", catVisited: "Мировые иконы", catGrowth: "Восходящие звезды", catExotic: "Экзотика", loading: "Синхронизация...",
+          themes: { 'Madrid': 'Историческая столица', 'Barcelona': 'Живой модернизм', 'Sevilla': 'Суть мудехара', 'París': 'Город света', 'Tokio': 'Киберпанк-реальность', 'Nueva York': 'Центр мира' }
     }
 };
 

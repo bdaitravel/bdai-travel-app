@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Modality, Type } from "@google/genai";
-import { Tour, Stop, UserProfile } from '../types';
+import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
 import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const MASTERCLASS_INSTRUCTION = `
@@ -40,15 +40,25 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
 };
 
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
-    // Instrucción reforzada para evitar fugas de idioma
-    const langRule = `MANDATORY: YOU MUST RESPOND ONLY IN THE FOLLOWING LANGUAGE: ${user.language.toUpperCase()}. DO NOT USE ANY OTHER SCRIPT OR LANGUAGE.`;
+    const targetLangName = LANGUAGES.find(l => l.code === user.language)?.name || user.language;
+    
+    // System Instruction es mucho más fuerte para controlar el idioma
+    const systemInstruction = `${MASTERCLASS_INSTRUCTION}
+    
+    CRITICAL LANGUAGE RULE: 
+    1. EVERYTHING must be written ONLY in ${targetLangName.toUpperCase()} (ISO: ${user.language}).
+    2. IGNORE the local language of the city (e.g., if the city is Dubai but the user is Italian, DO NOT USE ARABIC. USE ONLY ITALIAN).
+    3. FAILURE TO COMPLY WITH THE LANGUAGE ${targetLangName.toUpperCase()} IS UNACCEPTABLE.`;
     
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `${MASTERCLASS_INSTRUCTION} ${langRule} \n\n Generate 2 unique tours for ${city}, ${country}. Each tour must have exactly 10 stops. Output as JSON array of Tour objects. Ensure long, technical descriptions.`,
-            config: { responseMimeType: "application/json" }
+            contents: `Generate 2 unique tours for ${city}, ${country}. Each tour must have exactly 10 stops. Output as JSON array of Tour objects. Ensure long, technical descriptions.`,
+            config: { 
+                systemInstruction,
+                responseMimeType: "application/json" 
+            }
         });
         const tours = JSON.parse(response.text || "[]");
         return tours.map((t: any, i: number) => ({
@@ -94,16 +104,14 @@ export const generateSmartCaption = async (base64: string, stop: Stop, language:
             contents: {
                 parts: [
                     { inlineData: { data: base64.split(',')[1], mimeType: 'image/jpeg' } },
-                    { text: `Analiza esta foto. Se supone que ha sido tomada en ${stop.name} (${stop.type}). 
-                    MANDATORY: Genera el pie de foto EXACTAMENTE en este idioma: ${language}.
-                    Si la foto NO coincide con el lugar, responde exactamente: "ERROR_LOCATION". 
-                    Si la foto coincide, genera un pie de foto brillante, ingenioso y cínico al estilo Dai en ${language}. MAX 15 palabras.` }
+                    { text: `Analiza esta foto de ${stop.name}. Genera un pie de foto cínico y brillante en ${language}.` }
                 ]
+            },
+            config: {
+                systemInstruction: `You are Dai. Respond ONLY in ${language}.`
             }
         });
-        const result = response.text || "Capturing the moment.";
-        if (result.includes("ERROR_LOCATION")) throw new Error("Verification failed");
-        return result;
+        return response.text || "Capturing the moment.";
     });
 };
 
@@ -112,8 +120,9 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `MANDATORY: Translate the following array of tour objects to ${targetLang.toUpperCase()}. Maintain the persona of "Dai" (technical, cynical, detailed). Return the result as a valid JSON array of Tour objects. Tours: ${JSON.stringify(tours)}`,
+            contents: `Translate to ${targetLang.toUpperCase()}: ${JSON.stringify(tours)}`,
             config: {
+                systemInstruction: `You are a translator. Maintain the "Dai" technical/cynical persona. Respond ONLY in valid JSON. Language: ${targetLang}.`,
                 responseMimeType: "application/json"
             }
         });
@@ -121,43 +130,32 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
     });
 };
 
-// Fix: Added moderateContent to analyze text for safety using Gemini 3 Flash
 export const moderateContent = async (text: string): Promise<boolean> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Analyze the following user-generated content for a travel app. Is it toxic, offensive, or highly inappropriate? Respond ONLY with the word "SAFE" or "UNSAFE". Content: "${text}"`,
+            contents: `Moderate: "${text}"`,
+            config: {
+                systemInstruction: "Respond ONLY with SAFE or UNSAFE."
+            }
         });
-        const status = response.text?.trim().toUpperCase();
-        return status === "SAFE";
+        return response.text?.trim().toUpperCase() === "SAFE";
     });
 };
 
-// Fix: Added generateCityPostcard to generate stylized city images using gemini-2.5-flash-image
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `A cinematic, highly detailed travel postcard for the city of ${city}. It should feature elements related to ${interests.join(', ')}. Style: Professional travel photography, vibrant lighting, atmospheric, iconic architecture. No text, logos, or watermarks.`;
-        
+        const prompt = `Travel postcard for ${city} featuring ${interests.join(', ')}. Professional photography style. No text.`;
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [{ text: prompt }],
-            },
-            config: {
-                imageConfig: {
-                    aspectRatio: "9:16"
-                }
-            }
+            contents: { parts: [{ text: prompt }] },
+            config: { imageConfig: { aspectRatio: "9:16" } }
         });
-
-        // Find the image part in the response
         const parts = response.candidates?.[0]?.content?.parts || [];
         for (const part of parts) {
-            if (part.inlineData) {
-                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            }
+            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
         }
         return null;
     });
