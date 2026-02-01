@@ -92,7 +92,7 @@ const CONTENT: any = {
     ja: {
         title: "スタートガイド", subtitle: "トラベル・マスタークラス", btn: "体験を始める",
         points: [
-            { id: 1, title: "高密度ツアー", desc: "Daiが工学、技術的課題、そして真実の歴史的秘話を分析します。", icon: "fa-microchip", color: "text-purple-500" },
+            { id: 1, title: "高密度ツアー", desc: "Daiが工学、技術的課題、そして真実의 歴史的秘話を分析します。", icon: "fa-microchip", color: "text-purple-500" },
             { id: 2, title: "世界中のあらゆる都市", desc: "最新AIを使用して、地球上のどこでも即座にツアーを生成。", icon: "fa-earth-americas", color: "text-blue-500" },
             { id: 3, title: "マイルとGPS", desc: "スポットで位置を同期してマイルを獲得し、ランクアップ。", icon: "fa-satellite-dish", color: "text-orange-500" },
             { id: 4, title: "デジタルパスポート", desc: "ビザスタンプ、カテゴリーポイント、思い出を記録します。", icon: "fa-id-card", color: "text-emerald-500" }
@@ -146,6 +146,7 @@ const CONTENT: any = {
 };
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language }) => {
+    // Lookup with safety fallback
     const t = CONTENT[language] || CONTENT['es'];
 
     return (

@@ -35,18 +35,56 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS.es;
   if (!tour) return null;
+
   return (
-    <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-md p-7 mb-4 cursor-pointer relative active:scale-[0.98] transition-all">
+    <div 
+      onClick={() => onSelect(tour)} 
+      className="group bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden p-8 mb-6 cursor-pointer relative active:scale-[0.98] transition-all hover:border-purple-500/40 shadow-2xl"
+    >
       <div className="flex flex-col">
           <div className="mb-4 flex justify-between items-center">
-             <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white">{tour.theme || "Tour"}</span>
+             <span className="px-4 py-2 rounded-full text-[8px] font-black uppercase tracking-widest bg-purple-600 text-white shadow-lg">
+               {tour.theme || "Tech Masterclass"}
+             </span>
+             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+               {tour.difficulty || "Moderate"}
+             </span>
           </div>
-          <h3 className="text-2xl font-black text-slate-900 mb-3 uppercase tracking-tighter leading-tight">{tour.title || "Tour Sin Título"}</h3>
-          <p className="text-slate-500 text-xs leading-relaxed line-clamp-2">{tour.description || "Cargando detalles..."}</p>
-          <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-50">
-               <span className="text-slate-900 font-black text-[10px] uppercase tracking-widest"><i className="fas fa-clock mr-2"></i> {tour.duration || '---'} • {tour.distance || '---'}</span>
-               <span className="text-purple-600 font-black text-[10px] uppercase tracking-widest">{tl.start} <i className="fas fa-chevron-right ml-1"></i></span>
+          
+          <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">
+            {tour.title}
+          </h3>
+          
+          <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-6 font-medium">
+            {tour.description}
+          </p>
+          
+          <div className="flex items-center justify-between pt-6 border-t border-white/5">
+               <div className="flex gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Tiempo</span>
+                    <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.duration}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Distancia</span>
+                    <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.distance}</span>
+                  </div>
+               </div>
+               
+               <div className="flex items-center gap-3">
+                 <span className="text-purple-500 font-black text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+                   {tl.start}
+                 </span>
+                 <div className="w-10 h-10 bg-white text-slate-950 rounded-2xl flex items-center justify-center shadow-xl group-hover:bg-purple-500 group-hover:text-white transition-all">
+                   <i className="fas fa-play text-[10px] ml-0.5"></i>
+                 </div>
+               </div>
           </div>
+      </div>
+      
+      {/* Escaneo Visual Decorativo */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-purple-500/10 overflow-hidden">
+          <div className="w-1/3 h-full bg-purple-500 animate-scan"></div>
       </div>
     </div>
   );
