@@ -9,6 +9,8 @@ const SHOP_TEXTS: any = {
     it: { title: "mercato bdai", subtitle: "Attrezzatura e Asset Digitali", buy: "Compra su Etsy", download: "Scarica su Hotmart", official: "Nostri Store Ufficiali", cats: { 'Digital': 'Prodotti Digitali', 'Merch': 'Abbigliamento' } },
     ru: { title: "рынок bdai", subtitle: "Снаряжение и цифровые активы", buy: "Купить на Etsy", download: "Hotmart", official: "Наши официальные магазины", cats: { 'Digital': 'Цифровые товары', 'Merch': 'Мерч' } },
     hi: { title: "bdai बाज़ार", subtitle: "यात्री गियर और डिजिटल संपत्ति", buy: "Etsy पर खरीदें", download: "Hotmart पर प्राप्त करें", official: "हमारे आधिकारिक स्टोर", cats: { 'Digital': 'डिजिटल सामान', 'Merch': 'फिजिकल गियर' } },
+    ko: { title: "bdai 마켓", subtitle: "여행자 장비 및 디지털 자산", buy: "Etsy에서 구매", download: "Hotmart에서 다운로드", official: "공식 스토어", cats: { 'Digital': '디지털 상품', 'Merch': '의류 및 액세서리' } },
+    tr: { title: "bdai pazarı", subtitle: "Gezgin Ekipmanları ve Dijital Varlıklar", buy: "Etsy'den satın al", download: "Hotmart'tan indir", official: "Resmi Mağazalarımız", cats: { 'Digital': 'Dijital Ürünler', 'Merch': 'Giyim ve Aksesuar' } },
     fr: { title: "marché bdai", subtitle: "Équipement pour Voyageurs", buy: "Acheter sur Etsy", download: "Sur Hotmart", official: "Boutiques Officielles", cats: { 'Digital': 'Produits Numériques', 'Merch': 'Vêtements' } },
     de: { title: "bdai Markt", subtitle: "Ausrüstung & Digitale Produkte", buy: "Auf Etsy kaufen", download: "Auf Hotmart", official: "Offizielle Shops", cats: { 'Digital': 'Digitale Güter', 'Merch': 'Kleidung' } },
     ja: { title: "bdai マーケット", subtitle: "トラベラーギアとデジタル資産", buy: "Etsyで購入", download: "Hotmartで入手", official: "公式ストア", cats: { 'Digital': 'デジタル商品', 'Merch': 'フィジカルギア' } },

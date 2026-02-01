@@ -16,7 +16,10 @@ const TEXTS: any = {
     ar: { start: "إطلاق", stop: "محطة", of: "من", photoSpot: "زاوية تقنية", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "رجوع", next: "التالي", meters: "م", itinerary: "المسار", syncing: "جاري المزامنة...", tooFar: "GPS غير دقيق", generateStory: "تأكيد بالصورة", checkIn: "تأكيد GPS", checkedIn: "تم التأكيد", shareInsta: "نسخ النص", distance: "على بعد", refreshGps: "تحديث GPS", gpsOk: "GPS جيد", gpsLow: "GPS ضعيف" },
     zh: { start: "启动", stop: "停留", of: "之", photoSpot: "技术角度", capture: "记录数据", rewardReceived: "已同步", prev: "返回", next: "下一步", meters: "米", itinerary: "行程", syncing: "同步中...", tooFar: "GPS 不确定", generateStory: "通过照片验证", checkIn: "GPS 签到", checkedIn: "已验证", shareInsta: "复制文案", distance: "于", refreshGps: "刷新 GPS", gpsOk: "GPS 正常", gpsLow: "GPS 信号弱" },
     ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Angle Tècnic", capture: "Log Dades", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Avançar", meters: "m", itinerary: "Itinerari", syncing: "Sincronitzant...", tooFar: "GPS Incert", generateStory: "Verificar per Foto", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Feble" },
-    eu: { start: "Lauziratu", stop: "Geltokia", of: "-(e)tik", photoSpot: "Angelu Teknikoa", capture: "Datuak Erregistratu", rewardReceived: "Sinkronizatuta", prev: "Atzera", next: "Aurrera", meters: "m", itinerary: "Ibilbidea", syncing: "Sinkronizatzen...", tooFar: "GPS Ziurgabea", generateStory: "Argazki bidez Egiaztatu", checkIn: "GPS Check-in", checkedIn: "Egiaztatuta", shareInsta: "Caption Kopiatu", distance: "-(e)an", refreshGps: "GPS Freskatu", gpsOk: "GPS OK", gpsLow: "GPS Ahula" }
+    eu: { start: "Lauziratu", stop: "Geltokia", of: "-(e)tik", photoSpot: "Angelu Teknikoa", capture: "Datuak Erregistratu", rewardReceived: "Sinkronizatuta", prev: "Atzera", next: "Aurrera", meters: "m", itinerary: "Ibilbidea", syncing: "Sinkronizatzen...", tooFar: "GPS Ziurgabea", generateStory: "Argazki bidez Egiaztatu", checkIn: "GPS Check-in", checkedIn: "Egiaztatuta", shareInsta: "Caption Kopiatu", distance: "-(e)an", refreshGps: "GPS Freskatu", gpsOk: "GPS OK", gpsLow: "GPS Ahula" },
+    hi: { start: "लॉन्च", stop: "स्टॉप", of: "का", photoSpot: "तकनीकी कोण", capture: "डेटा लॉग करें", rewardReceived: "सिंक किया गया", prev: "पीछे", next: "आगे", meters: "मी", itinerary: "यात्रा कार्यक्रम", syncing: "सिंक हो रहा है...", tooFar: "GPS अनिश्चित", generateStory: "फोटो द्वारा सत्यापित करें", checkIn: "GPS चेक-इन", checkedIn: "सत्यापित", shareInsta: "कैप्शन कॉपी करें", distance: "पर", refreshGps: "GPS रिफ्रेश करें", gpsOk: "GPS ठीक है", gpsLow: "कम GPS" },
+    ko: { start: "시작", stop: "정지", of: "/", photoSpot: "기술적 각도", capture: "데이터 로그", rewardReceived: "동기화됨", prev: "이전", next: "다음", meters: "m", itinerary: "일정", syncing: "동기화 중...", tooFar: "GPS 불확실", generateStory: "사진으로 확인", checkIn: "GPS 체크인", checkedIn: "확인됨", shareInsta: "캡션 복사", distance: "위치", refreshGps: "GPS 새로고침", gpsOk: "GPS 양호", gpsLow: "GPS 약함" },
+    tr: { start: "Başlat", stop: "Durak", of: "/", photoSpot: "Teknik Açı", capture: "Veri Günlüğü", rewardReceived: "Senkronize", prev: "Geri", next: "İleri", meters: "m", itinerary: "Güzergah", syncing: "Senkronize ediliyor...", tooFar: "GPS Belirsiz", generateStory: "Fotoğrafla Doğrula", checkIn: "GPS Check-in", checkedIn: "Doğrulandı", shareInsta: "Açıklamayı Kopyala", distance: "mesafede", refreshGps: "GPS Yenile", gpsOk: "GPS TAMAM", gpsLow: "GPS Zayıf" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -52,7 +55,6 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
 export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS.es;
     
-    // GUARDIA: Si no hay paradas o el tour es nulo, volvemos atrás para evitar error de script
     if (!tour || !tour.stops || tour.stops.length === 0) {
         useEffect(() => { onBack(); }, []);
         return null;
@@ -60,7 +62,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
     const currentStop = tour.stops[currentStopIndex] as Stop;
     
-    // GUARDIA: Si la parada actual no existe (fuera de rango)
     if (!currentStop) {
         useEffect(() => { onJumpTo(0); }, []);
         return null;

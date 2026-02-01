@@ -16,6 +16,8 @@ const TEXTS: any = {
     it: { title: "Classifica Mondiale", you: "Tuo Stato", subtitle: "Esploratori d'élite" },
     ru: { title: "Рейтинг", you: "Ваш статус", subtitle: "Элитные исследователи" },
     hi: { title: "वैश्विक रैंकिंग", you: "आपकी स्थिति", subtitle: "अभिजात वर्ग के खोजकर्ता" },
+    ko: { title: "글로벌 랭킹", you: "나의 상태", subtitle: "엘리트 탐험가 순위" },
+    tr: { title: "Küresel Sıralama", you: "Durumunuz", subtitle: "Seçkin gezginler sıralaması" },
     fr: { title: "Classement Mondial", you: "Votre Statut", subtitle: "Voyageurs d'élite" },
     de: { title: "Bestenliste", you: "Dein Status", subtitle: "Globale Entdecker-Rankings" },
     ja: { title: "リーダーボード", you: "あなたのステータス", subtitle: "エリート探検家" },

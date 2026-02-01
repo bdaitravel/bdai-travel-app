@@ -31,6 +31,39 @@ const CONTENT: any = {
             { id: 4, title: "Digital Passport", desc: "Your profile tracks visa stamps, category points, and your captured moments.", icon: "fa-id-card", color: "text-emerald-500" },
             { id: 5, title: "Ranking & Market", desc: "Compete in the global traveler elite and access exclusive gear in our official shop.", icon: "fa-trophy", color: "text-yellow-500" }
         ]
+    },
+    hi: {
+        title: "शुरुआत करना",
+        subtitle: "ट्रैवल मास्टरक्लास",
+        btn: "अनुभव शुरू करें",
+        points: [
+            { id: 1, title: "उच्च घनत्व वाले टूर", desc: "कोई बुनियादी गाइड नहीं। दाई हर पड़ाव की इंजीनियरिंग और वास्तविक ऐतिहासिक गपशप का विश्लेषण करता है।", icon: "fa-microchip", color: "text-purple-500" },
+            { id: 2, title: "दुनिया का कोई भी शहर", desc: "अत्याधुनिक AI के साथ दुनिया के किसी भी कोने में तत्काल टूर उत्पन्न करने के लिए खोज का उपयोग करें।", icon: "fa-earth-americas", color: "text-blue-500" },
+            { id: 3, title: "मील और GPS", desc: "शारीरिक रूप से घूमें। मील कमाने और रैंक बढ़ाने के लिए स्टॉप पर अपनी स्थिति सिंक करें।", icon: "fa-satellite-dish", color: "text-orange-500" },
+            { id: 4, title: "डिजिटल पासपोर्ट", desc: "आपका प्रोफाइल वीजा स्टैम्प, श्रेणी अंक और आपके कैप्चर किए गए क्षणों को ट्रैक करता है।", icon: "fa-id-card", color: "text-emerald-500" }
+        ]
+    },
+    ko: {
+        title: "시작하기",
+        subtitle: "트래블 마스터클래스",
+        btn: "경험 시작하기",
+        points: [
+            { id: 1, title: "고밀도 투어", desc: "기본 가이드가 아닙니다. Dai는 각 정류장의 엔지니어링, 기술적 과제 및 실제 역사적 뒷이야기를 분석합니다.", icon: "fa-microchip", color: "text-purple-500" },
+            { id: 2, title: "전 세계 모든 도시", desc: "최첨단 AI를 사용하여 지구 구석구석에서 즉석 투어를 생성하려면 검색을 사용하세요.", icon: "fa-earth-americas", color: "text-blue-500" },
+            { id: 3, title: "마일 및 GPS", desc: "실제로 이동하십시오. 마일을 획득하고 순위를 올리려면 정류장에서 위치를 동기화하세요.", icon: "fa-satellite-dish", color: "text-orange-500" },
+            { id: 4, title: "디지털 여권", desc: "프로필은 비자 스탬프, 카테고리 포인트 및 캡처된 순간을 추적합니다.", icon: "fa-id-card", color: "text-emerald-500" }
+        ]
+    },
+    tr: {
+        title: "Başlarken",
+        subtitle: "Seyahat Masterclass",
+        btn: "Deneyimi Başlat",
+        points: [
+            { id: 1, title: "Yüksek Yoğunluklu Turlar", desc: "Temel bir rehber değil. Dai her durağın mühendisliğini ve gerçek tarihi sırlar analiz eder.", icon: "fa-microchip", color: "text-purple-500" },
+            { id: 2, title: "Dünyanın Herhangi Bir Şehri", desc: "Son teknoloji yapay zeka ile dünyanın her köşesinde anında turlar oluşturmak için aramayı kullanın.", icon: "fa-earth-americas", color: "text-blue-500" },
+            { id: 3, title: "Miller ve GPS", desc: "Fiziksel olarak hareket edin. Mil kazanmak ve rütbe atlamak için duraklarda konumunuzu eşitleyin.", icon: "fa-satellite-dish", color: "text-orange-500" },
+            { id: 4, title: "Dijital Pasaport", desc: "Profiliniz vize damgalarını, kategori puanlarını ve yakalanan anlarınızı takip eder.", icon: "fa-id-card", color: "text-emerald-500" }
+        ]
     }
 };
 
@@ -39,7 +72,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language }) 
 
     return (
         <div className="fixed inset-0 z-[10000] bg-[#020617] flex flex-col font-sans overflow-hidden animate-fade-in">
-            {/* Fondo decorativo sutil */}
             <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-purple-600/10 to-transparent pointer-events-none"></div>
             
             <div className="flex-1 overflow-y-auto no-scrollbar pt-20 px-8 pb-40">

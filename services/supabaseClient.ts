@@ -37,6 +37,26 @@ export const getCachedTours = async (city: string, country: string, language: st
   return null; 
 };
 
+/**
+ * Busca si una ciudad existe en la base de datos en CUALQUIER idioma.
+ * Útil para sincronizar traducciones rápidamente sin regenerar tours.
+ */
+export const findCityInAnyLanguage = async (city: string, country: string): Promise<{data: Tour[], language: string} | null> => {
+    const nInput = normalizeKey(city, country);
+    if (!nInput) return null;
+
+    // Buscamos cualquier idioma que tenga datos
+    const { data } = await supabase.from('tours_cache')
+        .select('data, language')
+        .eq('city', nInput)
+        .limit(1);
+    
+    if (data && data.length > 0) {
+        return { data: data[0].data as Tour[], language: data[0].language };
+    }
+    return null;
+};
+
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
   const nKey = normalizeKey(city, country);
   if (!nKey) return;

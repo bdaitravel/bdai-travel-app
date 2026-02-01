@@ -16,7 +16,10 @@ const TEXTS: any = {
     de: { guide: "Weg zum Stopp", openInMaps: "GPS Nav" },
     it: { guide: "Camminando verso la fermata", openInMaps: "Vai con GPS" },
     ja: { guide: "スポットへ徒歩で移動", openInMaps: "GPSナビ" },
-    ru: { guide: "Идем к остановке", openInMaps: "GPS Нав" }
+    ru: { guide: "Идем к остановке", openInMaps: "GPS Нав" },
+    hi: { guide: "स्टॉप पर चल रहे हैं", openInMaps: "GPS नेविगेशन" },
+    ko: { guide: "정지 위치로 도보 이동 중", openInMaps: "GPS 내비게이션" },
+    tr: { guide: "Durağa doğru yürünüyor", openInMaps: "GPS Navigasyon" }
 };
 
 export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, onPlayAudio, audioPlayingId, audioLoadingId, userLocation }) => {
