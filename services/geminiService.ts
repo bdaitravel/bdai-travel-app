@@ -40,7 +40,8 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
 };
 
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
-    const langRule = `RESPOND IN ${user.language.toUpperCase()}.`;
+    // Instrucción reforzada para evitar fugas de idioma
+    const langRule = `MANDATORY: YOU MUST RESPOND ONLY IN THE FOLLOWING LANGUAGE: ${user.language.toUpperCase()}. DO NOT USE ANY OTHER SCRIPT OR LANGUAGE.`;
     
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -94,6 +95,7 @@ export const generateSmartCaption = async (base64: string, stop: Stop, language:
                 parts: [
                     { inlineData: { data: base64.split(',')[1], mimeType: 'image/jpeg' } },
                     { text: `Analiza esta foto. Se supone que ha sido tomada en ${stop.name} (${stop.type}). 
+                    MANDATORY: Genera el pie de foto EXACTAMENTE en este idioma: ${language}.
                     Si la foto NO coincide con el lugar, responde exactamente: "ERROR_LOCATION". 
                     Si la foto coincide, genera un pie de foto brillante, ingenioso y cínico al estilo Dai en ${language}. MAX 15 palabras.` }
                 ]
@@ -105,59 +107,58 @@ export const generateSmartCaption = async (base64: string, stop: Stop, language:
     });
 };
 
-export const moderateContent = async (content: string): Promise<boolean> => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Analyze if this message is appropriate for a public travel board. It must be safe for all audiences and contain no hate speech or harassment. Return exactly "SAFE" or "TOXIC". Message: "${content}"`,
-        });
-        const result = response.text?.trim().toUpperCase();
-        return result === "SAFE";
-    });
-};
-
-export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [
-                    {
-                        text: `A cinematic, high-quality travel postcard for ${city} highlighting interests like ${interests.join(', ')}. Artistic, vibrant, and evocative of discovery.`,
-                    },
-                ],
-            },
-            config: {
-                imageConfig: {
-                    aspectRatio: "9:16",
-                },
-            },
-        });
-        
-        if (response.candidates?.[0]?.content?.parts) {
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    const base64EncodeString: string = part.inlineData.data;
-                    return `data:image/png;base64,${base64EncodeString}`;
-                }
-            }
-        }
-        return null;
-    });
-};
-
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Translate the following array of tour objects to ${targetLang}. Maintain the persona of "Dai" (technical, cynical, detailed). Return the result as a valid JSON array of Tour objects. Tours: ${JSON.stringify(tours)}`,
+            contents: `MANDATORY: Translate the following array of tour objects to ${targetLang.toUpperCase()}. Maintain the persona of "Dai" (technical, cynical, detailed). Return the result as a valid JSON array of Tour objects. Tours: ${JSON.stringify(tours)}`,
             config: {
                 responseMimeType: "application/json"
             }
         });
         return JSON.parse(response.text || "[]");
+    });
+};
+
+// Fix: Added moderateContent to analyze text for safety using Gemini 3 Flash
+export const moderateContent = async (text: string): Promise<boolean> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Analyze the following user-generated content for a travel app. Is it toxic, offensive, or highly inappropriate? Respond ONLY with the word "SAFE" or "UNSAFE". Content: "${text}"`,
+        });
+        const status = response.text?.trim().toUpperCase();
+        return status === "SAFE";
+    });
+};
+
+// Fix: Added generateCityPostcard to generate stylized city images using gemini-2.5-flash-image
+export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const prompt = `A cinematic, highly detailed travel postcard for the city of ${city}. It should feature elements related to ${interests.join(', ')}. Style: Professional travel photography, vibrant lighting, atmospheric, iconic architecture. No text, logos, or watermarks.`;
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [{ text: prompt }],
+            },
+            config: {
+                imageConfig: {
+                    aspectRatio: "9:16"
+                }
+            }
+        });
+
+        // Find the image part in the response
+        const parts = response.candidates?.[0]?.content?.parts || [];
+        for (const part of parts) {
+            if (part.inlineData) {
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
+        }
+        return null;
     });
 };
