@@ -5,9 +5,9 @@ import { SchematicMap } from './SchematicMap';
 import { generateAudio, generateSmartCaption } from '../services/geminiService';
 
 const TEXTS: any = {
-    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "Fuera de rango", generateStory: "Capturar Momento", checkIn: "Verificar Visita", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a" },
-    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "Too far.", generateStory: "Capture Moment", checkIn: "Verify Visit", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at" },
-    ar: { start: "إطلاق", stop: "محطة", of: "من", photoSpot: "زاوية تقنية", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "رجوع", next: "التالي", meters: "م", itinerary: "المسار", syncing: "جاري المزامنة...", tooFar: "بعيد جداً", generateStory: "التقاط لحظة", checkIn: "تأكيد الزيارة", checkedIn: "تم التأكيد", shareInsta: "نسخ النص", distance: "على بعد" }
+    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Verificar por Foto", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil" },
+    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Verify by Photo", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS" },
+    ar: { start: "إطلاق", stop: "محطة", of: "من", photoSpot: "زاوية تقنية", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "رجوع", next: "التالي", meters: "م", itinerary: "المسار", syncing: "جاري المزامنة...", tooFar: "GPS غير دقيق", generateStory: "تأكيد بالصورة", checkIn: "تأكيد GPS", checkedIn: "تم التأكيد", shareInsta: "نسخ النص", distance: "على بعد", refreshGps: "تحديث GPS", gpsOk: "GPS جيد", gpsLow: "GPS ضعيف" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -50,6 +50,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [showStoryModal, setShowStoryModal] = useState(false);
     const [storyMoment, setStoryMoment] = useState<CapturedMoment | null>(null);
     const [showItinerary, setShowItinerary] = useState(false);
+    const [isRefreshingGps, setIsRefreshingGps] = useState(false);
 
     const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
     const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
@@ -57,13 +58,13 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Calculamos distancia actual al punto
+    // Distancia calculada
     const distToTarget = useMemo(() => {
         if (!userLocation) return null;
         return Math.round(calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
     }, [userLocation, currentStop]);
 
-    // Umbral de validación: 1000 metros para pruebas/entornos urbanos
+    // Rango de validación (1km)
     const IS_IN_RANGE = distToTarget !== null && distToTarget <= 1000;
 
     useEffect(() => {
@@ -79,6 +80,17 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             sourceNodeRef.current = null;
         }
         setAudioPlayingId(null);
+    };
+
+    const handleRefreshGps = () => {
+        setIsRefreshingGps(true);
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(() => {
+                setTimeout(() => setIsRefreshingGps(false), 1500);
+            }, () => setIsRefreshingGps(false), { enableHighAccuracy: true });
+        } else {
+            setIsRefreshingGps(false);
+        }
     };
 
     const handlePlayAudio = async (stopId: string, text: string) => {
@@ -109,13 +121,17 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const handleCheckIn = () => {
-        if (!IS_IN_RANGE) { alert(`${tl.tooFar} (${distToTarget}m)`); return; }
+        if (!IS_IN_RANGE) { 
+            alert(`${tl.tooFar}: Estás a ${distToTarget}m. Acércate más o usa "Verificar por Foto" si el GPS no es exacto.`); 
+            return; 
+        }
         setRewardClaimed(true);
         onUpdateUser({ ...user, miles: user.miles + 50 });
     };
 
     const handlePhotoReward = () => {
-        if (!IS_IN_RANGE) { alert(`${tl.tooFar} (${distToTarget}m)`); return; }
+        // Permitimos abrir cámara siempre, incluso si el GPS falla, 
+        // porque la IA validará si la foto es correcta
         fileInputRef.current?.click();
     };
 
@@ -127,13 +143,37 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         reader.onloadend = async () => {
             const base64 = reader.result as string;
             try {
+                // Dai analizará si la foto es del sitio correcto
                 const caption = await generateSmartCaption(base64, currentStop, language);
-                const moment = { id: `m_${Date.now()}`, stopId: currentStop.id, stopName: currentStop.name, city: tour.city, imageUrl: base64, caption, timestamp: new Date().toISOString() };
+                
+                const moment = { 
+                    id: `m_${Date.now()}`, 
+                    stopId: currentStop.id, 
+                    stopName: currentStop.name, 
+                    city: tour.city, 
+                    imageUrl: base64, 
+                    caption, 
+                    timestamp: new Date().toISOString() 
+                };
+
                 setStoryMoment(moment);
                 setShowStoryModal(true);
                 setPhotoClaimed(true);
-                onUpdateUser({ ...user, miles: user.miles + 100, capturedMoments: [...(user.capturedMoments || []), moment] });
-            } catch (err) { alert("Error IA"); } finally { setIsGeneratingStory(false); }
+                
+                // IMPORTANTE: Al validar por foto, también damos las millas del Check-in si no se habían dado
+                const milesBonus = rewardClaimed ? 100 : 150; // 100 de foto + 50 de check-in implícito
+                setRewardClaimed(true);
+
+                onUpdateUser({ 
+                    ...user, 
+                    miles: user.miles + milesBonus, 
+                    capturedMoments: [...(user.capturedMoments || []), moment] 
+                });
+            } catch (err) { 
+                alert("La IA no pudo verificar el lugar con esta foto. Prueba otro ángulo."); 
+            } finally { 
+                setIsGeneratingStory(false); 
+            }
         };
         reader.readAsDataURL(file);
     };
@@ -143,20 +183,44 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              {showStoryModal && storyMoment && (
                  <div className="fixed inset-0 z-[9000] bg-slate-950 flex flex-col items-center justify-center p-6 animate-fade-in">
                      <div className="w-full max-w-sm bg-white rounded-[3rem] overflow-hidden shadow-2xl flex flex-col animate-slide-up">
-                         <div className="aspect-[9/16] relative"><img src={storyMoment.imageUrl} className="w-full h-full object-cover" /><div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 text-white"><h4 className="text-xs font-black uppercase mb-2">{storyMoment.stopName}</h4><p className="text-xs italic opacity-90">"{storyMoment.caption}"</p></div></div>
-                         <div className="p-8 space-y-3 bg-white"><button onClick={() => { navigator.clipboard.writeText(storyMoment.caption); alert("OK!"); }} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest">{tl.shareInsta}</button><button onClick={() => setShowStoryModal(false)} className="w-full py-3 text-slate-400 font-black uppercase text-[9px]">Cerrar</button></div>
+                         <div className="aspect-[9/16] relative">
+                            <img src={storyMoment.imageUrl} className="w-full h-full object-cover" />
+                            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 text-white">
+                                <h4 className="text-xs font-black uppercase mb-2">{storyMoment.stopName}</h4>
+                                <p className="text-xs italic opacity-90">"{storyMoment.caption}"</p>
+                            </div>
+                         </div>
+                         <div className="p-8 space-y-3 bg-white">
+                            <button onClick={() => { navigator.clipboard.writeText(storyMoment.caption); alert("Copiado!"); }} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest">{tl.shareInsta}</button>
+                            <button onClick={() => setShowStoryModal(false)} className="w-full py-3 text-slate-400 font-black uppercase text-[9px]">Cerrar</button>
+                         </div>
                      </div>
                  </div>
              )}
-             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+             
+             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileChange} />
+             
              {showItinerary && (
-                 <div className="fixed inset-0 z-[8000] flex flex-col"><div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setShowItinerary(false)}></div>
-                     <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-10 max-h-[85vh] overflow-y-auto no-scrollbar animate-slide-up"><h3 className="text-3xl font-black text-slate-950 uppercase mb-8">{tl.itinerary}</h3>
-                         <div className="space-y-3">{tour.stops.map((s: Stop, i: number) => (<button key={s.id} onClick={() => { onJumpTo(i); setShowItinerary(false); }} className={`w-full p-6 rounded-[2rem] flex items-center gap-5 ${currentStopIndex === i ? 'bg-purple-600 text-white shadow-xl' : 'bg-slate-50 text-slate-950 border border-slate-100'}`}><span className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px] font-black ${currentStopIndex === i ? 'bg-white text-purple-600' : 'bg-slate-200 text-slate-500'}`}>{i + 1}</span><div className="text-left flex-1 min-w-0"><p className="text-xs font-black uppercase truncate">{s.name}</p><p className="text-[9px] font-bold uppercase opacity-60">{s.type}</p></div></button>))}</div>
+                 <div className="fixed inset-0 z-[8000] flex flex-col">
+                     <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setShowItinerary(false)}></div>
+                     <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-10 max-h-[85vh] overflow-y-auto no-scrollbar animate-slide-up">
+                         <h3 className="text-3xl font-black text-slate-950 uppercase mb-8">{tl.itinerary}</h3>
+                         <div className="space-y-3">
+                             {tour.stops.map((s: Stop, i: number) => (
+                                 <button key={s.id} onClick={() => { onJumpTo(i); setShowItinerary(false); }} className={`w-full p-6 rounded-[2rem] flex items-center gap-5 ${currentStopIndex === i ? 'bg-purple-600 text-white shadow-xl' : 'bg-slate-50 text-slate-950 border border-slate-100'}`}>
+                                     <span className={`w-10 h-10 rounded-full flex items-center justify-center text-[11px] font-black ${currentStopIndex === i ? 'bg-white text-purple-600' : 'bg-slate-200 text-slate-500'}`}>{i + 1}</span>
+                                     <div className="text-left flex-1 min-w-0">
+                                         <p className="text-xs font-black uppercase truncate">{s.name}</p>
+                                         <p className="text-[9px] font-bold uppercase opacity-60">{s.type}</p>
+                                     </div>
+                                 </button>
+                             ))}
+                         </div>
                          <button onClick={() => setShowItinerary(false)} className="w-full py-8 mt-10 text-slate-400 font-black uppercase text-[10px]">Cerrar</button>
                      </div>
                  </div>
              )}
+
              <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] shrink-0 pt-safe-iphone shadow-sm">
                 <button onClick={onBack} className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950"><i className="fas fa-arrow-left text-xs"></i></button>
                 
@@ -170,27 +234,54 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
                 <button onClick={() => handlePlayAudio(currentStop.id, currentStop.description)} className={`w-11 h-11 rounded-xl flex items-center justify-center ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-purple-600 text-white shadow-lg'}`}>{audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-play'} text-xs ml-0.5`}></i>}</button>
              </div>
+
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col relative">
-                <div className="h-[32vh] w-full relative z-[100] shrink-0 border-b border-slate-100 bg-slate-200"><SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={(i: number) => { onJumpTo(i); stopAudio(); }} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} /></div>
+                <div className="h-[32vh] w-full relative z-[100] shrink-0 border-b border-slate-100 bg-slate-200">
+                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={(i: number) => { onJumpTo(i); stopAudio(); }} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} />
+                    
+                    {/* Botón flotante para refrescar GPS en el mapa */}
+                    <button onClick={handleRefreshGps} className="absolute bottom-4 right-4 z-[500] w-10 h-10 bg-white rounded-full shadow-xl flex items-center justify-center text-purple-600 border border-purple-100 active:scale-90 transition-all">
+                        <i className={`fas fa-location-crosshairs ${isRefreshingGps ? 'animate-spin' : ''}`}></i>
+                    </button>
+                </div>
+
                 <div className="px-8 pt-10 pb-44 space-y-10 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-30px_60px_rgba(0,0,0,0.08)] z-[200]">
                     <div className="grid grid-cols-2 gap-4">
-                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-[2.5rem] font-black uppercase text-[9px] shadow-lg border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500 shadow-purple-500/20' : 'bg-slate-200 text-slate-400 border-slate-300 opacity-80')}`}>
+                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-[2.5rem] font-black uppercase text-[9px] shadow-lg border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500 shadow-purple-500/20' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
                             <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg`}></i>
                             <span className="text-center">{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
-                            {!rewardClaimed && <span className="text-[7px] opacity-60 font-bold lowercase">{tl.distance} {distToTarget ?? '?'}m</span>}
+                            {!rewardClaimed && (
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${IS_IN_RANGE ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                                    <span className="text-[7px] opacity-60 font-bold lowercase">{distToTarget ?? '?'}m</span>
+                                </div>
+                            )}
                         </button>
                         
-                        <button onClick={handlePhotoReward} disabled={isGeneratingStory || photoClaimed} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-[2.5rem] font-black uppercase text-[9px] shadow-xl border transition-all ${photoClaimed ? 'bg-slate-50 text-purple-600 border-purple-100' : (IS_IN_RANGE ? 'bg-slate-950 text-white border-slate-800 shadow-slate-900/40' : 'bg-slate-200 text-slate-400 border-slate-300 opacity-80')}`}>
+                        <button onClick={handlePhotoReward} disabled={isGeneratingStory || photoClaimed} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-[2.5rem] font-black uppercase text-[9px] shadow-xl border transition-all ${photoClaimed ? 'bg-slate-50 text-purple-600 border-purple-100' : 'bg-slate-950 text-white border-slate-800 shadow-slate-900/40'}`}>
                             {isGeneratingStory ? <i className="fas fa-spinner fa-spin text-lg"></i> : <i className="fas fa-camera text-lg"></i>}
                             <span className="text-center">{isGeneratingStory ? 'SYNC...' : photoClaimed ? tl.rewardReceived : tl.generateStory}</span>
-                            {!photoClaimed && !isGeneratingStory && <span className="text-[7px] opacity-60 font-bold lowercase">{tl.distance} {distToTarget ?? '?'}m</span>}
+                            {!photoClaimed && !isGeneratingStory && (
+                                <span className="text-[7px] opacity-40 font-bold uppercase tracking-widest mt-1">Manual Bypass</span>
+                            )}
                         </button>
                     </div>
-                    <div className="relative group"><div className="space-y-10 text-slate-800 text-lg leading-relaxed font-medium">{currentStop.description.split('\n\n').map((paragraph, idx) => (<p key={idx} className={`animate-fade-in first-letter:text-6xl first-letter:font-black first-letter:text-slate-950 first-letter:float-left opacity-90 ${language === 'ar' ? 'text-right first-letter:float-right first-letter:ml-3 first-letter:mr-0' : 'first-letter:mr-3'}`}>{paragraph}</p>))}</div>
-                        <div className={`absolute top-0 ${language === 'ar' ? 'left-0' : 'right-0'}`}><button onClick={() => handlePlayAudio(currentStop.id, currentStop.description)} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-white text-purple-600 border border-purple-100'}`}>{audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin"></i> : <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-headphones-simple'} text-xl`}></i>}</button></div>
+
+                    <div className="relative group">
+                        <div className="space-y-10 text-slate-800 text-lg leading-relaxed font-medium">
+                            {currentStop.description.split('\n\n').map((paragraph, idx) => (
+                                <p key={idx} className={`animate-fade-in first-letter:text-6xl first-letter:font-black first-letter:text-slate-950 first-letter:float-left opacity-90 ${language === 'ar' ? 'text-right first-letter:float-right first-letter:ml-3 first-letter:mr-0' : 'first-letter:mr-3'}`}>{paragraph}</p>
+                            ))}
+                        </div>
+                        <div className={`absolute top-0 ${language === 'ar' ? 'left-0' : 'right-0'}`}>
+                            <button onClick={() => handlePlayAudio(currentStop.id, currentStop.description)} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-white text-purple-600 border border-purple-100'}`}>
+                                {audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin"></i> : <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-headphones-simple'} text-xl`}></i>}
+                            </button>
+                        </div>
                     </div>
                 </div>
              </div>
+
              <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 p-6 flex gap-3 z-[6000] shrink-0 pb-safe-iphone shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
                 <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0">{tl.prev}</button>
                 <button onClick={() => { onNext(); stopAudio(); }} disabled={currentStopIndex === tour.stops.length - 1} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl">{tl.next}</button>

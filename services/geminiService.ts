@@ -25,7 +25,6 @@ async function handleAiCall<T>(fn: () => Promise<T>, retries = 3, delay = 1000):
 }
 
 export const standardizeCityName = async (input: string): Promise<{name: string, spanishName: string, country: string}[]> => {
-    // Initializing GoogleGenAI with the required named parameter and environment API key.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
@@ -33,7 +32,6 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
             contents: `Identify this city: "${input}". Return JSON array of objects with keys: name (English), spanishName (Spanish), country (English). If unsure, return empty array. Only use valid cities.`,
             config: { responseMimeType: "application/json" }
         });
-        // Accessing the .text property directly as per guidelines.
         return JSON.parse(response.text || "[]");
     });
 };
@@ -90,15 +88,18 @@ export const generateSmartCaption = async (base64: string, stop: Stop, language:
             contents: {
                 parts: [
                     { inlineData: { data: base64.split(',')[1], mimeType: 'image/jpeg' } },
-                    { text: `Based on this photo taken at ${stop.name} (${stop.type}), generate a smart, witty caption for a traveler's log in ${language}. MAX 15 words.` }
+                    { text: `Analiza esta foto. Se supone que ha sido tomada en ${stop.name} (${stop.type}). 
+                    Si la foto NO coincide con el lugar, responde exactamente: "ERROR_LOCATION". 
+                    Si la foto coincide, genera un pie de foto brillante, ingenioso y cínico al estilo Dai en ${language}. MAX 15 palabras.` }
                 ]
             }
         });
-        return response.text || "Capturing the moment.";
+        const result = response.text || "Capturing the moment.";
+        if (result.includes("ERROR_LOCATION")) throw new Error("Verification failed");
+        return result;
     });
 };
 
-// Fix: Added moderateContent to filter community posts for safety
 export const moderateContent = async (content: string): Promise<boolean> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
@@ -111,7 +112,6 @@ export const moderateContent = async (content: string): Promise<boolean> => {
     });
 };
 
-// Fix: Added generateCityPostcard using the gemini-2.5-flash-image model
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
@@ -131,7 +131,6 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
             },
         });
         
-        // Iterate through all parts to find the image part as recommended.
         if (response.candidates?.[0]?.content?.parts) {
             for (const part of response.candidates[0].content.parts) {
                 if (part.inlineData) {
@@ -144,7 +143,6 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
     });
 };
 
-// Fix: Added translateTours for massive translation in AdminPanel
 export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     return handleAiCall(async () => {
