@@ -144,7 +144,10 @@ export const LANGUAGES = [
   { code: 'de', name: 'Deutsch' },
   { code: 'it', name: 'Italiano' },
   { code: 'ja', name: '日本語' },
-  { code: 'ru', name: 'Русский' }
+  { code: 'ru', name: 'Русский' },
+  { code: 'hi', name: 'हिन्दी' },
+  { code: 'ko', name: '한국어' },
+  { code: 'tr', name: 'Türkçe' }
 ];
 
 export const AVATARS = [

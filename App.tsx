@@ -14,18 +14,21 @@ import { AdminPanel } from './components/AdminPanel';
 import { supabase, getUserProfileByEmail, getGlobalRanking, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email no válido", codeError: "8 dígitos requeridos", selectLang: "elegir idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "cargando tour...", analyzing: "analizando..." },
-  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "better destinations by ai", authError: "invalid email", codeError: "8 digits required", selectLang: "choose language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "change", sentTo: "sent to", loadingTour: "loading tour...", analyzing: "analyzing..." },
-  it: { welcome: "log bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "nome utente", login: "richiedi accesso", verify: "conferma", tagline: "better destinations by ai", authError: "email non valida", codeError: "8 cifre richieste", selectLang: "scegli lingua", loading: "sincronizzazione...", navElite: "elite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", changeEmail: "modifica", sentTo: "inviato a", loadingTour: "caricamento...", analyzing: "analisi..." },
-  zh: { welcome: "登录:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "电子邮箱", userPlaceholder: "用户名", login: "请求访问", verify: "验证", tagline: "better destinations by ai", authError: "电子邮件无效", codeError: "需要8位数字", selectLang: "选择语言", loading: "同步中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", changeEmail: "修改", sentTo: "已发送至", loadingTour: "正在加载路线...", analyzing: "正在分析..." },
-  eu: { welcome: "log bidaer:", explorer: "erabiltzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarrera eskatu", verify: "egiaztatu", tagline: "better destinations by ai", authError: "email okerra", codeError: "8 digitu behar dira", selectLang: "hizkuntza hautatu", loading: "sinkronizatzen...", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", changeEmail: "zuzendu", sentTo: "hona bidalia", loadingTour: "kargatzen...", analyzing: "analitzant..." },
-  ca: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuari", login: "sol·licitar accés", verify: "validar", tagline: "better destinations by ai", authError: "email no vàlid", codeError: "8 dígits requerits", selectLang: "triar idioma", loading: "sincronitzant...", navElite: "elit", navHub: "intel", navVisa: "pasaporte", navStore: "botiga", changeEmail: "corregir", sentTo: "enviat a", loadingTour: "carregant...", analyzing: "analitzant..." },
-  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "carregando...", analyzing: "analisando..." },
-  fr: { welcome: "log bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "nom d'utilisateur", login: "accès", verify: "valider", tagline: "better destinations by ai", authError: "email invalide", codeError: "8 chiffres", selectLang: "choisir langue", loading: "synchronisation...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", changeEmail: "modifier", sentTo: "envoyé à", loadingTour: "chargement...", analyzing: "analyse..." },
-  de: { welcome: "log bidaer:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "email", userPlaceholder: "name", login: "zugang", verify: "bestätigen", tagline: "better destinations by ai", authError: "ungültig", codeError: "8 stellen", selectLang: "sprache", loading: "synchronisierung...", navElite: "elite", navHub: "intel", navVisa: "reisepass", navStore: "shop", changeEmail: "ändern", sentTo: "gesendet an", loadingTour: "laden...", analyzing: "analyse..." },
-  ja: { welcome: "ログイン:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール", userPlaceholder: "名前", login: "リクエスト", verify: "確認", tagline: "better destinations by ai", authError: "無効", codeError: "8桁", selectLang: "言語を選択", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", changeEmail: "変更", sentTo: "送信先", loadingTour: "読み込み中...", analyzing: "分析中..." },
-  ru: { welcome: "вход:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "email", userPlaceholder: "имя", login: "доступ", verify: "ок", tagline: "better destinations by ai", authError: "ошибка email", codeError: "8 цифр", selectLang: "язык", loading: "синхронизация...", navElite: "элита", navHub: "инфо", navVisa: "паспорт", navStore: "магазин", changeEmail: "исправить", sentTo: "отправлено", loadingTour: "загрузка...", analyzing: "анализ..." },
-  ar: { welcome: "سجل الدخول:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك", userPlaceholder: "المستخدم", login: "دخول", verify: "تحقق", tagline: "better destinations by ai", authError: "خطأ", codeError: "٨ أرقام", selectLang: "اللغة", loading: "مزامنة...", navElite: "النخبة", navHub: "معلومات", navVisa: "جواز سفر", navStore: "متجر", changeEmail: "تعديل", sentTo: "أرسل إلى", loadingTour: "تحميل...", analyzing: "تحليل..." }
+  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando..." },
+  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "better destinations by ai", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "change", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing..." },
+  it: { welcome: "log bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "utente", login: "richiedi accesso", verify: "conferma", tagline: "better destinations by ai", authError: "email non valida", codeError: "8 cifre", selectLang: "lingua", loading: "sincronizzazione...", navElite: "elite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", changeEmail: "modifica", sentTo: "inviato a", loadingTour: "caricamento...", analyzing: "analisi..." },
+  zh: { welcome: "登录:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "电子邮箱", userPlaceholder: "用户名", login: "请求访问", verify: "验证", tagline: "better destinations by ai", authError: "无效", codeError: "8位数字", selectLang: "选择语言", loading: "同步中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", changeEmail: "修改", sentTo: "已发送至", loadingTour: "加载中...", analyzing: "正在分析..." },
+  eu: { welcome: "log bidaer:", explorer: "erabiltzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "eskatu", verify: "egiaztatu", tagline: "better destinations by ai", authError: "okerra", codeError: "8 digitu", selectLang: "hizkuntza", loading: "sinkronizatzen...", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", changeEmail: "zuzendu", sentTo: "bidalia", loadingTour: "kargatzen...", analyzing: "analizatzen..." },
+  ca: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuari", login: "sol·licitar", verify: "validar", tagline: "better destinations by ai", authError: "no vàlid", codeError: "8 dígits", selectLang: "idioma", loading: "sincronitzant...", navElite: "elit", navHub: "intel", navVisa: "pasaporte", navStore: "botiga", changeEmail: "corregir", sentTo: "enviat a", loadingTour: "generant...", analyzing: "analitzant..." },
+  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar", verify: "validar", tagline: "better destinations by ai", authError: "inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "carregando...", analyzing: "analisando..." },
+  fr: { welcome: "log bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "nom", login: "accès", verify: "valider", tagline: "better destinations by ai", authError: "invalide", codeError: "8 chiffres", selectLang: "langue", loading: "sync...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", changeEmail: "modifier", sentTo: "envoyé à", loadingTour: "chargement...", analyzing: "analyse..." },
+  de: { welcome: "log bidaer:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "email", userPlaceholder: "name", login: "zugang", verify: "bestätigen", tagline: "better destinations by ai", authError: "ungültig", codeError: "8 stellen", selectLang: "sprache", loading: "sync...", navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "shop", changeEmail: "ändern", sentTo: "gesendet", loadingTour: "laden...", analyzing: "analyse..." },
+  ja: { welcome: "ログイン:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール", userPlaceholder: "名前", login: "リクエスト", verify: "確認", tagline: "better destinations by ai", authError: "無効", codeError: "8桁", selectLang: "言語", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", changeEmail: "変更", sentTo: "送信先", loadingTour: "読み込み中...", analyzing: "分析中..." },
+  ru: { welcome: "вход:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "email", userPlaceholder: "имя", login: "доступ", verify: "ок", tagline: "better destinations by ai", authError: "ошибка", codeError: "8 цифр", selectLang: "язык", loading: "синх...", navElite: "элита", navHub: "инфо", navVisa: "паспорт", navStore: "магазин", changeEmail: "исправить", sentTo: "отправлено", loadingTour: "загрузка...", analyzing: "анализ..." },
+  ar: { welcome: "دخول:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك", userPlaceholder: "المستخدم", login: "طلب", verify: "تحقق", tagline: "better destinations by ai", authError: "خطأ", codeError: "٨ أرقام", selectLang: "اللغة", loading: "مزامنة...", navElite: "النخبة", navHub: "معلومات", navVisa: "جواز", navStore: "متجر", changeEmail: "تعديل", sentTo: "أرسل", loadingTour: "تحميل...", analyzing: "تحليل..." },
+  hi: { welcome: "लॉगिन:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "ईमेल", userPlaceholder: "नाम", login: "अनुरود", verify: "पुष्टि", tagline: "better destinations by ai", authError: "अमान्य", codeError: "8 अंक", selectLang: "भाषा", loading: "सिंक...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", changeEmail: "बदलें", sentTo: "भेजा गया", loadingTour: "लोड हो रहा है...", analyzing: "विश्लेषण..." },
+  ko: { welcome: "로그 bidaer:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일", userPlaceholder: "사용자", login: "액세스 요청", verify: "확인", tagline: "better destinations by ai", authError: "잘못된 이메일", codeError: "8자리 숫자", selectLang: "언어", loading: "동기화 중...", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", changeEmail: "수정", sentTo: "보낸 곳", loadingTour: "로드 중...", analyzing: "분석 중..." },
+  tr: { welcome: "log bidaer:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "e-posta", userPlaceholder: "kullanıcı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", authError: "geçersiz", codeError: "8 rakam", selectLang: "dil seçin", loading: "senkronize...", navElite: "elit", navHub: "istihbarat", navVisa: "pasaport", navStore: "mağaza", changeEmail: "değiştir", sentTo: "gönderildi", loadingTour: "yükleniyor...", analyzing: "analiz ediliyor..." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -77,7 +80,7 @@ export default function App() {
                     id: session.user.id, 
                     email: session.user.email, 
                     isLoggedIn: true,
-                    language: profile?.language || user.language 
+                    language: profile?.language || user.language || 'es'
                 };
                 setUser(newUser as any);
                 localStorage.setItem('bdai_profile', JSON.stringify(newUser));
@@ -160,11 +163,11 @@ export default function App() {
             await saveToursToCache(official.spanishName, official.country, targetLang, generated);
             setView(AppView.CITY_DETAIL);
         } else {
-            alert("No data found.");
+            alert("No se pudieron generar tours para esta ubicación.");
         }
     } catch (e: any) { 
         console.error("City selection error:", e);
-        alert("Connectivity error."); 
+        alert("Error de conexión con el motor de IA."); 
     } finally { 
         setIsLoading(false); 
     }
@@ -172,7 +175,7 @@ export default function App() {
 
   const handleStartTour = (tour: Tour) => {
       if (!tour || !tour.stops || tour.stops.length === 0) {
-          alert("Tour error.");
+          alert("Tour no disponible.");
           return;
       }
       setActiveTour(tour);
@@ -187,14 +190,14 @@ export default function App() {
           const { error } = await supabase.auth.signInWithOtp({ email });
           if (error) throw error;
           setLoginStep('CODE');
-      } catch (e: any) { alert("Auth error: " + e.message); } 
+      } catch (e: any) { alert("Error de autenticación: " + e.message); } 
       finally { setIsLoading(false); }
   };
 
   const handleVerifyCode = async () => {
       if (otpCode.length < 4) { alert(t('codeError')); return; }
       setIsLoading(true);
-      const currentSelectedLang = user.language;
+      const persistentLang = user.language; 
       try {
           const { data: { session }, error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: 'email' });
           if (error) throw error;
@@ -206,14 +209,14 @@ export default function App() {
                   email, 
                   username: username || 'explorer', 
                   isLoggedIn: true,
-                  language: profile?.language || currentSelectedLang 
+                  language: persistentLang 
               };
               setUser(newUser as any);
               localStorage.setItem('bdai_profile', JSON.stringify(newUser));
               await syncUserProfile(newUser as any);
               setShowOnboarding(true);
           }
-      } catch (e: any) { alert("OTP error: " + e.message); } 
+      } catch (e: any) { alert("Error OTP: " + e.message); } 
       finally { setIsLoading(false); }
   };
 
@@ -221,9 +224,7 @@ export default function App() {
       const newUser = { ...user, language: code };
       setUser(newUser);
       localStorage.setItem('bdai_profile', JSON.stringify(newUser));
-      if (user.isLoggedIn) {
-          syncUserProfile(newUser);
-      }
+      if (user.isLoggedIn) syncUserProfile(newUser);
   };
 
   if (isVerifyingSession) return <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center"><BdaiLogo className="w-16 h-16 animate-pulse" /></div>;
@@ -261,7 +262,7 @@ export default function App() {
               <div className="absolute bottom-10 left-0 right-0 px-8 flex flex-col items-center gap-4">
                 <p className="text-[7px] font-black lowercase tracking-[0.3em] text-slate-700 text-center uppercase">{t('selectLang')}</p>
                 <div className="bg-white/[0.02] border border-white/[0.05] p-5 rounded-[2rem] shadow-2xl backdrop-blur-md">
-                    <div className="grid grid-cols-6 gap-x-5 gap-y-4 items-center justify-items-center">
+                    <div className="grid grid-cols-5 gap-x-5 gap-y-4 items-center justify-items-center">
                       {LANGUAGES.map(lang => (
                         <button key={lang.code} onClick={() => handleLangChange(lang.code)} className="transition-all active:scale-90 relative">
                           <FlagIcon code={lang.code} className={`w-6 h-6 ${user.language === lang.code ? 'ring-2 ring-purple-500 scale-125 z-10' : 'grayscale-[0.8] opacity-40 hover:opacity-100 hover:grayscale-0'}`} />

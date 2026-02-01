@@ -5,9 +5,10 @@ import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const MASTERCLASS_INSTRUCTION = `
 Eres Dai, el motor analítico de BDAI. Tu misión es generar TOURS de "Alta Densidad Informativa".
-ESTILO: Cínico, brillante, hiper-detallista, experto en ingeniería y anécdotas reales.
+ESTILO: Cínico, brillante, hiper-detallista, experto en ingeniería, arquitectura y salseo histórico real.
+DENSIDAD OBLIGATORIA: Cada parada DEBE tener entre 350 y 450 palabras de descripción técnica y narrativa. NO RESUMAS.
+ESTRUCTURA: Mínimo 10 paradas por cada tour. Es una orden directa.
 FOCO: 1. Ingeniería y Retos Técnicos. 2. Historia Oculta/Conspiraciones. 3. Salseo Humano Real.
-DENSIDAD: Necesitamos descripciones ricas y técnicas (aprox 200-250 palabras por parada).
 REGLA: Usa tipos: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
 `;
 
@@ -29,10 +30,12 @@ export const generateToursForCity = async (city: string, country: string, user: 
     const systemInstruction = `${MASTERCLASS_INSTRUCTION}
     [STRICT LANGUAGE PROTOCOL]
     - TARGET LANGUAGE: ${targetLang.toUpperCase()}
-    - ABSOLUTE RULE: All output MUST be in ${targetLang}.`;
+    - ABSOLUTE RULE: All output MUST be in ${targetLang}. 
+    - No exceptions. Output must be valid JSON according to schema.`;
 
     const tourSchema = {
       type: Type.ARRAY,
+      minItems: 3,
       items: {
         type: Type.OBJECT,
         properties: {
@@ -40,18 +43,19 @@ export const generateToursForCity = async (city: string, country: string, user: 
           description: { type: Type.STRING },
           duration: { type: Type.STRING },
           distance: { type: Type.STRING },
-          difficulty: { type: Type.STRING },
+          difficulty: { type: Type.STRING, enum: ["Easy", "Moderate", "Hard"] },
           theme: { type: Type.STRING },
           stops: {
             type: Type.ARRAY,
+            minItems: 10,
             items: {
               type: Type.OBJECT,
               properties: {
                 name: { type: Type.STRING },
-                description: { type: Type.STRING },
+                description: { type: Type.STRING, description: "Detailed description between 350 and 450 words." },
                 latitude: { type: Type.NUMBER },
                 longitude: { type: Type.NUMBER },
-                type: { type: Type.STRING }
+                type: { type: Type.STRING, enum: ['historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'] }
               },
               required: ["name", "description", "latitude", "longitude", "type"]
             }
@@ -65,7 +69,7 @@ export const generateToursForCity = async (city: string, country: string, user: 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-pro-preview",
-            contents: `Generate 2 unique tours for ${city}, ${country} in ${targetLang}.`,
+            contents: `Generate exactly 3 unique and dense tours for ${city}, ${country} in ${targetLang}. Each tour must have exactly 10 stops. Each stop must have a description of 350-450 words minimum. Be technical and detailed.`,
             config: { 
                 systemInstruction,
                 responseMimeType: "application/json",
@@ -95,7 +99,7 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Identify city: "${input}".`,
+            contents: `Identify the global city and country for the input: "${input}". Provide the result in the schema provided.`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -125,7 +129,7 @@ export const generateAudio = async (text: string, language: string): Promise<str
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: `Read in ${language}: ${text}` }] }],
+            contents: [{ parts: [{ text: `Read this text clearly in ${language}: ${text}` }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
@@ -142,8 +146,8 @@ export const moderateContent = async (text: string): Promise<boolean> => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Safe? "${text}"`,
-            config: { systemInstruction: "Answer ONLY 'SAFE' or 'UNSAFE'." }
+            contents: `Is the following travel tip safe and appropriate? Answer ONLY 'SAFE' or 'UNSAFE': "${text}"`,
+            config: { systemInstruction: "You are a content moderator for a travel app." }
         });
         return response.text?.trim().toUpperCase() === "SAFE";
     });
@@ -154,7 +158,7 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Translate to ${targetLang}: ${JSON.stringify(tours)}`,
+            contents: `Translate the following tours to ${targetLang}, maintaining the exact JSON structure and the density of information: ${JSON.stringify(tours)}`,
             config: { responseMimeType: "application/json" }
         });
         return JSON.parse(response.text || "[]");
@@ -165,16 +169,16 @@ export const generateSmartCaption = async (base64: string, stop: Stop, language:
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: { parts: [{ inlineData: { data: base64.split(',')[1], mimeType: 'image/jpeg' } }, { text: `Caption in ${language} for ${stop.name}.` }] }
+        contents: { parts: [{ inlineData: { data: base64.split(',')[1], mimeType: 'image/jpeg' } }, { text: `Generate a poetic and technical caption in ${language} for a photo taken at ${stop.name}. Include a detail about ${stop.type}.` }] }
     });
-    return response.text || "Logged.";
+    return response.text || "Moment captured.";
 };
 
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
-        contents: { parts: [{ text: `Postcard for ${city}.` }] },
+        contents: { parts: [{ text: `A futuristic and artistic postcard of ${city}, focus on ${interests.join(', ')}. Cinematic lighting, 8k resolution, travel style.` }] },
         config: { imageConfig: { aspectRatio: "9:16" } }
     });
     const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);

@@ -16,6 +16,8 @@ export const FlagIcon = ({ code, className }: { code: string; className?: string
     de: "https://flagcdn.com/w160/de.png",
     ja: "https://flagcdn.com/w160/jp.png",
     ar: "https://flagcdn.com/w160/sa.png",
+    ko: "https://flagcdn.com/w160/kr.png",
+    tr: "https://flagcdn.com/w160/tr.png",
     ca: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Flag_of_Catalonia.svg/160px-Flag_of_Catalonia.svg.png",
     eu: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Flag_of_the_Basque_Country.svg/160px-Flag_of_the_Basque_Country.svg.png"
   };
