@@ -9,27 +9,21 @@ interface ProfileModalProps {
   onClose: () => void;
   onUpdateUser?: (updatedUser: UserProfile) => void;
   onLogout?: () => void;
+  onOpenAdmin?: () => void;
   language?: string;
 }
+
+const ADMIN_EMAIL = 'travelbdai@gmail.com';
 
 const MODAL_TEXTS: any = {
     es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "F. Nacimiento", categoryPoints: "Actividad Técnica", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Visados de Frontera", visibility: "Visibilidad", public: "Perfil Público", private: "Perfil Privado" },
     en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", categoryPoints: "Technical Activity", save: "Save", edit: "Edit", logout: "Logout", stamps: "Border Visas", visibility: "Visibility", public: "Public Profile", private: "Private Profile" },
-    zh: { title: "bdai 全球护照", subtitle: "数字游民身份", surname: "姓", givenNames: "名", city: "城市", country: "国家", age: "年龄", birthday: "生日", categoryPoints: "技术活动", save: "保存", edit: "编辑", logout: "登出", stamps: "边境签证", visibility: "可见性", public: "公开资料", private: "私人资料" },
-    ca: { title: "Passaport Global bdai", subtitle: "Nòmada Digital ID", surname: "Cognoms", givenNames: "Noms", city: "Ciutat", country: "País", age: "Edat", birthday: "F. Naixement", categoryPoints: "Activitat Tècnica", save: "Desar", edit: "Editar", logout: "Sortir", stamps: "Visats de Frontera", visibility: "Visibilitat", public: "Perfil Públic", private: "Perfil Privat" },
-    eu: { title: "bdai Pasaporte Globala", subtitle: "Nomada Digital ID", surname: "Abizenak", givenNames: "Izenak", city: "Hiria", country: "Herrialdea", age: "Adina", birthday: "Jaiotze data", categoryPoints: "Jarduera Teknikoa", save: "Gorde", edit: "Editatu", logout: "Irten", stamps: "Mugako Bisatuak", visibility: "Ikusgarritasuna", public: "Profil Publikoa", private: "Profil Pribatua" },
-    ar: { title: "جواز سفر bdai العالمي", subtitle: "هوية البدوي الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", age: "العمر", birthday: "تاريخ الميلاد", categoryPoints: "النشاط التقني", save: "حفظ", edit: "تعديل", logout: "خروج", stamps: "تأشيرات الحدود", visibility: "الرؤية", public: "ملف شخصي عام", private: "ملف شخصي خاص" },
-    pt: { title: "Passaporte Global bdai", subtitle: "Nômade Digital ID", surname: "Apelidos", givenNames: "Nomes", city: "Cidade", country: "País", age: "Idade", birthday: "Nascimento", categoryPoints: "Atividade Técnica", save: "Salvar", edit: "Editar", logout: "Sair", stamps: "Vistos de Fronteira", visibility: "Visibilidade", public: "Perfil Público", private: "Perfil Privado" },
-    fr: { title: "Passeport Global bdai", subtitle: "ID Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Date de naissance", categoryPoints: "Activité Technique", save: "Enregistrer", edit: "Modifier", logout: "Déconnexion", stamps: "Visas de Frontière", visibility: "Visibilité", public: "Profil Public", private: "Profil Privé" },
-    de: { title: "bdai Globaler Reisepass", subtitle: "Digitaler Nomade ID", surname: "Nachname", givenNames: "Vornamen", city: "Stadt", country: "Land", age: "Alter", birthday: "Geburtsdatum", categoryPoints: "Technische Aktivität", save: "Speichern", edit: "Bearbeiten", logout: "Abmelden", stamps: "Grenzvisa", visibility: "Sichtbarkeit", public: "Öffentliches Profil", private: "Privates Profil" },
-    it: { title: "Passaporto Globale bdai", subtitle: "ID Nomade Digitale", surname: "Cognome", givenNames: "Nomi", city: "Città", country: "Paese", age: "Età", birthday: "Data di nascita", categoryPoints: "Attività Tecnica", save: "Salva", edit: "Modifica", logout: "Esci", stamps: "Visti di Frontiera", visibility: "Visibilità", public: "Profilo Pubblico", private: "Profilo Privato" },
-    ja: { title: "bdai グローバルパスポート", subtitle: "デジタルノマドID", surname: "姓", givenNames: "名", city: "都市", country: "国", age: "年齢", birthday: "生年月日", categoryPoints: "技術活動", save: "保存", edit: "編集", logout: "ログアウト", stamps: "入国スタンプ", visibility: "公開設定", public: "公開プロフィール", private: "非公開プロフィール" },
-    ru: { title: "Глобальный паспорт bdai", subtitle: "ID цифрового кочевника", surname: "Фамилия", givenNames: "Имена", city: "Город", country: "Страна", age: "Возраст", birthday: "Дата рождения", categoryPoints: "Техническая активность", save: "Сохранить", edit: "Править", logout: "Выйти", stamps: "Пограничные визы", visibility: "Видимость", public: "Публичный профиль", private: "Приватный профиль" }
+    ar: { title: "جواز سفر bdai العالمي", subtitle: "هوية البدوي الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", age: "العمر", birthday: "تاريخ الميلاد", categoryPoints: "النشاط التقني", save: "حفظ", edit: "تعديل", logout: "خروج", stamps: "تأشيرات الحدود", visibility: "الرؤية", public: "ملف شخصi عام", private: "ملف شخصي خاص" }
 };
 
 const STAMP_COLORS = ['text-blue-600 border-blue-600', 'text-emerald-600 border-emerald-600', 'text-red-600 border-red-600', 'text-purple-600 border-purple-600', 'text-amber-600 border-amber-600'];
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout }) => {
+export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,6 +88,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 </div>
             </div>
             <div className="flex gap-2">
+                {user.email === ADMIN_EMAIL && (
+                   <button onClick={onOpenAdmin} className="w-9 h-9 rounded-xl flex items-center justify-center bg-yellow-500/20 text-yellow-500 transition-all border border-yellow-500/20">
+                      <i className="fas fa-cog text-xs"></i>
+                   </button>
+                )}
                 <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className={`w-9 h-9 rounded-xl flex items-center justify-center ${isEditing ? 'bg-blue-600 shadow-lg' : 'bg-white/10'} text-white transition-all`}>
                     {isSyncing ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${isEditing ? 'fa-save' : 'fa-edit'} text-xs`}></i>}
                 </button>
@@ -126,7 +125,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 <div><p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('birthday')}</p>{isEditing ? <input type="date" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[11px] uppercase" /> : <p className="font-bold text-slate-800 text-[11px] uppercase">{formData.birthday || '---'}</p>}</div>
             </div>
 
-            {/* Selector de Privacidad */}
             <div className="pt-2 border-t border-slate-200">
                 <p className="text-[7px] text-slate-400 font-black uppercase mb-3 tracking-widest">{pt('visibility')}</p>
                 <div className="flex items-center gap-3">
@@ -177,7 +175,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         </button>
                     ))}
                 </div>
-                {/* Botón de Logout estilizado y sutil */}
                 <button 
                     onClick={onLogout} 
                     className="w-full py-4 border border-red-100 text-red-500 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:bg-red-50 transition-all hover:border-red-200"

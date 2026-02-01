@@ -5,18 +5,9 @@ import { SchematicMap } from './SchematicMap';
 import { generateAudio, generateSmartCaption } from '../services/geminiService';
 
 const TEXTS: any = {
-    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "Demasiado lejos.", generateStory: "Capturar Momento", checkIn: "Verificar Visita", checkedIn: "Verificada", shareInsta: "Copiar Caption" },
-    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "Too far.", generateStory: "Capture Moment", checkIn: "Verify Visit", checkedIn: "Verified", shareInsta: "Copy Caption" },
-    zh: { start: "启动", stop: "站", of: "/", photoSpot: "技术角度", capture: "记录数据", rewardReceived: "已同步", prev: "上一步", next: "下一步", meters: "米", itinerary: "路线图", syncing: "同步中...", tooFar: "太远了", generateStory: "捕捉瞬间", checkIn: "验证访问", checkedIn: "已验证", shareInsta: "复制文案" },
-    ca: { start: "Llançar", stop: "Parada", of: "de", photoSpot: "Àngle Tècnic", capture: "Loguejar", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Endavant", meters: "m", itinerary: "Itinerari", syncing: "Sincronitzant...", tooFar: "Massa lluny.", generateStory: "Capturar Moment", checkIn: "Verificar Visita", checkedIn: "Verificada", shareInsta: "Copiar Caption" },
-    eu: { start: "Biarazi", stop: "Geltokia", of: "-(e)koa", photoSpot: "Angelu Teknikoa", capture: "Datuak Gorde", rewardReceived: "Sinkronizatuta", prev: "Atzera", next: "Aurrera", meters: "m", itinerary: "Ibilbidea", syncing: "Sinkronizatzen...", tooFar: "Urrunegi.", generateStory: "Une bat harrapatu", checkIn: "Bisita egiaztatu", checkedIn: "Egiaztatuta", shareInsta: "Kopiatu Caption" },
-    ar: { start: "إطلاق", stop: "محطة", of: "من", photoSpot: "زاوية تقنية", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "رجوع", next: "التالي", meters: "م", itinerary: "المسار", syncing: "جاري المزامنة...", tooFar: "بعيد جداً", generateStory: "التقاط لحظة", checkIn: "تأكيد الزيارة", checkedIn: "تم التأكيد", shareInsta: "نسخ النص" },
-    pt: { start: "Lançar", stop: "Parada", of: "de", photoSpot: "Ângulo Técnico", capture: "Logar Dados", rewardReceived: "Sincronizado", prev: "Voltar", next: "Avançar", meters: "m", itinerary: "Itinerário", syncing: "Sincronizando...", tooFar: "Muito longe.", generateStory: "Capturar Moment", checkIn: "Verificar Visita", checkedIn: "Verificada", shareInsta: "Copiar Legenda" },
-    fr: { start: "Lancer", stop: "Arrêt", of: "de", photoSpot: "Angle Technique", capture: "Données", rewardReceived: "Synchronisé", prev: "Retour", next: "Suivant", meters: "m", itinerary: "Itinéraire", syncing: "Synchro...", tooFar: "Trop loin.", generateStory: "Capturer Moment", checkIn: "Vérifier Visite", checkedIn: "Vérifiée", shareInsta: "Copier Légende" },
-    de: { start: "Starten", stop: "Stopp", of: "von", photoSpot: "Technischer Winkel", capture: "Daten Log", rewardReceived: "Synchronisiert", prev: "Zurück", next: "Weiter", meters: "m", itinerary: "Route", syncing: "Synchronisierung...", tooFar: "Zu weit weg.", generateStory: "Moment festhalten", checkIn: "Besuch verifizieren", checkedIn: "Verifiziert", shareInsta: "Caption kopieren" },
-    it: { start: "Lancia", stop: "Fermata", of: "di", photoSpot: "Angolo Tecnico", capture: "Dati", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Itinerario", syncing: "Sincronizzazione...", tooFar: "Troppo lontano.", generateStory: "Cattura Momento", checkIn: "Verifica Visita", checkedIn: "Verificata", shareInsta: "Copia Didascalia" },
-    ja: { start: "開始", stop: "スポット", of: "/", photoSpot: "技術的角度", capture: "ログデータ", rewardReceived: "同期済み", prev: "戻る", next: "次へ", meters: "m", itinerary: "旅程", syncing: "同期中...", tooFar: "遠すぎます", generateStory: "瞬間をキャプチャ", checkIn: "訪問を確認", checkedIn: "確認済み", shareInsta: "キャプションをコピー" },
-    ru: { start: "Запуск", stop: "Остановка", of: "из", photoSpot: "Технический угол", capture: "Данные", rewardReceived: "Синхронизировано", prev: "Назад", next: "Вперед", meters: "м", itinerary: "Маршрут", syncing: "Синхронизация...", tooFar: "Слишком далеко.", generateStory: "Заснять momento", checkIn: "Verificar visita", checkedIn: "Verificada", shareInsta: "Copiar Caption" }
+    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "Fuera de rango", generateStory: "Capturar Momento", checkIn: "Verificar Visita", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a" },
+    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "Too far.", generateStory: "Capture Moment", checkIn: "Verify Visit", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at" },
+    ar: { start: "إطلاق", stop: "محطة", of: "من", photoSpot: "زاوية تقنية", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "رجوع", next: "التالي", meters: "م", itinerary: "المسار", syncing: "جاري المزامنة...", tooFar: "بعيد جداً", generateStory: "التقاط لحظة", checkIn: "تأكيد الزيارة", checkedIn: "تم التأكيد", shareInsta: "نسخ النص", distance: "على بعد" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -66,6 +57,15 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Calculamos distancia actual al punto
+    const distToTarget = useMemo(() => {
+        if (!userLocation) return null;
+        return Math.round(calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
+    }, [userLocation, currentStop]);
+
+    // Umbral de validación: 1000 metros para pruebas/entornos urbanos
+    const IS_IN_RANGE = distToTarget !== null && distToTarget <= 1000;
+
     useEffect(() => {
         setRewardClaimed(false);
         setPhotoClaimed(false);
@@ -109,15 +109,13 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const handleCheckIn = () => {
-        if (!userLocation) { alert(tl.tooFar); return; }
-        if (calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude) > 300) { alert(tl.tooFar); return; }
+        if (!IS_IN_RANGE) { alert(`${tl.tooFar} (${distToTarget}m)`); return; }
         setRewardClaimed(true);
         onUpdateUser({ ...user, miles: user.miles + 50 });
     };
 
     const handlePhotoReward = () => {
-        if (!userLocation) { alert(tl.tooFar); return; }
-        if (calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude) > 300) { alert(tl.tooFar); return; }
+        if (!IS_IN_RANGE) { alert(`${tl.tooFar} (${distToTarget}m)`); return; }
         fileInputRef.current?.click();
     };
 
@@ -162,7 +160,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] shrink-0 pt-safe-iphone shadow-sm">
                 <button onClick={onBack} className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-950"><i className="fas fa-arrow-left text-xs"></i></button>
                 
-                {/* Botón de Itinerario más visual (Selector de paradas) */}
                 <button onClick={() => setShowItinerary(true)} className="flex-1 mx-4 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between group active:bg-slate-100 transition-all overflow-hidden">
                     <div className={`flex flex-col text-left truncate ${language === 'ar' ? 'order-2 text-right' : ''}`}>
                         <p className="text-[7px] font-black text-purple-600 uppercase mb-0.5">{tl.stop} {currentStopIndex + 1} {tl.of} {tour.stops.length}</p>
@@ -177,8 +174,17 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 <div className="h-[32vh] w-full relative z-[100] shrink-0 border-b border-slate-100 bg-slate-200"><SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={(i: number) => { onJumpTo(i); stopAudio(); }} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} /></div>
                 <div className="px-8 pt-10 pb-44 space-y-10 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-30px_60px_rgba(0,0,0,0.08)] z-[200]">
                     <div className="grid grid-cols-2 gap-4">
-                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2.5rem] font-black uppercase text-[10px] shadow-lg border ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : 'bg-purple-600 text-white border-purple-500'}`}><i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-xl`}></i><span className="text-center">{rewardClaimed ? tl.checkedIn : `${tl.checkIn}\n(+50 Miles)`}</span></button>
-                        <button onClick={handlePhotoReward} disabled={isGeneratingStory || photoClaimed} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2.5rem] font-black uppercase text-[10px] shadow-xl border ${photoClaimed ? 'bg-slate-50 text-purple-600 border-purple-100' : 'bg-slate-900 text-white border-slate-800'}`}>{isGeneratingStory ? <i className="fas fa-spinner fa-spin text-xl"></i> : <i className="fas fa-camera text-xl"></i>}<span className="text-center">{isGeneratingStory ? 'SYNC...' : photoClaimed ? tl.rewardReceived : `${tl.generateStory}\n(+100 Miles)`}</span></button>
+                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-[2.5rem] font-black uppercase text-[9px] shadow-lg border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500 shadow-purple-500/20' : 'bg-slate-200 text-slate-400 border-slate-300 opacity-80')}`}>
+                            <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg`}></i>
+                            <span className="text-center">{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
+                            {!rewardClaimed && <span className="text-[7px] opacity-60 font-bold lowercase">{tl.distance} {distToTarget ?? '?'}m</span>}
+                        </button>
+                        
+                        <button onClick={handlePhotoReward} disabled={isGeneratingStory || photoClaimed} className={`flex flex-col items-center justify-center gap-2 p-5 rounded-[2.5rem] font-black uppercase text-[9px] shadow-xl border transition-all ${photoClaimed ? 'bg-slate-50 text-purple-600 border-purple-100' : (IS_IN_RANGE ? 'bg-slate-950 text-white border-slate-800 shadow-slate-900/40' : 'bg-slate-200 text-slate-400 border-slate-300 opacity-80')}`}>
+                            {isGeneratingStory ? <i className="fas fa-spinner fa-spin text-lg"></i> : <i className="fas fa-camera text-lg"></i>}
+                            <span className="text-center">{isGeneratingStory ? 'SYNC...' : photoClaimed ? tl.rewardReceived : tl.generateStory}</span>
+                            {!photoClaimed && !isGeneratingStory && <span className="text-[7px] opacity-60 font-bold lowercase">{tl.distance} {distToTarget ?? '?'}m</span>}
+                        </button>
                     </div>
                     <div className="relative group"><div className="space-y-10 text-slate-800 text-lg leading-relaxed font-medium">{currentStop.description.split('\n\n').map((paragraph, idx) => (<p key={idx} className={`animate-fade-in first-letter:text-6xl first-letter:font-black first-letter:text-slate-950 first-letter:float-left opacity-90 ${language === 'ar' ? 'text-right first-letter:float-right first-letter:ml-3 first-letter:mr-0' : 'first-letter:mr-3'}`}>{paragraph}</p>))}</div>
                         <div className={`absolute top-0 ${language === 'ar' ? 'left-0' : 'right-0'}`}><button onClick={() => handlePlayAudio(currentStop.id, currentStop.description)} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-white text-purple-600 border border-purple-100'}`}>{audioLoadingId === currentStop.id ? <i className="fas fa-spinner fa-spin"></i> : <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-headphones-simple'} text-xl`}></i>}</button></div>
