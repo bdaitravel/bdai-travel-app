@@ -13,16 +13,14 @@ import { Onboarding } from './components/Onboarding';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase, getUserProfileByEmail, getGlobalRanking, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
-const ADMIN_EMAIL = 'travelbdai@gmail.com';
-
 const TRANSLATIONS: any = {
   es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email no válido", codeError: "8 dígitos requeridos", selectLang: "elegir idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "cargando tour...", analyzing: "analizando..." },
   en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "better destinations by ai", authError: "invalid email", codeError: "8 digits required", selectLang: "choose language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "change", sentTo: "sent to", loadingTour: "loading tour...", analyzing: "analyzing..." },
   it: { welcome: "log bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "nome utente", login: "richiedi accesso", verify: "conferma", tagline: "better destinations by ai", authError: "email non valida", codeError: "8 cifre richieste", selectLang: "scegli lingua", loading: "sincronizzazione...", navElite: "elite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", changeEmail: "modifica", sentTo: "inviato a", loadingTour: "caricamento...", analyzing: "analisi..." },
   zh: { welcome: "登录:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "电子邮箱", userPlaceholder: "用户名", login: "请求访问", verify: "验证", tagline: "better destinations by ai", authError: "电子邮件无效", codeError: "需要8位数字", selectLang: "选择语言", loading: "同步中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", changeEmail: "修改", sentTo: "已发送至", loadingTour: "正在加载路线...", analyzing: "正在分析..." },
-  eu: { welcome: "log bidaer:", explorer: "erabiltzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarrera eskatu", verify: "egiaztatu", tagline: "better destinations by ai", authError: "email okerra", codeError: "8 digitu behar dira", selectLang: "hizkuntza hautatu", loading: "sinkronizatzen...", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", changeEmail: "zuzendu", sentTo: "hona bidalia", loadingTour: "kargatzen...", analyzing: "analizatzen..." },
+  eu: { welcome: "log bidaer:", explorer: "erabiltzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarrera eskatu", verify: "egiaztatu", tagline: "better destinations by ai", authError: "email okerra", codeError: "8 digitu behar dira", selectLang: "hizkuntza hautatu", loading: "sinkronizatzen...", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", changeEmail: "zuzendu", sentTo: "hona bidalia", loadingTour: "kargatzen...", analyzing: "analitzant..." },
   ca: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuari", login: "sol·licitar accés", verify: "validar", tagline: "better destinations by ai", authError: "email no vàlid", codeError: "8 dígits requerits", selectLang: "triar idioma", loading: "sincronitzant...", navElite: "elit", navHub: "intel", navVisa: "pasaporte", navStore: "botiga", changeEmail: "corregir", sentTo: "enviat a", loadingTour: "carregant...", analyzing: "analitzant..." },
-  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar acesso", verify: "validar", tagline: "better destinations by ai", authError: "email inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "carregando...", analyzing: "analisando..." },
+  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "carregando...", analyzing: "analisando..." },
   fr: { welcome: "log bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "nom d'utilisateur", login: "accès", verify: "valider", tagline: "better destinations by ai", authError: "email invalide", codeError: "8 chiffres", selectLang: "choisir langue", loading: "synchronisation...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", changeEmail: "modifier", sentTo: "envoyé à", loadingTour: "chargement...", analyzing: "analyse..." },
   de: { welcome: "log bidaer:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "email", userPlaceholder: "name", login: "zugang", verify: "bestätigen", tagline: "better destinations by ai", authError: "ungültig", codeError: "8 stellen", selectLang: "sprache", loading: "synchronisierung...", navElite: "elite", navHub: "intel", navVisa: "reisepass", navStore: "shop", changeEmail: "ändern", sentTo: "gesendet an", loadingTour: "laden...", analyzing: "analyse..." },
   ja: { welcome: "ログイン:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール", userPlaceholder: "名前", login: "リクエスト", verify: "確認", tagline: "better destinations by ai", authError: "無効", codeError: "8桁", selectLang: "言語を選択", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", changeEmail: "変更", sentTo: "送信先", loadingTour: "読み込み中...", analyzing: "分析中..." },
@@ -59,8 +57,10 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   
   const [user, setUser] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('bdai_profile');
-    if (saved) return { ...GUEST_PROFILE, ...JSON.parse(saved) };
+    try {
+        const saved = localStorage.getItem('bdai_profile');
+        if (saved) return { ...GUEST_PROFILE, ...JSON.parse(saved) };
+    } catch (e) {}
     return GUEST_PROFILE;
   });
 
@@ -68,17 +68,26 @@ export default function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-            const profile = await getUserProfileByEmail(session.user.email || '');
-            if (profile) {
-              const newUser = { ...profile, id: session.user.id, isLoggedIn: true };
-              setUser(newUser as any);
-              localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const profile = await getUserProfileByEmail(session.user.email || '');
+                const newUser = { 
+                    ...(profile || GUEST_PROFILE), 
+                    id: session.user.id, 
+                    email: session.user.email, 
+                    isLoggedIn: true,
+                    language: profile?.language || user.language 
+                };
+                setUser(newUser as any);
+                localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+                setView(AppView.HOME);
             }
-            setView(AppView.HOME);
+        } catch (e) {
+            console.error("Auth init error:", e);
+        } finally {
+            setIsVerifyingSession(false);
         }
-        setIsVerifyingSession(false);
     };
     checkAuth();
     getGlobalRanking().then(setLeaderboard);
@@ -88,8 +97,8 @@ export default function App() {
     if ('geolocation' in navigator) {
       const watchId = navigator.geolocation.watchPosition(
         (position) => setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude }),
-        (err) => console.error(err),
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        (err) => console.debug("GPS skip:", err),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
       );
       return () => navigator.geolocation.clearWatch(watchId);
     }
@@ -103,50 +112,72 @@ export default function App() {
   const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
 
   const handleCitySearch = async (cityInput: string) => {
-    if (!cityInput.trim() || isLoading) return;
+    if (!cityInput || !cityInput.trim() || isLoading) return;
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
     const targetLang = user.language || 'es';
-    const cached = await getCachedTours(cityInput, "", targetLang);
-    if (cached) {
-        const validTours = (cached.data as Tour[]).filter(tour => tour.stops && tour.stops.length > 0);
-        setTours(validTours);
-        setSelectedCity(cached.cityName || cityInput);
-        setView(AppView.CITY_DETAIL);
-        setIsLoading(false);
-        return;
-    }
+    setTours([]);
+    
     try {
+        const cached = await getCachedTours(cityInput, "", targetLang);
+        if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
+            setTours(cached.data);
+            setSelectedCity(cached.cityName || cityInput);
+            setView(AppView.CITY_DETAIL);
+            setIsLoading(false);
+            return;
+        }
         const results = await standardizeCityName(cityInput);
         if (results && results.length > 0) setSearchOptions(results);
         else await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
-    } catch (e: any) { await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" }); } 
-    finally { setIsLoading(false); }
+    } catch (e: any) { 
+        console.error("Search error:", e);
+        await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" }); 
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   const processCitySelection = async (official: {name: string, spanishName: string, country: string}) => {
+    if (!official || !official.spanishName) return;
     setIsLoading(true); 
     setSearchOptions(null); 
     const targetLang = user.language || 'es';
+    setTours([]);
+
     try {
         setSelectedCity(official.spanishName); 
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
-        if (cached && cached.langFound === targetLang) {
-            const validTours = (cached.data as Tour[]).filter(tour => tour.stops && tour.stops.length > 0);
-            setTours(validTours); 
+        if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
+            setTours(cached.data); 
             setView(AppView.CITY_DETAIL);
-            setIsLoading(false); 
             return;
         } 
         setLoadingMessage(t('loadingTour'));
         const generated = await generateToursForCity(official.spanishName, official.country, user);
-        const validGenerated = generated.filter(tour => tour.stops && tour.stops.length > 0);
-        setTours(validGenerated); 
-        if (validGenerated.length > 0) {
-            await saveToursToCache(official.spanishName, official.country, targetLang, validGenerated);
+        if (Array.isArray(generated) && generated.length > 0) {
+            setTours(generated); 
+            await saveToursToCache(official.spanishName, official.country, targetLang, generated);
+            setView(AppView.CITY_DETAIL);
+        } else {
+            alert("No data found.");
         }
-        setView(AppView.CITY_DETAIL);
-    } catch (e: any) { alert("error"); } finally { setIsLoading(false); }
+    } catch (e: any) { 
+        console.error("City selection error:", e);
+        alert("Connectivity error."); 
+    } finally { 
+        setIsLoading(false); 
+    }
+  };
+
+  const handleStartTour = (tour: Tour) => {
+      if (!tour || !tour.stops || tour.stops.length === 0) {
+          alert("Tour error.");
+          return;
+      }
+      setActiveTour(tour);
+      setView(AppView.TOUR_ACTIVE);
+      setCurrentStopIndex(0);
   };
 
   const handleLoginRequest = async () => {
@@ -156,25 +187,43 @@ export default function App() {
           const { error } = await supabase.auth.signInWithOtp({ email });
           if (error) throw error;
           setLoginStep('CODE');
-      } catch (e: any) { alert("error: " + e.message); } 
+      } catch (e: any) { alert("Auth error: " + e.message); } 
       finally { setIsLoading(false); }
   };
 
   const handleVerifyCode = async () => {
-      if (otpCode.length < 8) { alert(t('codeError')); return; }
+      if (otpCode.length < 4) { alert(t('codeError')); return; }
       setIsLoading(true);
+      const currentSelectedLang = user.language;
       try {
           const { data: { session }, error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: 'email' });
           if (error) throw error;
           if (session) {
               const profile = await getUserProfileByEmail(email);
-              const newUser = profile ? { ...profile, id: session.user.id, isLoggedIn: true } : { ...GUEST_PROFILE, id: session.user.id, email, username: username || 'explorer', isLoggedIn: true };
+              const newUser = { 
+                  ...(profile || GUEST_PROFILE), 
+                  id: session.user.id, 
+                  email, 
+                  username: username || 'explorer', 
+                  isLoggedIn: true,
+                  language: profile?.language || currentSelectedLang 
+              };
               setUser(newUser as any);
               localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+              await syncUserProfile(newUser as any);
               setShowOnboarding(true);
           }
-      } catch (e: any) { alert("error: " + e.message); } 
+      } catch (e: any) { alert("OTP error: " + e.message); } 
       finally { setIsLoading(false); }
+  };
+
+  const handleLangChange = (code: string) => {
+      const newUser = { ...user, language: code };
+      setUser(newUser);
+      localStorage.setItem('bdai_profile', JSON.stringify(newUser));
+      if (user.isLoggedIn) {
+          syncUserProfile(newUser);
+      }
   };
 
   if (isVerifyingSession) return <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center"><BdaiLogo className="w-16 h-16 animate-pulse" /></div>;
@@ -214,7 +263,7 @@ export default function App() {
                 <div className="bg-white/[0.02] border border-white/[0.05] p-5 rounded-[2rem] shadow-2xl backdrop-blur-md">
                     <div className="grid grid-cols-6 gap-x-5 gap-y-4 items-center justify-items-center">
                       {LANGUAGES.map(lang => (
-                        <button key={lang.code} onClick={() => setUser(prev => ({...prev, language: lang.code}))} className="transition-all active:scale-90 relative">
+                        <button key={lang.code} onClick={() => handleLangChange(lang.code)} className="transition-all active:scale-90 relative">
                           <FlagIcon code={lang.code} className={`w-6 h-6 ${user.language === lang.code ? 'ring-2 ring-purple-500 scale-125 z-10' : 'grayscale-[0.8] opacity-40 hover:opacity-100 hover:grayscale-0'}`} />
                           {user.language === lang.code && <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-purple-500 rounded-full"></div>}
                         </button>
@@ -232,17 +281,19 @@ export default function App() {
                       <h1 className="text-2xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.username || t('explorer')}.</span></h1>
                       <div className="relative mt-6 flex gap-3"><input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySearch(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-white outline-none font-bold text-xs" /><button onClick={() => handleCitySearch(searchVal)} className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg"><i className="fas fa-search text-sm"></i></button></div>
                       {searchOptions && (<div className="mt-4 space-y-1 bg-slate-900/95 backdrop-blur-xl p-3 rounded-3xl border border-white/5 shadow-2xl">{searchOptions.map((opt, i) => (<button key={i} onClick={() => processCitySelection(opt)} className="w-full p-3 bg-white/5 rounded-xl flex items-center justify-between transition-all text-left active:bg-purple-600/20"><div><span className="text-white font-black uppercase text-[10px]">{opt.spanishName}</span><br/><span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">{opt.country}</span></div><i className="fas fa-chevron-right text-[8px] text-slate-800"></i></button>))}</div>)}
-                      <TravelServices mode="HOME" language={user.language || 'es'} onCitySelect={(name) => handleCitySearch(name)} />
+                      <TravelServices mode="HOME" language={user.language || 'es'} onCitySelect={(name: string) => handleCitySearch(name)} />
                   </div>
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto"><header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 text-white flex items-center justify-center"><i className="fas fa-arrow-left text-xs"></i></button><h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2></header>
-                      <div className="space-y-4 pb-12">{tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0);}} language={user.language || 'es'} />)}</div>
+                      <div className="space-y-4 pb-12">
+                          {tours.length > 0 ? tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => handleStartTour(tour)} language={user.language || 'es'} />) : <div className="text-center py-20 opacity-30 uppercase font-black text-xs tracking-widest">{t('loading')}</div>}
+                      </div>
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => { setUser(u); syncUserProfile(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); }} language={user.language || 'es'} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} />}
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language || 'es'} /></div>}
-                {view === AppView.TOOLS && <div className="pt-safe-iphone px-6 max-w-md mx-auto"><TravelServices mode="HUB" language={user.language || 'es'} onCitySelect={(name) => handleCitySearch(name)} /></div>}
+                {view === AppView.TOOLS && <div className="pt-safe-iphone px-6 max-w-md mx-auto"><TravelServices mode="HUB" language={user.language || 'es'} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => { setUser(u); syncUserProfile(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); }} language={user.language || 'es'} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={(reward) => { const nu = {...user, miles: user.miles + reward}; setUser(nu); syncUserProfile(nu); }} /></div>}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}

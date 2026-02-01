@@ -36,12 +36,12 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
     <div onClick={() => onSelect(tour)} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-md p-7 mb-4 cursor-pointer relative active:scale-[0.98] transition-all">
       <div className="flex flex-col">
           <div className="mb-4 flex justify-between items-center">
-             <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white">{tour.theme}</span>
+             <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white">{tour.theme || "Tour"}</span>
           </div>
-          <h3 className="text-2xl font-black text-slate-900 mb-3 uppercase tracking-tighter leading-tight">{tour.title}</h3>
-          <p className="text-slate-500 text-xs leading-relaxed line-clamp-2">{tour.description}</p>
+          <h3 className="text-2xl font-black text-slate-900 mb-3 uppercase tracking-tighter leading-tight">{tour.title || "Tour Sin Título"}</h3>
+          <p className="text-slate-500 text-xs leading-relaxed line-clamp-2">{tour.description || "Cargando detalles..."}</p>
           <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-50">
-               <span className="text-slate-900 font-black text-[10px] uppercase tracking-widest"><i className="fas fa-clock mr-2"></i> {tour.duration} • {tour.distance}</span>
+               <span className="text-slate-900 font-black text-[10px] uppercase tracking-widest"><i className="fas fa-clock mr-2"></i> {tour.duration || '---'} • {tour.distance || '---'}</span>
                <span className="text-purple-600 font-black text-[10px] uppercase tracking-widest">{tl.start} <i className="fas fa-chevron-right ml-1"></i></span>
           </div>
       </div>
@@ -51,7 +51,20 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
 
 export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS.es;
+    
+    // GUARDIA: Si no hay paradas o el tour es nulo, volvemos atrás para evitar error de script
+    if (!tour || !tour.stops || tour.stops.length === 0) {
+        useEffect(() => { onBack(); }, []);
+        return null;
+    }
+
     const currentStop = tour.stops[currentStopIndex] as Stop;
+    
+    // GUARDIA: Si la parada actual no existe (fuera de rango)
+    if (!currentStop) {
+        useEffect(() => { onJumpTo(0); }, []);
+        return null;
+    }
     
     const [rewardClaimed, setRewardClaimed] = useState(false);
     const [photoClaimed, setPhotoClaimed] = useState(false);
@@ -68,7 +81,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const distToTarget = useMemo(() => {
-        if (!userLocation) return null;
+        if (!userLocation || !currentStop) return null;
         return Math.round(calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
     }, [userLocation, currentStop]);
 
@@ -79,7 +92,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         setPhotoClaimed(false);
         setStoryMoment(null);
         stopAudio();
-    }, [currentStop.id]);
+    }, [currentStop?.id]);
 
     const stopAudio = () => {
         if (sourceNodeRef.current) {
