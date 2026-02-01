@@ -12,12 +12,17 @@ FOCO: 1. Ingeniería y Retos Técnicos. 2. Historia Oculta/Conspiraciones. 3. Sa
 REGLA: Usa tipos: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
 `;
 
-async function handleAiCall<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
+async function handleAiCall<T>(fn: () => Promise<T>, retries = 4, delay = 2000): Promise<T> {
     try {
         return await fn();
     } catch (e: any) {
+        const errorMsg = e?.message || "";
+        const isQuotaError = errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED") || errorMsg.includes("quota");
+        
         if (retries > 0) {
-            await new Promise(res => setTimeout(res, delay));
+            const waitTime = isQuotaError ? delay * 3 : delay;
+            console.warn(`Gemini API Error (${isQuotaError ? 'Quota' : 'General'}). Retrying in ${waitTime}ms...`, e);
+            await new Promise(res => setTimeout(res, waitTime));
             return handleAiCall(fn, retries - 1, delay * 2);
         }
         throw e;
@@ -122,6 +127,21 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
     });
 };
 
+export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Translate the following JSON of travel tours to ${targetLang}. 
+            CRITICAL: DO NOT change keys, DO NOT summarize descriptions. 
+            Maintain the high information density. 
+            Tours to translate: ${JSON.stringify(tours)}`,
+            config: { responseMimeType: "application/json" }
+        });
+        return JSON.parse(response.text || "[]");
+    });
+};
+
 export const generateAudio = async (text: string, language: string): Promise<string | null> => {
     const cacheKey = `audio_${language}_${text.substring(0, 50).replace(/[^a-z0-9]/gi, '_')}`;
     const cached = await getCachedAudio(cacheKey);
@@ -143,30 +163,6 @@ export const generateAudio = async (text: string, language: string): Promise<str
     });
 };
 
-export const moderateContent = async (text: string): Promise<boolean> => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Is the following travel tip safe and appropriate? Answer ONLY 'SAFE' or 'UNSAFE': "${text}"`,
-            config: { systemInstruction: "You are a content moderator for a travel app." }
-        });
-        return response.text?.trim().toUpperCase() === "SAFE";
-    });
-};
-
-export const translateTours = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Translate the following tours to ${targetLang}, maintaining the exact JSON structure and the density of information: ${JSON.stringify(tours)}`,
-            config: { responseMimeType: "application/json" }
-        });
-        return JSON.parse(response.text || "[]");
-    });
-};
-
 export const generateSmartCaption = async (base64: string, stop: Stop, language: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
@@ -185,4 +181,30 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
     });
     const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
     return part ? `data:image/png;base64,${part.inlineData.data}` : null;
+};
+
+// Add moderateContent function to analyze community board posts for appropriateness using Gemini.
+export const moderateContent = async (text: string): Promise<boolean> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Analyze the following text for safety and appropriateness on a travel community board. It should not contain hate speech, threats, explicit content, or severe harassment.
+            
+            Text: "${text}"`,
+            config: {
+                systemInstruction: "You are a content moderator for a travel community. Determine if the provided text is safe to post. Return your decision as a JSON object with a boolean field 'isSafe'.",
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        isSafe: { type: Type.BOOLEAN, description: "True if the content is safe and appropriate, false otherwise." }
+                    },
+                    required: ["isSafe"]
+                }
+            }
+        });
+        const result = JSON.parse(response.text || '{"isSafe": true}');
+        return !!result.isSafe;
+    });
 };

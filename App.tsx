@@ -14,11 +14,22 @@ import { AdminPanel } from './components/AdminPanel';
 import { supabase, getUserProfileByEmail, getGlobalRanking, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat, findCityInAnyLanguage } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando...", fastSync: "traduciendo caché..." },
-  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "better destinations by ai", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "change", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing...", fastSync: "syncing cache..." },
-  hi: { welcome: "लॉगिन:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "ईमेल", userPlaceholder: "नाम", login: "अनुरोध", verify: "पुष्टि करें", tagline: "better destinations by ai", authError: "अमान्य ईमेल", codeError: "8 अंक", selectLang: "भाषा चुनें", loading: "सिंक हो रहा है...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", changeEmail: "बदलें", sentTo: "को भेजा गया", loadingTour: "लोड हो रहा है...", analyzing: "विश्लेषण...", fastSync: "कैश सिंक हो रहा है..." },
-  ko: { welcome: "로그 bidaer:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일", userPlaceholder: "사용자", login: "액세스 요청", verify: "확인", tagline: "better destinations by ai", authError: "잘못된 이메일", codeError: "8자리 숫자", selectLang: "언어 선택", loading: "동기화 중...", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", changeEmail: "변경", sentTo: "보낸 곳", loadingTour: "로드 중...", analyzing: "분석 중...", fastSync: "캐시 동기화 중..." },
-  tr: { welcome: "log bidaer:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "e-posta", userPlaceholder: "kullanıcı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", authError: "geçersiz e-posta", codeError: "8 rakam", selectLang: "dil seçin", loading: "senkronize ediliyor...", navElite: "elit", navHub: "istihbarat", navVisa: "pasaport", navStore: "mağaza", changeEmail: "değiştir", sentTo: "gönderildi", loadingTour: "yükleniyor...", analyzing: "analiz ediliyor...", fastSync: "önbellek senkronize ediliyor..." }
+  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "mejores destinos por ia", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando...", fastSync: "traduciendo caché...", apiLimit: "IA Saturada. Reintentando...", retry: "Reintentar" },
+  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "better destinations by ai", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "change", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing...", fastSync: "syncing cache...", apiLimit: "AI Saturated. Retrying...", retry: "Retry" },
+  hi: { welcome: "नमस्ते bidaer:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "ईमेल", userPlaceholder: "नाम", login: "अनुरोध", verify: "पुष्टि करें", tagline: "एआई द्वारा बेहतर गंतव्य", authError: "अमान्य ईमेल", codeError: "8 अंक", selectLang: "भाषा चुनें", loading: "सिंक हो रहा है...", navElite: "एलीट", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", changeEmail: "बदलें", sentTo: "को भेजा गया", loadingTour: "लोड हो रहा है...", analyzing: "विश्लेषण...", fastSync: "कैश सिंक हो रहा है...", apiLimit: "एआई संतृप्त। पुनः प्रयास करें...", retry: "पुनः प्रयास करें" },
+  ko: { welcome: "환영합니다 bidaer:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일", userPlaceholder: "사용자", login: "액세스 요청", verify: "확인", tagline: "AI를 통한 더 나은 목적지", authError: "잘못된 이메일", codeError: "8자리 숫자", selectLang: "언어 선택", loading: "동기화 중...", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", changeEmail: "변경", sentTo: "보낸 곳", loadingTour: "로드 중...", analyzing: "분석 중...", fastSync: "캐시 동기화 중...", apiLimit: "AI 포화. 다시 시도 중...", retry: "다시 시도" },
+  tr: { welcome: "hoş geldin bidaer:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "e-posta", userPlaceholder: "kullanıcı", login: "erişim iste", verify: "doğrula", tagline: "yapay zeka ile en iyi rotalar", authError: "geçersiz e-posta", codeError: "8 rakam", selectLang: "dil seçin", loading: "senkronize ediliyor...", navElite: "elit", navHub: "istihbarat", navVisa: "pasaport", navStore: "mağaza", changeEmail: "değiştir", sentTo: "gönderildi", loadingTour: "yükleniyor...", analyzing: "analiz ediliyor...", fastSync: "önbellek senkronize ediliyor...", apiLimit: "Yapay Zeka Dolu. Yeniden deneniyor...", retry: "Tekrar Dene" },
+  it: { welcome: "benvenuto bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "utente", login: "richiedi accesso", verify: "conferma", tagline: "migliori destinazioni via ia", authError: "email non valida", codeError: "8 cifre", selectLang: "lingua", loading: "sincronizzazione...", navElite: "elite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", changeEmail: "modifica", sentTo: "inviato a", loadingTour: "caricamento...", analyzing: "analisi...", fastSync: "sincronizzazione...", apiLimit: "IA Satura. Riprova...", retry: "Riprova" },
+  zh: { welcome: "欢迎 bidaer:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "电子邮箱", userPlaceholder: "用户名", login: "请求访问", verify: "验证", tagline: "ai赋能更佳目的地", authError: "无效", codeError: "8位数字", selectLang: "选择语言", loading: "同步中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", changeEmail: "修改", sentTo: "已发送至", loadingTour: "加载中...", analyzing: "正在分析...", fastSync: "同步缓存...", apiLimit: "AI 饱和。重试中...", retry: "重试" },
+  ca: { welcome: "benvingut bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuari", login: "sol·licitar", verify: "validar", tagline: "millors destins per ia", authError: "no vàlid", codeError: "8 dígits", selectLang: "idioma", loading: "sincronitzant...", navElite: "elit", navHub: "intel", navVisa: "pasaport", navStore: "botiga", changeEmail: "corregir", sentTo: "enviat a", loadingTour: "generant...", analyzing: "analitzant...", fastSync: "traduint...", apiLimit: "AI Saturada. Reintentant...", retry: "Reintentar" },
+  // Fixed typo in property 'sentTo' for Basque (eu) translation
+  eu: { welcome: "ongi etorri bidaer:", explorer: "erabiltzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "eskatu", verify: "egiaztatu", tagline: "ko helmuga onenak ia-ren bidez", authError: "okerra", codeError: "8 digitu", selectLang: "hizkuntza", loading: "sinkronizatzen...", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", changeEmail: "zuzendu", sentTo: "bidalia", loadingTour: "kargatzen...", analyzing: "analitzant...", fastSync: "sinkronizatzen...", apiLimit: "AI Saturatua. Saiatu berriro...", retry: "Berriz saiatu" },
+  pt: { welcome: "bem-vindo bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar", verify: "validar", tagline: "melhores destinos por ia", authError: "inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "carregando...", analyzing: "analisando...", fastSync: "sincronizando...", apiLimit: "IA Saturada. Tentando novamente...", retry: "Repetir" },
+  fr: { welcome: "bienvenue bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "nom", login: "accès", verify: "valider", tagline: "meilleures destinations par ia", authError: "invalide", codeError: "8 chiffres", selectLang: "langue", loading: "sync...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", changeEmail: "modifier", sentTo: "envoyé à", loadingTour: "chargement...", analyzing: "analyse...", fastSync: "synchronisation...", apiLimit: "IA Saturée. Nouvel essai...", retry: "Réessayer" },
+  de: { welcome: "willkommen bidaer:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "email", userPlaceholder: "name", login: "zugang", verify: "bestätigen", tagline: "bessere reiseziele durch ki", authError: "ungültig", codeError: "8 stellen", selectLang: "sprache", loading: "sync...", navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "shop", changeEmail: "ändern", sentTo: "gesendet", loadingTour: "laden...", analyzing: "analyse...", fastSync: "synchronisierung...", apiLimit: "KI Überlastet. Reversuch...", retry: "Wiederholen" },
+  ja: { welcome: "ようこそ bidaer:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール", userPlaceholder: "名前", login: "リクエスト", verify: "確認", tagline: "aiによる最高の目的地", authError: "無効", codeError: "8桁", selectLang: "言語", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", changeEmail: "変更", sentTo: "送信先", loadingTour: "読み込み中...", analyzing: "分析中...", fastSync: "同期中...", apiLimit: "AI 飽和。再試行中...", retry: "再試行" },
+  ru: { welcome: "добро пожаловать bidaer:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "email", userPlaceholder: "имя", login: "доступ", verify: "ок", tagline: "лучшие направления через ии", authError: "ошибка", codeError: "8 цифр", selectLang: "язык", loading: "синх...", navElite: "элита", navHub: "инфо", navVisa: "паспорт", navStore: "магазин", changeEmail: "исправить", sentTo: "отправлено", loadingTour: "загрузка...", analyzing: "анализ...", fastSync: "синхронизация...", apiLimit: "ИИ Перегружен. Повтор...", retry: "Повторить" },
+  ar: { welcome: "أهلاً بك bidaer:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك", userPlaceholder: "المستخدم", login: "طلب", verify: "تحقق", tagline: "أفضل الوجهات عبر الذكاء الاصطناعي", authError: "خطأ", codeError: "٨ أرقام", selectLang: "اللغة", loading: "مزامنة...", navElite: "النخبة", navHub: "معلومات", navVisa: "جواز", navStore: "متجر", changeEmail: "تعديل", sentTo: "أرسل", loadingTour: "تحميل...", analyzing: "تحليل...", fastSync: "مزامنة...", apiLimit: "الذكاء الاصطناعي مشبع. إعادة المحاولة...", retry: "إعادة المحاولة" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -102,13 +113,15 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
 
-  const t = (key: string) => (TRANSLATIONS[user.language] || TRANSLATIONS['es'])[key] || key;
+  const t = (key: string) => {
+    const currentLang = user.language || 'es';
+    return (TRANSLATIONS[currentLang] || TRANSLATIONS['es'])[key] || key;
+  };
 
   const handleCitySearch = async (cityInput: string) => {
     if (!cityInput || !cityInput.trim() || isLoading) return;
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
-    const targetLang = user.language || 'es';
     setTours([]);
     setSearchOptions(null);
     
@@ -128,9 +141,14 @@ export default function App() {
         }
     } catch (e: any) { 
         console.error("Search error:", e);
-        await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" }); 
-    } finally { 
-        setIsLoading(false); 
+        const errorMsg = e?.message || "";
+        if (errorMsg.includes("429")) {
+            setLoadingMessage(t('apiLimit'));
+            setTimeout(() => handleCitySearch(cityInput), 5000);
+        } else {
+            await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" }); 
+            setIsLoading(false);
+        }
     }
   };
 
@@ -144,44 +162,57 @@ export default function App() {
     try {
         setSelectedCity(official.spanishName); 
         
-        // 1. Intentar buscar en el idioma solicitado
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
         if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
             setTours(cached.data); 
             setView(AppView.CITY_DETAIL);
+            setIsLoading(false);
             return;
         }
 
-        // 2. Si no existe en el idioma solicitado, buscar si existe en CUALQUIER otro idioma
         setLoadingMessage(t('fastSync'));
         const existingAnyLang = await findCityInAnyLanguage(official.spanishName, official.country);
         
         if (existingAnyLang && existingAnyLang.data) {
-            // Traducir los tours existentes (proceso mucho más rápido que regenerar desde cero)
-            const translated = await translateTours(existingAnyLang.data as Tour[], targetLang);
-            if (translated && translated.length > 0) {
-                setTours(translated);
-                await saveToursToCache(official.spanishName, official.country, targetLang, translated);
-                setView(AppView.CITY_DETAIL);
-                return;
+            try {
+                const translated = await translateTours(existingAnyLang.data as Tour[], targetLang);
+                if (translated && translated.length > 0) {
+                    setTours(translated);
+                    await saveToursToCache(official.spanishName, official.country, targetLang, translated);
+                    setView(AppView.CITY_DETAIL);
+                    setIsLoading(false);
+                    return;
+                }
+            } catch (transErr: any) {
+                if (transErr?.message?.includes("429")) {
+                    setLoadingMessage(t('apiLimit'));
+                    setTimeout(() => processCitySelection(official), 6000);
+                    return;
+                }
             }
         }
 
-        // 3. Si no existe en absoluto, generar desde cero (lento)
         setLoadingMessage(t('loadingTour'));
         const generated = await generateToursForCity(official.spanishName, official.country, user);
         if (Array.isArray(generated) && generated.length > 0) {
             setTours(generated); 
             await saveToursToCache(official.spanishName, official.country, targetLang, generated);
             setView(AppView.CITY_DETAIL);
+            setIsLoading(false);
         } else {
             alert("No se pudieron generar tours para esta ubicación.");
+            setIsLoading(false);
         }
     } catch (e: any) { 
         console.error("City selection error:", e);
-        alert("Error de conexión con el motor de IA."); 
-    } finally { 
-        setIsLoading(false); 
+        const errorMsg = e?.message || "";
+        if (errorMsg.includes("429")) {
+            setLoadingMessage(t('apiLimit'));
+            setTimeout(() => processCitySelection(official), 8000);
+        } else {
+            alert("Error de conexión con el motor de IA."); 
+            setIsLoading(false);
+        }
     }
   };
 
@@ -245,7 +276,20 @@ export default function App() {
 
   return (
     <div className="flex-1 bg-[#020617] flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      {isLoading && <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10"><div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-6"></div><p className="text-white font-black uppercase text-[9px] tracking-[0.3em] text-center px-8">{loadingMessage}</p></div>}
+      {isLoading && (
+        <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 animate-fade-in">
+            <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+            <p className="text-white font-black uppercase text-[9px] tracking-[0.3em] text-center px-8 mb-4">{loadingMessage}</p>
+            {loadingMessage === t('apiLimit') && (
+                <button 
+                    onClick={() => setIsLoading(false)} 
+                    className="text-[8px] font-black text-slate-500 uppercase border border-white/10 px-4 py-2 rounded-full"
+                >
+                    Cancelar
+                </button>
+            )}
+        </div>
+      )}
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617] overflow-hidden">
