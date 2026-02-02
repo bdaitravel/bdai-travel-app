@@ -13,7 +13,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     const [purgeConfirm, setPurgeConfirm] = useState('');
 
     const addLog = (msg: string) => {
-        setLog(prev => [msg, ...prev].slice(0, 20));
+        setLog(prev => [msg, ...prev].slice(0, 30));
     };
 
     useEffect(() => {
@@ -32,29 +32,36 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 const rawName = row.city.split('_')[0];
                 const baseNormalized = normalizeKey(rawName);
                 const langCode = row.language.toLowerCase().trim();
+                
                 if (!bucketLangs[baseNormalized]) bucketLangs[baseNormalized] = new Set();
                 bucketLangs[baseNormalized].add(langCode);
                 bestKeyForBucket[baseNormalized] = row.city;
                 
-                // Contar paradas para estimar audios
                 const tours = row.data as Tour[];
-                tours.forEach(t => totalStops += t.stops.length);
+                if (Array.isArray(tours)) {
+                    tours.forEach(t => totalStops += (t.stops?.length || 0));
+                }
             });
 
             const gaps = [];
             for (const base in bucketLangs) {
                 const langs = Array.from(bucketLangs[base]);
+                // Si tenemos la fuente original (español), buscamos qué le falta
                 if (langs.includes('es')) {
                     const missing = LANGUAGES.map(l => l.code).filter(c => !langs.includes(c));
-                    if (missing.length > 0) gaps.push({ city: bestKeyForBucket[base], base, missing });
+                    if (missing.length > 0) {
+                        gaps.push({ city: bestKeyForBucket[base], base, missing, missingCount: missing.length });
+                    }
                 }
             }
             
-            // Estimación rápida de audios faltantes (esto es pesado de calcular exacto, usamos una muestra)
+            // Ordenar por las que menos idiomas les falten para quitarlas rápido del medio
+            gaps.sort((a, b) => a.missingCount - b.missingCount);
+
             setStats({ 
                 totalCities: Object.keys(bucketLangs).length, 
                 totalEntries: allRows.length,
-                missingAudios: totalStops // Simplificado: total de paradas en DB
+                missingAudios: totalStops
             });
             setMissingTranslations(gaps);
         }
@@ -66,7 +73,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         try {
             const deleted = await purgeBrokenToursBatch((msg) => addLog(msg));
             addLog(`Reparación finalizada. Eliminados ${deleted} registros.`);
-            fetchSummary();
+            await fetchSummary();
         } catch (e) {
             addLog("Error crítico durante la reparación.");
         } finally {
@@ -77,41 +84,55 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     const handleSincronizar = async () => {
         if (isProcessing) return;
         setIsProcessing(true);
-        addLog("Iniciando Spider de Traducción...");
-        let count = 0;
+        addLog("Lanzando Spider Granular...");
         
-        const batchSize = 2; // Procesamos de 2 en 2 para seguridad
-        const batch = missingTranslations.slice(0, batchSize);
-        
-        if (batch.length === 0) {
-            addLog("No hay traducciones pendientes.");
-            setIsProcessing(false);
-            return;
-        }
-
-        for (const item of batch) {
-            addLog(`Extrayendo base de datos para: ${item.city}`);
-            const { data: esData } = await supabase.from('tours_cache').select('data').eq('city', item.city).eq('language', 'es').maybeSingle();
+        try {
+            // Tomamos las primeras 5 ciudades con huecos
+            const targetCities = missingTranslations.slice(0, 5);
             
-            if (esData && esData.data) {
-                for (const langCode of item.missing) {
-                    try {
+            if (targetCities.length === 0) {
+                addLog("No hay traducciones pendientes.");
+                setIsProcessing(false);
+                return;
+            }
+
+            for (const item of targetCities) {
+                addLog(`Analizando origen: ${item.city}`);
+                const { data: esData } = await supabase.from('tours_cache')
+                    .select('data')
+                    .eq('city', item.city)
+                    .eq('language', 'es')
+                    .maybeSingle();
+                
+                if (esData && esData.data) {
+                    // Traducimos SOLO los primeros 3 idiomas faltantes de esta ciudad
+                    // para no bloquear la UI demasiado tiempo
+                    const languagesToProcess = item.missing.slice(0, 3);
+                    
+                    for (const langCode of languagesToProcess) {
                         addLog(`Traduciendo [${langCode.toUpperCase()}] -> ${item.city}...`);
-                        const translated = await translateTours(esData.data as Tour[], langCode);
-                        await saveToursToCache(item.city, "", langCode, translated);
-                        count++;
-                        // Pequeño delay para no saturar Gemini
-                        await new Promise(r => setTimeout(r, 1000));
-                    } catch (e) {
-                        addLog(`Fallo en traducción [${langCode}]: ${item.city}`);
+                        try {
+                            const translated = await translateTours(esData.data as Tour[], langCode);
+                            await saveToursToCache(item.city, "", langCode, translated);
+                            addLog(`✓ Éxito: ${item.city} [${langCode}]`);
+                            
+                            // Actualizamos resumen tras cada idioma para ver progreso real
+                            await fetchSummary(); 
+                            await new Promise(r => setTimeout(r, 800)); // Delay cortés
+                        } catch (e: any) {
+                            addLog(`✗ Error [${langCode}]: ${e.message || 'IA ocupada'}`);
+                            await new Promise(r => setTimeout(r, 3000)); // Pausa más larga si falla
+                        }
                     }
                 }
             }
+            addLog("Lote finalizado. Pulsa de nuevo para el siguiente.");
+        } catch (e) {
+            addLog("Error en el Spider Global.");
+        } finally {
+            setIsProcessing(false);
+            await fetchSummary();
         }
-        
-        addLog(`Spider finalizado. ${count} nuevas versiones añadidas.`);
-        setIsProcessing(false);
-        fetchSummary();
     };
 
     const handleGenerateAllAudios = async () => {
@@ -125,7 +146,6 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         addLog("Iniciando Pre-generación de Audios...");
         
         try {
-            // 1. Obtener todos los tours de la base de datos
             const { data: allCache } = await supabase.from('tours_cache').select('city, language, data');
             if (!allCache) throw new Error("No hay datos");
 
@@ -138,35 +158,33 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 const lang = entry.language;
 
                 for (const tour of tours) {
+                    if (!tour.stops) continue;
                     for (const stop of tour.stops) {
                         if (!isAudioWorkerActive) break;
 
-                        // Verificar si ya existe en audio_cache
                         const cacheKey = `audio_${lang}_${stop.description.substring(0, 50).replace(/[^a-z0-9]/gi, '_')}`;
                         const { data: existingAudio } = await supabase.from('audio_cache').select('key').eq('key', cacheKey).maybeSingle();
 
                         if (!existingAudio) {
-                            addLog(`Generando Audio [${lang}] -> ${stop.name}...`);
+                            addLog(`Voz [${lang}] -> ${stop.name}...`);
                             try {
                                 const base64 = await generateAudio(stop.description, lang);
                                 if (base64) {
                                     generatedCount++;
-                                    addLog(`✓ Audio guardado: ${stop.name}`);
-                                    // Delay para evitar límite de cuota TTS
-                                    await new Promise(r => setTimeout(r, 1500));
+                                    addLog(`✓ Audio OK: ${stop.name}`);
+                                    await new Promise(r => setTimeout(r, 1200));
                                 }
                             } catch (err) {
-                                addLog(`✗ Error TTS en: ${stop.name}`);
-                                await new Promise(r => setTimeout(r, 5000)); // Pausa más larga si hay error
+                                addLog(`✗ Error TTS: ${stop.name}`);
+                                await new Promise(r => setTimeout(r, 4000));
                             }
                         }
                     }
                 }
             }
-            
-            addLog(`Proceso de audio terminado. ${generatedCount} archivos nuevos.`);
+            addLog(`Audio Lab terminado. ${generatedCount} archivos.`);
         } catch (e) {
-            addLog("Error crítico en el trabajador de audio.");
+            addLog("Error en el trabajador de audio.");
         } finally {
             setIsAudioWorkerActive(false);
         }
@@ -175,11 +193,11 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     return (
         <div className="fixed inset-0 z-[200] bg-slate-950 flex flex-col p-8 overflow-hidden font-sans">
             <header className="flex items-center justify-between mb-8">
-                <div>
-                    <h2 className="text-3xl font-black text-white italic tracking-tighter">SALA DE MÁQUINAS</h2>
+                <div className="animate-fade-in">
+                    <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Sala de Máquinas</h2>
                     <p className="text-[8px] font-black text-purple-500 uppercase tracking-widest mt-1">Control Maestro BDAI</p>
                 </div>
-                <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white"><i className="fas fa-times"></i></button>
+                <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"><i className="fas fa-times"></i></button>
             </header>
 
             <div className="grid grid-cols-3 gap-4 mb-8">
@@ -188,23 +206,24 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                     <span className="text-xl font-black text-white">{stats.totalCities}</span>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Variantes</p>
+                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Versiones</p>
                     <span className="text-xl font-black text-purple-500">{stats.totalEntries}</span>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Stops Total</p>
+                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Stops DB</p>
                     <span className="text-xl font-black text-blue-500">{stats.missingAudios}</span>
                 </div>
             </div>
 
-            <div className="bg-black/50 border border-white/5 rounded-2xl p-4 mb-6 h-48 overflow-hidden flex flex-col font-mono shadow-inner">
+            <div className="bg-black/50 border border-white/5 rounded-2xl p-4 mb-6 h-48 overflow-hidden flex flex-col font-mono shadow-inner border-l-4 border-l-purple-500">
                 <p className="text-[7px] text-slate-600 font-black uppercase mb-2 flex justify-between">
-                    <span>Transmisión de Datos</span>
-                    {isAudioWorkerActive && <span className="text-blue-500 animate-pulse">Trabajador Activo</span>}
+                    <span>Monitor de Transmisión</span>
+                    {isProcessing && <span className="text-purple-500 animate-pulse">Traduciendo...</span>}
+                    {isAudioWorkerActive && <span className="text-blue-500 animate-pulse">Generando Audio...</span>}
                 </p>
                 <div className="flex-1 overflow-y-auto no-scrollbar space-y-1">
                     {log.map((m, i) => (
-                        <p key={i} className="text-[9px] text-green-500/80 lowercase leading-tight">&gt; {m}</p>
+                        <p key={i} className={`text-[9px] lowercase leading-tight ${m.includes('✓') ? 'text-green-400' : m.includes('✗') ? 'text-red-400' : 'text-slate-400'}`}>&gt; {m}</p>
                     ))}
                 </div>
             </div>
@@ -213,40 +232,40 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 <button 
                     onClick={handleReparar} 
                     disabled={isProcessing || isAudioWorkerActive}
-                    className="py-4 bg-blue-600/10 border border-blue-600/30 text-blue-400 rounded-2xl font-black uppercase text-[9px] flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    className="py-4 bg-blue-600/10 border border-blue-600/30 text-blue-400 rounded-2xl font-black uppercase text-[9px] flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-20"
                 >
-                    <i className="fas fa-hammer"></i> Reparar DB
+                    <i className="fas fa-hammer"></i> Limpiar DB
                 </button>
                 <button 
                     onClick={handleGenerateAllAudios} 
                     className={`py-4 border rounded-2xl font-black uppercase text-[9px] flex items-center justify-center gap-2 active:scale-95 transition-all ${isAudioWorkerActive ? 'bg-red-500 text-white border-red-400 animate-pulse' : 'bg-purple-600/10 border-purple-600/30 text-purple-400'}`}
                 >
-                    <i className={`fas ${isAudioWorkerActive ? 'fa-stop' : 'fa-headphones'}`}></i> {isAudioWorkerActive ? 'Parar Worker' : 'Pre-Gen Audios'}
+                    <i className={`fas ${isAudioWorkerActive ? 'fa-stop' : 'fa-headphones'}`}></i> {isAudioWorkerActive ? 'Parar Voz' : 'Pre-Gen Audios'}
                 </button>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-6 flex-1 flex flex-col overflow-hidden shadow-2xl">
+            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-6 flex-1 flex flex-col overflow-hidden shadow-2xl relative">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-white font-black text-xs uppercase tracking-tight italic">Gaps de Traducción</h3>
-                    <span className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full text-[8px] font-black">{missingTranslations.length}</span>
+                    <h3 className="text-white font-black text-xs uppercase tracking-tight italic">Gaps de Idioma</h3>
+                    <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-[8px] font-black border border-purple-500/20">{missingTranslations.length} ciudades</span>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 mb-6">
-                    {missingTranslations.map((m, idx) => (
+                    {missingTranslations.slice(0, 15).map((m, idx) => (
                         <div key={idx} className="flex items-center justify-between p-3 bg-white/[0.02] rounded-xl border border-white/5">
-                            <span className="text-[9px] font-black text-slate-400 uppercase truncate max-w-[120px]">{m.city.replace(/_/g, ' ')}</span>
+                            <span className="text-[9px] font-black text-slate-300 uppercase truncate max-w-[140px]">{m.city.split('_')[0]}</span>
                             <div className="flex gap-1">
-                                {m.missing.slice(0, 3).map((c: string) => (
+                                {m.missing.slice(0, 4).map((c: string) => (
                                     <span key={c} className="text-[7px] font-black text-slate-600 uppercase bg-black/40 px-1.5 py-0.5 rounded border border-white/5">{c}</span>
                                 ))}
-                                {m.missing.length > 3 && <span className="text-[7px] font-black text-slate-600">+{m.missing.length - 3}</span>}
+                                {m.missing.length > 4 && <span className="text-[7px] font-black text-slate-500">+{m.missing.length - 4}</span>}
                             </div>
                         </div>
                     ))}
                     {missingTranslations.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-full opacity-20">
                             <i className="fas fa-check-double text-4xl mb-2"></i>
-                            <p className="text-[10px] font-black uppercase">Todo Sincronizado</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest">Base de Datos Completa</p>
                         </div>
                     )}
                 </div>
@@ -254,19 +273,19 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 <button 
                     disabled={isProcessing || isAudioWorkerActive || missingTranslations.length === 0}
                     onClick={handleSincronizar}
-                    className="w-full py-6 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 disabled:opacity-20 transition-all"
+                    className="w-full py-6 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-widest text-[11px] shadow-2xl active:scale-95 disabled:opacity-20 transition-all flex items-center justify-center gap-3"
                 >
-                    {isProcessing ? 'Procesando Lote...' : 'Lanzar Spider Global'}
+                    {isProcessing ? <><i className="fas fa-spinner fa-spin"></i> Procesando Lote...</> : 'Lanzar Spider Granular'}
                 </button>
             </div>
             
             <div className="mt-6 flex gap-2">
                 <input 
                     type="text" 
-                    placeholder="CONFIRMAR PURGA" 
+                    placeholder="Escribe: BORRAR TODO" 
                     value={purgeConfirm} 
                     onChange={e => setPurgeConfirm(e.target.value)} 
-                    className="flex-1 bg-red-950/10 border border-red-900/20 rounded-xl px-4 text-[8px] font-black text-red-500 outline-none uppercase" 
+                    className="flex-1 bg-red-950/10 border border-red-900/20 rounded-xl px-4 text-[8px] font-black text-red-500 outline-none uppercase placeholder:text-red-900/40" 
                 />
                 <button 
                     onClick={async () => {
@@ -275,12 +294,12 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                         addLog("Ejecutando purga total...");
                         await clearAllToursCache();
                         setPurgeConfirm('');
-                        addLog("Base de datos vaciada.");
-                        fetchSummary();
+                        addLog("Caché vaciado correctamente.");
+                        await fetchSummary();
                         setIsProcessing(false);
                     }} 
                     disabled={isProcessing || purgeConfirm !== 'BORRAR TODO'} 
-                    className="px-6 py-4 bg-red-600/10 border border-red-600/30 text-red-600 rounded-xl font-black uppercase text-[8px] disabled:opacity-10"
+                    className="px-6 py-4 bg-red-600 text-white rounded-xl font-black uppercase text-[8px] disabled:opacity-10 active:scale-95 transition-all"
                 >
                     Purgar
                 </button>
