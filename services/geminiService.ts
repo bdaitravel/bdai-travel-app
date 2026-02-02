@@ -9,7 +9,8 @@ ESTILO: Cínico, brillante, hiper-detallista, experto en ingeniería, arquitectu
 DENSIDAD OBLIGATORIA: Cada parada DEBE tener entre 350 y 450 palabras de descripción técnica y narrativa. NO RESUMAS.
 ESTRUCTURA: Mínimo 10 paradas por cada tour. Es una orden directa.
 META: Obligatorio incluir título creativo, duración aproximada y distancia total.
-REGLA: Usa tipos: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
+
+REGLA DE ORO DE UBICACIÓN: Las coordenadas (latitude/longitude) DEBEN corresponder exactamente a la ENTRADA PRINCIPAL o al punto de acceso público del sitio. No des coordenadas del centro del edificio si este es grande. Necesitamos precisión de 6 decimales.
 `;
 
 async function handleAiCall<T>(fn: () => Promise<T>, retries = 4, delay = 2000): Promise<T> {
@@ -74,7 +75,8 @@ export const generateToursForCity = async (city: string, country: string, user: 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-pro-preview",
-            contents: `Generate exactly 3 unique and dense tours for ${city}, ${country} in ${targetLang}. Metadata is MANDATORY.`,
+            contents: `Generate exactly 3 unique and dense tours for ${city}, ${country} in ${targetLang}. 
+            CRITICAL: Use exact GPS coordinates for the DOORS/ENTRANCES of the monuments.`,
             config: { 
                 systemInstruction,
                 responseMimeType: "application/json",
@@ -193,7 +195,7 @@ export const generateSmartCaption = async (base64: string, stop: Stop, language:
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: { parts: [{ inlineData: { data: base64.split(',')[1], mimeType: 'image/jpeg' } }, { text: `Technical caption in ${language} for ${stop.name}.` }] }
+        contents: { parts: [{ inlineData: { data: base64.split(',')[1], mimeType: 'image/jpeg' } }, { text: `Technical caption in ${language} for ${stop.name}. Be technical and cinic.` }] }
     });
     return response.text || "Moment captured.";
 };
@@ -202,7 +204,7 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
-        contents: { parts: [{ text: `Artistic postcard of ${city}.` }] },
+        contents: { parts: [{ text: `Artistic technical postcard of ${city}.` }] },
         config: { imageConfig: { aspectRatio: "9:16" } }
     });
     const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);

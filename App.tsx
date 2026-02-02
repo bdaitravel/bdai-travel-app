@@ -26,7 +26,7 @@ const TRANSLATIONS: any = {
   pt: { welcome: "bem-vindo bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar", verify: "validar", tagline: "better destinations by ai", authError: "inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "carregando...", analyzing: "analisando...", fastSync: "sincronizando...", apiLimit: "IA Saturada. Tentando nuevamente...", retry: "Repetir" },
   fr: { welcome: "bienvenue bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "nom", login: "accès", verify: "valider", tagline: "better destinations by ai", authError: "invalide", codeError: "8 chiffres", selectLang: "langue", loading: "sync...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", changeEmail: "modifier", sentTo: "envoyé à", loadingTour: "chargement...", analyzing: "analyse...", fastSync: "synchronisation...", apiLimit: "IA Saturée. Nouvel essai...", retry: "Réessayer" },
   de: { welcome: "willkommen bidaer:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "email", userPlaceholder: "name", login: "zugang", verify: "bestätigen", tagline: "better destinations by ai", authError: "ungültig", codeError: "8 stellen", selectLang: "sprache", loading: "sync...", navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "shop", changeEmail: "ändern", sentTo: "gesendet", loadingTour: "laden...", analyzing: "analyse...", fastSync: "synchronisierung...", apiLimit: "KI Überlastet. Reversuch...", retry: "Wiederholen" },
-  ja: { welcome: "ようこそ bidaer:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール", userPlaceholder: "名前", login: "リクエスト", verify: "確認", tagline: "better destinations by ai", authError: "無効", codeError: "8桁", selectLang: "言語", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", changeEmail: "変更", sentTo: "送信先", loadingTour: "読み込み中...", analyzing: "分析中...", fastSync: "同期中...", apiLimit: "AI 飽和. 再試行中...", retry: "再試行" },
+  ja: { welcome: "ようこそ bidaer:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール", userPlaceholder: "名前", login: "リクエスト", verify: "確認", tagline: "better destinations by ai", authError: "無効", codeError: "8桁", selectLang: "言語", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア", changeEmail: "変更", sentTo: "送信先", loadingTour: "読み込み中...", analyzing: "分析中...", fastSync: "同期中...", apiLimit: "AI 飽和. 再試行중...", retry: "再試行" },
   ru: { welcome: "добро пожаловать bidaer:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "email", userPlaceholder: "имя", login: "доступ", verify: "ок", tagline: "better destinations by ai", authError: "ошибка", codeError: "8 цифр", selectLang: "язык", loading: "синх...", navElite: "элита", navHub: "инфо", navVisa: "паспорт", navStore: "магазиn", changeEmail: "исправить", sentTo: "отправлено", loadingTour: "загрузка...", analyzing: "анализ...", fastSync: "синхронизация...", apiLimit: "ИИ Перегружен. Повтор...", retry: "Повторить" },
   ar: { welcome: "أهلاً بك bidaer:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك", userPlaceholder: "المستخدم", login: "طلب", verify: "تحقق", tagline: "better destinations by ai", authError: "خطأ", codeError: "٨ أرقام", selectLang: "اللغة", loading: "مزامنة...", navElite: "النخبة", navHub: "معلومات", navVisa: "جواز", navStore: "متجر", changeEmail: "تعديل", sentTo: "أرسل", loadingTour: "تحميل...", analyzing: "تحليل...", fastSync: "مزامنة...", apiLimit: "الذكاء الاصطناعي مشبع. إعادة المحاولة...", retry: "إعادة المحاولة" }
 };
@@ -49,7 +49,7 @@ export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   const [loginStep, setLoginStep] = useState<'EMAIL' | 'CODE'>('EMAIL');
-  const [email, setEmail] = useState('');
+  const [email, setEmal] = useState('');
   const [username, setUsername] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [searchVal, setSearchVal] = useState('');
@@ -96,6 +96,27 @@ export default function App() {
     getGlobalRanking().then(setLeaderboard);
   }, []);
 
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      // PRECISIÓN QUIRÚRGICA: Evitamos el desfase de 300m forzando GPS puro y sin caché
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+            setUserLocation({ 
+                lat: position.coords.latitude, 
+                lng: position.coords.longitude 
+            });
+        },
+        (err) => console.debug("GPS skip:", err),
+        { 
+            enableHighAccuracy: true, // Forzamos GPS de satélite
+            timeout: 10000, 
+            maximumAge: 0 // Prohibimos usar la última posición guardada del móvil
+        }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
+
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
@@ -109,24 +130,19 @@ export default function App() {
   const handleCitySearch = async (cityInput: string) => {
     if (!cityInput || !cityInput.trim() || isLoading) return;
     
-    // PRIORIDAD ABSOLUTA: Comprobar caché antes de encender el spinner si es posible
     const targetLang = user.language || 'es';
-    const nKey = normalizeKey(cityInput, "España"); // Intento rápido por defecto
-    
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
     setTours([]);
     setSearchOptions(null);
 
     try {
-        // 1. COMPROBACIÓN FLASH DE CACHÉ (Evita IA si ya existe)
         const cached = await getCachedTours(cityInput, "", targetLang);
         if (cached && cached.data.length > 0) {
             await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
             return;
         }
 
-        // 2. DISAMBIGUACIÓN IA (Si no hay caché directo)
         const results = await standardizeCityName(cityInput);
         if (results && results.length > 0) {
             setSearchOptions(results);
@@ -156,7 +172,6 @@ export default function App() {
     setTours([]);
 
     try {
-        // 1. INTENTO DE CACHÉ EXACTO
         const cached = await getCachedTours(official.spanishName, official.country, targetLang);
         if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
             const validated = cached.data.map((tour, idx) => ({
@@ -171,7 +186,6 @@ export default function App() {
             return;
         }
 
-        // 2. INTENTO DE TRADUCCIÓN RÁPIDA (Si existe en otro idioma)
         setLoadingMessage(t('fastSync'));
         const existingAnyLang = await findCityInAnyLanguage(official.spanishName, official.country);
         if (existingAnyLang && existingAnyLang.data) {
@@ -193,7 +207,6 @@ export default function App() {
             } catch (transErr: any) { console.error("Trans error:", transErr); }
         }
 
-        // 3. GENERACIÓN IA (Último recurso)
         setLoadingMessage(t('loadingTour'));
         const generated = await generateToursForCity(official.spanishName, official.country, user);
         if (Array.isArray(generated) && generated.length > 0) {
@@ -286,7 +299,7 @@ export default function App() {
                   {loginStep === 'EMAIL' ? (
                       <div className="space-y-2 animate-fade-in">
                           <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/[0.01] border border-white/[0.04] rounded-lg py-2 px-3 text-center text-white outline-none text-[9px] font-medium placeholder-slate-800" placeholder={t('userPlaceholder')} />
-                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/[0.01] border border-white/[0.04] rounded-lg py-2 px-3 text-center text-white outline-none text-[9px] font-medium placeholder-slate-800" placeholder={t('emailPlaceholder')} />
+                          <input type="email" value={email} onChange={e => setEmal(e.target.value)} className="w-full bg-white/[0.01] border border-white/[0.04] rounded-lg py-2 px-3 text-center text-white outline-none text-[9px] font-medium placeholder-slate-800" placeholder={t('emailPlaceholder')} />
                           <button onClick={handleLoginRequest} className="w-full py-4 bg-white text-slate-950 rounded-lg font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all">{t('login')}</button>
                       </div>
                   ) : (
