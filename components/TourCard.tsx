@@ -5,8 +5,8 @@ import { SchematicMap } from './SchematicMap';
 import { generateAudio } from '../services/geminiService';
 
 const TEXTS: any = {
-    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Dai Shot", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Dai Shot", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil", photoHint: "Tip de foto" },
-    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Dai Shot", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Dai Shot", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS", photoHint: "Photo Tip" }
+    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Dai Shot", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Dai Shot", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil", photoHint: "Tip de foto", nearbyAlert: "Parada Cercana Detectada" },
+    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Dai Shot", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Dai Shot", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS", photoHint: "Photo Tip", nearbyAlert: "Nearby Stop Detected" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -60,11 +60,30 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [rewardClaimed, setRewardClaimed] = useState(false);
     const [showPhotoTip, setShowPhotoTip] = useState(false);
     const [showItinerary, setShowItinerary] = useState(false);
+    const [nearbyStopHint, setNearbyStopHint] = useState<number | null>(null);
 
     const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
     const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+
+    // Lógica de detección de paradas cercanas para permitir saltos automáticos
+    useEffect(() => {
+        if (!userLocation || !tour.stops) return;
+        
+        const THRESHOLD = 40; // metros para detectar que estás "ahí"
+        let found = null;
+
+        tour.stops.forEach((s: Stop, idx: number) => {
+            if (idx === currentStopIndex) return;
+            const dist = calculateDistance(userLocation.lat, userLocation.lng, s.latitude, s.longitude);
+            if (dist < THRESHOLD) {
+                found = idx;
+            }
+        });
+
+        setNearbyStopHint(found);
+    }, [userLocation, currentStopIndex, tour.stops]);
 
     const distToTarget = useMemo(() => {
         if (!userLocation || !currentStop) return null;
@@ -155,6 +174,25 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                  </div>
              )}
 
+             {/* Alerta de proximidad inteligente */}
+             {nearbyStopHint !== null && (
+                <div className="fixed top-24 left-4 right-4 z-[7000] animate-bounce">
+                    <button 
+                        onClick={() => onJumpTo(nearbyStopHint)}
+                        className="w-full bg-purple-600 text-white p-4 rounded-2xl shadow-2xl border border-purple-400 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"><i className="fas fa-location-crosshairs"></i></div>
+                            <div className="text-left">
+                                <p className="text-[8px] font-black uppercase tracking-widest opacity-80">{tl.nearbyAlert}</p>
+                                <p className="text-[10px] font-black uppercase">{tour.stops[nearbyStopHint].name}</p>
+                            </div>
+                        </div>
+                        <i className="fas fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+             )}
+
              <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 shadow-sm">
                 <button onClick={onBack} className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center shrink-0"><i className="fas fa-arrow-left text-xs"></i></button>
                 <button onClick={() => setShowItinerary(true)} className="flex-1 mx-4 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between group overflow-hidden">
@@ -170,7 +208,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              </div>
 
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col">
-                <div className="h-[40vh] w-full relative shrink-0">
+                <div className="h-[45vh] w-full relative shrink-0">
                     <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={(i: number) => onJumpTo(i)} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} />
                 </div>
                 <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-30px_60px_rgba(0,0,0,0.08)] z-[200]">
