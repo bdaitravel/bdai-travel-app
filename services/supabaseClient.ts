@@ -10,7 +10,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const normalizeKey = (city: string | undefined | null, country?: string) => {
     const safeCity = (city || "").toString().trim();
     if (!safeCity) return "";
-    
     const raw = country ? `${safeCity}_${country}` : safeCity;
     return raw.toLowerCase()
         .normalize("NFD")
@@ -18,146 +17,55 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[^a-z0-9_]/g, ""); 
 };
 
-export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
-  const nInput = normalizeKey(city, country);
-  if (!nInput) return null;
+// --- STORAGE LOGIC ---
 
-  const { data: exactMatch } = await supabase.from('tours_cache')
-    .select('data, language, city')
-    .eq('city', nInput)
-    .eq('language', language)
-    .maybeSingle();
-    
-  if (exactMatch && exactMatch.data) {
-    const tours = exactMatch.data as Tour[];
-    if (Array.isArray(tours) && tours.length > 0) {
-        return { data: tours, langFound: language, cityName: exactMatch.city };
-    }
-  }
-  return null; 
-};
-
-/**
- * Busca si una ciudad existe en la base de datos en CUALQUIER idioma.
- * Útil para sincronizar traducciones rápidamente sin regenerar tours.
- */
-export const findCityInAnyLanguage = async (city: string, country: string): Promise<{data: Tour[], language: string} | null> => {
-    const nInput = normalizeKey(city, country);
-    if (!nInput) return null;
-
-    // Buscamos cualquier idioma que tenga datos
-    const { data } = await supabase.from('tours_cache')
-        .select('data, language')
-        .eq('city', nInput)
-        .limit(1);
-    
-    if (data && data.length > 0) {
-        return { data: data[0].data as Tour[], language: data[0].language };
-    }
-    return null;
-};
-
-export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
-  const nKey = normalizeKey(city, country);
-  if (!nKey) return;
-  await supabase.from('tours_cache').upsert({ city: nKey, language, data: tours, updated_at: new Date().toISOString() }, { onConflict: 'city,language' });
+const base64ToBlob = (base64: string, type: string = 'audio/mpeg') => {
+  const binary = atob(base64.split(',')[1] || base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type });
 };
 
 export const getCachedAudio = async (key: string): Promise<string | null> => {
-  const { data } = await supabase.from('audio_cache').select('base64').eq('key', key).maybeSingle();
-  return data ? (data as any).base64 : null;
+  const { data } = await supabase.from('audio_cache').select('file_path, base64').eq('key', key).maybeSingle();
+  
+  if (data && data.file_path) {
+    const { data: fileData, error } = await supabase.storage.from('audios').download(data.file_path);
+    if (!error && fileData) {
+      // Si es un .txt antiguo (Base64 puro), leemos el texto directamente
+      if (data.file_path.endsWith('.txt')) {
+        const text = await fileData.text();
+        return text.trim(); 
+      }
+      // Si es un .mp3 (Binario), lo convertimos a un formato que el reproductor entienda rápido
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(fileData);
+      });
+    }
+  }
+  // Fallback por si el archivo no está en storage pero sí en la base de datos (registros muy viejos)
+  return (data && data.base64 && data.base64.length > 200) ? data.base64 : null;
 };
 
 export const saveAudioToCache = async (key: string, base64: string) => {
-  await supabase.from('audio_cache').upsert({ key, base64, updated_at: new Date().toISOString() });
-};
+  // Guardamos como MP3 binario: ocupa menos y carga más rápido
+  const fileName = `${key}_${Date.now()}.mp3`;
+  const blob = base64ToBlob(base64);
 
-export const clearAllToursCache = async () => {
-    const { error } = await supabase.from('tours_cache').delete().neq('language', 'none');
-    if (error) throw error;
-};
+  const { data: uploadData } = await supabase.storage
+    .from('audios')
+    .upload(fileName, blob, { contentType: 'audio/mpeg', upsert: true });
 
-export const purgeBrokenToursBatch = async (onProgress: (msg: string) => void) => {
-    let totalBroken = 0;
-    const batchSize = 100;
-    let offset = 0;
-    let hasMore = true;
-
-    onProgress("Iniciando escaneo...");
-
-    while (hasMore) {
-        const { data, error } = await supabase
-            .from('tours_cache')
-            .select('city, language, data')
-            .range(offset, offset + batchSize - 1);
-
-        if (error || !data || data.length === 0) {
-            hasMore = false;
-            break;
-        }
-
-        const toDelete: {city: string, language: string}[] = [];
-        data.forEach((row: any) => {
-            const tours = row.data as Tour[];
-            const isBroken = !tours || !Array.isArray(tours) || tours.length === 0 || tours.some(t => !t.stops || t.stops.length === 0);
-            if (isBroken) toDelete.push({ city: row.city, language: row.language });
-        });
-
-        if (toDelete.length > 0) {
-            for (const item of toDelete) {
-                await supabase.from('tours_cache').delete().eq('city', item.city).eq('language', item.language);
-                totalBroken++;
-            }
-            onProgress(`Bloque ${offset}: Eliminados ${toDelete.length}.`);
-        }
-
-        offset += batchSize;
-        if (data.length < batchSize) hasMore = false;
-    }
-    return totalBroken;
-};
-
-export const getUserProfileByEmail = async (email: string) => {
-  const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-  if (error || !data) return null;
-
-  return {
-    ...data,
-    id: data.id,
-    isLoggedIn: true,
-    firstName: data.first_name,
-    lastName: data.last_name,
-    visitedCities: data.visited_cities || [],
-    completedTours: data.completed_tours || [],
-    culturePoints: data.culture_points || 0,
-    foodPoints: data.food_points || 0,
-    photoPoints: data.photo_points || 0,
-    historyPoints: data.history_points || 0,
-    naturePoints: data.nature_points || 0,
-    artPoints: data.art_points || 0,
-    archPoints: data.arch_points || 0,
-    language: data.language || 'es'
-  };
-};
-
-export const syncUserProfile = async (profile: UserProfile) => {
-  if (!profile || profile.id === 'guest') return;
-  await supabase.from('profiles').upsert({
-    id: profile.id,
-    email: profile.email,
-    username: profile.username,
-    first_name: profile.firstName,
-    last_name: profile.lastName,
-    miles: profile.miles,
-    language: profile.language,
-    updated_at: new Date().toISOString()
+  await supabase.from('audio_cache').upsert({ 
+    key, 
+    file_path: uploadData?.path || null,
+    base64: base64.substring(0, 100), // Solo una referencia corta en la tabla
+    updated_at: new Date().toISOString() 
   });
 };
 
-export const validateEmailFormat = (email: string) => { return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); };
-export const getGlobalRanking = async () => {
-    const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
-    return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username } as any));
-};
-export const getCommunityPosts = async (city: string) => { return []; };
-export const addCommunityPost = async (post: any) => { return { success: true }; };
+// --- REST OF SERVICES ---
+
+export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName:
