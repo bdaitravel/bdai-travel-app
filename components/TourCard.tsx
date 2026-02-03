@@ -6,8 +6,7 @@ import { generateAudio, generateSmartCaption } from '../services/geminiService';
 
 const TEXTS: any = {
     es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Ángulo Técnico", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Verificar por Foto", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil", photoHint: "Usa la cámara si el GPS falla" },
-    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Verify by Photo", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS", photoHint: "Use camera if GPS fails" },
-    // Resto de traducciones simplificadas para brevedad...
+    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Technical Angle", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Verify by Photo", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS", photoHint: "Use camera if GPS fails" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -111,10 +110,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         return Math.round(calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
     }, [userLocation, currentStop]);
 
-    // RANGO 1: Check-in automático (100m)
     const IS_IN_RANGE = distToTarget !== null && distToTarget <= 100;
-    
-    // RANGO 2: Bypass por Foto habilitado (350m para compensar errores de GPS en ciudad)
     const CAN_PHOTO_BYPASS = distToTarget !== null && distToTarget <= 350;
 
     useEffect(() => {
@@ -148,18 +144,22 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         stopAudio();
         setAudioLoadingId(stopId);
         try {
-            const base64 = await generateAudio(text, user.language);
-            if (!base64) throw new Error();
+            const audioUrl = await generateAudio(text, user.language);
+            if (!audioUrl) throw new Error();
+            
             if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
             const ctx = audioContextRef.current;
             if (ctx.state === 'suspended') await ctx.resume();
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            const dataInt16 = new Int16Array(bytes.buffer);
+
+            // STREAMING OPTIMIZATION: Fetch directo del ArrayBuffer
+            const response = await fetch(audioUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            const dataInt16 = new Int16Array(arrayBuffer);
+            
             const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
             const channelData = buffer.getChannelData(0);
             for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
+
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
@@ -167,7 +167,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             sourceNodeRef.current = source;
             source.start(0);
             setAudioPlayingId(stopId);
-        } catch (e) { alert("Error audio"); } finally { setAudioLoadingId(null); }
+        } catch (e) { 
+            console.error("Audio lag error:", e);
+            alert("Error de sincronización de audio"); 
+        } finally { 
+            setAudioLoadingId(null); 
+        }
     };
 
     const handleCheckIn = () => {
@@ -195,7 +200,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         reader.onloadend = async () => {
             const base64 = reader.result as string;
             try {
-                // La IA analiza la foto y las coordenadas para confirmar el "Bypass"
                 const caption = await generateSmartCaption(base64, currentStop, language);
                 const moment = { 
                     id: `m_${Date.now()}`, 
@@ -212,7 +216,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 setRewardClaimed(true);
                 onUpdateUser({ 
                     ...user, 
-                    miles: user.miles + 200, // Bono extra por verificar manualmente
+                    miles: user.miles + 200, 
                     capturedMoments: [...(user.capturedMoments || []), moment] 
                 });
             } catch (err) { 

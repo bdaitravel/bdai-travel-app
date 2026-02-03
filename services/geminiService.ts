@@ -172,13 +172,11 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
 
 export const generateAudio = async (text: string, language: string): Promise<string | null> => {
     const cacheKey = `audio_${language}_${text.substring(0, 50).replace(/[^a-z0-9]/gi, '_')}`;
-    const cached = await getCachedAudio(cacheKey);
-    if (cached) return cached;
+    const cachedUrl = await getCachedAudio(cacheKey);
+    if (cachedUrl) return cachedUrl;
 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        // Refinamos el prompt para forzar acento de España si el idioma es español
         const ttsPrompt = language === 'es' 
             ? `Actúa como un guía turístico local de España con acento castellano puro de Madrid. Lee el siguiente texto de forma clara, profesional y con entonación 100% de España (evita cualquier acento latinoamericano): ${text}`
             : `Read this clearly in ${language}: ${text}`;
@@ -192,8 +190,11 @@ export const generateAudio = async (text: string, language: string): Promise<str
             },
         });
         const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
-        if (base64) await saveAudioToCache(cacheKey, base64);
-        return base64;
+        if (base64) {
+          // Guardamos y devolvemos la URL de streaming para velocidad máxima
+          return await saveAudioToCache(cacheKey, base64);
+        }
+        return null;
     });
 };
 

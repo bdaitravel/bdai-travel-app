@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
-// CLAVES ORIGINALES - NO TOCAR PARA ASEGURAR OTP
+// CONFIGURACIÓN ORIGINAL - NO TOCAR PARA ASEGURAR OTP
 const supabaseUrl = process.env.SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
@@ -18,7 +18,7 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[^a-z0-9_]/g, ""); 
 };
 
-// --- STORAGE LOGIC OPTIMIZADA PARA MÓVIL ---
+// --- OPTIMIZACIÓN DE AUDIO (STREAMING URL) ---
 
 const base64ToBlob = (base64: string, type: string = 'audio/mpeg') => {
   const binary = atob(base64.split(',')[1] || base64);
@@ -28,36 +28,15 @@ const base64ToBlob = (base64: string, type: string = 'audio/mpeg') => {
 };
 
 export const getCachedAudio = async (key: string): Promise<string | null> => {
-  const { data } = await supabase.from('audio_cache').select('file_path, base64').eq('key', key).maybeSingle();
-  
+  const { data } = await supabase.from('audio_cache').select('file_path').eq('key', key).maybeSingle();
   if (data && data.file_path) {
-    try {
-      const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(data.file_path);
-      const response = await fetch(publicUrl);
-      if (!response.ok) throw new Error();
-
-      if (data.file_path.endsWith('.txt')) {
-        return (await response.text()).trim();
-      } else {
-        // Conversión de alto rendimiento para móviles
-        const blob = await response.blob();
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64 = reader.result as string;
-            resolve(base64.split(',')[1]); // Retorna solo el base64 puro
-          };
-          reader.readAsDataURL(blob);
-        });
-      }
-    } catch (e) {
-      console.warn("Fallback de audio activo");
-    }
+    const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(data.file_path);
+    return publicUrl;
   }
-  return (data && data.base64 && data.base64.length > 200) ? data.base64 : null;
+  return null;
 };
 
-export const saveAudioToCache = async (key: string, base64: string) => {
+export const saveAudioToCache = async (key: string, base64: string): Promise<string | null> => {
   const fileName = `${key}_${Date.now()}.mp3`;
   const blob = base64ToBlob(base64);
 
@@ -65,15 +44,18 @@ export const saveAudioToCache = async (key: string, base64: string) => {
     .from('audios')
     .upload(fileName, blob, { contentType: 'audio/mpeg', upsert: true });
 
-  await supabase.from('audio_cache').upsert({ 
-    key, 
-    file_path: uploadData?.path || null,
-    base64: base64.substring(0, 100), 
-    updated_at: new Date().toISOString() 
-  });
+  if (uploadData?.path) {
+    await supabase.from('audio_cache').upsert({ 
+      key, 
+      file_path: uploadData.path,
+      updated_at: new Date().toISOString() 
+    });
+    return supabase.storage.from('audios').getPublicUrl(uploadData.path).data.publicUrl;
+  }
+  return null;
 };
 
-// --- RESTO DE SERVICIOS (SIN CAMBIOS) ---
+// --- SERVICIOS DE DATOS ---
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
