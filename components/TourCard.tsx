@@ -95,7 +95,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
     const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
     const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const distToTarget = useMemo(() => {
@@ -114,9 +115,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     }, [currentStop?.id]);
 
     const stopAudio = () => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current = null;
+        if (sourceNodeRef.current) {
+            try { sourceNodeRef.current.stop(); } catch(e) {}
+            sourceNodeRef.current = null;
         }
         setAudioPlayingId(null);
     };
@@ -141,19 +142,28 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             const audioUrl = await generateAudio(text, user.language);
             if (!audioUrl) throw new Error();
             
-            // STREAMING INSTANTÁNEO: Usar el objeto Audio nativo
-            const audio = new Audio(audioUrl);
-            audio.oncanplay = () => {
-                audio.play();
+            if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const ctx = audioContextRef.current;
+            if (ctx.state === 'suspended') await ctx.resume();
+
+            // REPRODUCCIÓN INSTANTÁNEA: Usamos decodeAudioData (el motor nativo más rápido)
+            const response = await fetch(audioUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            
+            ctx.decodeAudioData(arrayBuffer, (buffer) => {
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+                source.onended = () => setAudioPlayingId(null);
+                sourceNodeRef.current = source;
+                source.start(0);
                 setAudioPlayingId(stopId);
                 setAudioLoadingId(null);
-            };
-            audio.onended = () => setAudioPlayingId(null);
-            audio.onerror = () => {
+            }, (err) => {
+                console.error("Decode error:", err);
                 setAudioLoadingId(null);
-                alert("Error de streaming");
-            };
-            audioRef.current = audio;
+            });
+
         } catch (e) { 
             console.error("Audio lag error:", e);
             setAudioLoadingId(null);
