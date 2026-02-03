@@ -85,12 +85,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     }
 
     const currentStop = tour.stops[currentStopIndex] as Stop;
-    
-    if (!currentStop) {
-        useEffect(() => { onJumpTo(0); }, []);
-        return null;
-    }
-    
     const [rewardClaimed, setRewardClaimed] = useState(false);
     const [photoClaimed, setPhotoClaimed] = useState(false);
     const [isGeneratingStory, setIsGeneratingStory] = useState(false);
@@ -101,8 +95,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
     const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
     const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const distToTarget = useMemo(() => {
@@ -121,9 +114,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     }, [currentStop?.id]);
 
     const stopAudio = () => {
-        if (sourceNodeRef.current) {
-            try { sourceNodeRef.current.stop(); } catch(e) {}
-            sourceNodeRef.current = null;
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
         }
         setAudioPlayingId(null);
     };
@@ -143,41 +136,33 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         if (audioPlayingId === stopId) { stopAudio(); return; }
         stopAudio();
         setAudioLoadingId(stopId);
+        
         try {
             const audioUrl = await generateAudio(text, user.language);
             if (!audioUrl) throw new Error();
             
-            if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const ctx = audioContextRef.current;
-            if (ctx.state === 'suspended') await ctx.resume();
-
-            // STREAMING OPTIMIZATION: Fetch directo del ArrayBuffer
-            const response = await fetch(audioUrl);
-            const arrayBuffer = await response.arrayBuffer();
-            const dataInt16 = new Int16Array(arrayBuffer);
-            
-            const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
-            const channelData = buffer.getChannelData(0);
-            for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
-            source.onended = () => setAudioPlayingId(null);
-            sourceNodeRef.current = source;
-            source.start(0);
-            setAudioPlayingId(stopId);
+            // STREAMING INSTANTÁNEO: Usar el objeto Audio nativo
+            const audio = new Audio(audioUrl);
+            audio.oncanplay = () => {
+                audio.play();
+                setAudioPlayingId(stopId);
+                setAudioLoadingId(null);
+            };
+            audio.onended = () => setAudioPlayingId(null);
+            audio.onerror = () => {
+                setAudioLoadingId(null);
+                alert("Error de streaming");
+            };
+            audioRef.current = audio;
         } catch (e) { 
             console.error("Audio lag error:", e);
-            alert("Error de sincronización de audio"); 
-        } finally { 
-            setAudioLoadingId(null); 
+            setAudioLoadingId(null);
         }
     };
 
     const handleCheckIn = () => {
         if (!IS_IN_RANGE) { 
-            alert(`GPS INEXACTO: Estás a ${distToTarget}m. El sistema requiere 100m para auto-verificación. Si realmente estás allí, usa el botón de FOTO para verificar visualmente.`); 
+            alert(`GPS INEXACTO: Estás a ${distToTarget}m. El sistema requiere 100m.`); 
             return; 
         }
         setRewardClaimed(true);
@@ -186,7 +171,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
     const handlePhotoReward = () => {
         if (!CAN_PHOTO_BYPASS && distToTarget !== null) {
-            alert(`ESTÁS MUY LEJOS: El sistema detecta que estás a ${distToTarget}m. Acércate más a la entrada principal para poder usar la verificación por foto.`);
+            alert(`MUY LEJOS: Estás a ${distToTarget}m.`);
             return;
         }
         fileInputRef.current?.click();
@@ -220,7 +205,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     capturedMoments: [...(user.capturedMoments || []), moment] 
                 });
             } catch (err) { 
-                alert("Verificación fallida. Asegúrate de capturar la entrada o el edificio claramente."); 
+                alert("Verificación fallida."); 
             } finally { 
                 setIsGeneratingStory(false); 
             }

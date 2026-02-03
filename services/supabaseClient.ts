@@ -18,13 +18,27 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[^a-z0-9_]/g, ""); 
 };
 
-// --- OPTIMIZACIÓN DE AUDIO (STREAMING URL) ---
+// --- OPTIMIZACIÓN DE AUDIO (STREAMING WAV) ---
 
-const base64ToBlob = (base64: string, type: string = 'audio/mpeg') => {
-  const binary = atob(base64.split(',')[1] || base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type });
+const createWavHeader = (dataLength: number, sampleRate: number) => {
+  const buffer = new ArrayBuffer(44);
+  const view = new DataView(buffer);
+  
+  view.setUint32(0, 0x52494646, false); // "RIFF"
+  view.setUint32(4, 36 + dataLength, true); // ChunkSize
+  view.setUint32(8, 0x57415645, false); // "WAVE"
+  view.setUint32(12, 0x666d7420, false); // "fmt "
+  view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+  view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
+  view.setUint16(22, 1, true); // NumChannels (1 for Mono)
+  view.setUint32(24, sampleRate, true); // SampleRate
+  view.setUint32(28, sampleRate * 2, true); // ByteRate (SampleRate * 1 * 16/8)
+  view.setUint16(32, 2, true); // BlockAlign (1 * 16/8)
+  view.setUint16(34, 16, true); // BitsPerSample
+  view.setUint32(36, 0x64617461, false); // "data"
+  view.setUint32(40, dataLength, true); // Subchunk2Size
+  
+  return buffer;
 };
 
 export const getCachedAudio = async (key: string): Promise<string | null> => {
@@ -37,12 +51,19 @@ export const getCachedAudio = async (key: string): Promise<string | null> => {
 };
 
 export const saveAudioToCache = async (key: string, base64: string): Promise<string | null> => {
-  const fileName = `${key}_${Date.now()}.mp3`;
-  const blob = base64ToBlob(base64);
+  const binaryString = atob(base64.split(',')[1] || base64);
+  const pcmData = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) pcmData[i] = binaryString.charCodeAt(i);
+
+  // Añadimos cabecera WAV para que el navegador pueda hacer streaming nativo
+  const wavHeader = createWavHeader(pcmData.length, 24000);
+  const wavBlob = new Blob([wavHeader, pcmData], { type: 'audio/wav' });
+
+  const fileName = `${key}_${Date.now()}.wav`;
 
   const { data: uploadData } = await supabase.storage
     .from('audios')
-    .upload(fileName, blob, { contentType: 'audio/mpeg', upsert: true });
+    .upload(fileName, wavBlob, { contentType: 'audio/wav', upsert: true });
 
   if (uploadData?.path) {
     await supabase.from('audio_cache').upsert({ 
@@ -55,7 +76,7 @@ export const saveAudioToCache = async (key: string, base64: string): Promise<str
   return null;
 };
 
-// --- SERVICIOS DE DATOS ---
+// --- RESTO DE SERVICIOS (SIN CAMBIOS) ---
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
