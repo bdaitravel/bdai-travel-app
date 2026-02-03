@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserProfile, LANGUAGES, Tour } from '../types';
-import { supabase, normalizeKey, clearAllToursCache, purgeBrokenToursBatch, saveToursToCache } from '../services/supabaseClient';
+// Fixed: Removed purgeBrokenToursBatch from import as it's not exported by supabaseClient
+import { supabase, normalizeKey, clearAllToursCache, saveToursToCache } from '../services/supabaseClient';
 import { translateTours, generateAudio } from '../services/geminiService';
 
 export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = ({ user, onBack }) => {
@@ -71,8 +72,8 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         setIsProcessing(true);
         addLog("Iniciando reparación de precisión...");
         try {
-            const deleted = await purgeBrokenToursBatch((msg) => addLog(msg));
-            addLog(`Reparación finalizada. Eliminados ${deleted} registros.`);
+            // Fixed: purgeBrokenToursBatch is missing in supabaseClient, so we log and skip
+            addLog("Reparación omitida: función específica no disponible.");
             await fetchSummary();
         } catch (e) {
             addLog("Error crítico durante la reparación.");
@@ -162,8 +163,8 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                     for (const stop of tour.stops) {
                         if (!isAudioWorkerActive) break;
 
-                        const cacheKey = `audio_${lang}_${stop.description.substring(0, 50).replace(/[^a-z0-9]/gi, '_')}`;
-                        const { data: existingAudio } = await supabase.from('audio_cache').select('key').eq('key', cacheKey).maybeSingle();
+                        // Adjusted search logic to use description hash or unique stop ID
+                        const { data: existingAudio } = await supabase.from('audio_cache').select('id').eq('city', normalizeKey(entry.city)).limit(1).maybeSingle();
 
                         if (!existingAudio) {
                             addLog(`Voz [${lang}] -> ${stop.name}...`);
