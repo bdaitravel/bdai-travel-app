@@ -177,9 +177,15 @@ export const generateAudio = async (text: string, language: string): Promise<str
 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        // Refinamos el prompt para forzar acento de España si el idioma es español
+        const ttsPrompt = language === 'es' 
+            ? `Actúa como un guía turístico local de España con acento castellano puro de Madrid. Lee el siguiente texto de forma clara, profesional y con entonación 100% de España (evita cualquier acento latinoamericano): ${text}`
+            : `Read this clearly in ${language}: ${text}`;
+
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: `Read this clearly in ${language}: ${text}` }] }],
+            contents: [{ parts: [{ text: ttsPrompt }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },

@@ -98,7 +98,6 @@ export default function App() {
 
   useEffect(() => {
     if ('geolocation' in navigator) {
-      // PRECISIÓN QUIRÚRGICA: Evitamos el desfase de 300m forzando GPS puro y sin caché
       const watchId = navigator.geolocation.watchPosition(
         (position) => {
             setUserLocation({ 
@@ -108,9 +107,9 @@ export default function App() {
         },
         (err) => console.debug("GPS skip:", err),
         { 
-            enableHighAccuracy: true, // Forzamos GPS de satélite
+            enableHighAccuracy: true, 
             timeout: 10000, 
-            maximumAge: 0 // Prohibimos usar la última posición guardada del móvil
+            maximumAge: 0 
         }
       );
       return () => navigator.geolocation.clearWatch(watchId);
@@ -289,18 +288,30 @@ export default function App() {
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617]">
-              <div className="text-center animate-fade-in flex flex-col items-center mb-8 mt-[-15dvh]">
+              <div className="text-center animate-fade-in flex flex-col items-center mb-6 mt-[-20dvh]">
                   <BdaiLogo className="w-28 h-28 animate-pulse-logo" />
                   <h1 className="text-5xl font-black lowercase tracking-tighter text-white/95 -mt-2">bdai</h1>
                   <p className="text-[11px] font-black lowercase tracking-tighter text-purple-500/80 mt-1">{t('tagline')}</p>
               </div>
               
-              <div className="w-full max-w-[220px] mt-8 space-y-4">
+              <div className="w-full max-w-[240px] mt-4 space-y-4">
                   {loginStep === 'EMAIL' ? (
-                      <div className="space-y-2 animate-fade-in">
-                          <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/[0.01] border border-white/[0.04] rounded-lg py-2 px-3 text-center text-white outline-none text-[9px] font-medium placeholder-slate-800" placeholder={t('userPlaceholder')} />
-                          <input type="email" value={email} onChange={e => setEmal(e.target.value)} className="w-full bg-white/[0.01] border border-white/[0.04] rounded-lg py-2 px-3 text-center text-white outline-none text-[9px] font-medium placeholder-slate-800" placeholder={t('emailPlaceholder')} />
-                          <button onClick={handleLoginRequest} className="w-full py-4 bg-white text-slate-950 rounded-lg font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all">{t('login')}</button>
+                      <div className="space-y-3 animate-fade-in">
+                          <input 
+                            type="text" 
+                            value={username} 
+                            onChange={e => setUsername(e.target.value)} 
+                            className="w-full bg-white/10 border border-white/20 rounded-xl py-4 px-5 text-center text-white outline-none text-sm font-bold placeholder-slate-400 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition-all shadow-inner" 
+                            placeholder={t('userPlaceholder')} 
+                          />
+                          <input 
+                            type="email" 
+                            value={email} 
+                            onChange={e => setEmal(e.target.value)} 
+                            className="w-full bg-white/10 border border-white/20 rounded-xl py-4 px-5 text-center text-white outline-none text-sm font-bold placeholder-slate-400 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition-all shadow-inner" 
+                            placeholder={t('emailPlaceholder')} 
+                          />
+                          <button onClick={handleLoginRequest} className="w-full py-5 bg-white text-slate-950 rounded-xl font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all shadow-xl">{t('login')}</button>
                       </div>
                   ) : (
                       <div className="space-y-6 text-center animate-fade-in">
@@ -310,7 +321,7 @@ export default function App() {
                   )}
               </div>
 
-              <div className="absolute bottom-10 left-0 right-0 px-8 flex flex-col items-center gap-4">
+              <div className="absolute bottom-5 left-0 right-0 px-8 flex flex-col items-center gap-3">
                 <p className="text-[7px] font-black lowercase tracking-[0.3em] text-slate-700 text-center uppercase">{t('selectLang')}</p>
                 <div className="bg-white/[0.02] border border-white/[0.05] p-5 rounded-[2rem] shadow-2xl backdrop-blur-md">
                     <div className="grid grid-cols-5 gap-x-5 gap-y-4 items-center justify-items-center">
