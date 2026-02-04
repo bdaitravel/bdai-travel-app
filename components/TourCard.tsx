@@ -5,8 +5,21 @@ import { SchematicMap } from './SchematicMap';
 import { generateAudio } from '../services/geminiService';
 
 const TEXTS: any = {
-    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Dai Shot", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Dai Shot", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil", photoHint: "Tip de foto", nearbyAlert: "Parada Cercana Detectada", jumpTo: "Saltar aquí" },
-    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Dai Shot", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Dai Shot", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS", photoHint: "Photo Tip", nearbyAlert: "Nearby Stop Detected", jumpTo: "Jump here" }
+    es: { start: "Lanzar", stop: "Parada", of: "de", daiShot: "Consejo Dai", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Siguiente", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Dai Shot", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "Distancia", duration: "Duración", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil", photoHint: "Ángulo Dai", nearbyAlert: "Parada Cercana Detectada", jumpTo: "Saltar aquí" },
+    en: { start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Dai Shot", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "Distance", duration: "Duration", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS", photoHint: "Dai Angle", nearbyAlert: "Nearby Stop Detected", jumpTo: "Jump here" },
+    zh: { start: "开始", stop: "站点", of: "的", daiShot: "Dai 建议", prev: "返回", next: "下一步", distance: "距离", duration: "时长", generateStory: "Dai 快照", photoHint: "Dai 角度" },
+    ca: { start: "Llançar", stop: "Parada", of: "de", daiShot: "Consell Dai", prev: "Enrere", next: "Següent", distance: "Distància", duration: "Durada", generateStory: "Dai Shot", photoHint: "Angle Dai" },
+    eu: { start: "Abiarazi", stop: "Geldialdia", of: "-(e)ko", daiShot: "Dai Aholkua", prev: "Atzera", next: "Hurrengoa", distance: "Distantzia", duration: "Iraupena", generateStory: "Dai Shot", photoHint: "Dai Angelua" },
+    pt: { start: "Lançar", stop: "Parada", of: "de", daiShot: "Dica Dai", prev: "Voltar", next: "Próximo", distance: "Distância", duration: "Duração", generateStory: "Dai Shot", photoHint: "Ângulo Dai" },
+    fr: { start: "Lancer", stop: "Arrêt", of: "de", daiShot: "Conseil Dai", prev: "Retour", next: "Suivant", distance: "Distance", duration: "Durée", generateStory: "Dai Shot", photoHint: "Angle Dai" },
+    de: { start: "Starten", stop: "Stopp", of: "von", daiShot: "Dai Tipp", prev: "Zurück", next: "Weiter", distance: "Entfernung", duration: "Dauer", generateStory: "Dai Shot", photoHint: "Dai Winkel" },
+    it: { start: "Lancia", stop: "Fermata", of: "di", daiShot: "Consiglio Dai", prev: "Indietro", next: "Avanti", distance: "Distanza", duration: "Durata", generateStory: "Dai Shot", photoHint: "Angolo Dai" },
+    ja: { start: "開始", stop: "停留所", of: "の", daiShot: "Dai チップ", prev: "戻る", next: "次へ", distance: "距離", duration: "所要時間", generateStory: "Dai ショット", photoHint: "Dai 角度" },
+    ru: { start: "Запуск", stop: "Остановка", of: "из", daiShot: "Совет Dai", prev: "Назад", next: "Далее", distance: "Дистанция", duration: "Длительность", generateStory: "Dai Шот", photoHint: "Угол Dai" },
+    hi: { start: "शुरू करें", stop: "रुकें", of: "का", daiShot: "Dai सलाह", prev: "पीछे", next: "अगला", distance: "दूरी", duration: "अवधि", generateStory: "Dai शॉट", photoHint: "Dai कोण" },
+    ko: { start: "시작", stop: "정류장", of: "의", daiShot: "Dai 팁", prev: "뒤로", next: "다음", distance: "거리", duration: "소요 시간", generateStory: "Dai 샷", photoHint: "Dai 각도" },
+    tr: { start: "Başlat", stop: "Durak", of: "/", daiShot: "Dai İpucu", prev: "Geri", next: "İleri", distance: "Mesafe", duration: "Süre", generateStory: "Dai Shot", photoHint: "Dai Açısı" },
+    ar: { start: "إطلاق", stop: "محطة", of: "من", daiShot: "نصيحة Dai", prev: "السابق", next: "التالي", distance: "المسافة", duration: "المدة", generateStory: "Dai شوت", photoHint: "زاوية Dai" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -30,11 +43,11 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
           <div className="flex items-center justify-between pt-6 border-t border-white/5">
                <div className="flex gap-4">
                   <div className="flex flex-col">
-                    <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Duración</span>
+                    <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.duration}</span>
                     <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.duration}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Distancia</span>
+                    <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.distance}</span>
                     <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.distance}</span>
                   </div>
                </div>
@@ -230,15 +243,15 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                         </button>
                         <button onClick={() => setShowPhotoTip(!showPhotoTip)} className={`flex flex-col items-center justify-center gap-1 p-5 rounded-[2.5rem] font-black uppercase border transition-all ${showPhotoTip ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-900 text-white border-slate-800 shadow-xl shadow-slate-950/20'}`}>
                             <i className="fas fa-camera text-lg mb-1"></i>
-                            <span className="text-[9px]">DAI SHOT</span>
-                            <span className="text-[7px] text-slate-500/60 font-black tracking-[0.2em]">TIP</span>
+                            <span className="text-[9px]">{tl.generateStory}</span>
+                            <span className="text-[7px] text-slate-500/60 font-black tracking-[0.2em]">{tl.daiShot}</span>
                         </button>
                     </div>
 
                     {showPhotoTip && (
                         <div className="bg-amber-50 border-2 border-amber-200 p-6 rounded-[2rem] animate-fade-in relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-2 opacity-10"><i className="fas fa-hashtag text-4xl text-amber-600"></i></div>
-                            <p className="text-[7px] font-black text-amber-600 uppercase tracking-widest mb-2">Ángulo Recomendado por Dai:</p>
+                            <p className="text-[7px] font-black text-amber-600 uppercase tracking-widest mb-2">{tl.photoHint}:</p>
                             <p className="text-xs font-bold text-amber-900 italic leading-relaxed">"{currentStop.photoSpot?.angle || 'Busca una perspectiva lateral para captar la profundidad de la estructura.'}"</p>
                             <p className="text-[8px] font-black text-amber-400 mt-3 uppercase tracking-widest">#DaiShot #BetterDestinations</p>
                         </div>
@@ -253,8 +266,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              </div>
 
              <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 p-6 flex gap-3 z-[6000] pb-safe-iphone shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-                <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0 transition-opacity">Atrás</button>
-                <button onClick={() => { onNext(); stopAudio(); }} disabled={currentStopIndex === tour.stops.length - 1} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98] transition-all">Siguiente</button>
+                <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0 transition-opacity">{tl.prev}</button>
+                <button onClick={() => { onNext(); stopAudio(); }} disabled={currentStopIndex === tour.stops.length - 1} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98] transition-all">{tl.next}</button>
              </div>
         </div>
     );

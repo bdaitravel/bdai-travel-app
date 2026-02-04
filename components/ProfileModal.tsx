@@ -14,27 +14,28 @@ interface ProfileModalProps {
 }
 
 const MODAL_TEXTS: any = {
-    es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "F. Nacimiento", categoryPoints: "Actividad Técnica", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Visados", visibility: "Visibilidad", public: "Público", private: "Privado", langLabel: "Idioma", user_id: "ID_USUARIO", rank: "RANGO", miles: "MILLAS", admin: "SALA DE MÁQUINAS" },
-    en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", categoryPoints: "Technical Activity", save: "Save", edit: "Edit", logout: "Logout", stamps: "Stamps", visibility: "Visibility", public: "Public", private: "Private", langLabel: "Language", user_id: "USER_ID", rank: "RANK", miles: "MILES", admin: "ADMIN PANEL" },
-    it: { title: "Passaporto Globale bdai", subtitle: "ID Nomade Digitale", surname: "Cognome", givenNames: "Nome", city: "Città", country: "Paese", age: "Età", birthday: "Nascita", categoryPoints: "Attività Tecnica", save: "Salva", edit: "Modifica", logout: "Esci", stamps: "Visti", visibility: "Visibilità", public: "Pubblico", private: "Privato", langLabel: "Lingua", user_id: "ID_UTENTE", rank: "RANGO", miles: "MIGLIA", admin: "SALA MACCHINE" },
-    zh: { title: "bdai 全球护照", subtitle: "数字游民 ID", surname: "姓", givenNames: "名", city: "城市", country: "国家", age: "年龄", birthday: "出生日期", categoryPoints: "技术活动", save: "保存", edit: "编辑", logout: "注销", stamps: "签证", visibility: "可见性", public: "公开", private: "私密", langLabel: "语言", user_id: "用户ID", rank: "等级", miles: "里程", admin: "机房" },
-    ca: { title: "Passaport Global bdai", subtitle: "Nòmada Digital ID", surname: "Cognoms", givenNames: "Noms", city: "Ciutat", country: "País", age: "Edat", birthday: "F. Naixement", categoryPoints: "Activitat Tècnica", save: "Desar", edit: "Editar", logout: "Tancar", stamps: "Visats", visibility: "Visibilitat", public: "Públic", private: "Privat", langLabel: "Idioma", user_id: "ID_USUARI", rank: "RANG", miles: "MILLES", admin: "MÀQUINES" },
-    eu: { title: "bdai Pasaporte Globala", subtitle: "Nomada Digital ID", surname: "Abizenak", givenNames: "Izenak", city: "Hiria", country: "Herrialdea", age: "Adina", birthday: "Data", categoryPoints: "Jarduera Teknikoa", save: "Gorde", edit: "Editatu", logout: "Itxi", stamps: "Bisatuak", visibility: "Ikusgarritasuna", public: "Publikoa", private: "Pribatua", langLabel: "Hizkuntza", user_id: "ID", rank: "MAILA", miles: "MILIAK", admin: "GELA" },
-    ar: { title: "جواز سفر bdai العالمي", subtitle: "معرف الرحالة الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", age: "العمر", birthday: "الميلاد", categoryPoints: "النشاط", save: "حفظ", edit: "تعديل", logout: "خروج", stamps: "التأشيرات", visibility: "الظهور", public: "عام", private: "خاص", langLabel: "اللغة", user_id: "ID", rank: "الرتبة", miles: "أميال", admin: "غرفة" },
-    pt: { title: "Passaporte Global bdai", subtitle: "ID Nómada Digital", surname: "Apelidos", givenNames: "Nomes", city: "Cidade", country: "País", age: "Idade", birthday: "Nascimento", categoryPoints: "Atividade", save: "Guardar", edit: "Editar", logout: "Sair", stamps: "Vistos", visibility: "Visibilidade", public: "Público", private: "Privado", langLabel: "Idioma", user_id: "ID", rank: "RANK", miles: "MILHAS", admin: "MÁQUINAS" },
-    fr: { title: "Passeport Global bdai", subtitle: "ID Nomade", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Naissance", categoryPoints: "Activité", save: "Enregistrer", edit: "Modifier", logout: "Sortir", stamps: "Visas", visibility: "Visibilité", public: "Public", private: "Privé", langLabel: "Langue", user_id: "ID", rank: "RANG", miles: "MILLES", admin: "SALLE" },
-    de: { title: "bdai Reisepass", subtitle: "Nomade ID", surname: "Nachname", givenNames: "Vorname", city: "Stadt", country: "Land", age: "Alter", birthday: "Datum", categoryPoints: "Aktivität", save: "Speichern", edit: "Edit", logout: "Logout", stamps: "Visa", visibility: "Sichtbarkeit", public: "Öffentlich", private: "Privat", langLabel: "Sprache", user_id: "ID", rank: "RANG", miles: "MEILEN", admin: "ROOM" },
-    ja: { title: "bdai パスポート", subtitle: "デジタルノマド ID", surname: "姓", givenNames: "名", city: "都市", country: "国", age: "年齢", birthday: "生年月日", categoryPoints: "活動", save: "保存", edit: "編集", logout: "終了", stamps: "ビザ", visibility: "公開", public: "公開", private: "非公開", langLabel: "言語", user_id: "ID", rank: "ランク", miles: "マイル", admin: "管理" },
-    ru: { title: "Паспорт bdai", subtitle: "Цифровой кочевник ID", surname: "Фамилия", givenNames: "Имя", city: "Город", country: "Страна", age: "Возраст", birthday: "Дата", categoryPoints: "Активность", save: "Сохранить", edit: "Правка", logout: "Выйти", stamps: "Визы", visibility: "Видимость", public: "Публичный", private: "Приватный", langLabel: "Язык", user_id: "ID", rank: "РАНГ", miles: "МИЛИ", admin: "ЗАЛ" },
-    hi: { title: "bdai पासपोर्ट", subtitle: "डिजिटल आईडी", surname: "उपनाम", givenNames: "नाम", city: "शहर", country: "देश", age: "आयु", birthday: "जन्म तिथि", categoryPoints: "गतिविधि", save: "सहेजें", edit: "संपादित", logout: "लॉगआउट", stamps: "वीजा", visibility: "दृश्यता", public: "सार्वजनिक", private: "निजी", langLabel: "भाषा", user_id: "आई디", rank: "रैंक", miles: "मील", admin: "एडमिन" },
-    ko: { title: "bdai 글로벌 여권", subtitle: "디지털 노마드 ID", surname: "성", givenNames: "이름", city: "도시", country: "국가", age: "나이", birthday: "생일", categoryPoints: "기술 활동", save: "저장", edit: "편집", logout: "로그아웃", stamps: "비자", visibility: "공개 여부", public: "공개", private: "비공개", langLabel: "언어", user_id: "아이디", rank: "랭크", miles: "마일", admin: "관리자" },
-    tr: { title: "bdai Küresel Pasaport", subtitle: "Dijital Göçebe Kimliği", surname: "Soyadı", givenNames: "Adı", city: "Şehir", country: "Ülke", age: "Yaş", birthday: "Doğum Tarihi", categoryPoints: "Teknik Aktivite", save: "Kaydet", edit: "Düzenle", logout: "Çıkış Yap", stamps: "Vizeler", visibility: "Görünürlük", public: "Açık", private: "Gizli", langLabel: "Dil", user_id: "Kullanıcı ID", rank: "RÜTBE", miles: "MİLLER", admin: "ADMİN" }
+    es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "F. Nacimiento", categoryPoints: "Actividad Técnica", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Mis Visados", visibility: "Visibilidad", public: "Público", private: "Privado", langLabel: "Idioma", user_id: "ID_USUARIO", rank: "RANGO", miles: "MILLAS", admin: "SALA DE MÁQUINAS", emptyStamps: "Sin visados registrados aún", cats: { Hist: "Hist", Gast: "Gast", Arte: "Arte", Natu: "Natu", Foto: "Foto", Cult: "Cult", Arqu: "Arqu" } },
+    en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", categoryPoints: "Technical Activity", save: "Save", edit: "Edit", logout: "Logout", stamps: "My Visas", visibility: "Visibility", public: "Public", private: "Private", langLabel: "Language", user_id: "USER_ID", rank: "RANK", miles: "MILES", admin: "ADMIN PANEL", emptyStamps: "No stamps recorded yet", cats: { Hist: "Hist", Gast: "Food", Arte: "Art", Natu: "Natu", Foto: "Photo", Cult: "Cult", Arqu: "Arch" } },
+    zh: { title: "bdai 全球护照", subtitle: "数字游民 ID", surname: "姓", givenNames: "名", city: "城市", country: "国家", age: "年龄", birthday: "出生日期", categoryPoints: "技术活动", save: "保存", edit: "编辑", logout: "注销", stamps: "签证", visibility: "可见性", public: "公开", private: "私密", langLabel: "语言", user_id: "用户ID", rank: "等级", miles: "里程", admin: "机房", emptyStamps: "暂无签证记录", cats: { Hist: "历史", Gast: "美食", Arte: "艺术", Natu: "自然", Foto: "摄影", Cult: "文化", Arqu: "建筑" } },
+    ca: { title: "Passaport Global bdai", subtitle: "Nòmada Digital ID", surname: "Cognoms", givenNames: "Noms", city: "Ciutat", country: "País", age: "Edat", birthday: "F. Naixement", categoryPoints: "Activitat Tècnica", save: "Desar", edit: "Editar", logout: "Tancar", stamps: "Visats", visibility: "Visibilitat", public: "Públic", private: "Privat", langLabel: "Idioma", user_id: "ID_USUARI", rank: "RANG", miles: "MILLES", admin: "MÀQUINES", emptyStamps: "Sense visats registrats", cats: { Hist: "Hist", Gast: "Gast", Arte: "Art", Natu: "Natu", Foto: "Foto", Cult: "Cult", Arqu: "Arqu" } },
+    eu: { title: "bdai Pasaporte Globala", subtitle: "Nomada Digital ID", surname: "Abizenak", givenNames: "Izenak", city: "Hiria", country: "Herrialdea", age: "Adina", birthday: "Data", categoryPoints: "Jarduera Teknikoa", save: "Gorde", edit: "Editatu", logout: "Itxi", stamps: "Bisatuak", visibility: "Ikusgarritasuna", public: "Publikoa", private: "Pribatua", langLabel: "Hizkuntza", user_id: "ID", rank: "MAILA", miles: "MILIAK", admin: "GELA", emptyStamps: "Bisaturik gabe oraindik", cats: { Hist: "Hist", Gast: "Gast", Arte: "Arte", Natu: "Natu", Foto: "Foto", Cult: "Kult", Arqu: "Ark" } },
+    pt: { title: "Passaporte Global bdai", subtitle: "ID Nómada Digital", surname: "Apelidos", givenNames: "Nomes", city: "Cidade", country: "País", age: "Idade", birthday: "Nascimento", categoryPoints: "Atividade", save: "Guardar", edit: "Editar", logout: "Sair", stamps: "Vistos", visibility: "Visibilidade", public: "Público", private: "Privado", langLabel: "Idioma", user_id: "ID", rank: "RANK", miles: "MILHAS", admin: "MÁQUINAS", emptyStamps: "Sem vistos registrados ainda", cats: { Hist: "Hist", Gast: "Gast", Arte: "Arte", Natu: "Natu", Foto: "Foto", Cult: "Cult", Arqu: "Arqu" } },
+    fr: { title: "Passeport Global bdai", subtitle: "ID Nomade", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Naissance", categoryPoints: "Activité", save: "Enregistrer", edit: "Modifier", logout: "Sortir", stamps: "Visas", visibility: "Visibilité", public: "Public", private: "Privé", langLabel: "Langue", user_id: "ID", rank: "RANG", miles: "MILLES", admin: "SALLE", emptyStamps: "Aucun visa enregistré", cats: { Hist: "Hist", Gast: "Gast", Arte: "Art", Natu: "Natu", Foto: "Photo", Cult: "Cult", Arqu: "Arch" } },
+    de: { title: "bdai Reisepass", subtitle: "Nomade ID", surname: "Nachname", givenNames: "Vorname", city: "Stadt", country: "Land", age: "Alter", birthday: "Datum", categoryPoints: "Aktivität", save: "Speichern", edit: "Edit", logout: "Logout", stamps: "Visa", visibility: "Sichtbarkeit", public: "Öffentlich", private: "Privat", langLabel: "Sprache", user_id: "ID", rank: "RANG", miles: "MEILEN", admin: "ROOM", emptyStamps: "Noch keine Visa", cats: { Hist: "Hist", Gast: "Gast", Arte: "Art", Natu: "Natu", Foto: "Foto", Cult: "Cult", Arqu: "Arch" } },
+    it: { title: "Passaporto Globale bdai", subtitle: "ID Nomade Digitale", surname: "Cognome", givenNames: "Nome", city: "Città", country: "Paese", age: "Età", birthday: "Nascita", categoryPoints: "Attività Tecnica", save: "Salva", edit: "Modifica", logout: "Esci", stamps: "Visti", visibility: "Visibilità", public: "Pubblico", private: "Privato", langLabel: "Lingua", user_id: "ID_UTENTE", rank: "RANGO", miles: "MIGLIA", admin: "SALA MACCHINE", emptyStamps: "Nessun visto registrato", cats: { Hist: "Hist", Gast: "Gast", Arte: "Arte", Natu: "Natu", Foto: "Foto", Cult: "Cult", Arqu: "Arch" } },
+    ru: { title: "Паспорт bdai", subtitle: "Цифровой кочевник ID", surname: "Фамилия", givenNames: "Имя", city: "Город", country: "Страна", age: "Возраст", birthday: "Дата", categoryPoints: "Активность", save: "Сохранить", edit: "Правка", logout: "Выйти", stamps: "Визы", visibility: "видимость", public: "Публичный", private: "Приватный", langLabel: "Язык", user_id: "ID", rank: "РАНГ", miles: "МИЛИ", admin: "ЗАЛ", emptyStamps: "Визы отсутствуют", cats: { Hist: "Ист", Gast: "Гаст", Arte: "Арт", Natu: "Прир", Foto: "Фото", Cult: "Культ", Arqu: "Арх" } },
+    hi: { title: "bdai पासपोर्ट", subtitle: "डिजिटल आईडी", surname: "उपनाम", givenNames: "नाम", city: "शहर", country: "देश", age: "आयु", birthday: "जन्म तिथि", categoryPoints: "गतिविधि", save: "सहेजें", edit: "संपादित", logout: "लॉगआउट", stamps: "वीजा", visibility: "दृश्यता", public: "सार्वजनिक", private: "निजी", langLabel: "भाषा", user_id: "आईडी", rank: "रैंक", miles: "मील", admin: "एडमिन", emptyStamps: "कोई वीजा रिकॉर्ड नहीं", cats: { Hist: "इति", Gast: "भोजन", Arte: "कला", Natu: "प्रकृति", Foto: "फोटो", Cult: "संस्कृति", Arqu: "वास्तु" } },
+    ko: { title: "bdai 글로벌 여권", subtitle: "디지털 노마드 ID", surname: "성", givenNames: "이름", city: "都市", country: "국가", age: "나이", birthday: "생일", categoryPoints: "기술 활동", save: "저장", edit: "편집", logout: "로그아웃", stamps: "비자", visibility: "공개 여부", public: "공개", private: "비공개", langLabel: "언어", user_id: "아이디", rank: "랭크", miles: "마일", admin: "관리자", emptyStamps: "등록된 비자 없음", cats: { Hist: "역사", Gast: "미식", Arte: "아트", Natu: "자연", Foto: "사진", Cult: "문화", Arqu: "건축" } },
+    tr: { title: "bdai Küresel Pasaport", subtitle: "Dijital Göçebe Kimliği", surname: "Soyadı", givenNames: "Adı", city: "Şehir", country: "Ülke", age: "Yaş", birthday: "Doğum Tarihi", categoryPoints: "Teknik Aktivite", save: "Kaydet", edit: "Düzenle", logout: "Çıkış Yap", stamps: "Vizeler", visibility: "Görünürlük", public: "Açık", private: "Gizli", langLabel: "Dil", user_id: "Kullanıcı ID", rank: "RÜTBE", miles: "MİLLER", admin: "ADMİN", emptyStamps: "Kayıtlı vize yok", cats: { Hist: "Tar", Gast: "Gast", Arte: "San", Natu: "Doğa", Foto: "Foto", Cult: "Kült", Arqu: "Mim" } },
+    ar: { title: "جواز سفر bdai العالمي", subtitle: "معرف الرحالة الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", age: "العمر", birthday: "الميلاد", categoryPoints: "النشاط", save: "حفظ", edit: "تعديل", logout: "خروج", stamps: "التأشيرات", visibility: "الظهور", public: "عام", private: "خاص", langLabel: "اللغة", user_id: "ID", rank: "الرتبة", miles: "أميال", admin: "غرفة", emptyStamps: "لا يوجد تأشيرات", cats: { Hist: "تار", Gast: "غذاء", Arte: "فن", Natu: "طبيعة", Foto: "صور", Cult: "ثقافة", Arqu: "عمارة" } },
+    ja: { title: "bdai グローバルパスポート", subtitle: "デジタルノマド ID", surname: "姓", givenNames: "名", city: "都市", country: "国", age: "年齢", birthday: "生年月日", categoryPoints: "テクニカルアクティビティ", save: "保存", edit: "編集", logout: "ログアウト", stamps: "入国スタンプ", visibility: "公開設定", public: "公開", private: "非公開", langLabel: "言語", user_id: "ユーザーID", rank: "ランク", miles: "マイル", admin: "管理パネル", emptyStamps: "スタンプはまだありません", cats: { Hist: "歴史", Gast: "美食", Arte: "アート", Natu: "自然", Foto: "写真", Cult: "文化", Arqu: "建築" } }
 };
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const pt = (key: string) => (MODAL_TEXTS[user.language] || MODAL_TEXTS['es'])[key] || key;
+  const cats = (MODAL_TEXTS[user.language] || MODAL_TEXTS['es']).cats || MODAL_TEXTS['es'].cats;
 
   const isAdmin = user.email === 'travelbdai@gmail.com';
 
@@ -67,13 +68,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   };
 
   const activityCategories = [
-    { label: 'Hist', points: user.historyPoints || 0 },
-    { label: 'Gast', points: user.foodPoints || 0 },
-    { label: 'Arte', points: user.artPoints || 0 },
-    { label: 'Natu', points: user.naturePoints || 0 },
-    { label: 'Foto', points: user.photoPoints || 0 },
-    { label: 'Cult', points: user.culturePoints || 0 },
-    { label: 'Arqu', points: user.archPoints || 0 }
+    { label: cats.Hist, points: user.historyPoints || 0 },
+    { label: cats.Gast, points: user.foodPoints || 0 },
+    { label: cats.Arte, points: user.artPoints || 0 },
+    { label: cats.Natu, points: user.naturePoints || 0 },
+    { label: cats.Foto, points: user.photoPoints || 0 },
+    { label: cats.Cult, points: user.culturePoints || 0 },
+    { label: cats.Arqu, points: user.archPoints || 0 }
   ];
 
   return (
@@ -121,6 +122,25 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
             </div>
 
             <div className="pt-2">
+                <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.4em] mb-4 border-b border-slate-200 pb-2">{pt('stamps')}</h4>
+                <div className="flex gap-5 overflow-x-auto no-scrollbar pb-8 min-h-[100px] pt-2 px-1">
+                    {user.stamps && user.stamps.length > 0 ? (
+                        user.stamps.map((stamp, i) => (
+                            <div key={i} className="shrink-0 w-20 h-20 rounded-full border-[3px] border-[#8b2b2b]/40 bg-white/90 flex flex-col items-center justify-center text-center shadow-[10px_10px_20px_rgba(0,0,0,0.3)] rotate-[-12deg] p-2 border-dashed transition-transform hover:scale-110 active:scale-95">
+                                <span className="text-[6px] font-black uppercase leading-none text-[#8b2b2b] tracking-tighter">{stamp.country}</span>
+                                <span className="text-[8px] font-black uppercase text-slate-900 my-0.5 tracking-tight border-y border-[#8b2b2b]/20 py-0.5 w-full">{stamp.city}</span>
+                                <span className="text-[5px] font-bold text-slate-400 uppercase">{stamp.date}</span>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="w-full h-16 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center opacity-40 italic text-[9px]">
+                            {pt('emptyStamps')}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="pt-2">
                 <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-[0.4em] mb-4 border-b border-slate-200 pb-2">{pt('categoryPoints')}</h4>
                 <div className="grid grid-cols-4 gap-2">
                     {activityCategories.map(cat => (
@@ -137,7 +157,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 <div className="grid grid-cols-5 gap-3 mb-8">
                     {LANGUAGES.map(lang => (
                         <button key={lang.code} onClick={() => { setFormData({...formData, language: lang.code}); if(onUpdateUser) onUpdateUser({...user, language: lang.code}); }} className="transition-all active:scale-90">
-                            <FlagIcon code={lang.code} className={`w-7 h-7 ${formData.language === lang.code ? 'ring-2 ring-purple-600' : 'opacity-30 grayscale'}`} />
+                            <FlagIcon code={lang.code} className={`w-7 h-7 ${formData.language === lang.code ? 'ring-2 ring-purple-600 shadow-lg' : 'opacity-30 grayscale'}`} />
                         </button>
                     ))}
                 </div>

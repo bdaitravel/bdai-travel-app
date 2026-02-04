@@ -15,7 +15,20 @@ const STOP_ICONS: Record<string, string> = {
 
 const TEXTS: any = {
     es: { guide: "Ir a", openInMaps: "GPS", follow: "Seguir", stopFollow: "Libre", focus: "Fijar", dist: "a" },
-    en: { guide: "Go to", openInMaps: "GPS", follow: "Follow", stopFollow: "Free", focus: "Fix", dist: "at" }
+    en: { guide: "Go to", openInMaps: "GPS", follow: "Follow", stopFollow: "Free", focus: "Fix", dist: "at" },
+    zh: { guide: "前往", openInMaps: "GPS", follow: "跟随", focus: "固定" },
+    ca: { guide: "Anar a", openInMaps: "GPS", follow: "Seguir", focus: "Fixar" },
+    eu: { guide: "Joan hona", openInMaps: "GPS", follow: "Jarraitu", focus: "Finkatu" },
+    ar: { guide: "اذهب إلى", openInMaps: "GPS", follow: "متابعة", focus: "تثبيت" },
+    pt: { guide: "Ir para", openInMaps: "GPS", follow: "Seguir", focus: "Fixar" },
+    fr: { guide: "Aller à", openInMaps: "GPS", follow: "Suivre", focus: "Fixer" },
+    de: { guide: "Gehe zu", openInMaps: "GPS", follow: "Folgen", focus: "Fixieren" },
+    it: { guide: "Vai a", openInMaps: "GPS", follow: "Segui", focus: "Fissa" },
+    ja: { guide: "行く", openInMaps: "GPS", follow: "フォロー", focus: "固定" },
+    ru: { guide: "Перейти к", openInMaps: "GPS", follow: "Следовать", focus: "Закрепить" },
+    hi: { guide: "जाओ", openInMaps: "GPS", follow: "अनुसरण करें", focus: "ठीक करें" },
+    ko: { guide: "가기", openInMaps: "GPS", follow: "팔로우", focus: "고정" },
+    tr: { guide: "Git", openInMaps: "GPS", follow: "Takip et", focus: "Sabitle" }
 };
 
 export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, userLocation }) => {
@@ -30,7 +43,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const tl = TEXTS[language] || TEXTS.es;
   const currentStop = stops[currentStopIndex];
 
-  // Inicialización del Mapa
   useEffect(() => {
     if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
     const map = L.map(mapContainerRef.current, { 
@@ -49,7 +61,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     return () => { if (mapInstanceRef.current) mapInstanceRef.current.remove(); };
   }, []);
 
-  // Sincronización de Ubicación del Usuario
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !L || !userLocation) return;
@@ -94,7 +105,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     }
   }, [userLocation, currentStop, isAutoFollowing]);
 
-  // Actualización de Capas de Paradas e Interactividad
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !L) return;
