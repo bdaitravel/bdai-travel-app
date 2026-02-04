@@ -86,9 +86,15 @@ export const generateAudio = async (text: string, language: string, city: string
     // 2. Si no existe, generar con Gemini
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        // Refinamiento de acento: Si es español, pedimos específicamente acento de España (Castellano)
+        const ttsPrompt = language === 'es' 
+            ? `Read in Spanish (Spain) with a natural Castilian accent: ${text}` 
+            : `Read in ${language}: ${text}`;
+
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: `Read in ${language}: ${text}` }] }],
+            contents: [{ parts: [{ text: ttsPrompt }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
@@ -112,7 +118,6 @@ export const generateSmartCaption = async (base64: string, stop: Stop, language:
     return response.text || "Photo captured.";
 };
 
-// Fixed: Added optional interests parameter to match call in PostcardModal and updated to iterate parts for image extraction
 export const generateCityPostcard = async (city: string, interests: string[] = []): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const interestStr = interests.length > 0 ? ` highlighting themes like ${interests.join(', ')}` : '';
@@ -121,7 +126,6 @@ export const generateCityPostcard = async (city: string, interests: string[] = [
         contents: { parts: [{ text: `Postcard of ${city}${interestStr}.` }] }
     });
     
-    // Iterate through all candidates and parts to find the image part correctly
     if (response.candidates) {
         for (const candidate of response.candidates) {
             if (candidate.content && candidate.content.parts) {
@@ -137,5 +141,5 @@ export const generateCityPostcard = async (city: string, interests: string[] = [
 };
 
 export const moderateContent = async (text: string): Promise<boolean> => {
-    return true; // Simplificado para velocidad
+    return true; 
 };

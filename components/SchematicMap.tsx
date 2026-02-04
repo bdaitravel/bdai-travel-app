@@ -56,7 +56,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
 
     if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
     
-    // Marcador de usuario con dirección/brújula simulada
     userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { 
         zIndexOffset: 1000,
         icon: L.divIcon({ 
@@ -76,7 +75,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     if (polylineRef.current) map.removeLayer(polylineRef.current);
     
     if (currentStop) {
-        // Línea de ruta suave
         polylineRef.current = L.polyline([
             [userLocation.lat, userLocation.lng], 
             [currentStop.latitude, currentStop.longitude]
@@ -101,7 +99,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     const map = mapInstanceRef.current;
     if (!map || !L) return;
 
-    // Limpieza de capas previas
     markersRef.current.forEach(m => map.removeLayer(m));
     geofenceCirclesRef.current.forEach(c => map.removeLayer(c));
     markersRef.current = [];
@@ -110,7 +107,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     stops.forEach((stop: any, idx: number) => {
         const isActive = idx === currentStopIndex;
         
-        // Círculos de proximidad (Geofence Visual)
         const circle = L.circle([stop.latitude, stop.longitude], {
             radius: 40,
             color: isActive ? '#9333ea' : '#cbd5e1',
@@ -121,7 +117,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         }).addTo(map);
         geofenceCirclesRef.current.push(circle);
 
-        // Marcadores interactivos
         const marker = L.marker([stop.latitude, stop.longitude], { 
             icon: L.divIcon({ 
                 className: '', 
@@ -132,7 +127,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
                             <i class="fas ${STOP_ICONS[stop.type] || 'fa-location-dot'}"></i>
                         </div>
                         <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 -z-10 shadow-lg"></div>
-                        
                         <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white text-[8px] px-3 py-1 rounded-full font-black whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 uppercase tracking-widest shadow-xl">
                             ${stop.name}
                         </div>
@@ -143,12 +137,9 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
             }) 
         }).addTo(map);
 
-        // La magia: cualquier marcador cambia la parada activa
         marker.on('click', () => {
             onStopSelect?.(idx);
             setIsAutoFollowing(true);
-            
-            // Efecto visual de feedback al tocar
             map.flyTo([stop.latitude, stop.longitude], 17, { duration: 1 });
         });
         
@@ -160,7 +151,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     <div className="w-full h-full relative overflow-hidden bg-slate-200">
         <div ref={mapContainerRef} className="w-full h-full" />
         
-        {/* Controles del Mapa Nativo */}
         <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-3">
             <button 
                 onClick={() => setIsAutoFollowing(!isAutoFollowing)}
@@ -179,7 +169,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
             </button>
         </div>
 
-        {/* HUD Superior de Navegación In-App */}
         {currentStop && (
             <div className="absolute top-4 left-0 right-0 z-[450] px-4 pointer-events-none">
                 <div className="bg-slate-950/90 backdrop-blur-2xl border border-white/10 p-5 rounded-[2.5rem] shadow-2xl flex items-center gap-4 pointer-events-auto max-w-sm mx-auto animate-fade-in">

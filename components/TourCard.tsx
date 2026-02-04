@@ -67,16 +67,14 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
 
-    // Detección Inteligente de Paradas Cercanas (Exploración Libre)
     useEffect(() => {
         if (!userLocation || !tour.stops) return;
         
-        const NEARBY_THRESHOLD = 35; // metros para considerar que estás "frente a" un punto
+        const NEARBY_THRESHOLD = 35; 
         let bestCandidate: number | null = null;
         let minDistance = Infinity;
 
         tour.stops.forEach((s: Stop, idx: number) => {
-            // Ignorar la parada actual para no molestar
             if (idx === currentStopIndex) return;
             
             const dist = calculateDistance(userLocation.lat, userLocation.lng, s.latitude, s.longitude);
@@ -88,7 +86,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
         if (bestCandidate !== nearbyStopHint) {
             setNearbyStopHint(bestCandidate);
-            // Si el dispositivo lo soporta, dar feedback vibratorio sutil
             if (bestCandidate !== null && 'vibrate' in navigator) {
                 navigator.vibrate(40);
             }
@@ -184,7 +181,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                  </div>
              )}
 
-             {/* Notificación de Parada Cercana (Smart Discovery) */}
              {nearbyStopHint !== null && (
                 <div className="fixed top-24 left-4 right-4 z-[7000] animate-bounce">
                     <button 
@@ -226,7 +222,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
                 <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-30px_60px_rgba(0,0,0,0.08)] z-[200] relative">
-                    
                     <div className="grid grid-cols-2 gap-4">
                         <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center gap-1 p-5 rounded-[2.5rem] font-black uppercase shadow-lg border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500 shadow-purple-500/20' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
                             <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg mb-1`}></i>
