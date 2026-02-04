@@ -5,8 +5,8 @@ import { SchematicMap } from './SchematicMap';
 import { generateAudio } from '../services/geminiService';
 
 const TEXTS: any = {
-    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Dai Shot", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Dai Shot", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil", photoHint: "Tip de foto", nearbyAlert: "Parada Cercana Detectada" },
-    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Dai Shot", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Dai Shot", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS", photoHint: "Photo Tip", nearbyAlert: "Nearby Stop Detected" }
+    es: { start: "Lanzar", stop: "Parada", of: "de", photoSpot: "Dai Shot", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Avanzar", meters: "m", itinerary: "Itinerario", syncing: "Sincronizando...", tooFar: "GPS Incierto", generateStory: "Dai Shot", checkIn: "Check-in GPS", checkedIn: "Verificada", shareInsta: "Copiar Caption", distance: "a", refreshGps: "Refrescar GPS", gpsOk: "GPS OK", gpsLow: "GPS Débil", photoHint: "Tip de foto", nearbyAlert: "Parada Cercana Detectada", jumpTo: "Saltar aquí" },
+    en: { start: "Launch", stop: "Stop", of: "of", photoSpot: "Dai Shot", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", syncing: "Syncing...", tooFar: "GPS Uncertain", generateStory: "Dai Shot", checkIn: "GPS Check-in", checkedIn: "Verified", shareInsta: "Copy Caption", distance: "at", refreshGps: "Refresh GPS", gpsOk: "GPS OK", gpsLow: "Low GPS", photoHint: "Photo Tip", nearbyAlert: "Nearby Stop Detected", jumpTo: "Jump here" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -67,23 +67,33 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
 
-    // Lógica de detección de paradas cercanas para permitir saltos automáticos
+    // Detección Inteligente de Paradas Cercanas (Exploración Libre)
     useEffect(() => {
         if (!userLocation || !tour.stops) return;
         
-        const THRESHOLD = 40; // metros para detectar que estás "ahí"
-        let found = null;
+        const NEARBY_THRESHOLD = 35; // metros para considerar que estás "frente a" un punto
+        let bestCandidate: number | null = null;
+        let minDistance = Infinity;
 
         tour.stops.forEach((s: Stop, idx: number) => {
+            // Ignorar la parada actual para no molestar
             if (idx === currentStopIndex) return;
+            
             const dist = calculateDistance(userLocation.lat, userLocation.lng, s.latitude, s.longitude);
-            if (dist < THRESHOLD) {
-                found = idx;
+            if (dist < NEARBY_THRESHOLD && dist < minDistance) {
+                minDistance = dist;
+                bestCandidate = idx;
             }
         });
 
-        setNearbyStopHint(found);
-    }, [userLocation, currentStopIndex, tour.stops]);
+        if (bestCandidate !== nearbyStopHint) {
+            setNearbyStopHint(bestCandidate);
+            // Si el dispositivo lo soporta, dar feedback vibratorio sutil
+            if (bestCandidate !== null && 'vibrate' in navigator) {
+                navigator.vibrate(40);
+            }
+        }
+    }, [userLocation, currentStopIndex, tour.stops, nearbyStopHint]);
 
     const distToTarget = useMemo(() => {
         if (!userLocation || !currentStop) return null;
@@ -174,21 +184,25 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                  </div>
              )}
 
-             {/* Alerta de proximidad inteligente */}
+             {/* Notificación de Parada Cercana (Smart Discovery) */}
              {nearbyStopHint !== null && (
                 <div className="fixed top-24 left-4 right-4 z-[7000] animate-bounce">
                     <button 
-                        onClick={() => onJumpTo(nearbyStopHint)}
-                        className="w-full bg-purple-600 text-white p-4 rounded-2xl shadow-2xl border border-purple-400 flex items-center justify-between"
+                        onClick={() => { onJumpTo(nearbyStopHint); setNearbyStopHint(null); }}
+                        className="w-full bg-purple-600 text-white p-5 rounded-[2.5rem] shadow-2xl border-2 border-white/20 flex items-center justify-between"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"><i className="fas fa-location-crosshairs"></i></div>
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                                <i className="fas fa-location-crosshairs"></i>
+                            </div>
                             <div className="text-left">
-                                <p className="text-[8px] font-black uppercase tracking-widest opacity-80">{tl.nearbyAlert}</p>
-                                <p className="text-[10px] font-black uppercase">{tour.stops[nearbyStopHint].name}</p>
+                                <p className="text-[9px] font-black uppercase tracking-widest opacity-70 mb-1">{tl.nearbyAlert}</p>
+                                <p className="text-[11px] font-black uppercase truncate max-w-[150px]">{tour.stops[nearbyStopHint].name}</p>
                             </div>
                         </div>
-                        <i className="fas fa-chevron-right text-xs"></i>
+                        <div className="flex items-center gap-2 bg-white text-purple-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase">
+                            {tl.jumpTo}
+                        </div>
                     </button>
                 </div>
              )}
@@ -209,9 +223,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col">
                 <div className="h-[45vh] w-full relative shrink-0">
-                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={(i: number) => onJumpTo(i)} onPlayAudio={handlePlayAudio} audioPlayingId={audioPlayingId} audioLoadingId={audioLoadingId} userLocation={userLocation} />
+                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
-                <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-30px_60px_rgba(0,0,0,0.08)] z-[200]">
+                <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-30px_60px_rgba(0,0,0,0.08)] z-[200] relative">
                     
                     <div className="grid grid-cols-2 gap-4">
                         <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center gap-1 p-5 rounded-[2.5rem] font-black uppercase shadow-lg border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500 shadow-purple-500/20' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
@@ -244,8 +258,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              </div>
 
              <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 p-6 flex gap-3 z-[6000] pb-safe-iphone shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-                <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0">Atrás</button>
-                <button onClick={() => { onNext(); stopAudio(); }} disabled={currentStopIndex === tour.stops.length - 1} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl">Siguiente</button>
+                <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0 transition-opacity">Atrás</button>
+                <button onClick={() => { onNext(); stopAudio(); }} disabled={currentStopIndex === tour.stops.length - 1} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98] transition-all">Siguiente</button>
              </div>
         </div>
     );
