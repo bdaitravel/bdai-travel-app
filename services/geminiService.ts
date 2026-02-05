@@ -79,31 +79,39 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
 };
 
 export const generateAudio = async (text: string, language: string, city: string = ""): Promise<string | null> => {
-    // 1. Intentar recuperar de tu tabla audio_cache
+    // 1. Intentar recuperar de caché
     const cachedBase64 = await getCachedAudio(text, language);
     if (cachedBase64) return cachedBase64;
 
-    // 2. Si no existe, generar con Gemini
+    // 2. Si no existe, generar con Gemini TTS
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        // Refinamiento de acento: Si es español, pedimos específicamente acento de España (Castellano)
+        // Refinamiento de acento y estilo
         const ttsPrompt = language === 'es' 
-            ? `Read in Spanish (Spain) with a natural Castilian accent: ${text}` 
-            : `Read in ${language}: ${text}`;
+            ? `Lee esto con acento castellano de España, con una entonación culta y ligeramente cínica: ${text}` 
+            : `Read this in ${language} with a natural and professional voice: ${text}`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: ttsPrompt }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+                speechConfig: { 
+                    voiceConfig: { 
+                        prebuiltVoiceConfig: { 
+                            // Kore es una voz equilibrada y clara
+                            voiceName: 'Kore' 
+                        } 
+                    } 
+                },
             },
         });
+        
         const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
         if (base64) {
-          // 3. Guardar en tu tabla audio_cache
-          return await saveAudioToCache(text, language, base64, city);
+            // 3. Guardar en caché para siempre
+            return await saveAudioToCache(text, language, base64, city);
         }
         return null;
     });

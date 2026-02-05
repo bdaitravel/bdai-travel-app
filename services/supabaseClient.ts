@@ -11,7 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Generador de ID único coincidiendo con tu columna 'text_hash'
 const generateAudioId = (text: string, lang: string) => {
   let hash = 0;
-  const str = `${lang}_${text.substring(0, 150)}`; // Más largo para evitar colisiones
+  const str = `${lang}_${text.substring(0, 150)}`; 
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) - hash) + str.charCodeAt(i);
     hash |= 0;
@@ -29,14 +29,12 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[^a-z0-9_]/g, ""); 
 };
 
-// --- OPTIMIZACIÓN DE AUDIO USANDO 'text_hash' (COMO EN TU CAPTURA) ---
-
 export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
   const hash = generateAudioId(text, lang);
   const { data, error } = await supabase
     .from('audio_cache')
     .select('base64')
-    .eq('text_hash', hash) // Corregido a text_hash
+    .eq('text_hash', hash)
     .maybeSingle();
   
   if (error) console.error("Cache fetch error:", error);
@@ -48,7 +46,7 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
   const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
   
   const { error } = await supabase.from('audio_cache').upsert({ 
-    text_hash: hash, // Corregido a text_hash
+    text_hash: hash,
     base64: cleanBase64, 
     language: lang, 
     city: normalizeKey(city) 
@@ -57,8 +55,6 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
   if (error) console.error("Cache save error:", error);
   return cleanBase64;
 };
-
-// --- SERVICIOS DE DATOS ---
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
@@ -70,18 +66,16 @@ export const getCachedTours = async (city: string, country: string, language: st
   return null; 
 };
 
-export const findCityInAnyLanguage = async (city: string, country: string): Promise<{data: Tour[], language: string} | null> => {
-    const nInput = normalizeKey(city, country);
-    if (!nInput) return null;
-    const { data } = await supabase.from('tours_cache').select('data, language').eq('city', nInput).limit(1);
-    if (data && data.length > 0) return { data: data[0].data as Tour[], language: data[0].language };
-    return null;
-};
-
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
   const nKey = normalizeKey(city, country);
   if (!nKey) return;
   await supabase.from('tours_cache').upsert({ city: nKey, language, data: tours }, { onConflict: 'city,language' });
+};
+
+export const purgeBrokenToursBatch = async () => {
+    // Elimina entradas vacías o malformadas
+    const { error } = await supabase.from('tours_cache').delete().is('data', null);
+    return !error;
 };
 
 export const getUserProfileByEmail = async (email: string) => {
