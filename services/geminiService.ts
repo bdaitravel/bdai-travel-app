@@ -7,7 +7,8 @@ const MASTERCLASS_INSTRUCTION = `
 Eres Dai, el motor analítico de BDAI. Tu misión es generar TOURS de "Alta Densidad Informativa".
 ESTILO: Cínico, brillante, experto en ingeniería y arquitectura.
 DENSIDAD: Cada parada DEBE tener entre 350 y 450 palabras de descripción técnica.
-PRECISIÓN GPS: Es CRÍTICO que las coordenadas (latitud y longitud) sean EXACTAS. Utiliza coordenadas reales de mapas para cada monumento o parada. No inventes posiciones.
+PRECISIÓN GPS: Es CRÍTICO que las coordenadas (latitud y longitud) sean EXACTAS. Utiliza coordenadas reales de Google Maps.
+INTERNACIONAL: Para ciudades en China, Japón o Rusia, asegúrate de que los nombres de las paradas sean reconocibles localmente.
 ESTRUCTURA: Exactamente 10 paradas por cada tour.
 `;
 
@@ -49,10 +50,15 @@ export const getPrecisionCoordinates = async (stops: string[], city: string, cou
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Return the exact real-world latitude and longitude for these places in ${city}, ${country}: ${stops.join(', ')}.`,
+            model: "gemini-3-pro-preview",
+            contents: `As a precision mapping engineer, extract the EXACT Google Maps coordinates for these places in ${city}, ${country}: ${stops.join(', ')}. 
+            If the city is in China, Japan, Korea or Russia, search by local name to ensure accuracy.
+            Rules:
+            1. Use 7 decimal places.
+            2. Points must be physically within ${city}.
+            3. Return exactly one coordinate per stop name.`,
             config: { 
-                systemInstruction: "You are a military-grade GPS engine. Return ONLY a JSON array of objects with 'name', 'latitude', and 'longitude'. Use high precision (6+ decimals).",
+                systemInstruction: "Surgical GPS tool. Return JSON array of objects: 'name', 'latitude', 'longitude'.",
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.ARRAY,
@@ -77,7 +83,7 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Identify up to 5 real world cities for: "${input}".`,
+            contents: `Identify up to 5 real world cities for: "${input}". Provide English name and Country.`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -99,7 +105,7 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Translate the following tour descriptions and stop names to ${targetLang} keeping the JSON structure and exact coordinates: ${JSON.stringify(tours)}`,
+            contents: `Translate the following tours to ${targetLang}. Keep the JSON structure exactly as is: ${JSON.stringify(tours)}`,
             config: { responseMimeType: "application/json" }
         });
         return JSON.parse(response.text || "[]");
