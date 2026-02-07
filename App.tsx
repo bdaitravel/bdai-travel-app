@@ -14,8 +14,8 @@ import { AdminPanel } from './components/AdminPanel';
 import { supabase, getUserProfileByEmail, getGlobalRanking, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando...", fastSync: "traduciendo caché...", apiLimit: "IA Saturada. Reintentando...", retry: "Reintentar", info: "info" },
-  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "better destinations by ai", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "change", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing...", fastSync: "syncing cache...", apiLimit: "AI Saturated. Retrying...", retry: "Retry", info: "info" },
+  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "ciudades globales a tu alcance", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando...", fastSync: "traduciendo caché...", apiLimit: "IA Saturada. Reintentando...", retry: "Reintentar", info: "info" },
+  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "global cities at your fingertips", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "change", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing...", fastSync: "syncing cache...", apiLimit: "AI Saturated. Retrying...", retry: "Retry", info: "info" },
   zh: { welcome: "bidaer 日志:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "你的@email.com", userPlaceholder: "用户名", login: "申请访问", verify: "验证", tagline: "better destinations by ai", selectLang: "语言", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", sentTo: "已发送至", info: "信息" },
   ca: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "el-teu@email.com", userPlaceholder: "usuari", login: "sol·licitar accés", verify: "validar", tagline: "better destinations by ai", selectLang: "idioma", navElite: "elit", navHub: "intel", navVisa: "passaport", navStore: "botiga", sentTo: "enviat a", info: "info" },
   eu: { welcome: "bidaer log:", explorer: "esploratzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarrera eskatu", verify: "balioztatu", tagline: "better destinations by ai", selectLang: "hizkuntza", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", sentTo: "hona bidalia", info: "info" },
@@ -116,6 +116,30 @@ export default function App() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
+
+  // Auto-translate tours when language changes
+  useEffect(() => {
+    if (tours.length > 0) {
+      const translateCurrent = async () => {
+        setIsLoading(true);
+        setLoadingMessage(t('fastSync'));
+        try {
+          const targetLangName = LANGUAGES.find(l => l.code === user.language)?.name || "Spanish";
+          const translated = await translateTours(tours, targetLangName);
+          setTours(translated);
+          if (activeTour) {
+            const translatedActive = translated.find(t => t.id === activeTour.id);
+            if (translatedActive) setActiveTour(translatedActive);
+          }
+        } catch (e) {
+          console.error("Auto-translate error:", e);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      translateCurrent();
+    }
+  }, [user.language]);
 
   const t = (key: string) => {
     const currentLang = user.language || 'es';
