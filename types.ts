@@ -70,6 +70,12 @@ export interface UserProfile {
   capturedMoments?: CapturedMoment[];
 }
 
+export const APP_BADGES: Badge[] = [
+  { id: 'owl', name: 'El Búho', icon: 'fa-owl', description: 'Has completado un tour después de las 20:00', category: 'night', requiredPoints: 0 },
+  { id: 'mayor', name: 'El Alcalde', icon: 'fa-crown', description: 'Eres el líder del ranking local', category: 'rank', requiredPoints: 0 },
+  { id: 'local', name: 'El Local', icon: 'fa-user-secret', description: 'Has visitado 3 pueblos de menos de 5.000 habitantes', category: 'explore', requiredPoints: 0 }
+];
+
 export interface LeaderboardEntry {
   id: string;
   name: string;
@@ -99,6 +105,7 @@ export interface Stop {
 export interface Tour {
   id: string;
   city: string;
+  country?: string;
   title: string;
   description: string;
   duration: string;

@@ -8,7 +8,6 @@ Eres Dai, el motor analítico de BDAI. Tu misión es generar TOURS de "Alta Dens
 ESTILO: Cínico, brillante, experto en ingeniería y arquitectura.
 DENSIDAD: Cada parada DEBE tener entre 350 y 450 palabras de descripción técnica.
 PRECISIÓN GPS: Es CRÍTICO que las coordenadas (latitud y longitud) sean EXACTAS. Utiliza coordenadas reales de Google Maps.
-INTERNACIONAL: Para ciudades en China, Japón o Rusia, asegúrate de que los nombres de las paradas sean reconocibles localmente.
 ESTRUCTURA: Exactamente 10 paradas por cada tour.
 `;
 
@@ -33,7 +32,43 @@ export const generateToursForCity = async (city: string, country: string, user: 
             contents: `Generate exactly 3 unique and dense tours for ${city}, ${country} in ${targetLang}. Ensure GPS coordinates are 100% accurate for each stop.`,
             config: { 
                 systemInstruction: MASTERCLASS_INSTRUCTION,
-                responseMimeType: "application/json"
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING, description: "Título del tour" },
+                            description: { type: Type.STRING, description: "Descripción general del tour" },
+                            duration: { type: Type.STRING, description: "Duración estimada (ej: 2h 30m)" },
+                            distance: { type: Type.STRING, description: "Distancia total (ej: 4.5 km)" },
+                            difficulty: { type: Type.STRING, enum: ["Easy", "Moderate", "Hard"] },
+                            theme: { type: Type.STRING, description: "Tema del tour" },
+                            stops: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        name: { type: Type.STRING },
+                                        description: { type: Type.STRING },
+                                        latitude: { type: Type.NUMBER },
+                                        longitude: { type: Type.NUMBER },
+                                        type: { type: Type.STRING, enum: ['historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'] },
+                                        photoSpot: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                angle: { type: Type.STRING },
+                                                milesReward: { type: Type.NUMBER }
+                                            }
+                                        }
+                                    },
+                                    required: ["name", "description", "latitude", "longitude", "type"]
+                                }
+                            }
+                        },
+                        required: ["title", "description", "duration", "distance", "difficulty", "theme", "stops"]
+                    }
+                }
             }
         });
         const tours = JSON.parse(response.text || "[]");
@@ -51,14 +86,9 @@ export const getPrecisionCoordinates = async (stops: string[], city: string, cou
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-pro-preview",
-            contents: `As a precision mapping engineer, extract the EXACT Google Maps coordinates for these places in ${city}, ${country}: ${stops.join(', ')}. 
-            If the city is in China, Japan, Korea or Russia, search by local name to ensure accuracy.
-            Rules:
-            1. Use 7 decimal places.
-            2. Points must be physically within ${city}.
-            3. Return exactly one coordinate per stop name.`,
+            contents: `As a precision mapping engineer, extract the EXACT Google Maps coordinates (Latitude/Longitude) for these places in ${city}, ${country}: ${stops.join(', ')}.`,
             config: { 
-                systemInstruction: "Surgical GPS tool. Return JSON array of objects: 'name', 'latitude', 'longitude'.",
+                systemInstruction: "You are a surgical GPS extraction tool. Return ONLY a JSON array of objects with 'name', 'latitude', and 'longitude'.",
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.ARRAY,
@@ -83,7 +113,7 @@ export const standardizeCityName = async (input: string): Promise<{name: string,
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Identify up to 5 real world cities for: "${input}". Provide English name and Country.`,
+            contents: `Identify up to 5 real world cities for: "${input}".`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -105,7 +135,7 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Translate the following tours to ${targetLang}. Keep the JSON structure exactly as is: ${JSON.stringify(tours)}`,
+            contents: `Translate the following tour descriptions and stop names to ${targetLang} keeping the JSON structure and exact coordinates: ${JSON.stringify(tours)}`,
             config: { responseMimeType: "application/json" }
         });
         return JSON.parse(response.text || "[]");
