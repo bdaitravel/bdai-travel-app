@@ -24,17 +24,21 @@ async function handleAiCall<T>(fn: () => Promise<T>, retries = 3, delay = 2000):
 }
 
 /**
- * PASO 2: REPARACIÓN QUIRÚRGICA DE COORDENADAS
- * Toma los nombres de las paradas y busca su ubicación REAL en Google Maps.
+ * REPARACIÓN QUIRÚRGICA GPS (Google Search Grounding)
+ * Extrae coordenadas REALES de Google Maps.
+ * MODELO: Gemini 3 Flash (Alta velocidad, bajo coste, precisión vía Search).
  */
 export const getPrecisionCoordinates = async (stops: string[], city: string, country: string): Promise<{name: string, latitude: number, longitude: number}[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-3-pro-preview",
-            contents: `Busca en Google Maps las coordenadas GPS EXACTAS (latitud y longitud decimal) para estos lugares en ${city}, ${country}: ${stops.join(', ')}. No estimes, extrae los datos reales del buscador.`,
+            model: "gemini-3-flash-preview", 
+            contents: `Busca en Google Maps la ubicación EXACTA de estos lugares en ${city}, ${country}: ${stops.join(', ')}. 
+            REGLA DE ORO: No inventes, no estimes, no aproximes. 
+            Debes usar la herramienta de búsqueda para obtener la latitud y longitud decimal REAL con al menos 6 decimales de precisión directamente de la API de Google Maps o resultados de búsqueda oficiales. 
+            Quiero el punto exacto de la entrada o el mirador principal del monumento.`,
             config: { 
-                systemInstruction: "Eres una herramienta de extracción GPS de alta precisión. Devuelve ÚNICAMENTE un array JSON con 'name', 'latitude' y 'longitude'.",
+                systemInstruction: "Eres un extractor técnico de coordenadas GPS. Tu salida debe ser exclusivamente un JSON válido con 'name', 'latitude' y 'longitude'.",
                 tools: [{ googleSearch: {} }],
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -42,9 +46,9 @@ export const getPrecisionCoordinates = async (stops: string[], city: string, cou
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            name: { type: Type.STRING },
-                            latitude: { type: Type.NUMBER },
-                            longitude: { type: Type.NUMBER }
+                            name: { type: Type.STRING, description: "Nombre original de la parada" },
+                            latitude: { type: Type.NUMBER, description: "Latitud exacta de Google Maps" },
+                            longitude: { type: Type.NUMBER, description: "Longitud exacta de Google Maps" }
                         },
                         required: ["name", "latitude", "longitude"]
                     }
@@ -55,13 +59,9 @@ export const getPrecisionCoordinates = async (stops: string[], city: string, cou
     });
 };
 
-/**
- * PASO 1: GENERACIÓN DE NARRATIVA Y ESTRUCTURA
- */
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
     const targetLang = LANGUAGES.find(l => l.code === user.language)?.name || "Spanish";
     
-    // 1. Generar la narrativa y nombres de paradas
     const rawTours = await handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
@@ -75,10 +75,10 @@ export const generateToursForCity = async (city: string, country: string, user: 
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            title: { type: Type.STRING, description: "Título del tour" },
-                            description: { type: Type.STRING, description: "Descripción general" },
-                            duration: { type: Type.STRING, description: "Ej: 2h 30m" },
-                            distance: { type: Type.STRING, description: "Ej: 4.5 km" },
+                            title: { type: Type.STRING },
+                            description: { type: Type.STRING },
+                            duration: { type: Type.STRING },
+                            distance: { type: Type.STRING },
                             difficulty: { type: Type.STRING, enum: ["Easy", "Moderate", "Hard"] },
                             theme: { type: Type.STRING },
                             stops: {
@@ -109,13 +109,11 @@ export const generateToursForCity = async (city: string, country: string, user: 
         return JSON.parse(response.text || "[]");
     });
 
-    // 2. Corregir coordenadas para cada tour de forma independiente
     const finalizedTours = [];
     for (const tour of rawTours) {
         const stopNames = tour.stops.map((s: any) => s.name);
         try {
             const realCoords = await getPrecisionCoordinates(stopNames, city, country);
-            
             const correctedStops = tour.stops.map((stop: any) => {
                 const coordMatch = realCoords.find((c: any) => 
                     c.name.toLowerCase().includes(stop.name.toLowerCase()) || 
@@ -138,11 +136,9 @@ export const generateToursForCity = async (city: string, country: string, user: 
                 stops: correctedStops
             });
         } catch (e) {
-            console.error("Fallo al corregir GPS, usando valores por defecto", e);
             finalizedTours.push(tour);
         }
     }
-
     return finalizedTours;
 };
 
@@ -174,7 +170,14 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Translate the following tour data to ${targetLang} while keeping the coordinates and JSON keys intact: ${JSON.stringify(tours)}`,
+            contents: `Traduce los siguientes tours al idioma ${targetLang}. 
+            REGLAS:
+            1. Traduce 'title', 'description', 'theme'.
+            2. Traduce 'name' y 'description' de cada parada.
+            3. TRADUCE 'angle' en 'photoSpot'.
+            4. MANTÉN INTACTOS COORDENADAS (latitude/longitude), IDs y valores numéricos.
+            
+            DATOS: ${JSON.stringify(tours)}`,
             config: { responseMimeType: "application/json" }
         });
         return JSON.parse(response.text || "[]");
@@ -184,7 +187,6 @@ export const translateTours = async (tours: Tour[], targetLang: string): Promise
 export const generateAudio = async (text: string, language: string, city: string = ""): Promise<string | null> => {
     const cachedBase64 = await getCachedAudio(text, language);
     if (cachedBase64) return cachedBase64;
-
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
@@ -192,9 +194,7 @@ export const generateAudio = async (text: string, language: string, city: string
             contents: [{ parts: [{ text: text }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
-                speechConfig: { 
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } 
-                },
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
             },
         });
         const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
