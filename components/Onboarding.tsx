@@ -24,6 +24,14 @@ const CONTENT: any = {
         { title: "Passport & Visas", desc: "Your progress is saved. The Visa shows you completed a city. Start today, finish whenever.", icon: "fa-passport", color: "text-orange-500" },
         { title: "Travel Marketplace", desc: "Gear up in our store. Update your data and level up your explorer status.", icon: "fa-shopping-bag", color: "text-pink-500" }
     ]},
+    it: { title: "Benvenuto in bdai", subtitle: "La tua Masterclass di Viaggio", btnNext: "Avanti", btnBack: "Indietro", btnStart: "Inizia!", btnSkip: "Salta", steps: [
+        { title: "Tour Gratuiti e Illimitati", desc: "Esplora ogni angolo del mondo nella tua lingua. Se non vedi la tua città, cercala. I tour sono gratuiti e illimitati.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: La tua Guida Personale", desc: "Dai ti sussurra segreti e curiosità tecniche. Inoltre, ti darà il 'Dai Shot': il consiglio esperto per la foto perfetta.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Tu hai il Controllo", desc: "Usa la mappa con GPS. Scegli tra 'Play' per l'audio o leggi al tuo ritmo. Decidi tu come esplorare.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Miglia e Distintivi", desc: "Guadagna miglia a ogni tappa per scalare la classifica mondiale. Ottieni distintivi in base ai tuoi interessi.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Passaporto e Visti", desc: "I tuoi dati sono sempre salvati. Il Visto indica che hai completato una città. Metti in pausa e finisci quando vuoi.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Travel Marketplace", desc: "Equipaggiati nel nostro store per le tue avventure. Migliora il tuo livello di esploratore.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
     ca: { title: "Benvingut a bdai", subtitle: "La Teva Masterclass", btnNext: "Següent", btnBack: "Enrere", btnStart: "Començar!", btnSkip: "Saltar", steps: [
         { title: "Tours Gratis", desc: "Explora el món en el teu idioma. Tours gratuïts i il·limitats.", icon: "fa-globe", color: "text-blue-500" },
         { title: "Dai: Guia Personal", desc: "Secrets i el 'Dai Shot' per a la foto perfecta.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
@@ -50,7 +58,7 @@ const CONTENT: any = {
     ]},
     pt: { title: "Bem-vindo ao bdai", subtitle: "Sua Masterclass de Viagem", btnNext: "Próximo", btnBack: "Voltar", btnStart: "Começar!", btnSkip: "Pular", steps: [
         { title: "Tours Grátis e Ilimitados", desc: "Explore o mundo no seu idioma. Tours gratuitos e sem limites.", icon: "fa-globe", color: "text-blue-500" },
-        { title: "Dai: Seu Guia Pessoal", desc: "Secrets e o 'Dai Shot' para a foto perfeita.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Dai: Seu Guia Pessoal", desc: "Secrets e o 'Dai Shot' para a foto perfecta.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
         { title: "Você no Controle", desc: "Mapa com GPS. Escolha áudio ou leitura ao seu ritmo.", icon: "fa-headphones", color: "text-emerald-500" },
         { title: "Milhas e Medalhas", desc: "Ganhe milhas e suba no ranking mundial.", icon: "fa-trophy", color: "text-yellow-500" },
         { title: "Passaporte e Vistos", desc: "Dados salvos sempre. O Visto marca seu progresso.", icon: "fa-passport", color: "text-orange-500" },
@@ -72,22 +80,6 @@ const CONTENT: any = {
         { title: "Reisepass & Visa", desc: "Deine Daten sind sicher. Visa zeigen deinen Erfolg.", icon: "fa-passport", color: "text-orange-500" },
         { title: "Marktplatz", desc: "Rüste dich in unserem Shop für dein Abenteuer aus.", icon: "fa-shopping-bag", color: "text-pink-500" }
     ]},
-    it: { title: "Benvenuto in bdai", subtitle: "La tua Masterclass di Viaggio", btnNext: "Avanti", btnBack: "Indietro", btnStart: "Inizia!", btnSkip: "Salta", steps: [
-        { title: "Tour Gratuiti", desc: "Esplora il mondo nella tua lingua. Tour gratuiti e illimitati.", icon: "fa-globe", color: "text-blue-500" },
-        { title: "Dai: Guida Personale", desc: "Segreti e il 'Dai Shot' per la foto perfetta.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
-        { title: "Tu hai il Controllo", desc: "Mappa con GPS. Scegli audio o lettura al tuo ritmo.", icon: "fa-headphones", color: "text-emerald-500" },
-        { title: "Miglia e Badge", desc: "Guadagna miglia e sali nella classifica mondiale.", icon: "fa-trophy", color: "text-yellow-500" },
-        { title: "Passaporto e Visti", desc: "Dati salvati sempre. Il Visto indica il tuo progresso.", icon: "fa-passport", color: "text-orange-500" },
-        { title: "Marketplace", desc: "Equipaggiati nel nostro store per le tue avventure.", icon: "fa-shopping-bag", color: "text-pink-500" }
-    ]},
-    ru: { title: "Добро пожаловать в bdai", subtitle: "Ваш мастер-класс по путешествиям", btnNext: "Далее", btnBack: "Назад", btnStart: "Начать!", btnSkip: "Пропустить", steps: [
-        { title: "Бесплатные туры", desc: "Исследуйте мир на своем языке. Бесплатно и безлимитно.", icon: "fa-globe", color: "text-blue-500" },
-        { title: "Dai: Ваш гид", desc: "Секреты и 'Dai Shot' для идеального фото.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
-        { title: "Вы у руля", desc: "GPS-карта. Слушайте аудио или читайте в своем темпе.", icon: "fa-headphones", color: "text-emerald-500" },
-        { title: "Мили и значки", desc: "Зарабатывайте мили и растите в мировом рейтинге.", icon: "fa-trophy", color: "text-yellow-500" },
-        { title: "Паспорт и визы", desc: "Прогресс всегда сохранен. Виза — знак успеха.", icon: "fa-passport", color: "text-orange-500" },
-        { title: "Магазин", desc: "Снаряжение для ваших приключений в нашем магазине.", icon: "fa-shopping-bag", color: "text-pink-500" }
-    ]},
     ja: { title: "bdaiへようこそ", subtitle: "あなたの旅行マスタークラス", btnNext: "次へ", btnBack: "戻る", btnStart: "開始！", btnSkip: "スキップ", steps: [
         { title: "無料無制限ツアー", desc: "あなたの言語で世界を探索。無料かつ無制限です。", icon: "fa-globe", color: "text-blue-500" },
         { title: "Dai：専属ガイド", desc: "秘密と完璧な写真のための「Dai Shot」。", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
@@ -96,37 +88,13 @@ const CONTENT: any = {
         { title: "パスポートとビザ", desc: "データは常に保存。ビザは完了の証です。", icon: "fa-passport", color: "text-orange-500" },
         { title: "マーケットプレイス", desc: "冒険に必要なものをショップで揃えよう。", icon: "fa-shopping-bag", color: "text-pink-500" }
     ]},
-    hi: { title: "bdai में आपका स्वागत है", subtitle: "आपकी यात्रा मास्टरक्लास", btnNext: "अगला", btnBack: "पीछे", btnStart: "शुरू करें!", btnSkip: "छोड़ें", steps: [
-        { title: "मुफ्त और असीमित टूर", desc: "अपनी भाषा में दुनिया की खोज करें।", icon: "fa-globe", color: "text-blue-500" },
-        { title: "Dai: आपका गाइड", desc: "रहस्य और 'Dai Shot' बेहतरीन फोटो के लिए।", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
-        { title: "आपका नियंत्रण", desc: "GPS मैप। ऑडियो सुनें या अपनी गति से पढ़ें।", icon: "fa-headphones", color: "text-emerald-500" },
-        { title: "मील और बैज", desc: "मील कमाएं और वैश्विक रैंकिंग में ऊपर बढ़ें।", icon: "fa-trophy", color: "text-yellow-500" },
-        { title: "पासपोर्ट और वीजा", desc: "प्रगति हमेशा सुरक्षित। वीजा आपके सफर की निशानी।", icon: "fa-passport", color: "text-orange-500" },
-        { title: "मार्केटप्लेस", desc: "अपनी यात्रा के लिए हमारे स्टोर से खरीदारी करें।", icon: "fa-shopping-bag", color: "text-pink-500" }
-    ]},
-    ko: { title: "bdai에 오신 것을 환영합니다", subtitle: "당신의 여행 마스터클래스", btnNext: "다음", btnBack: "뒤로", btnStart: "시작!", btnSkip: "건너뛰기", steps: [
-        { title: "무료 무제한 투어", desc: "당신의 언어로 세계를 탐험하세요. 무료입니다.", icon: "fa-globe", color: "text-blue-500" },
-        { title: "Dai: 개인 가이드", desc: "비밀과 인생샷을 위한 'Dai Shot' 팁.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
-        { title: "당신이 결정하세요", desc: "GPS 지도. 오디오 또는 읽기 중 선택.", icon: "fa-headphones", color: "text-emerald-500" },
-        { title: "마일과 배지", desc: "마일을 쌓아 세계 랭킹을 올리세요.", icon: "fa-trophy", color: "text-yellow-500" },
-        { title: "여권과 비자", desc: "데이터는 항상 저장됩니다. 비자는 완수의 증거.", icon: "fa-passport", color: "text-orange-500" },
-        { title: "마켓플레이스", desc: "탐험을 위한 장비를 상점에서 확인하세요.", icon: "fa-shopping-bag", color: "text-pink-500" }
-    ]},
-    tr: { title: "bdai'ye Hoş Geldiniz", subtitle: "Seyahat Masterclass'ınız", btnNext: "İleri", btnBack: "Geri", btnStart: "Başla!", btnSkip: "Atla", steps: [
-        { title: "Ücretsiz Turlar", desc: "Dünyayı kendi dilinizde keşfedin. Sınırsız ve ücretsiz.", icon: "fa-globe", color: "text-blue-500" },
-        { title: "Dai: Rehberiniz", desc: "Sırlar ve mükemmel fotoğraf için 'Dai Shot'.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
-        { title: "Kontrol Sizde", desc: "GPS harita. Sesli dinle veya kendi hızında oku.", icon: "fa-headphones", color: "text-emerald-500" },
-        { title: "Miller ve Rozetler", desc: "Mil kazanın ve dünya sıralamasında yükselin.", icon: "fa-trophy", color: "text-yellow-500" },
-        { title: "Pasaport ve Vizeler", desc: "Veriler her zaman kayıtlı. Vize başarınızın kanıtıdır.", icon: "fa-passport", color: "text-orange-500" },
-        { title: "Pazar Yeri", desc: "Maceranız için dükkanımızdan hazırlanın.", icon: "fa-shopping-bag", color: "text-pink-500" }
-    ]},
-    ar: { title: "مرحباً بك في bdai", subtitle: "ماستر كلاس السفر", btnNext: "التالي", btnBack: "السابق", btnStart: "ابدأ!", btnSkip: "تخطي", steps: [
-        { title: "جولات مجانية", desc: "استكشف العالم بلغتك. جولات مجانية وغير محدودة.", icon: "fa-globe", color: "text-blue-500" },
-        { title: "Dai: دليلك الخاص", desc: "أسرار و'Dai Shot' لأفضل صورة.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
-        { title: "أنت المتحكم", desc: "خريطة GPS. اختر الصوت أو القراءة.", icon: "fa-headphones", color: "text-emerald-500" },
-        { title: "أميال وأوسمة", desc: "اكسب الأميال وارفع تصنيفك العالمي.", icon: "fa-trophy", color: "text-yellow-500" },
-        { title: "جواز السفر", desc: "بياناتك محفوظة دائماً. التأشيرة دليل رحلتك.", icon: "fa-passport", color: "text-orange-500" },
-        { title: "سوق السفر", desc: "تجهز لمغامرتك من متجرنا الخاص.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ru: { title: "Добро пожаловать в bdai", subtitle: "Ваш мастер-класс по путешествиям", btnNext: "Далее", btnBack: "Назад", btnStart: "Начать!", btnSkip: "Пропустить", steps: [
+        { title: "Бесплатные туры", desc: "Исследуйте мир на своем языке. Бесплатно и безлимитно.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Ваш гид", desc: "Секреты и 'Dai Shot' для идеального фото.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Вы у руля", desc: "GPS-карта. Слушайте аудио или читайте в своем темпе.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Мили и значки", desc: "Зарабатывайте мили и растите в мировом рейтинге.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Паспорт и визы", desc: "Прогресс всегда сохранен. Виза — знак успеха.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Магазин", desc: "Снаряжение для ваших приключений в нашем магазине.", icon: "fa-shopping-bag", color: "text-pink-500" }
     ]}
 };
 
