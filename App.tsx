@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, standardizeCityName } from './services/geminiService';
@@ -26,7 +27,7 @@ const TRANSLATIONS: any = {
   ru: { step1: "1. выберите язык", step2: "2. выберите имя пользователя", step3: "3. зарегистрируйте свой email", welcome: "bidaer лог:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "ваш@email.com", userPlaceholder: "имя пользователя", login: "запросить доступ", verify: "подтвердить", tagline: "better destinations by ai", sentTo: "отправлено на", results: "результаты", changeEmail: "исправить email" },
   hi: { step1: "1. भाषा चुनें", step2: "2. उपयोगकर्ता नाम चुनें", step3: "3. अपना ईमेल पंजीकृत करें", welcome: "bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "आपका@email.com", userPlaceholder: "उपयोगकर्ता", login: "पहुँच का अनुरोध", verify: "सत्यापित", tagline: "better destinations by ai", sentTo: "को भेजा गया", results: "परिणाम", changeEmail: "ईमेल सुधारें" },
   ko: { step1: "1. 언어 선택", step2: "2. 사용자 이름 선택", step3: "3. 이메일 등록", welcome: "bidaer 로그:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일...", userPlaceholder: "사용자 이름", login: "액세스 요청", verify: "확인", tagline: "better destinations by ai", sentTo: "보낸 사람", results: "결과", changeEmail: "이메일 수정" },
-  tr: { step1: "1. dili seçin", step2: "2. kullanıcı adını seçin", step3: "3. e-postanızı kaydedin", welcome: "bidaer günlüğü:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "eposta...", userPlaceholder: "kullanıcı adı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", sentTo: "gönderildi", results: "sonuçlar", changeEmail: "epostayı düzelt" },
+  tr: { step1: "1. dili seçin", step2: "2. kullanıcı adını seçin", step3: "3. e-postanızı kaydedin", welcome: "bidaer günlüğü:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "eposta...", userPlaceholder: "kullanıcı adı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", sentTo: "جوديريلدي", results: "sonuçlar", changeEmail: "epostayı düzelt" },
   ar: { step1: "1. اختر اللغة", step2: "2. اختر اسم المستخدم", step3: "3. سجل بريدك الإلكتروني", welcome: "سجل بيداير:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك...", userPlaceholder: "اسم المستخدم", login: "طلب الدخول", verify: "تحقق", tagline: "better destinations by ai", sentTo: "أرسلت إلى", results: "نتائج", changeEmail: "تعديل البريد" }
 };
 
@@ -167,47 +168,52 @@ export default function App() {
             <p className="text-white font-black uppercase text-[9px] tracking-[0.3em] text-center px-8 mb-4">{loadingMessage}</p>
         </div>
       )}
+      
       {view === AppView.LOGIN ? (
-          <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617]">
-              <div className="text-center animate-fade-in flex flex-col items-center mb-8 mt-[-5dvh]">
-                  <BdaiLogo className="w-20 h-20 animate-pulse-logo" />
-                  <h1 className="text-5xl font-black lowercase tracking-tighter text-white/95 -mt-2">bdai</h1>
-                  <p className="text-[11px] font-black lowercase tracking-tighter text-purple-500/80 mt-1">{t('tagline')}</p>
+          <div className="h-full w-full flex flex-col items-center p-6 relative bg-[#020617] overflow-y-auto no-scrollbar">
+              <div className="text-center animate-fade-in flex flex-col items-center mb-6 mt-8">
+                  <BdaiLogo className="w-16 h-16 animate-pulse-logo" />
+                  <h1 className="text-4xl font-black lowercase tracking-tighter text-white/95 -mt-1">bdai</h1>
+                  <p className="text-[10px] font-black lowercase tracking-tighter text-purple-500/80 mt-1">{t('tagline')}</p>
               </div>
 
-              <div className="w-full max-w-[280px] space-y-4">
+              <div className="w-full max-w-[280px] space-y-3 mb-10">
                   {loginStep === 'EMAIL' ? (
-                      <div className="space-y-4 animate-fade-in">
+                      <div className="space-y-3 animate-fade-in">
                           <div className="relative group">
-                            <span className="absolute left-5 top-2.5 text-[7px] font-black text-purple-500/70 uppercase tracking-[0.2em] pointer-events-none group-focus-within:text-purple-400">{t('step2')}</span>
-                            <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl pt-7 pb-3 px-5 text-left text-white outline-none text-sm font-bold placeholder-slate-700 focus:border-purple-500 transition-all" placeholder={t('userPlaceholder')} />
+                            <span className="absolute left-4 top-2 text-[6px] font-black text-purple-500/60 uppercase tracking-[0.2em]">{t('step2')}</span>
+                            <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl pt-6 pb-2.5 px-4 text-left text-white outline-none text-xs font-bold placeholder-slate-800 focus:border-purple-500 transition-all" placeholder={t('userPlaceholder')} />
                           </div>
                           <div className="relative group">
-                            <span className="absolute left-5 top-2.5 text-[7px] font-black text-purple-500/70 uppercase tracking-[0.2em] pointer-events-none group-focus-within:text-purple-400">{t('step3')}</span>
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl pt-7 pb-3 px-5 text-left text-white outline-none text-sm font-bold placeholder-slate-700 focus:border-purple-500 transition-all" placeholder={t('emailPlaceholder')} />
+                            <span className="absolute left-4 top-2 text-[6px] font-black text-purple-500/60 uppercase tracking-[0.2em]">{t('step3')}</span>
+                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl pt-6 pb-2.5 px-4 text-left text-white outline-none text-xs font-bold placeholder-slate-800 focus:border-purple-500 transition-all" placeholder={t('emailPlaceholder')} />
                           </div>
-                          <button onClick={handleLoginRequest} className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all shadow-xl shadow-white/5">{t('login')}</button>
+                          <button onClick={handleLoginRequest} className="w-full py-3.5 bg-white text-slate-950 rounded-xl font-black lowercase text-[10px] tracking-widest active:scale-95 transition-all shadow-xl shadow-white/5">
+                            {t('login')}
+                          </button>
                       </div>
                   ) : (
-                      <div className="space-y-8 text-center animate-fade-in">
-                          <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
-                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('sentTo')}</p>
+                      <div className="space-y-6 text-center animate-fade-in">
+                          <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
+                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('sentTo')}</p>
                             <p className="text-purple-400 font-black lowercase text-xs mb-3">{email}</p>
-                            <button onClick={() => setLoginStep('EMAIL')} className="text-[8px] text-white/30 uppercase font-black tracking-widest border border-white/10 px-4 py-1.5 rounded-full hover:bg-white/5 active:scale-90 transition-all">{t('changeEmail')}</button>
+                            <button onClick={() => setLoginStep('EMAIL')} className="text-[7px] text-white/30 uppercase font-black tracking-widest border border-white/10 px-3 py-1 rounded-full active:scale-90 transition-all">{t('changeEmail')}</button>
                           </div>
-                          <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-transparent border-b border-purple-500/30 py-2 text-center font-black text-4xl text-white outline-none tracking-[0.2em]" placeholder="0000" />
-                          <button onClick={handleVerifyCode} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all shadow-xl shadow-purple-500/20">{t('verify')}</button>
+                          <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-transparent border-b border-purple-500/30 py-2 text-center font-black text-3xl text-white outline-none tracking-[0.2em]" placeholder="0000" />
+                          <button onClick={handleVerifyCode} className="w-full py-3.5 bg-purple-600 text-white rounded-xl font-black lowercase text-[10px] tracking-widest active:scale-95 transition-all">
+                            {t('verify')}
+                          </button>
                       </div>
                   )}
               </div>
 
-              <div className="absolute bottom-8 left-0 right-0 px-8 flex flex-col items-center gap-3">
-                <p className="text-[9px] font-black lowercase tracking-[0.3em] text-slate-600 text-center uppercase">{t('step1')}</p>
-                <div className="bg-white/[0.02] border border-white/[0.05] p-5 rounded-[2.5rem] shadow-2xl backdrop-blur-md">
-                    <div className="grid grid-cols-5 gap-x-5 gap-y-4 items-center justify-items-center">
+              <div className="w-full max-w-[300px] flex flex-col items-center gap-2 mt-auto pb-8">
+                <p className="text-[8px] font-black lowercase tracking-[0.3em] text-slate-600 text-center uppercase">{t('step1')}</p>
+                <div className="bg-white/[0.02] border border-white/[0.05] p-4 rounded-[2rem] shadow-2xl backdrop-blur-md w-full">
+                    <div className="grid grid-cols-5 gap-x-3 gap-y-3 items-center justify-items-center">
                       {LANGUAGES.map(lang => (
                         <button key={lang.code} onClick={() => { setCurrentLanguage(lang.code); setUser(p => ({...p, language: lang.code})); }} className="transition-all active:scale-90 relative">
-                          <FlagIcon code={lang.code} className={`w-6 h-6 ${currentLanguage === lang.code ? 'ring-2 ring-purple-500 scale-125 z-10 shadow-lg' : 'grayscale-[0.8] opacity-30 hover:opacity-100 hover:grayscale-0'}`} />
+                          <FlagIcon code={lang.code} className={`w-5 h-5 ${currentLanguage === lang.code ? 'ring-2 ring-purple-500 scale-125 z-10' : 'grayscale opacity-30 hover:opacity-100 hover:grayscale-0'}`} />
                         </button>
                       ))}
                     </div>
