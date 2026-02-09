@@ -27,7 +27,7 @@ const TRANSLATIONS: any = {
   ru: { step1: "1. выберите язык", step2: "2. выберите имя пользователя", step3: "3. зарегистрируйте свой email", welcome: "bidaer лог:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "ваш@email.com", userPlaceholder: "имя пользователя", login: "запросить доступ", verify: "подтвердить", tagline: "better destinations by ai", sentTo: "отправлено на", results: "результаты", changeEmail: "исправить email" },
   hi: { step1: "1. भाषा चुनें", step2: "2. उपयोगकर्ता नाम चुनें", step3: "3. अपना ईमेल पंजीकृत करें", welcome: "bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "आपका@email.com", userPlaceholder: "उपयोगकर्ता", login: "पहुँच का अनुरोध", verify: "सत्यापित", tagline: "better destinations by ai", sentTo: "को भेजा गया", results: "परिणाम", changeEmail: "ईमेल सुधारें" },
   ko: { step1: "1. 언어 선택", step2: "2. 사용자 이름 선택", step3: "3. 이메일 등록", welcome: "bidaer 로그:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일...", userPlaceholder: "사용자 이름", login: "액세스 요청", verify: "확인", tagline: "better destinations by ai", sentTo: "보낸 사람", results: "결과", changeEmail: "이메일 수정" },
-  tr: { step1: "1. dili seçin", step2: "2. kullanıcı adını seçin", step3: "3. e-postanızı kaydedin", welcome: "bidaer günlüğü:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "eposta...", userPlaceholder: "kullanıcı adı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", sentTo: "جوديريلدي", results: "sonuçlar", changeEmail: "epostayı düzelt" },
+  tr: { step1: "1. dili seçin", step2: "2. kullanıcı adını seçin", step3: "3. e-postanızı kaydedin", welcome: "bidaer günlüğü:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "eposta...", userPlaceholder: "kullanıcı adı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", sentTo: "gönderildi", results: "sonuçlar", changeEmail: "epostayı düzelt" },
   ar: { step1: "1. اختر اللغة", step2: "2. اختر اسم المستخدم", step3: "3. سجل بريدك الإلكتروني", welcome: "سجل بيداير:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك...", userPlaceholder: "اسم المستخدم", login: "طلب الدخول", verify: "تحقق", tagline: "better destinations by ai", sentTo: "أرسلت إلى", results: "نتائج", changeEmail: "تعديل البريد" }
 };
 
@@ -171,49 +171,60 @@ export default function App() {
       
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center p-6 relative bg-[#020617] overflow-y-auto no-scrollbar">
-              <div className="text-center animate-fade-in flex flex-col items-center mb-6 mt-8">
-                  <BdaiLogo className="w-16 h-16 animate-pulse-logo" />
-                  <h1 className="text-4xl font-black lowercase tracking-tighter text-white/95 -mt-1">bdai</h1>
-                  <p className="text-[10px] font-black lowercase tracking-tighter text-purple-500/80 mt-1">{t('tagline')}</p>
+              {/* BRAND AREA - LOGO XL, PULSING, REST MINIMAL */}
+              <div className="text-center animate-fade-in flex flex-col items-center mb-10 mt-10">
+                  <BdaiLogo className="w-36 h-36 animate-pulse-logo" />
+                  <h1 className="text-5xl font-black lowercase tracking-[-0.05em] text-white/95 -mt-2">bdai</h1>
+                  <p className="text-[7px] font-black lowercase tracking-[0.2em] text-purple-500/80 -mt-1 opacity-60 uppercase">{t('tagline')}</p>
               </div>
 
-              <div className="w-full max-w-[280px] space-y-3 mb-10">
+              {/* INPUTS AREA - FINE AND HIGH CONTRAST */}
+              <div className="w-full max-w-[260px] space-y-3 mb-12">
                   {loginStep === 'EMAIL' ? (
                       <div className="space-y-3 animate-fade-in">
-                          <div className="relative group">
-                            <span className="absolute left-4 top-2 text-[6px] font-black text-purple-500/60 uppercase tracking-[0.2em]">{t('step2')}</span>
-                            <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl pt-6 pb-2.5 px-4 text-left text-white outline-none text-xs font-bold placeholder-slate-800 focus:border-purple-500 transition-all" placeholder={t('userPlaceholder')} />
+                          <div className="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden group focus-within:border-purple-500/50 transition-all">
+                            <span className="absolute left-4 top-1.5 text-[6px] font-black text-white uppercase tracking-[0.2em] pointer-events-none">
+                                {t('step2')}
+                            </span>
+                            <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-transparent pt-5 pb-2 px-4 text-left text-white outline-none text-xs font-bold placeholder-slate-700 transition-all" placeholder={t('userPlaceholder')} />
                           </div>
-                          <div className="relative group">
-                            <span className="absolute left-4 top-2 text-[6px] font-black text-purple-500/60 uppercase tracking-[0.2em]">{t('step3')}</span>
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl pt-6 pb-2.5 px-4 text-left text-white outline-none text-xs font-bold placeholder-slate-800 focus:border-purple-500 transition-all" placeholder={t('emailPlaceholder')} />
+                          
+                          <div className="relative bg-white/5 border border-white/10 rounded-xl overflow-hidden group focus-within:border-purple-500/50 transition-all">
+                            <span className="absolute left-4 top-1.5 text-[6px] font-black text-white uppercase tracking-[0.2em] pointer-events-none">
+                                {t('step3')}
+                            </span>
+                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-transparent pt-5 pb-2 px-4 text-left text-white outline-none text-xs font-bold placeholder-slate-700 transition-all" placeholder={t('emailPlaceholder')} />
                           </div>
-                          <button onClick={handleLoginRequest} className="w-full py-3.5 bg-white text-slate-950 rounded-xl font-black lowercase text-[10px] tracking-widest active:scale-95 transition-all shadow-xl shadow-white/5">
+                          
+                          <button onClick={handleLoginRequest} className="w-full py-2.5 bg-white text-slate-950 rounded-lg font-black lowercase text-[9px] tracking-widest active:scale-95 transition-all shadow-xl shadow-white/5 border border-white/10">
                             {t('login')}
                           </button>
                       </div>
                   ) : (
                       <div className="space-y-6 text-center animate-fade-in">
                           <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
-                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('sentTo')}</p>
+                            <p className="text-[7px] font-black text-white/50 uppercase tracking-widest mb-1">{t('sentTo')}</p>
                             <p className="text-purple-400 font-black lowercase text-xs mb-3">{email}</p>
                             <button onClick={() => setLoginStep('EMAIL')} className="text-[7px] text-white/30 uppercase font-black tracking-widest border border-white/10 px-3 py-1 rounded-full active:scale-90 transition-all">{t('changeEmail')}</button>
                           </div>
                           <input autoFocus type="text" inputMode="numeric" maxLength={8} value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-transparent border-b border-purple-500/30 py-2 text-center font-black text-3xl text-white outline-none tracking-[0.2em]" placeholder="0000" />
-                          <button onClick={handleVerifyCode} className="w-full py-3.5 bg-purple-600 text-white rounded-xl font-black lowercase text-[10px] tracking-widest active:scale-95 transition-all">
+                          <button onClick={handleVerifyCode} className="w-full py-2.5 bg-purple-600 text-white rounded-lg font-black lowercase text-[9px] tracking-widest active:scale-95 transition-all">
                             {t('verify')}
                           </button>
                       </div>
                   )}
               </div>
 
-              <div className="w-full max-w-[300px] flex flex-col items-center gap-2 mt-auto pb-8">
-                <p className="text-[8px] font-black lowercase tracking-[0.3em] text-slate-600 text-center uppercase">{t('step1')}</p>
-                <div className="bg-white/[0.02] border border-white/[0.05] p-4 rounded-[2rem] shadow-2xl backdrop-blur-md w-full">
-                    <div className="grid grid-cols-5 gap-x-3 gap-y-3 items-center justify-items-center">
+              {/* STEP 1 - LANGUAGE SELECTOR AT BOTTOM, TEXT RIGHT ABOVE FLAGS */}
+              <div className="w-full max-w-[280px] flex flex-col items-center gap-3 mt-auto pb-10">
+                <p className="text-[7px] font-black text-white/60 uppercase tracking-[0.3em] text-center">
+                    {t('step1')}
+                </p>
+                <div className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-[2rem] shadow-2xl backdrop-blur-xl w-full">
+                    <div className="grid grid-cols-5 gap-x-2 gap-y-2 items-center justify-items-center">
                       {LANGUAGES.map(lang => (
                         <button key={lang.code} onClick={() => { setCurrentLanguage(lang.code); setUser(p => ({...p, language: lang.code})); }} className="transition-all active:scale-90 relative">
-                          <FlagIcon code={lang.code} className={`w-5 h-5 ${currentLanguage === lang.code ? 'ring-2 ring-purple-500 scale-125 z-10' : 'grayscale opacity-30 hover:opacity-100 hover:grayscale-0'}`} />
+                          <FlagIcon code={lang.code} className={`w-5 h-5 ${currentLanguage === lang.code ? 'ring-2 ring-purple-500 scale-110 z-10 shadow-lg' : 'grayscale opacity-20 hover:opacity-100 hover:grayscale-0'}`} />
                         </button>
                       ))}
                     </div>
