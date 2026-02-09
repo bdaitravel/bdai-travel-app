@@ -131,7 +131,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
             <div className="flex-1 bg-black/50 border border-white/5 rounded-[2rem] p-6 overflow-y-auto no-scrollbar font-mono shadow-inner">
                 {log.map((m, i) => (
                     <p key={i} className={`text-[9px] lowercase mb-1 ${m.includes('✓') ? 'text-green-400' : m.includes('✗') ? 'text-red-400' : 'text-slate-500'}`}>
-                        {">"} {m}
+                        > {m}
                     </p>
                 ))}
             </div>
