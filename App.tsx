@@ -125,6 +125,7 @@ export default function App() {
         try {
           const translated = await translateToursBatch(tours, user.language);
           setTours(translated);
+          if (translated.length > 0) setSelectedCity(translated[0].city);
           if (activeTour) {
             const translatedActive = translated.find(t => t.id === activeTour.id);
             if (translatedActive) setActiveTour(translatedActive);
@@ -183,6 +184,7 @@ export default function App() {
         const cached = await getCachedTours(official.spanishName, official.country, user.language);
         if (cached && cached.data.length > 0) {
             setTours(cached.data); 
+            setSelectedCity(cached.data[0].city);
             setView(AppView.CITY_DETAIL);
             setIsLoading(false);
             return;
@@ -191,6 +193,7 @@ export default function App() {
         const generated = await generateToursForCity(official.spanishName, official.country, user);
         if (generated.length > 0) {
             setTours(generated); 
+            setSelectedCity(generated[0].city);
             await saveToursToCache(official.spanishName, official.country, user.language, generated);
             setView(AppView.CITY_DETAIL);
         }
