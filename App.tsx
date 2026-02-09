@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
-import { generateToursForCity, standardizeCityName, translateTours } from './services/geminiService';
+import { generateToursForCity, standardizeCityName, translateToursBatch } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { Leaderboard } from './components/Leaderboard';
 import { ProfileModal } from './components/ProfileModal';
@@ -11,24 +11,12 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { FlagIcon } from './components/FlagIcon';
 import { Onboarding } from './components/Onboarding';
 import { AdminPanel } from './components/AdminPanel';
+import { PartnerProgram } from './components/PartnerProgram';
 import { supabase, getUserProfileByEmail, getGlobalRanking, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "ciudades globales a tu alcance", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando...", fastSync: "traduciendo caché...", apiLimit: "IA Saturada. Reintentando...", retry: "Reintentar", info: "info" },
-  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "global cities at your fingertips", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "change", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing...", fastSync: "syncing cache...", apiLimit: "AI Saturated. Retrying...", retry: "Retry", info: "info" },
-  zh: { welcome: "bidaer 日志:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "你的@email.com", userPlaceholder: "用户名", login: "申请访问", verify: "验证", tagline: "better destinations by ai", selectLang: "语言", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", sentTo: "已发送至", info: "信息" },
-  ca: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "el-teu@email.com", userPlaceholder: "usuari", login: "sol·licitar accés", verify: "validar", tagline: "better destinations by ai", selectLang: "idioma", navElite: "elit", navHub: "intel", navVisa: "passaport", navStore: "botiga", sentTo: "enviat a", info: "info" },
-  eu: { welcome: "bidaer log:", explorer: "esploratzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarrera eskatu", verify: "balioztatu", tagline: "better destinations by ai", selectLang: "hizkuntza", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", sentTo: "hona bidalia", info: "info" },
-  ar: { welcome: "سجل bidaer:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك@الإلكتروني", userPlaceholder: "اسم المستخدم", login: "طلب الدخول", verify: "تحقق", tagline: "better destinations by ai", selectLang: "اللغة", navElite: "النخبة", navHub: "ذكاء", navVisa: "جواز السفر", navStore: "متجر", sentTo: "تم الإرسال إلى", info: "معلومات" },
-  pt: { welcome: "registro bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "acesso", verify: "validar", tagline: "better destinations by ai", selectLang: "idioma", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", sentTo: "enviado para", info: "info" },
-  fr: { welcome: "journal bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "utilisateur", login: "accès", verify: "valider", tagline: "better destinations by ai", selectLang: "langue", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", sentTo: "envoyé à", info: "info" },
-  de: { welcome: "bidaer log:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "deine@email.com", userPlaceholder: "benutzer", login: "zugang", verify: "bestätigen", tagline: "better destinations by ai", selectLang: "sprache", navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "shop", sentTo: "gesendet an", info: "info" },
-  it: { welcome: "diario bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "utente", login: "accesso", verify: "valida", tagline: "better destinations by ai", selectLang: "lingua", navElite: "élite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", sentTo: "inviato a", info: "info" },
-  ja: { welcome: "bidaer ログ:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メールアドレス", userPlaceholder: "ユーザー名", login: "アクセスリクエスト", verify: "検証", tagline: "better destinations by ai", selectLang: "言語", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", sentTo: "送信先", info: "情報" },
-  ru: { welcome: "журнал bidaer:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "ваш@email.com", userPlaceholder: "имя пользователя", login: "запрос доступа", verify: "проверить", tagline: "better destinations by ai", selectLang: "язык", navElite: "элита", navHub: "интел", navVisa: "паспорт", navStore: "магазин", sentTo: "отправлено на", info: "инфо" },
-  hi: { welcome: "bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "आपका@email.com", userPlaceholder: "उपयोगकर्ता", login: "पहुंच का अनुरोध", verify: "पुष्टि करें", tagline: "better destinations by ai", selectLang: "भाषा", navElite: "अभिजात वर्ग", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", sentTo: "को भेजा गया", info: "जानकारी" },
-  ko: { welcome: "bidaer 로그:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일 주소", userPlaceholder: "사용자 이름", login: "액세스 요청", verify: "확인", tagline: "better destinations by ai", selectLang: "언어", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", sentTo: "전송됨:", info: "정보" },
-  tr: { welcome: "bidaer günlüğü:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "epostanız@email.com", userPlaceholder: "kullanıcı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", selectLang: "dil", navElite: "seçkinler", navHub: "intel", navVisa: "pasaport", navStore: "mağaza", sentTo: "gönderildi:", info: "bilgi" }
+  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "ciudades globales a tu alcance", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", navEarn: "gana", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando...", fastSync: "traduciendo caché...", apiLimit: "IA Saturada. Reintentando...", retry: "Reintentar", info: "info" },
+  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "global cities at your fingertips", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", navEarn: "earn", changeEmail: "change", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing...", fastSync: "syncing cache...", apiLimit: "AI Saturated. Retrying...", retry: "Retry", info: "info" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -49,7 +37,7 @@ export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   const [loginStep, setLoginStep] = useState<'EMAIL' | 'CODE'>('EMAIL');
-  const [email, setEmal] = useState('');
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [searchVal, setSearchVal] = useState('');
@@ -116,30 +104,6 @@ export default function App() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
-
-  // Auto-translate tours when language changes
-  useEffect(() => {
-    if (tours.length > 0) {
-      const translateCurrent = async () => {
-        setIsLoading(true);
-        setLoadingMessage(t('fastSync'));
-        try {
-          const targetLangName = LANGUAGES.find(l => l.code === user.language)?.name || "Spanish";
-          const translated = await translateTours(tours, targetLangName);
-          setTours(translated);
-          if (activeTour) {
-            const translatedActive = translated.find(t => t.id === activeTour.id);
-            if (translatedActive) setActiveTour(translatedActive);
-          }
-        } catch (e) {
-          console.error("Auto-translate error:", e);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      translateCurrent();
-    }
-  }, [user.language]);
 
   const t = (key: string) => {
     const currentLang = user.language || 'es';
@@ -268,7 +232,7 @@ export default function App() {
                   {loginStep === 'EMAIL' ? (
                       <div className="space-y-3 animate-fade-in">
                           <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-4 px-5 text-center text-white outline-none text-sm font-bold placeholder-slate-400" placeholder={t('userPlaceholder')} />
-                          <input type="email" value={email} onChange={e => setEmal(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-4 px-5 text-center text-white outline-none text-sm font-bold placeholder-slate-400" placeholder={t('emailPlaceholder')} />
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-4 px-5 text-center text-white outline-none text-sm font-bold placeholder-slate-400" placeholder={t('emailPlaceholder')} />
                           <button onClick={handleLoginRequest} className="w-full py-5 bg-white text-slate-950 rounded-xl font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all shadow-xl">{t('login')}</button>
                       </div>
                   ) : (
@@ -312,21 +276,6 @@ export default function App() {
                           <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySearch(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-white outline-none font-bold text-xs" />
                           <button onClick={() => handleCitySearch(searchVal)} className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg"><i className="fas fa-search text-sm"></i></button>
                       </div>
-                      
-                      {searchOptions && (
-                        <div className="mt-4 space-y-3 bg-slate-900 border-2 border-purple-500/50 p-6 rounded-[2.5rem] shadow-2xl animate-fade-in relative z-50">
-                            {searchOptions.map((opt, i) => (
-                                <button key={i} onClick={() => processCitySelection(opt)} className="w-full p-5 bg-white/5 rounded-[1.5rem] flex items-center justify-between border border-white/5">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center"><i className="fas fa-map-marker-alt text-purple-500"></i></div>
-                                        <div className="text-left"><span className="text-white font-black uppercase text-xs block">{opt.spanishName}</span><span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">{opt.country}</span></div>
-                                    </div>
-                                    <i className="fas fa-chevron-right text-[10px] text-purple-500"></i>
-                                </button>
-                            ))}
-                        </div>
-                      )}
-                      
                       <TravelServices mode="HOME" language={user.language || 'es'} onCitySelect={(name: string) => handleCitySearch(name)} />
                   </div>
                 )}
@@ -343,13 +292,15 @@ export default function App() {
                 {view === AppView.TOOLS && <div className="pt-safe-iphone px-6 max-w-md mx-auto"><TravelServices mode="HUB" language={user.language || 'es'} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => { setUser(u); syncUserProfile(u); localStorage.setItem('bdai_profile', JSON.stringify(u)); }} language={user.language || 'es'} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); }} onOpenAdmin={() => setView(AppView.ADMIN)} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
+                {view === AppView.PARTNER && <div className="max-w-md mx-auto h-full"><PartnerProgram language={user.language || 'es'} onBack={() => setView(AppView.HOME)} /></div>}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
             {view !== AppView.TOUR_ACTIVE && (
-              <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-4 flex justify-center pointer-events-none"><nav className="bg-slate-900/98 backdrop-blur-2xl border border-white/10 px-2 py-3 flex justify-around items-center w-full max-w-sm rounded-[2rem] pointer-events-auto shadow-2xl">
+              <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-4 flex justify-center pointer-events-none"><nav className="bg-slate-900/98 backdrop-blur-2xl border border-white/10 px-1 py-3 flex justify-around items-center w-full max-w-lg rounded-[2.5rem] pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar">
                       <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
                       <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
-                      <button onClick={() => setView(AppView.HOME)} className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg' : 'bg-white/5'}`}><BdaiLogo className="w-5 h-5" /></button>
+                      <button onClick={() => setView(AppView.HOME)} className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all shrink-0 ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg' : 'bg-white/5'}`}><BdaiLogo className="w-5 h-5" /></button>
+                      <NavButton icon="fa-handshake" label={t('navEarn')} isActive={view === AppView.PARTNER} onClick={() => setView(AppView.PARTNER)} />
                       <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
                       <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
                   </nav></div>

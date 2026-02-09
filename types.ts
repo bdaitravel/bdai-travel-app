@@ -136,7 +136,8 @@ export enum AppView {
   SHOP = 'SHOP',
   LEADERBOARD = 'LEADERBOARD',
   TOOLS = 'TOOLS',
-  ADMIN = 'ADMIN'
+  ADMIN = 'ADMIN',
+  PARTNER = 'PARTNER'
 }
 
 export const LANGUAGES = [
