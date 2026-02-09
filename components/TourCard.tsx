@@ -5,8 +5,21 @@ import { SchematicMap } from './SchematicMap';
 import { generateAudio } from '../services/geminiService';
 
 const TEXTS: any = {
-    es: { start: "Lanzar", stop: "Parada", of: "de", daiShot: "Consejo Dai", angleLabel: "Ángulo Dai:", photoTipFallback: "Busca una perspectiva lateral para captar la profundidad de la estructura.", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Siguiente", meters: "m", itinerary: "Itinerario", finish: "Finalizar Tour", congrats: "¡Tour Completado!", stampDesc: "Has ganado un nuevo sello", shareIg: "Compartir (+100 Millas)", close: "Cerrar", tooFar: "GPS Incierto", checkIn: "Check-in GPS", checkedIn: "Verificada", distance: "Distancia", duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS", shareMsg: "¡He completado el tour de {city} en BDAI! He ganado {miles} millas y un nuevo visado oficial. 🌍✨ #bdai #travelia" },
-    en: { start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:", photoTipFallback: "Look for a side perspective to capture the depth of the structure.", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", finish: "Finish Tour", congrats: "Tour Completed!", stampDesc: "You earned a new stamp", shareIg: "Share (+100 Miles)", close: "Close", tooFar: "GPS Uncertain", checkIn: "GPS Check-in", checkedIn: "Verified", distance: "Distance", duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES", shareMsg: "Just finished the {city} tour in BDAI! Earned {miles} miles and a new official visa. 🌍✨ #bdai #travelia" }
+    es: { start: "Lanzar", stop: "Parada", of: "de", daiShot: "Consejo Dai", angleLabel: "Ángulo Dai:", photoTipFallback: "Busca una perspectiva lateral para captar la profundidad de la estructura.", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Siguiente", meters: "m", itinerary: "Itinerario", finish: "Finalizar Tour", congrats: "¡Tour Completado!", stampDesc: "Has ganado un nuevo sello", shareIg: "Compartir (+100 Millas)", close: "Cerrar", tooFar: "GPS Incierto", checkIn: "Check-in GPS", checkedIn: "Verificada", distance: "Distancia", duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS" },
+    en: { start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:", photoTipFallback: "Look for a side perspective to capture the depth of the structure.", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", finish: "Finish Tour", congrats: "Tour Completed!", stampDesc: "You earned a new stamp", shareIg: "Share (+100 Miles)", close: "Close", tooFar: "GPS Uncertain", checkIn: "GPS Check-in", checkedIn: "Verified", distance: "Distance", duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES" },
+    zh: { start: "开始", stop: "站点", of: "/", daiShot: "Dai 建议", angleLabel: "Dai 角度：", photoTipFallback: "寻找侧面视角以捕捉结构的深度。", capture: "记录数据", rewardReceived: "已同步", prev: "返回", next: "下一步", meters: "米", itinerary: "行程计划", finish: "完成之旅", congrats: "旅程已完成！", stampDesc: "您获得了一枚新印章", shareIg: "分享 (+100 里程)", close: "关闭", tooFar: "GPS 不确定", checkIn: "GPS 签到", checkedIn: "已验证", distance: "距离", duration: "持续时间", nearbyAlert: "检测到附近站点", jumpTo: "跳转到此处", rewardMiles: "+50 里程" },
+    ca: { start: "Llançar", stop: "Parada", of: "de", daiShot: "Consell Dai", angleLabel: "Angle Dai:", photoTipFallback: "Busca una perspectiva lateral per captar la profunditat de l'estructura.", capture: "Loguejar Dades", rewardReceived: "Sincronitzat", prev: "Enrere", next: "Següent", meters: "m", itinerary: "Itinerari", finish: "Finalitzar Tour", congrats: "Tour Completat!", stampDesc: "Has guanyat un nou segell", shareIg: "Compartir (+100 Milles)", close: "Tancar", tooFar: "GPS Incerte", checkIn: "Check-in GPS", checkedIn: "Verificada", distance: "Distància", duration: "Durada", nearbyAlert: "Parada Propera", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLES" },
+    eu: { start: "Abiarazi", stop: "Geldialdia", of: "/", daiShot: "Dai Aholkua", angleLabel: "Dai Kulua:", photoTipFallback: "Bilatu alboko perspektiba bat egituraren sakonera jasotzeko.", capture: "Datuak Gorde", rewardReceived: "Sinkronizatuta", prev: "Atzera", next: "Hurrengoa", meters: "m", itinerary: "Ibilbidea", finish: "Tourra Amaitu", congrats: "Tourra Amaituta!", stampDesc: "Zigilua lortu duzu", shareIg: "Partekatu (+100 Milia)", close: "Itxi", tooFar: "GPS Ziurgabea", checkIn: "GPS Check-in", checkedIn: "Egiaztatuta", distance: "Distantzia", duration: "Iraupena", nearbyAlert: "Geldialdia Hurbil", jumpTo: "Saltatu hona", rewardMiles: "+50 MILIA" },
+    ar: { start: "إطلاق", stop: "محطة", of: "من", daiShot: "نصيحة Dai", angleLabel: "زاوية Dai:", photoTipFallback: "ابحث عن منظور جانبي لالتقاط عمق الهيكل.", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "السابق", next: "التالي", meters: "م", itinerary: "مسار الرحلة", finish: "إنهاء الجولة", congrats: "اكتملت الجولة!", stampDesc: "لقد حصلت على ختم جديد", shareIg: "مشاركة (+100 ميل)", close: "إغلاق", tooFar: "GPS غير مؤكد", checkIn: "تسجيل الدخول", checkedIn: "تم التحقق", distance: "المسافة", duration: "المدة", nearbyAlert: "تم اكتشاف محطة قريبة", jumpTo: "انتقل هنا", rewardMiles: "+50 ميل" },
+    pt: { start: "Lançar", stop: "Parada", of: "de", daiShot: "Dica Dai", angleLabel: "Ângulo Dai:", photoTipFallback: "Procure uma perspectiva lateral para capturar a profundidade da estrutura.", capture: "Logar Dados", rewardReceived: "Sincronizado", prev: "Anterior", next: "Próximo", meters: "m", itinerary: "Itinerário", finish: "Finalizar Tour", congrats: "Tour Concluído!", stampDesc: "Você ganhou um novo selo", shareIg: "Compartilhar (+100 Milhas)", close: "Fechar", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificada", distance: "Distância", duration: "Duração", nearbyAlert: "Parada Próxima", jumpTo: "Pular aqui", rewardMiles: "+50 MILHAS" },
+    fr: { start: "Lancer", stop: "Arrêt", of: "sur", daiShot: "Conseil Dai", angleLabel: "Angle Dai :", photoTipFallback: "Cherchez une perspective latérale pour capturer la profondeur de la structure.", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Précédent", next: "Suivant", meters: "m", itinerary: "Itinéraire", finish: "Terminer le Tour", congrats: "Tour Terminé!", stampDesc: "Nouveau tampon gagné", shareIg: "Partager (+100 Miles)", close: "Fermer", tooFar: "GPS Incertain", checkIn: "Check-in GPS", checkedIn: "Vérifié", distance: "Distance", duration: "Durée", nearbyAlert: "Arrêt Proche", jumpTo: "Aller ici", rewardMiles: "+50 MILES" },
+    de: { start: "Starten", stop: "Halt", of: "von", daiShot: "Dai-Tipp", angleLabel: "Dai-Winkel:", photoTipFallback: "Suchen Sie nach einer Seitenperspektive, um die Tiefe der Struktur einzufangen.", capture: "Daten Loggen", rewardReceived: "Synchronisiert", prev: "Zurück", next: "Weiter", meters: "m", itinerary: "Reiseroute", finish: "Tour Beenden", congrats: "Tour Abgeschlossen!", stampDesc: "Neuer Stempel erhalten", shareIg: "Teilen (+100 Meilen)", close: "Schließen", tooFar: "GPS Unsicher", checkIn: "GPS Check-in", checkedIn: "Verifiziert", distance: "Entfernung", duration: "Dauer", nearbyAlert: "Halt in der Nähe", jumpTo: "Hierher springen", rewardMiles: "+50 MEILEN" },
+    it: { start: "Lancia", stop: "Fermata", of: "di", daiShot: "Consiglio Dai", angleLabel: "Angolo Dai:", photoTipFallback: "Cerca una prospettiva laterale per catturare la profondità della struttura.", capture: "Log Dati", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Itinerario", finish: "Termina Tour", congrats: "Tour Completato!", stampDesc: "Hai vinto un nuovo timbro", shareIg: "Condividi (+100 Miglia)", close: "Chiudi", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificato", distance: "Distanza", duration: "Durata", nearbyAlert: "Fermata Vicina", jumpTo: "Salta qui", rewardMiles: "+50 MIGLIA" },
+    ja: { start: "開始", stop: "停止", of: "/", daiShot: "Daiのヒント", angleLabel: "Daiアングル:", photoTipFallback: "構造物の奥行きを捉えるために、横からの視点を探してください。", capture: "データ記録", rewardReceived: "同期済み", prev: "戻る", next: "次へ", meters: "m", itinerary: "旅程", finish: "ツアーを終了", congrats: "ツアー完了！", stampDesc: "新しいスタンプを獲得しました", shareIg: "共有 (+100マイル)", close: "閉じる", tooFar: "GPSが不安定", checkIn: "GPSチェックイン", checkedIn: "確認済み", distance: "距離", duration: "期間", nearbyAlert: "近くの停留所", jumpTo: "ここへ移動", rewardMiles: "+50 マイル" },
+    ru: { start: "Запуск", stop: "Остановка", of: "из", daiShot: "Совет Dai", angleLabel: "Угол Dai:", photoTipFallback: "Ищите боковую перспективу, чтобы запечатлеть глубину строения.", capture: "Данные", rewardReceived: "Синхронизировано", prev: "Назад", next: "Далее", meters: "м", itinerary: "Маршрут", finish: "Завершить тур", congrats: "Тур завершен!", stampDesc: "Вы получили новый штамп", shareIg: "Поделиться (+100 миль)", close: "Закрыть", tooFar: "GPS неточен", checkIn: "GPS Чекин", checkedIn: "Проверено", distance: "Расстояние", duration: "Длительность", nearbyAlert: "Остановка рядом", jumpTo: "Перейти сюда", rewardMiles: "+50 МИЛЬ" },
+    hi: { start: "शुरू करें", stop: "पड़ाव", of: "का", daiShot: "Dai टिप", angleLabel: "Dai कोण:", photoTipFallback: "संरचना की गहराई को पकड़ने के लिए पार्श्व परिप्रेक्ष्य की तलाश करें।", capture: "डेटा लॉग करें", rewardReceived: "सिंक किया गया", prev: "पीछे", next: "अगला", meters: "मी", itinerary: "यात्रा कार्यक्रम", finish: "दौरा समाप्त करें", congrats: "दौरा पूरा हुआ!", stampDesc: "आपने एक नया स्टैम्प जीता", shareIg: "साझा करें (+100 मील)", close: "बंद करें", tooFar: "GPS अनिश्चित", checkIn: "GPS चेक-इन", checkedIn: "सत्यापित", distance: "दूरी", duration: "अवधि", nearbyAlert: "निकटतम पड़ाव", jumpTo: "यहाँ जाएँ", rewardMiles: "+50 मील" },
+    ko: { start: "시작", stop: "정류장", of: "/", daiShot: "Dai 팁", angleLabel: "Dai 각도:", photoTipFallback: "구조물의 깊이를 포착하기 위해 측면 원근감을 찾으십시오.", capture: "데이터 로깅", rewardReceived: "동기화됨", prev: "이전", next: "다음", meters: "m", itinerary: "일정", finish: "투어 종료", congrats: "투어 완료!", stampDesc: "새 스탬프를 획득했습니다", shareIg: "공유 (+100 마일)", close: "닫기", tooFar: "GPS 불확실", checkIn: "GPS 체크인", checkedIn: "확인됨", distance: "거리", duration: "기간", nearbyAlert: "가까운 정류장", jumpTo: "여기로 이동", rewardMiles: "+50 마일" },
+    tr: { start: "Başlat", stop: "Durak", of: "/", daiShot: "Dai İpucu", angleLabel: "Dai Açısı:", photoTipFallback: "Yapının derinliğini yakalamak için yan bir perspektif arayın.", capture: "Veri Kaydet", rewardReceived: "Senkronize", prev: "Geri", next: "İleri", meters: "m", itinerary: "Rota", finish: "Turu Bitir", congrats: "Tur Tamamlandı!", stampDesc: "Yeni bir damga kazandınız", shareIg: "Paylaş (+100 Mil)", close: "Kapat", tooFar: "GPS Belirsiz", checkIn: "GPS Check-in", checkedIn: "Doğrulandı", distance: "Mesafe", duration: "Süre", nearbyAlert: "Yakın Durak", jumpTo: "Buraya atla", rewardMiles: "+50 MİL" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -170,6 +183,10 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             const mayor = APP_BADGES.find(b => b.id === 'mayor');
             if (mayor) newBadges.push({ ...mayor, earnedAt: now.toISOString() });
         }
+        if (newCompleted.length >= 3 && !newBadges.find(b => b.id === 'local')) {
+            const local = APP_BADGES.find(b => b.id === 'local');
+            if (local) newBadges.push({ ...local, earnedAt: now.toISOString() });
+        }
 
         onUpdateUser({ 
             ...user, 
@@ -183,22 +200,13 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const handleShareInstagram = () => {
-        const text = tl.shareMsg.replace('{city}', tour.city).replace('{miles}', (user.miles + 100).toString());
-        
+        onUpdateUser({ ...user, miles: user.miles + 100 });
+        const text = `Acabo de completar el tour de ${tour.city} con BDAI! 🌍✨`;
         if (navigator.share) {
-            navigator.share({
-                title: 'Mi Log BDAI',
-                text: text,
-                url: window.location.href
-            }).then(() => {
-                onUpdateUser({ ...user, miles: user.miles + 100 });
-            }).catch(() => {
-                window.open(`https://www.instagram.com/`, '_blank');
-            });
+            navigator.share({ title: 'BDAI', text, url: window.location.href }).catch(() => {});
         } else {
-            // Fallback para desktop o navegadores sin Share API
-            const encodedText = encodeURIComponent(text);
-            window.open(`https://twitter.com/intent/tweet?text=${encodedText}`, '_blank');
+            alert("¡Millas otorgadas! Compartiendo en Stories...");
+            window.open(`https://www.instagram.com/`, '_blank');
         }
     };
 
@@ -246,6 +254,28 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                          <button onClick={() => setShowItinerary(false)} className="w-full py-8 mt-6 text-slate-400 font-black uppercase text-[10px]">{tl.close}</button>
                      </div>
                  </div>
+             )}
+
+             {nearbyStopHint !== null && (
+                <div className="fixed top-24 left-4 right-4 z-[7000] animate-bounce">
+                    <button 
+                        onClick={() => { onJumpTo(nearbyStopHint); setNearbyStopHint(null); }}
+                        className="w-full bg-purple-600 text-white p-5 rounded-[2.5rem] shadow-2xl border-2 border-white/20 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                                <i className="fas fa-location-crosshairs"></i>
+                            </div>
+                            <div className="text-left">
+                                <p className="text-[9px] font-black uppercase tracking-widest opacity-70 mb-1">{tl.nearbyAlert}</p>
+                                <p className="text-[11px] font-black uppercase truncate max-w-[150px]">{tour.stops[nearbyStopHint].name}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white text-purple-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase">
+                            {tl.jumpTo}
+                        </div>
+                    </button>
+                </div>
              )}
 
              <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 shadow-sm">

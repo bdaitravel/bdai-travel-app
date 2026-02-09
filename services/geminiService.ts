@@ -4,13 +4,61 @@ import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
 import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const MASTERCLASS_INSTRUCTION = `
-Eres Dai, el motor analítico de BDAI. Generas TOURS de "Alta Densidad Informativa".
-ESTILO: Cínico, brillante, experto en ingeniería y curiosidades locales.
-DENSIDAD: 350-450 palabras por parada. 10 paradas por tour.
-IMPORTANTE: Traduce ABSOLUTAMENTE TODO al idioma solicitado, incluyendo nombres de paradas y el campo angle de photoSpot.
+Eres Dai, el motor analítico de BDAI. Generas Masterclasses de viaje de Alta Densidad Informativa.
+REGLA DE ORO DE ESTILO: Escribe como un experto HUMANO brillante, un poco cínico y erudito.
+PROHIBICIÓN ABSOLUTA: 
+- NUNCA uses formato de terminal, log o consola.
+- NUNCA uses textos como "[PROCESANDO...]", "CARGANDO... 100%", "EJECUTANDO TOUR", "OBJETIVO: DESMANTELAR...".
+- NUNCA uses mayúsculas sostenidas para párrafos enteros.
+- NUNCA uses lenguaje propio de un sistema operativo o inteligencia artificial robótica.
+ESTRUCTURA OBLIGATORIA:
+- Escribe párrafos fluidos y literarios, con un toque técnico profesional.
+- Usa exactamente 3 o 4 párrafos por cada parada, separados SIEMPRE por doble salto de línea (\\n\\n).
+- Cada parada debe contener entre 350 y 450 palabras de datos reales, ingeniería oculta y contexto histórico crudo.
+- TODO el contenido (título, paradas, consejos de foto) DEBE estar en el idioma solicitado.
+- CRÍTICO: Los nombres de ciudades y países también deben traducirse al idioma destino si existe una versión común (p.ej. London -> Londres).
 `;
 
-async function handleAiCall<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
+const TOUR_SCHEMA = {
+    type: Type.ARRAY,
+    items: {
+        type: Type.OBJECT,
+        properties: {
+            id: { type: Type.STRING },
+            city: { type: Type.STRING, description: "City name translated to target language." },
+            country: { type: Type.STRING, description: "Country name translated to target language." },
+            title: { type: Type.STRING, description: "Tour title translated to target language." },
+            description: { type: Type.STRING, description: "Tour summary translated to target language." },
+            duration: { type: Type.STRING },
+            distance: { type: Type.STRING },
+            theme: { type: Type.STRING },
+            stops: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        id: { type: Type.STRING },
+                        name: { type: Type.STRING, description: "Stop name translated to target language." },
+                        description: { type: Type.STRING, description: "400-word masterclass description in target language." },
+                        type: { type: Type.STRING },
+                        latitude: { type: Type.NUMBER },
+                        longitude: { type: Type.NUMBER },
+                        photoSpot: {
+                            type: Type.OBJECT,
+                            properties: {
+                                angle: { type: Type.STRING, description: "Technical photo advice translated to target language." },
+                                milesReward: { type: Type.NUMBER },
+                                secretLocation: { type: Type.STRING }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+};
+
+async function handleAiCall<T>(fn: () => Promise<T>, retries = 3, delay = 1500): Promise<T> {
     try {
         return await fn();
     } catch (e: any) {
@@ -28,13 +76,19 @@ export const translateToursBatch = async (tours: Tour[], targetLangCode: string)
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Translate this technical tour data to ${langName}. 
-            Maintain the cynicism and high-density technical style of Dai. 
-            Translate titles, descriptions, and the 'angle' field inside 'photoSpot'.
+            contents: `Translate the following tour data into ${langName}. 
+            CRITICAL: You MUST translate every field including:
+            - The "city" and "country" names.
+            - The Tour "title" and "description".
+            - Each stop's "name" and "description".
+            - The "photoSpot.angle" (Dai Tip).
+            
+            Keep the expert, cynical, and technical style of the original content. 
             Data: ${JSON.stringify(tours)}`,
             config: { 
-                systemInstruction: "You are a world-class technical translator. Return only the translated JSON.",
-                responseMimeType: "application/json" 
+                systemInstruction: "You are a world-class technical translator specializing in travel and architecture. Translate EVERYTHING into the target language. City and country names must be translated too.",
+                responseMimeType: "application/json",
+                responseSchema: TOUR_SCHEMA
             }
         });
         return JSON.parse(response.text || "[]");
@@ -48,23 +102,25 @@ export const generateAudio = async (text: string, language: string, city: string
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         let voiceName = 'Kore';
-        let instruction = "Habla con autoridad técnica y claridad.";
 
         if (language === 'es') {
             const isSpain = city.toLowerCase().includes('spain') || 
-                            ['madrid', 'barcelona', 'sevilla', 'valencia', 'malaga', 'bilbao'].some(c => city.toLowerCase().includes(c));
+                            ['madrid', 'barcelona', 'sevilla', 'valencia', 'malaga', 'bilbao', 'ainsa'].some(c => city.toLowerCase().includes(c));
             voiceName = isSpain ? 'Kore' : 'Puck';
-            instruction = isSpain ? "Acento de España." : "Español neutro latino.";
         } else if (language === 'en') {
             voiceName = 'Zephyr';
         }
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: `${instruction} Texto: ${text}` }] }],
+            contents: [{ parts: [{ text: text }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName as any } } },
+                speechConfig: { 
+                    voiceConfig: { 
+                        prebuiltVoiceConfig: { voiceName: voiceName as any } 
+                    } 
+                },
             },
         });
 
@@ -79,55 +135,26 @@ export const generateToursForCity = async (city: string, country: string, user: 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-3-pro-preview",
-            contents: `Generate 3 technical tours for ${city}, ${country} in ${targetLang}. Include localized photoSpot angles.`,
+            model: "gemini-3-flash-preview",
+            contents: `Generate 3 expert-level technical tours for ${city}, ${country}. 
+            CRITICAL: All output including titles, stop names, masterclass descriptions, and photo advice MUST be in ${targetLang}. 
+            The city name "${city}" and country name "${country}" MUST also be translated to ${targetLang} in the JSON result.`,
             config: { 
                 systemInstruction: MASTERCLASS_INSTRUCTION,
                 responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            title: { type: Type.STRING },
-                            description: { type: Type.STRING },
-                            duration: { type: Type.STRING },
-                            distance: { type: Type.STRING },
-                            theme: { type: Type.STRING },
-                            stops: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        name: { type: Type.STRING },
-                                        description: { type: Type.STRING },
-                                        type: { type: Type.STRING },
-                                        photoSpot: {
-                                            type: Type.OBJECT,
-                                            properties: {
-                                                angle: { type: Type.STRING },
-                                                milesReward: { type: Type.NUMBER }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                responseSchema: TOUR_SCHEMA
             }
         });
         return JSON.parse(response.text || "[]");
     });
 };
 
-export const standardizeCityName = async (input: string, lang: string = 'es') => {
-    const langName = LANGUAGES.find(l => l.code === lang)?.name || 'Spanish';
+export const standardizeCityName = async (input: string) => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Normalize this city name: "${input}". Return a JSON list of objects with {name (original), spanishName (translated to ${langName}), country}.`,
-        config: { responseMimeType: "application/json" }
+        contents: `Normalize city name and country for: ${input}. Return JSON array with name, spanishName, country.`,
+        config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
     });
     return JSON.parse(response.text || "[]");
 };
