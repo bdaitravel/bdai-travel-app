@@ -16,7 +16,7 @@ ESTRUCTURA OBLIGATORIA:
 - Usa exactamente 3 o 4 párrafos por cada parada, separados SIEMPRE por doble salto de línea (\\n\\n).
 - Cada parada debe contener entre 350 y 450 palabras de datos reales, ingeniería oculta y contexto histórico crudo.
 - TODO el contenido (nombre de la ciudad, país, título del tour, paradas, consejos de foto) DEBE estar en el idioma solicitado.
-- CRÍTICO: Si el idioma es Chino, Japonés o Ruso, traduce TODO (incluyendo nombres de ciudades) a esos caracteres.
+- CRÍTICO: Si el idioma es Chino, Japonés, Ruso o cualquier otro, traduce TODO (incluyendo nombres de ciudades como 'Londres' -> 'London' o '伦敦') a ese idioma.
 `;
 
 const TOUR_SCHEMA = {
@@ -39,14 +39,14 @@ const TOUR_SCHEMA = {
                     properties: {
                         id: { type: Type.STRING },
                         name: { type: Type.STRING, description: "Stop name translated to target language." },
-                        description: { type: Type.STRING, description: "Detailed description in target language." },
+                        description: { type: Type.STRING, description: "Detailed masterclass in target language (approx 400 words)." },
                         type: { type: Type.STRING },
                         latitude: { type: Type.NUMBER },
                         longitude: { type: Type.NUMBER },
                         photoSpot: {
                             type: Type.OBJECT,
                             properties: {
-                                angle: { type: Type.STRING, description: "Photo advice translated to target language." },
+                                angle: { type: Type.STRING, description: "Technical photo advice translated to target language." },
                                 milesReward: { type: Type.NUMBER },
                                 secretLocation: { type: Type.STRING }
                             }
@@ -77,8 +77,8 @@ export const translateToursBatch = async (tours: Tour[], targetLangCode: string)
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `Translate the following tour data into ${langName}. 
-            CRITICAL: You MUST translate every field including:
-            - The "city" name (e.g. London -> 伦敦 if Chinese).
+            CRITICAL: You MUST translate every field INCLUDING:
+            - The "city" name (essential).
             - The "country" name.
             - The Tour "title" and "description".
             - Each stop's "name" and "description".
@@ -87,7 +87,7 @@ export const translateToursBatch = async (tours: Tour[], targetLangCode: string)
             Keep the expert, technical style. 
             Data: ${JSON.stringify(tours)}`,
             config: { 
-                systemInstruction: "You are a world-class technical translator. Translate EVERYTHING into the target language. DO NOT leave city names in English or Spanish if a translation exists.",
+                systemInstruction: "You are a world-class technical translator. Translate EVERYTHING into the target language. DO NOT leave city names or titles in the original language.",
                 responseMimeType: "application/json",
                 responseSchema: TOUR_SCHEMA
             }
@@ -104,7 +104,7 @@ export const generateAudio = async (text: string, language: string, city: string
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         let voiceName = 'Kore';
         if (language === 'es') {
-            const isSpain = city.toLowerCase().includes('spain') || ['madrid', 'barcelona', 'sevilla'].some(c => city.toLowerCase().includes(c));
+            const isSpain = city.toLowerCase().includes('spain') || ['madrid', 'barcelona', 'sevilla', 'ainsa'].some(c => city.toLowerCase().includes(c));
             voiceName = isSpain ? 'Kore' : 'Puck';
         } else if (language === 'en') {
             voiceName = 'Zephyr';

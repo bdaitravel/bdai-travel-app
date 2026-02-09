@@ -27,7 +27,7 @@ const TRANSLATIONS: any = {
   ja: { welcome: "bidaer ログ:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メールアドレス", userPlaceholder: "ユーザー名", login: "アクセスリクエスト", verify: "検証", tagline: "better destinations by ai", selectLang: "言語", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", changeEmail: "修正", sentTo: "送信先", info: "情報" },
   ru: { welcome: "журнал bidaer:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "ваш@email.com", userPlaceholder: "имя пользователя", login: "запрос доступа", verify: "проверить", tagline: "better destinations by ai", selectLang: "язык", navElite: "элита", navHub: "интел", navVisa: "паспорт", navStore: "магазин", changeEmail: "исправить", sentTo: "отправлено на", info: "инфо" },
   hi: { welcome: "bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "आपका@email.com", userPlaceholder: "उपयोगकर्ता", login: "पहुंच का अनुरोध", verify: "पुष्टि करें", tagline: "better destinations by ai", selectLang: "भाषा", navElite: "अभिजात वर्ग", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", changeEmail: "सुधारें", sentTo: "को भेजा गया", info: "जानकारी" },
-  ko: { welcome: "bidaer 로그:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일 주소", userPlaceholder: "사용자 이름", login: "액세스 요청", verify: "확인", tagline: "better destinations by ai", selectLang: "언어", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", changeEmail: "수정", sentTo: "전송됨:", info: "정보" },
+  ko: { welcome: "bidaer 로그:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일 주소", userPlaceholder: "사용자 이름", login: "액세스 요청", verify: "확인", tagline: "better destinations by ai", selectLang: "언어", navElite: "엘리特", navHub: "인텔", navVisa: "여권", navStore: "상점", changeEmail: "수정", sentTo: "전송됨:", info: "정보" },
   tr: { welcome: "bidaer günlüğü:", explorer: "gezgin", searchPlaceholder: "şehir...", emailPlaceholder: "epostanız@email.com", userPlaceholder: "kullanıcı", login: "erişim iste", verify: "doğrula", tagline: "better destinations by ai", selectLang: "dil", navElite: "seçkinler", navHub: "intel", navVisa: "pasaporte", navStore: "mağaza", changeEmail: "düzelt", sentTo: "gönderildi:", info: "bilgi" }
 };
 
@@ -125,7 +125,10 @@ export default function App() {
         try {
           const translated = await translateToursBatch(tours, user.language);
           setTours(translated);
-          if (translated.length > 0) setSelectedCity(translated[0].city);
+          // IMPORTANTE: Sincronizar el nombre de la ciudad seleccionada con la versión traducida
+          if (translated.length > 0 && translated[0].city) {
+            setSelectedCity(translated[0].city);
+          }
           if (activeTour) {
             const translatedActive = translated.find(t => t.id === activeTour.id);
             if (translatedActive) setActiveTour(translatedActive);
@@ -177,6 +180,7 @@ export default function App() {
     if (!official || !official.spanishName) { setIsLoading(false); return; }
     setIsLoading(true); 
     setSearchOptions(null); 
+    // Usamos el nombre base primero, se actualizará a la versión traducida tras cargar/generar
     setSelectedCity(official.spanishName); 
     setTours([]);
 
@@ -184,7 +188,7 @@ export default function App() {
         const cached = await getCachedTours(official.spanishName, official.country, user.language);
         if (cached && cached.data.length > 0) {
             setTours(cached.data); 
-            setSelectedCity(cached.data[0].city);
+            if (cached.data[0].city) setSelectedCity(cached.data[0].city);
             setView(AppView.CITY_DETAIL);
             setIsLoading(false);
             return;
@@ -193,7 +197,7 @@ export default function App() {
         const generated = await generateToursForCity(official.spanishName, official.country, user);
         if (generated.length > 0) {
             setTours(generated); 
-            setSelectedCity(generated[0].city);
+            if (generated[0].city) setSelectedCity(generated[0].city);
             await saveToursToCache(official.spanishName, official.country, user.language, generated);
             setView(AppView.CITY_DETAIL);
         }
