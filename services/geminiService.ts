@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
+import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 const GEO_BRUTAL_INSTRUCTION = `
 Eres Dai, el motor de precisión de BDAI. 
@@ -91,6 +92,11 @@ export const standardizeCityName = async (input: string) => {
 };
 
 export const generateAudio = async (text: string, language: string, city: string = ""): Promise<string | null> => {
+    // 1. INTENTAR CARGAR DE CACHÉ PRIMERO
+    const cached = await getCachedAudio(text, language);
+    if (cached) return cached;
+
+    // 2. SI NO HAY CACHÉ, LLAMAR A LA IA
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
@@ -100,10 +106,17 @@ export const generateAudio = async (text: string, language: string, city: string
             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
         },
     });
-    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+    
+    const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+    
+    // 3. GUARDAR EN CACHÉ PARA LA PRÓXIMA VEZ
+    if (base64) {
+        await saveAudioToCache(text, language, base64, city);
+    }
+    
+    return base64;
 };
 
-// Implemented moderateContent using gemini-3-flash-preview for safety checks
 export const moderateContent = async (text: string): Promise<boolean> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
@@ -113,11 +126,10 @@ export const moderateContent = async (text: string): Promise<boolean> => {
         });
         return response.text?.trim().toUpperCase() === 'SAFE';
     } catch (e) {
-        return true; // Fallback to safe if API call fails
+        return true; 
     }
 };
 
-// Implemented generateCityPostcard using gemini-2.5-flash-image for visual content
 export const generateCityPostcard = async (city: string, interests: any): Promise<string | null> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const interestsText = Array.isArray(interests) ? interests.join(", ") : 'travel and culture';

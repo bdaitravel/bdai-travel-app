@@ -33,7 +33,6 @@ export const saveToursToCache = async (city: string, country: string, language: 
   await supabase.from('tours_cache').upsert({ city: nKey, language, data: tours }, { onConflict: 'city,language' });
 };
 
-// NUEVA FUNCIÓN: Borra el caché corrupto de una ciudad específica
 export const deleteCityCache = async (city: string, country: string) => {
     const nKey = normalizeKey(city, country);
     const { error } = await supabase.from('tours_cache').delete().eq('city', nKey);
@@ -80,16 +79,19 @@ export const getGlobalRanking = async () => {
     return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username || 'Traveler' }));
 };
 
+// CACHÉ DE AUDIO REAL EN SUPABASE
 export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
-    // Implementación simplificada para evitar errores
-    return null;
+    const hash = btoa(text.slice(0, 50) + lang).slice(0, 100);
+    const { data } = await supabase.from('audio_cache').select('audio_base64').eq('id', hash).maybeSingle();
+    return data?.audio_base64 || null;
 };
 
 export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => {
+    const hash = btoa(text.slice(0, 50) + lang).slice(0, 100);
+    await supabase.from('audio_cache').upsert({ id: hash, text: text.slice(0, 100), language: lang, audio_base64: base64, city: city });
     return base64;
 };
 
-// Added getCommunityPosts to resolve module member error in CommunityBoard.tsx
 export const getCommunityPosts = async (city: string) => {
     const nKey = normalizeKey(city);
     const { data } = await supabase
@@ -108,7 +110,6 @@ export const getCommunityPosts = async (city: string) => {
     }));
 };
 
-// Added addCommunityPost to resolve module member error in CommunityBoard.tsx
 export const addCommunityPost = async (post: { city: string, userId: string, user: string, avatar: string, content: string, type: string }) => {
     const nKey = normalizeKey(post.city);
     const { error } = await supabase.from('community_posts').insert({

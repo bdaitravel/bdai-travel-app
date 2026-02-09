@@ -20,7 +20,7 @@ const UI_STRINGS: Record<string, any> = {
   ca: { welcome: "benvingut, bidaer:", explorer: "explorador", searchPlaceholder: "buscar ciutat...", emailPlaceholder: "teu@email.com", userPlaceholder: "usuari", login: "sol·licitar accés", verify: "validar", tagline: "better destinations by ai", authError: "email no vàlid", codeError: "incomplet", selectLang: "idioma", sentTo: "enviat a", changeEmail: "corregir", loading: "connectant...", navElite: "elit", navHub: "intel", navVisa: "passaport", navStore: "botiga", refreshIntel: "Actualitzar GPS" },
   eu: { welcome: "ongi etorri, bidaer:", explorer: "esploratzailea", searchPlaceholder: "bilatu hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarbidea eskatu", verify: "balioztatu", tagline: "better destinations by ai", authError: "email okerra", codeError: "osatu gabe", selectLang: "hizkuntza", sentTo: "hona bidalia", changeEmail: "zuzendu", loading: "konektatzen...", navElite: "elite", navHub: "intel", navVisa: "pasaportea", navStore: "denda", refreshIntel: "GPSa Berrezarri" },
   ar: { welcome: "أهلاً بك، بيداير:", explorer: "مستكشف", searchPlaceholder: "بحث عن مدينة...", emailPlaceholder: "بريدك", userPlaceholder: "اسم المستخدم", login: "طلب دخول", verify: "تأكيد", tagline: "better destinations by ai", authError: "بريد خاطئ", codeError: "ناقص", selectLang: "اللغة", sentTo: "أرسل إلى", changeEmail: "تعديل", loading: "جاري الاتصال...", navElite: "نخبة", navHub: "معلومات", navVisa: "جواز سفر", navStore: "متجر", refreshIntel: "تحديث GPS" },
-  pt: { welcome: "bem-vindo, bidaer:", explorer: "explorador", searchPlaceholder: "buscar cidade...", emailPlaceholder: "teu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email inválido", codeError: "incompleto", selectLang: "idioma", sentTo: "enviado para", changeEmail: "corregir", loading: "conectando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", refreshIntel: "Atualizar GPS" },
+  pt: { welcome: "bem-vindo, bidaer:", explorer: "explorador", searchPlaceholder: "buscar cidade...", emailPlaceholder: "teu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email inválido", codeError: "incompleto", selectLang: "idioma", sentTo: "enviado para", changeEmail: "corregir", loading: "conectando...", navElite: "elite", navHub: "intel", navVisa: "pasaporte", navStore: "loja", refreshIntel: "Atualizar GPS" },
   fr: { welcome: "bienvenue, bidaer:", explorer: "explorateur", searchPlaceholder: "chercher une ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "nom d'utilisateur", login: "demander l'accès", verify: "valider", tagline: "better destinations by ai", authError: "email invalide", codeError: "incomplet", selectLang: "langue", sentTo: "envoyé à", changeEmail: "modifier", loading: "connexion...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", refreshIntel: "Mettre à jour GPS" },
   de: { welcome: "willkommen, bidaer:", explorer: "entdecker", searchPlaceholder: "stadt suchen...", emailPlaceholder: "deine@email.com", userPlaceholder: "benutzername", login: "zugang anfordern", verify: "bestätigen", tagline: "better destinations by ai", authError: "ungültige email", codeError: "unvollständig", selectLang: "sprache", sentTo: "gesendet an", changeEmail: "korrigieren", loading: "verbinden...", navElite: "elite", navHub: "intel", navVisa: "reisepass", navStore: "laden", refreshIntel: "GPS aktualisieren" },
   it: { welcome: "benvenuto, bidaer:", explorer: "esploratore", searchPlaceholder: "cerca città...", emailPlaceholder: "tua@email.com", userPlaceholder: "username", login: "richiedi accesso", verify: "conferma", tagline: "better destinations by ai", authError: "email non valida", codeError: "incompleto", selectLang: "lingua", sentTo: "inviato a", changeEmail: "modifica", loading: "connessione...", navElite: "élite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", refreshIntel: "Aggiorna GPS" },
@@ -77,10 +77,11 @@ export default function App() {
         try {
             const { data: { session }, error } = await supabase.auth.getSession();
             
-            // SI HAY ERROR DE TOKEN (Invalid Refresh Token), LIMPIAMOS TODO
-            if (error) {
-                console.warn("Auth session error, clearing local state:", error);
+            // SI HAY ERROR DE TOKEN (Invalid Refresh Token), LIMPIAMOS TODO PARA SALIR DEL BUCLE
+            if (error || (error === null && !session && localStorage.getItem('bdai_profile'))) {
+                console.warn("Auth session corrupted or invalid token. Clearing state.");
                 localStorage.removeItem('bdai_profile');
+                localStorage.removeItem('sb-slldavgsoxunkphqeamx-auth-token'); // Limpieza forzada de Supabase storage
                 setUser({ language: user.language || 'es', miles: 0, isLoggedIn: false } as any);
                 setView(AppView.LOGIN);
                 return;
@@ -98,7 +99,9 @@ export default function App() {
                 if (!newUser.username) setShowOnboarding(true);
             }
         } catch (e) { 
-            console.error("Auth init fatal:", e); 
+            console.error("Auth init fatal:", e);
+            localStorage.removeItem('bdai_profile');
+            setView(AppView.LOGIN);
         } finally { 
             setIsVerifyingSession(false); 
         }
@@ -128,9 +131,8 @@ export default function App() {
     setSearchOptions(null);
     try {
         if (forceRefresh) {
-            // PURGA TOTAL DE LA CIUDAD EN SUPABASE
-            addLog(`Purgando caché de ${cityInput}...`);
             await deleteCityCache(cityInput, "");
+            setTours([]); // Limpieza local inmediata
         }
 
         const cached = await getCachedTours(cityInput, "", user.language);
@@ -174,8 +176,6 @@ export default function App() {
         }
     } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
-
-  const addLog = (m: string) => console.log(`[BDAI ADMIN] ${m}`);
 
   const handleLoginRequest = async () => {
     if (!validateEmailFormat(email)) { alert(t('authError')); return; }
