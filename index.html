@@ -1,7 +1,16 @@
-
 <!DOCTYPE html>
 <html lang="es">
   <head>
+    <!-- SCRIPT DE VALIDACIÓN EMERALD - PRIORIDAD MÁXIMA -->
+    <script data-noptimize="1" data-cfasync="false" data-wpfc-render="false">
+      (function () {
+          var script = document.createElement("script");
+          script.async = 1;
+          script.src = 'https://emrldco.com/NDk2ODYx.js?t=496861';
+          document.head.appendChild(script);
+      })();
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,69 +31,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Script de Partner de Viajes (Emerald) - INSTALACIÓN MANUAL REQUERIDA -->
-    <script data-noptimize="1" data-cfasync="false" data-wpfc-render="false">
-      (function () {
-          var script = document.createElement("script");
-          script.async = 1;
-          script.src = 'https://emrldco.com/NDk2ODYx.js?t=496861';
-          document.head.appendChild(script);
-      })();
-    </script>
 
     <style>
-      :root {
-        --font-heading: 'Outfit', sans-serif;
-      }
-      body {
-        font-family: 'Outfit', sans-serif;
-        background-color: #020617;
-        overscroll-behavior: none;
-        -webkit-tap-highlight-color: transparent;
-        margin: 0;
-        padding: 0;
-        height: 100dvh;
-        width: 100vw;
-        overflow: hidden;
-      }
+      :root { --font-heading: 'Outfit', sans-serif; }
+      body { font-family: 'Outfit', sans-serif; background-color: #020617; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; height: 100dvh; width: 100vw; overflow: hidden; }
       #root { height: 100%; display: flex; flex-direction: column; }
-      
-      .pt-safe-iphone { 
-        padding-top: calc(env(safe-area-inset-top, 20px) + 1.5rem) !important; 
-      }
-      .pb-safe-iphone { 
-        padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 1rem) !important; 
-      }
-      
+      .pt-safe-iphone { padding-top: calc(env(safe-area-inset-top, 20px) + 1.5rem) !important; }
+      .pb-safe-iphone { padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 1rem) !important; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      input, textarea { font-size: 16px !important; }
-
-      @keyframes scan {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(300%); }
-      }
-      .animate-scan {
-        animation: scan 3s linear infinite;
-      }
-
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      .animate-fade-in {
-        animation: fadeIn 0.4s ease-out;
-      }
-
-      @keyframes pulse-logo {
-        0% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(147,51,234,0)); }
-        50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(147,51,234,0.4)); }
-        100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(147,51,234,0)); }
-      }
-      .animate-pulse-logo {
-        animation: pulse-logo 3s ease-in-out infinite;
-      }
+      @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+      .animate-scan { animation: scan 3s linear infinite; }
+      @keyframes pulse-logo { 0% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(147,51,234,0)); } 50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(147,51,234,0.4)); } 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(147,51,234,0)); } }
+      .animate-pulse-logo { animation: pulse-logo 3s ease-in-out infinite; }
     </style>
   <script type="importmap">
 {
