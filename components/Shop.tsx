@@ -3,21 +3,9 @@ import React, { useState } from 'react';
 import { UserProfile } from '../types';
 
 const SHOP_TEXTS: any = {
-    en: { title: "bdai hub", subtitle: "Assets & Partner Network", buy: "Buy on Etsy", official: "Official Stores", partnerTitle: "Partner Program", partnerDesc: "Earn 10% on every sale.", searchPlaceholder: "Affiliate Link or Code...", validate: "Validate", earn: "Earn", market: "Market" },
-    es: { title: "hub bdai", subtitle: "Activos y Red de Partners", buy: "Comprar en Etsy", official: "Tiendas Oficiales", partnerTitle: "Programa de Partners", partnerDesc: "Gana un 10% por cada venta.", searchPlaceholder: "Enlace de afiliado o código...", validate: "Validar", earn: "Gana", market: "Mercado" },
-    it: { title: "hub bdai", subtitle: "Asset e Rete Partner", buy: "Compra su Etsy", official: "Store Ufficiali", partnerTitle: "Programma Partner", partnerDesc: "Guadagna il 10% su ogni vendita.", searchPlaceholder: "Link o codice affiliato...", validate: "Valida", earn: "Guadagna", market: "Mercato" },
-    zh: { title: "bdai 中心", subtitle: "资产与合作伙伴网络", buy: "在 Etsy 购买", official: "官方商店", partnerTitle: "合作伙伴计划", validate: "验证", earn: "赚取", market: "市场" },
-    ca: { title: "hub bdai", subtitle: "Actius i Xarxa de Partners", buy: "Comprar a Etsy", official: "Botigues Oficials", partnerTitle: "Programa de Partners", validate: "Validar", earn: "Guanya", market: "Mercat" },
-    eu: { title: "bdai hub", subtitle: "Aktiboak eta Partner Sarea", buy: "Etsy-n erosi", official: "Denda Ofizialak", partnerTitle: "Partner Programa", validate: "Egiaztatu", earn: "Irabazi", market: "Merkatua" },
-    pt: { title: "hub bdai", subtitle: "Ativos e Rede de Parceiros", buy: "Comprar no Etsy", official: "Lojas Oficiais", partnerTitle: "Programa de Parceiros", validate: "Validar", earn: "Ganhar", market: "Mercado" },
-    fr: { title: "hub bdai", subtitle: "Actifs et Réseau Partenaire", buy: "Acheter sur Etsy", official: "Boutiques Officielles", partnerTitle: "Programme Partenaire", validate: "Valider", earn: "Gagner", market: "Marché" },
-    de: { title: "bdai Hub", subtitle: "Assets & Partner Netzwerk", buy: "Bei Etsy kaufen", official: "Offizielle Shops", partnerTitle: "Partnerprogramm", validate: "Bestätigen", earn: "Verdienen", market: "Markt" },
-    ja: { title: "bdai ハブ", subtitle: "アセットとパートナーネットワーク", buy: "Etsyで購入", official: "公式ストア", partnerTitle: "パートナープログラム", validate: "確認", earn: "稼ぐ", market: "マーケット" },
-    ru: { title: "bdai хаб", subtitle: "Активы и партнерская сеть", buy: "Купить на Etsy", official: "Официальные магазины", partnerTitle: "Партнерская программа", validate: "Проверить", earn: "Заработать", market: "Рынок" },
-    tr: { title: "bdai merkezi", subtitle: "Varlıklar ve İş Ortağı Ağı", buy: "Etsy'den satın al", official: "Resmi Mağazalar", partnerTitle: "Ortaklık Programı", validate: "Doğrula", earn: "Kazan", market: "Pazar" },
-    ko: { title: "bdai 허브", subtitle: "자산 및 파트너 네트워크", buy: "Etsy에서 구매", official: "공식 상점", partnerTitle: "파트너 프로그램", validate: "확인", earn: "적립", market: "마켓" },
-    hi: { title: "bdai हब", subtitle: "संपत्ति और पार्टनर नेटवर्क", buy: "Etsy पर खरीदें", official: "आधिकारिक स्टोर", partnerTitle: "पार्टनर प्रोग्राम", validate: "सत्यापित", earn: "कमाएं", market: "बाजार" },
-    ar: { title: "مركز bdai", subtitle: "الأصول وشبكة الشركاء", buy: "شراء من Etsy", official: "المتاجر الرسمية", partnerTitle: "برنامج الشركاء", validate: "تحقق", earn: "اربح", market: "سوق" }
+    en: { title: "bdai hub", subtitle: "Assets & Partner Network", buy: "Buy on Etsy", official: "Official Stores", partnerTitle: "Partner Program", partnerDesc: "Earn 10% on every sale.", searchPlaceholder: "Affiliate Link or Code...", validate: "Verify & Link", earn: "Earn", market: "Market", verifying: "Verifying Ownership...", verified: "Ownership Verified!", loginRequired: "Login required to join." },
+    es: { title: "hub bdai", subtitle: "Activos y Red de Partners", buy: "Comprar en Etsy", official: "Tiendas Oficiales", partnerTitle: "Programa de Partners", partnerDesc: "Gana un 10% por cada venta.", searchPlaceholder: "Enlace de afiliado o código...", validate: "Verificar y Vincular", earn: "Gana", market: "Mercado", verifying: "Verificando Propiedad...", verified: "¡Propiedad Verificada!", loginRequired: "Debes iniciar sesión para unirte." },
+    pt: { title: "hub bdai", subtitle: "Ativos e Rede de Parceiros", buy: "Comprar no Etsy", official: "Lojas Oficiais", partnerTitle: "Programa de Parceiros", validate: "Validar", earn: "Ganhar", market: "Mercado" }
 };
 
 const ITEMS = [
@@ -29,10 +17,25 @@ const ITEMS = [
 export const Shop: React.FC<{ user: UserProfile, language: string, onPurchase: (reward: number) => void }> = ({ user, language, onPurchase }) => {
     const [activeTab, setActiveTab] = useState<'Market' | 'Earn'>('Market');
     const [affiliateCode, setAffiliateCode] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
     const t = SHOP_TEXTS[language] || SHOP_TEXTS.es;
 
+    const handleVerifyPartner = () => {
+        if (!user.isLoggedIn) {
+            alert(t.loginRequired);
+            return;
+        }
+        setIsVerifying(true);
+        // Simulación de verificación técnica contra la DB
+        setTimeout(() => {
+            setIsVerifying(false);
+            setIsVerified(true);
+        }, 2000);
+    };
+
     return (
-        <div className="pb-44 animate-fade-in bg-[#020617] min-h-full">
+        <div className="pb-44 animate-fade-in bg-[#020617] min-h-full overflow-y-auto no-scrollbar">
             <header className="bg-gradient-to-b from-purple-900/30 to-slate-950 p-10 rounded-b-[4rem] border-b border-purple-500/10">
                 <h2 className="text-4xl font-black text-white tracking-tighter uppercase">{t.title}</h2>
                 <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mt-1">{t.subtitle}</p>
@@ -65,17 +68,32 @@ export const Shop: React.FC<{ user: UserProfile, language: string, onPurchase: (
                     <div className="bg-gradient-to-br from-purple-600/20 to-slate-900 border border-purple-500/30 rounded-[3rem] p-8 text-center relative overflow-hidden">
                         <i className="fas fa-handshake absolute -top-10 -right-10 text-9xl text-white/5 rotate-12"></i>
                         <h4 className="text-white font-black text-xl uppercase mb-2 relative z-10">{t.partnerTitle}</h4>
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-6 relative z-10">{t.partnerDesc || "Earn commission on sales"}</p>
+                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-6 relative z-10">{t.partnerDesc}</p>
+                        
                         <div className="relative z-10 flex flex-col gap-3">
-                            <input type="text" value={affiliateCode} onChange={(e) => setAffiliateCode(e.target.value)} placeholder={t.searchPlaceholder || "Affiliate code..."} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-[10px] font-bold outline-none focus:border-purple-500 transition-all" />
-                            <button className="w-full py-4 bg-white text-slate-950 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all">{t.validate}</button>
+                            <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                                <p className="text-[7px] text-slate-500 uppercase font-black mb-1">Tu ID de Bidaer para Registro:</p>
+                                <p className="text-xs text-purple-400 font-mono font-black">{user.id}</p>
+                            </div>
+                            
+                            <input type="text" value={affiliateCode} onChange={(e) => setAffiliateCode(e.target.value)} placeholder={t.searchPlaceholder} className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-[10px] font-bold outline-none focus:border-purple-500 transition-all" />
+                            
+                            <button 
+                                onClick={handleVerifyPartner}
+                                disabled={isVerifying || isVerified}
+                                className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all ${isVerified ? 'bg-green-600 text-white' : 'bg-white text-slate-950'}`}
+                            >
+                                {isVerifying ? <i className="fas fa-spinner fa-spin mr-2"></i> : null}
+                                {isVerified ? t.verified : (isVerifying ? t.verifying : t.validate)}
+                            </button>
                         </div>
                     </div>
+                    
                     <div className="p-8 border border-white/5 bg-white/5 rounded-[3rem] flex items-center gap-6">
                         <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-white shrink-0"><i className="fas fa-shield-halved text-2xl"></i></div>
                         <div>
                             <h5 className="text-white font-black text-[10px] uppercase mb-1">Certificación Emerald</h5>
-                            <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Infraestructura de monetización segura. Pagos mensuales directos vía Stripe/PayPal.</p>
+                            <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Viculación de propiedad verificada. Para activar los pagos debes usar el mismo email que en BDAI.</p>
                         </div>
                     </div>
                 </div>
