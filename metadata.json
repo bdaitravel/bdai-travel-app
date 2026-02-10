@@ -1,6 +1,6 @@
 {
   "name": "bdai",
-  "description": "bdai- La Masterclass Global de Viajes. Tours de alta densidad informativa con ingeniería, historia y anécdotas reales.",
+  "description": "Better Destinations AI - La Masterclass Global de Viajes estilo Free Tour. Tours inteligentes con ingeniería, historia y anécdotas locales.",
   "requestFramePermissions": [
     "geolocation",
     "camera",

@@ -1,59 +1,90 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { UserProfile } from '../types';
 
 const SHOP_TEXTS: any = {
-    es: { title: "mercado bdai", subtitle: "Equipo Oficial y Servicios Digitales", status: "Próximamente", info: "Estamos construyendo el mejor mercado para viajeros. Pronto podrás encontrar reservas, eSIMs y equipo oficial aquí.", official: "Nuestro Futuro Ecosistema" },
-    en: { title: "bdai market", subtitle: "Official Gear & Digital Services", status: "Coming Soon", info: "We are building the best marketplace for travelers. Soon you will find bookings, eSIMs, and official nomad gear here.", official: "Our Future Ecosystem" },
-    zh: { title: "bdai 市场", subtitle: "官方装备与数字服务", status: "即将推出", info: "我们正在为旅行者建立最好的市场。很快你就能在这里找到预订、eSIM和官方游牧装备。", official: "我们的未来生态系统" },
-    ca: { title: "mercat bdai", subtitle: "Equip Oficial i Serveis Digitals", status: "Properament", info: "Estem construint el millor mercat per a viatgers. Aviat podràs trobar reserves, eSIMs i equip oficial aquí.", official: "El Nostre Futur Ecosistema" },
-    eu: { title: "bdai merkatua", subtitle: "Ekipo Ofiziala eta Zerbitzu Digitalak", status: "Laster", info: "Bidaiarientzako merkaturik onena eraikitzen ari gara. Laster erreserbak, eSIMak eta nomada ekipo ofiziala aurkituko dituzu hemen.", official: "Gure Etorkizuneko Ekosistema" },
-    ar: { title: "سوق bdai", subtitle: "المعدات الرسمية والخدمات الرقمية", status: "قريباً", info: "نحن نبني أفضل سوق للمسافرين. ستتمكن قريباً من العثور على الحجوزات وشرائح eSIM والمعدات الرسمية هنا.", official: "منظومتنا المستقبلية" },
-    pt: { title: "mercado bdai", subtitle: "Equipamento Oficial e Serviços Digitais", status: "Em breve", info: "Estamos construindo o melhor mercado para viajantes. Em breve você poderá encontrar reservas, eSIMs e equipamentos oficiais aqui.", official: "Nosso Futuro Ecossistema" },
-    fr: { title: "marché bdai", subtitle: "Équipement Officiel et Services Numériques", status: "Bientôt", info: "Nous construisons le meilleur marché pour les voyageurs. Bientôt vous trouverez ici des réservations, des eSIM et de l'équipement nomade.", official: "Notre Futur Écosystème" },
-    de: { title: "bdai marktplatz", subtitle: "Ausrüstung & Digitale Dienste", status: "Demnächst", info: "Wir bauen den besten Marktplatz für Reisende auf. Bald finden Sie hier Buchungen, eSIMs und Nomaden-Ausrüstung.", official: "Unser Zukünftiges Ökosystem" },
-    it: { title: "mercato bdai", subtitle: "Equipaggiamento e Servizi Digitali", status: "Prossimamente", info: "Stiamo costruendo il miglior mercato per i viaggiatori. Presto potrai trovare prenotazioni, eSIM e attrezzatura ufficiale.", official: "Il Nostro Futuro Ecosistema" },
-    ja: { title: "bdai マーケット", subtitle: "公式ギアとデジタルサービス", status: "近日公開", info: "旅行者のための最高のマーケットプレイスを構築中です。まもなく、予約、eSIM、公式ギアがここで見つかります。", official: "私たちの未来のエコシステム" },
-    ru: { title: "маркет bdai", subtitle: "Официальное снаряжение и услуги", status: "Скоро", info: "Мы строим лучший маркетплейс для путешественников. Скоро здесь вы найдете бронирования, eSIM и снаряжение.", official: "Наша будущая экосистема" },
-    hi: { title: "bdai बाज़ार", subtitle: "आधिकारिक गियर और डिजिटल सेवाएँ", status: "जल्द ही आ रहा है", info: "हम यात्रियों के लिए सबसे अच्छा बाज़ार बना रहे हैं। जल्द ही आप यहां बुकिंग, ई-सिम और गियर पा सकेंगे।", official: "हमारा भविष्य का पारिस्थितिकी तंत्र" },
-    ko: { title: "bdai 마켓", subtitle: "공식 장비 및 디지털 서비스", status: "출시 예정", info: "여행자를 위한 최고의 마켓플레이스를 구축하고 있습니다. 곧 여기서 예약, eSIM 및 공식 장비를 찾을 수 있습니다.", official: "우리의 미래 생태계" },
-    tr: { title: "bdai pazarı", subtitle: "Resmi Ekipman ve Dijital Hizmetler", status: "Yakında", info: "Gezginler için en iyi pazaryerini kuruyoruz. Yakında burada rezervasyonlar, eSIM'ler ve ekipmanlar bulabileceksiniz.", official: "Gelecekteki Ekosistemimiz" }
+    en: { title: "bdai market", subtitle: "Traveler Gear & Digital Assets", buy: "Buy on Etsy", download: "Get on Hotmart", official: "Our Official Stores", cats: { 'Digital': 'Digital Goods', 'Merch': 'Physical Gear' } },
+    es: { title: "mercado bdai", subtitle: "Equipo para Viajeros y Activos", buy: "Comprar en Etsy", download: "Bajar en Hotmart", official: "Nuestras Tiendas Oficiales", cats: { 'Digital': 'Productos Digitales', 'Merch': 'Ropa y Accesorios' } },
+    pt: { title: "mercado bdai", subtitle: "Equipamento e Ativos Digitais", buy: "Comprar no Etsy", download: "Baixar no Hotmart", official: "Lojas Oficiais", cats: { 'Digital': 'Produtos Digitais', 'Merch': 'Vestuário' } },
+    it: { title: "mercato bdai", subtitle: "Attrezzatura e Asset Digitali", buy: "Compra su Etsy", download: "Scarica su Hotmart", official: "Nostri Store Ufficiali", cats: { 'Digital': 'Prodotti Digitali', 'Merch': 'Abbigliamento' } },
+    ru: { title: "рынок bdai", subtitle: "Снаряжение и цифровые активы", buy: "Купить на Etsy", download: "Hotmart", official: "Наши официальные магазины", cats: { 'Digital': 'Цифровые товары', 'Merch': 'Мерч' } },
+    hi: { title: "bdai बाज़ार", subtitle: "यात्री गियर और डिजिटल संपत्ति", buy: "Etsy पर खरीदें", download: "Hotmart पर प्राप्त करें", official: "हमारे आधिकारिक स्टोर", cats: { 'Digital': 'डिजिटल सामान', 'Merch': 'फिजिकल गियर' } },
+    ko: { title: "bdai 마켓", subtitle: "여행자 장비 및 디지털 자산", buy: "Etsy에서 구매", download: "Hotmart에서 다운로드", official: "공식 스토어", cats: { 'Digital': '디지털 상품', 'Merch': '의류 및 액세서리' } },
+    tr: { title: "bdai pazarı", subtitle: "Gezgin Ekipmanları ve Dijital Varlıklar", buy: "Etsy'den satın al", download: "Hotmart'tan indir", official: "Resmi Mağazalarımız", cats: { 'Digital': 'Dijital Ürünler', 'Merch': 'Giyim ve Aksesuar' } },
+    fr: { title: "marché bdai", subtitle: "Équipement pour Voyageurs", buy: "Acheter sur Etsy", download: "Sur Hotmart", official: "Boutiques Officielles", cats: { 'Digital': 'Produits Numériques', 'Merch': 'Vêtements' } },
+    de: { title: "bdai Markt", subtitle: "Ausrüstung & Digitale Produkte", buy: "Auf Etsy kaufen", download: "Auf Hotmart", official: "Offizielle Shops", cats: { 'Digital': 'Digitale Güter', 'Merch': 'Kleidung' } },
+    ja: { title: "bdai マーケット", subtitle: "トラベラーギアとデジタル資産", buy: "Etsyで購入", download: "Hotmartで入手", official: "公式ストア", cats: { 'Digital': 'デジタル商品', 'Merch': 'フィジカルギア' } },
+    zh: { title: "bdai 市场", subtitle: "旅行装备与数字资产", buy: "在 Etsy 购买", download: "在 Hotmart 获取", official: "官方商店", cats: { 'Digital': '数字产品', 'Merch': '实体装备' } },
+    ca: { title: "mercat bdai", subtitle: "Equip per a Viatgers", buy: "Comprar a Etsy", download: "Baixar a Hotmart", official: "Botigues Oficials", cats: { 'Digital': 'Productes Digitals', 'Merch': 'Roba' } },
+    eu: { title: "bdai merkatua", subtitle: "Bidaiarientzako Ekipoa", buy: "Etsy-n erosi", download: "Hotmart-en deskargatu", official: "Denda Ofizialak", cats: { 'Digital': 'Produktu Digitalak', 'Merch': 'Arropa' } },
+    ar: { title: "سوق bdai", subtitle: "معدات المسافرين والأصول الرقمية", buy: "شراء من Etsy", download: "تحميل من Hotmart", official: "متاجرنا الرسمية", cats: { 'Digital': 'بضائع رقمية', 'Merch': 'ملابس وأدوات' } }
 };
 
-export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) => void }> = ({ user }) => {
-    const t = SHOP_TEXTS[user.language] || SHOP_TEXTS.en;
+const EXTERNAL_STORES = [
+    { id: 'etsy', name: 'Etsy Shop', url: 'https://www.etsy.com/es/shop/BdaiShop', icon: 'fa-etsy', color: 'bg-[#F1641E]' },
+    { id: 'hotmart', name: 'Hotmart', url: '#', icon: 'fa-fire', color: 'bg-[#f04e23]' },
+    { id: 'amazon', name: 'Amazon', url: '#', icon: 'fa-amazon', color: 'bg-[#232f3e]' },
+    { id: 'miravia', name: 'Miravia', url: '#', icon: 'fa-shopping-bag', color: 'bg-[#ff3b30]' }
+];
+
+const ITEMS = [
+    { id: 'd1', name: 'Travel Guide 1–3 days', price: '9.90€', cat: 'Digital', icon: 'fa-map-location-dot', color: 'bg-purple-600', note: 'AI Optimized', link: 'https://www.etsy.com/es/shop/BdaiShop' },
+    { id: 'd2', name: 'Digital Recipes', price: '12.50€', cat: 'Digital', icon: 'fa-utensils', color: 'bg-emerald-600', note: 'Global flavors', link: 'https://www.etsy.com/es/shop/BdaiShop' },
+    { id: 'd3', name: 'Notion Travel Templates', price: '19.00€', cat: 'Digital', icon: 'fa-clapperboard', color: 'bg-slate-800', note: 'Pro Organization', link: 'https://www.etsy.com/es/shop/BdaiShop' },
+    { id: 'p1', name: 'Premium Tote Bag', price: '22.00€', cat: 'Merch', icon: 'fa-bag-shopping', color: 'bg-amber-600', note: 'Nomad Style', link: 'https://www.etsy.com/es/shop/BdaiShop' },
+    { id: 'p2', name: 'Explorer T-Shirt', price: '32.00€', cat: 'Merch', icon: 'fa-shirt', color: 'bg-blue-600', note: 'Premium Cotton', link: 'https://www.etsy.com/es/shop/BdaiShop' }
+];
+
+export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) => void }> = ({ user, onPurchase }) => {
+    const [activeCat, setActiveCat] = useState('Merch');
+    const t = SHOP_TEXTS[user.language] || SHOP_TEXTS.es;
+
+    const openStore = (url: string) => {
+        if (url !== '#') window.open(url, '_blank');
+    };
 
     return (
-        <div className="pb-44 animate-fade-in bg-[#020617] min-h-full flex flex-col items-center px-8">
-            <header className="w-full bg-gradient-to-b from-purple-900/40 to-slate-950 p-10 rounded-b-[4rem] border-b border-purple-500/20 text-center mb-12">
-                <h2 className="text-4xl font-black text-white tracking-tighter uppercase">{t.title}</h2>
-                <p className="text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mb-4">{t.subtitle}</p>
+        <div className="pb-44 animate-fade-in bg-[#020617] min-h-full">
+            <header className="bg-gradient-to-b from-purple-900/40 to-slate-950 p-10 rounded-b-[4rem] border-b border-purple-500/20">
+                <h2 className={`text-4xl font-black text-white tracking-tighter uppercase ${user.language === 'ar' ? 'text-right' : ''}`}>{t.title}</h2>
+                <p className={`text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mb-8 ${user.language === 'ar' ? 'text-right' : ''}`}>{t.subtitle}</p>
+                <p className={`text-[8px] font-black text-white/40 uppercase tracking-widest mb-4 ${user.language === 'ar' ? 'text-right' : ''}`}>{t.official}</p>
+                <div className={`flex gap-3 overflow-x-auto no-scrollbar pb-2 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                    {EXTERNAL_STORES.map(store => (
+                        <button key={store.id} onClick={() => openStore(store.url)} className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-3 rounded-2xl active:scale-95 transition-all">
+                            <div className={`w-8 h-8 rounded-lg ${store.color} flex items-center justify-center text-white text-xs shadow-lg`}>
+                                <i className={`fab ${store.icon}`}></i>
+                            </div>
+                            <span className="text-[10px] font-black text-white whitespace-nowrap">{store.name}</span>
+                        </button>
+                    ))}
+                </div>
             </header>
-
-            <div className="w-full max-w-sm bg-white/5 border border-white/10 p-10 rounded-[3rem] text-center shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-purple-600 animate-pulse"></div>
-                <div className="w-20 h-20 rounded-[2rem] bg-purple-600/20 text-purple-500 flex items-center justify-center text-3xl mx-auto mb-6 border border-purple-500/30">
-                    <i className="fas fa-hammer"></i>
-                </div>
-                <h3 className="text-white font-black text-xl uppercase tracking-tighter mb-4">{t.status}</h3>
-                <p className="text-slate-400 text-xs leading-relaxed font-medium mb-8">
-                    {t.info}
-                </p>
-                <div className="flex justify-center gap-6 text-slate-600 text-xl">
-                    <i className="fas fa-hotel"></i>
-                    <i className="fas fa-sim-card"></i>
-                    <i className="fas fa-bag-shopping"></i>
-                    <i className="fas fa-ticket"></i>
-                </div>
-            </div>
-
-            <div className="mt-12 text-center opacity-30">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">{t.official}</p>
-                <div className="flex gap-4 items-center justify-center">
-                    <i className="fab fa-amazon"></i>
-                    <i className="fab fa-etsy"></i>
-                    <i className="fas fa-fire"></i>
-                </div>
+            <nav className={`px-8 mt-10 flex gap-3 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                {Object.keys(t.cats).map(c => (
+                    <button key={c} onClick={() => setActiveCat(c)} className={`px-6 py-4 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all border ${activeCat === c ? 'bg-white text-slate-950 border-white' : 'bg-white/5 text-white/40 border-white/5'}`}>
+                        {t.cats[c]}
+                    </button>
+                ))}
+            </nav>
+            <div className="p-8 grid grid-cols-1 gap-4">
+                {ITEMS.filter(i => i.cat === activeCat).map(item => (
+                    <div key={item.id} onClick={() => openStore(item.link)} className={`bg-white/5 border border-white/10 rounded-[2.5rem] p-6 flex items-center justify-between group active:scale-95 transition-all cursor-pointer ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                        <div className={`flex items-center gap-5 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                            <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center text-white text-xl shadow-lg`}>
+                                <i className={`fas ${item.icon}`}></i>
+                            </div>
+                            <div className={user.language === 'ar' ? 'text-right' : ''}>
+                                <h4 className="text-white font-black text-xs uppercase">{item.name}</h4>
+                                <div className={`flex items-center gap-2 mt-1 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                                    <p className="text-[11px] font-black text-purple-400">{item.price}</p>
+                                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">{item.note}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <i className={`fas fa-chevron-right text-slate-700 group-hover:text-purple-500 ${user.language === 'ar' ? 'rotate-180' : ''}`}></i>
+                    </div>
+                ))}
             </div>
         </div>
     );

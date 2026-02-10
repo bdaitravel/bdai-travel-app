@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BdaiLogo } from './BdaiLogo';
 
 interface OnboardingProps {
@@ -8,262 +8,181 @@ interface OnboardingProps {
 }
 
 const CONTENT: any = {
-    es: { 
-        title: "bienvenido a bdai", 
-        subtitle: "tours globales gratuitos y a tu ritmo",
-        intro: "Explora el mundo con la profundidad de un experto local, sin horarios y totalmente gratis gracias a nuestra inteligencia artificial.",
-        btnStart: "inicia tu experiencia",
-        features: [
-            { title: "Tours Gratis e Ilimitados", desc: "Cualquier ciudad del mundo está a tu alcance. Generamos masterclasses técnicas al instante.", icon: "fa-globe" },
-            { title: "Dai: Tu Guía con IA", desc: "Secretos técnicos, historia pura e ingeniería. Recibe el 'Dai Shot' para la foto perfecta.", icon: "fa-wand-magic-sparkles" },
-            { title: "Lectura, Audio y GPS", desc: "Tú eliges el ritmo. Lee, escucha el audio de Dai o sigue la ruta exacta con nuestro mapa interactivo.", icon: "fa-location-dot" },
-            { title: "Millas y Rango", desc: "Cada paso cuenta. Gana millas, sube en el ranking global y desbloquea insignias exclusivas.", icon: "fa-trophy" },
-            { title: "Pasaporte Digital", desc: "Tus viajes se quedan contigo. Cada ciudad completada te da un visado oficial en tu perfil.", icon: "fa-passport" }
-        ],
-        footer: "proximamente: marketplace bdai, la ecommerce del viajero."
-    },
-    en: { 
-        title: "welcome to bdai", 
-        subtitle: "free global tours at your own pace",
-        intro: "Explore the world with the depth of a local expert, with no schedules and completely free through our AI.",
-        btnStart: "start your experience",
-        features: [
-            { title: "Free & Unlimited Tours", desc: "Every city in the world at your fingertips. High-quality masterclasses generated instantly.", icon: "fa-globe" },
-            { title: "Dai: Your AI Guide", desc: "Technical secrets, pure history, and engineering. Get the 'Dai Shot' for the perfect photo.", icon: "fa-wand-magic-sparkles" },
-            { title: "Read, Listen & GPS", desc: "Your pace, your choice. Read secrets, listen to audio guides, or follow the precise GPS route.", icon: "fa-location-dot" },
-            { title: "Miles & Ranking", desc: "Every step counts. Earn miles, climb global rankings, and unlock exclusive badges.", icon: "fa-trophy" },
-            { title: "Digital Passport", desc: "Your travels stay with you. Get official visas for every city you complete.", icon: "fa-passport" }
-        ],
-        footer: "coming soon: bdai marketplace, the traveler's ecommerce."
-    },
-    zh: { 
-        title: "欢迎来到 bdai", 
-        subtitle: "免费全球旅游，按您的节奏进行",
-        intro: "借助我们的人工智能，您可以像当地专家一样深入探索世界，无需预约，完全免费。",
-        btnStart: "开启体验",
-        features: [
-            { title: "免费无限旅游", desc: "全球任何城市触手可及。即时生成技术级大师课。", icon: "fa-globe" },
-            { title: "Dai：AI 导游", desc: "技术秘密、纯粹历史与工程学。获取“Dai Shot”拍出完美照片。", icon: "fa-wand-magic-sparkles" },
-            { title: "阅读、语音与 GPS", desc: "节奏由您掌握。阅读、听取语音导览或跟随 GPS 地图。", icon: "fa-location-dot" },
-            { title: "里程与等级", desc: "每一步都有价值。赚取里程，提升全球排名，解锁独家徽章。", icon: "fa-trophy" },
-            { title: "数字护照", desc: "您的旅程将永远伴随您。完成每个城市都会在您的资料中获得正式签证。", icon: "fa-passport" }
-        ],
-        footer: "即将推出：bdai 市场，旅行者的电子商务。"
-    },
-    ca: { 
-        title: "benvingut a bdai", 
-        subtitle: "tours globals gratuïts i al teu ritme",
-        intro: "Explora el món amb la profunditat d'un expert local, sense horaris i totalment gratis gràcies a la nostra intel·ligència artificial.",
-        btnStart: "inicia la teva experiència",
-        features: [
-            { title: "Tours Gratis i Il·limitats", desc: "Qualsevol ciutat del món al teu abast. Generem masterclasses tècniques a l'instant.", icon: "fa-globe" },
-            { title: "Dai: El teu Guia amb IA", desc: "Secrets tècnics, història pura i enginyeria. Rep el 'Dai Shot' per a la foto perfecta.", icon: "fa-wand-magic-sparkles" },
-            { title: "Lectura, Àudio i GPS", desc: "Tu tries el ritme. Llegeix, escolta l'àudio d'en Dai o segueix la ruta amb el mapa interactiu.", icon: "fa-location-dot" },
-            { title: "Milles i Rang", desc: "Cada pas compta. Guanya milles, puja en el rànquing global i desbloqueja insígnies.", icon: "fa-trophy" },
-            { title: "Passaport Digital", desc: "Els teus viatges es queden amb tu. Cada ciutat completada et dóna un visat oficial al perfil.", icon: "fa-passport" }
-        ],
-        footer: "properament: marketplace bdai, l'ecommerce del viatger."
-    },
-    eu: { 
-        title: "ongi etorri bdai-ra", 
-        subtitle: "doako tour globalak zure erritmoan",
-        intro: "Esploratu mundua tokiko aditu baten sakontasunarekin, ordutegirik gabe eta doan gure adimen artifizialari esker.",
-        btnStart: "hasi zure esperientzia",
-        features: [
-            { title: "Doako Tour Mugagabeak", desc: "Munduko edozein hiri zure esku. Masterclass teknikoak berehala sortzen ditugu.", icon: "fa-globe" },
-            { title: "Dai: Zure IA Gida", desc: "Sekretu teknikoak, historia hutsa eta ingeniaritza. Jaso 'Dai Shot'-a argazki perfekturako.", icon: "fa-wand-magic-sparkles" },
-            { title: "Irakurketa, Audioa eta GPS", desc: "Zuk aukeratu ritmoa. Irakurri, entzun Dai-ren audioa edo jarraitu mapa interaktiboa.", icon: "fa-location-dot" },
-            { title: "Miliak eta Maila", desc: "Urrats bakoitzak balio du. Irabazi miliak, igo sailkapenean eta desblokeatu bereizgarriak.", icon: "fa-trophy" },
-            { title: "Pasaporte Digitala", desc: "Zure bidaiak zurekin geratzen dira. Osatutako hiri bakoitzak bisa ofiziala ematen dizu.", icon: "fa-passport" }
-        ],
-        footer: "laster: bdai marketplace, bidaiariaren ecommerce-a."
-    },
-    pt: { 
-        title: "bem-vindo ao bdai", 
-        subtitle: "tours globais gratuitos e no seu ritmo",
-        intro: "Explore o mundo com a profundidade de um especialista local, sem horários e totalmente grátis graças à nossa inteligência artificial.",
-        btnStart: "inicie sua experiência",
-        features: [
-            { title: "Tours Grátis e Ilimitados", desc: "Qualquer cidade do mundo ao seu alcance. Geramos masterclasses técnicas instantaneamente.", icon: "fa-globe" },
-            { title: "Dai: Seu Guia com IA", desc: "Segredos técnicos, história pura e engenharia. Receba o 'Dai Shot' para a foto perfeita.", icon: "fa-wand-magic-sparkles" },
-            { title: "Leitura, Áudio e GPS", desc: "Você escolhe o ritmo. Leia, ouça o áudio do Dai ou siga a rota com o mapa interativo.", icon: "fa-location-dot" },
-            { title: "Milhas e Ranking", desc: "Cada passo conta. Ganhe milhas, suba no ranking global e desbloqueie insígnias.", icon: "fa-trophy" },
-            { title: "Passaporte Digital", desc: "Suas viagens ficam com você. Cada cidade concluída dá um visto oficial no perfil.", icon: "fa-passport" }
-        ],
-        footer: "em breve: marketplace bdai, o ecommerce do viajante."
-    },
-    fr: { 
-        title: "bienvenue sur bdai", 
-        subtitle: "tours mondiaux gratuits et à votre rythme",
-        intro: "Explorez le monde avec la profondeur d'un expert local, sans horaires et totalement gratuit grâce à notre intelligence artificielle.",
-        btnStart: "commencez votre expérience",
-        features: [
-            { title: "Tours Gratuits & Illimités", desc: "N'importe quelle ville du monde à votre portée. Masterclasses techniques instantanées.", icon: "fa-globe" },
-            { title: "Dai : Votre Guide IA", desc: "Secrets techniques, histoire pure et ingénierie. Recevez le 'Dai Shot' pour la photo parfaite.", icon: "fa-wand-magic-sparkles" },
-            { title: "Lecture, Audio & GPS", desc: "Choisissez votre rythme. Lisez, écoutez Dai ou suivez la route avec la carte interactive.", icon: "fa-location-dot" },
-            { title: "Miles & Classement", desc: "Chaque pas compte. Gagnez des miles, montez au classement et débloquez des badges.", icon: "fa-trophy" },
-            { title: "Passeport Digital", desc: "Vos voyages restent avec vous. Chaque ville complétée vous donne un visa officiel.", icon: "fa-passport" }
-        ],
-        footer: "bientôt : marketplace bdai, l'e-commerce du voyageur."
-    },
-    de: { 
-        title: "willkommen bei bdai", 
-        subtitle: "kostenlose globale touren in ihrem tempo",
-        intro: "Entdecken Sie die Welt mit der Tiefe eines lokalen Experten, ohne Zeitplan und völlig kostenlos dank unserer KI.",
-        btnStart: "erlebnis starten",
-        features: [
-            { title: "Kostenlose Touren", desc: "Jede Stadt der Welt zum Greifen nah. Sofortige technische Masterclasses.", icon: "fa-globe" },
-            { title: "Dai: Ihr KI-Guide", desc: "Technische Geheimnisse, pure Geschichte. Holen Sie sich den 'Dai Shot' für das perfekte Foto.", icon: "fa-wand-magic-sparkles" },
-            { title: "Lesen, Audio & GPS", desc: "Sie bestimmen das Tempo. Lesen, hören oder folgen Sie der Route auf der Karte.", icon: "fa-location-dot" },
-            { title: "Meilen & Ranking", desc: "Jeder Schritt zählt. Sammeln Sie Meilen, steigen Sie im Ranking und schalten Sie Badges frei.", icon: "fa-trophy" },
-            { title: "Digitaler Pass", desc: "Ihre Reisen bleiben bei Ihnen. Jede Stadt bringt Ihnen ein offizielles Visum im Profil.", icon: "fa-passport" }
-        ],
-        footer: "demnächst: bdai marketplace, der e-commerce für reisende."
-    },
-    it: { 
-        title: "benvenuto su bdai", 
-        subtitle: "tour mondiali gratuiti e al tuo ritmo",
-        intro: "Esplora il mondo con la profondità di un esperto locale, senza orari e totalmente gratis grazie alla nostra intelligenza artificiale.",
-        btnStart: "inizia l'esperienza",
-        features: [
-            { title: "Tour Gratuiti e Illimitati", desc: "Qualsiasi città del mondo a portata di mano. Masterclass tecniche istantanee.", icon: "fa-globe" },
-            { title: "Dai: La tua Guida IA", desc: "Segreti tecnici, storia pura e ingegneria. Ricevi il 'Dai Shot' per la foto perfetta.", icon: "fa-wand-magic-sparkles" },
-            { title: "Lettura, Audio e GPS", desc: "Scegli tu il ritmo. Leggi, ascolta l'audio di Dai o segui la mappa interattiva.", icon: "fa-location-dot" },
-            { title: "Miglia e Classifica", desc: "Ogni passo conta. Guadagna miglia, scala la classifica e sblocca i badge.", icon: "fa-trophy" },
-            { title: "Passaporto Digitale", desc: "I tuoi viaggi restano con te. Ogni città completata ti dà un visto ufficiale.", icon: "fa-passport" }
-        ],
-        footer: "prossimamente: marketplace bdai, l'ecommerce del viaggiatore."
-    },
-    ja: { 
-        title: "bdaiへようこそ", 
-        subtitle: "あなたのペースで楽しめる無料の世界ツアー",
-        intro: "AIのおかげで、地元の専門家のような深い洞察を持って、スケジュールなしで完全に無料で世界を探索できます。",
-        btnStart: "体験を始める",
-        features: [
-            { title: "無料・無制限ツアー", desc: "世界中のあらゆる都市があなたの手の中に。テクニカルなマスタークラスを即座に生成。", icon: "fa-globe" },
-            { title: "Dai：AIガイド", desc: "技術の秘密、純粋な歴史、工学。完璧な写真のための「Dai Shot」を受け取る。", icon: "fa-wand-magic-sparkles" },
-            { title: "読書、音声、GPS", desc: "ペースはあなた次第。読む、Daiの音声を聞く、または地図でルートを追う。", icon: "fa-location-dot" },
-            { title: "マイルとランク", desc: "一歩一歩が大切。マイルを稼ぎ、世界ランキングを上げ、限定バッジを解除。", icon: "fa-trophy" },
-            { title: "デジタルパスポート", desc: "旅の記録はあなたのもの。都市を完了するごとに公式ビザがプロフィールに付与。", icon: "fa-passport" }
-        ],
-        footer: "近日公開：bdaiマーケットプレイス、旅行者のためのeコマース。"
-    },
-    ru: { 
-        title: "добро пожаловать в bdai", 
-        subtitle: "бесплатные туры по миру в вашем темпе",
-        intro: "Исследуйте мир с глубиной местного эксперта, без расписаний и совершенно бесплатно благодаря нашему ИИ.",
-        btnStart: "начать приключение",
-        features: [
-            { title: "Бесплатные туры", desc: "Любой город мира у вас под рукой. Мгновенные технические мастер-классы.", icon: "fa-globe" },
-            { title: "Dai: Ваш ИИ-гид", desc: "Технические секреты, чистая история. Получите 'Dai Shot' для идеального фото.", icon: "fa-wand-magic-sparkles" },
-            { title: "Чтение, Аудио и GPS", desc: "Вы выбираете темп. Читайте, слушайте Dai или следуйте по интерактивной карте.", icon: "fa-location-dot" },
-            { title: "Мили и Рейтинг", desc: "Каждый шаг важен. Зарабатывайте мили, поднимайтесь в рейтинге и открывайте значки.", icon: "fa-trophy" },
-            { title: "Цифровой паспорт", desc: "Ваши путешествия остаются с вами. Каждая виза сохраняется в вашем профиле.", icon: "fa-passport" }
-        ],
-        footer: "скоро: маркетплейс bdai, электронная коммерция для путешественников."
-    },
-    hi: { 
-        title: "bdai में आपका स्वागत है", 
-        subtitle: "अपनी गति से निःशुल्क वैश्विक यात्रा",
-        intro: "हमारे एआई की मदद से किसी स्थानीय विशेषज्ञ की गहराई के साथ दुनिया की खोज करें, बिना किसी समय सीमा के और पूरी तरह से निःशुल्क।",
-        btnStart: "अनुभव शुरू करें",
-        features: [
-            { title: "मुफ़्त और असीमित टूर", desc: "दुनिया का कोई भी शहर आपकी पहुंच में। तुरंत तकनीकी मास्टरक्लास तैयार करें।", icon: "fa-globe" },
-            { title: "Dai: आपका AI गाइड", desc: "तकनीकी रहस्य, शुद्ध इतिहास और इंजीनियरिंग। बेहतरीन फोटो के लिए 'Dai Shot' प्राप्त करें।", icon: "fa-wand-magic-sparkles" },
-            { title: "पढ़ें, सुनें और GPS", desc: "गति आपकी, चुनाव आपका। पढ़ें, दाई का ऑडियो सुनें या मैप का पालन करें।", icon: "fa-location-dot" },
-            { title: "मील और रैंकिंग", desc: "हर कदम मायने रखता है। मील कमाएं, रैंकिंग में ऊपर जाएं और बैज अनलॉक करें।", icon: "fa-trophy" },
-            { title: "डिजिटल पासपोर्ट", desc: "आपकी यात्राएं आपके साथ रहती हैं। हर शहर के लिए अपने प्रोफाइल में आधिकारिक वीजा पाएं।", icon: "fa-passport" }
-        ],
-        footer: "जल्द ही आ रहा है: bdai मार्केटप्लेस, यात्री ई-कॉमर्स।"
-    },
-    ko: { 
-        title: "bdai에 오신 것을 환영합니다", 
-        subtitle: "당신의 속도에 맞춘 무료 글로벌 투어",
-        intro: "인공지능의 도움으로 현지 전문가처럼 깊이 있게, 일정에 얽매이지 않고 완전히 무료로 세계를 탐험하세요.",
-        btnStart: "체험 시작하기",
-        features: [
-            { title: "무료 및 무제한 투어", desc: "전 세계 모든 도시가 내 손안에. 즉석에서 기술적인 마스터클래스 생성.", icon: "fa-globe" },
-            { title: "Dai: AI 가이드", desc: "기술적 비밀, 순수한 역사 및 엔지니어링. 완벽한 사진을 위한 'Dai Shot' 제공.", icon: "fa-wand-magic-sparkles" },
-            { title: "읽기, 오디오 및 GPS", desc: "템포는 당신의 선택. 읽거나, Dai의 오디오를 듣거나, 지도를 따라가세요.", icon: "fa-location-dot" },
-            { title: "마일리지 및 랭킹", desc: "모든 발걸음이 가치 있습니다. 마일리지를 쌓고 랭킹을 올려 뱃지를 획득하세요.", icon: "fa-trophy" },
-            { title: "디지털 여권", desc: "당신의 여행 기록은 영원히 남습니다. 완료한 도시마다 공식 비자가 발급됩니다.", icon: "fa-passport" }
-        ],
-        footer: "출시 예정: bdai 마켓플레이스, 여행자를 위한 이커머스।"
-    },
-    tr: { 
-        title: "bdai'ye hoş geldiniz", 
-        subtitle: "kendi hızınızda ücretsiz küresel turlar",
-        intro: "Yapay zekamız sayesinde dünyanın her yerini yerel bir uzman derinliğinde, programlara bağlı kalmadan ve tamamen ücretsiz keşfedin.",
-        btnStart: "deneyimi başlat",
-        features: [
-            { title: "Ücretsiz ve Sınırsız", desc: "Dünyanın her şehri parmaklarınızın ucunda. Anında teknik ustalık sınıfları.", icon: "fa-globe" },
-            { title: "Dai: AI Rehberiniz", desc: "Teknik sırlar, saf tarih ve mühendislik. Mükemmel fotoğraf için 'Dai Shot' alın.", icon: "fa-wand-magic-sparkles" },
-            { title: "Okuma, Ses ve GPS", desc: "Hızınızı siz belirleyin. Okuyun, Dai'yi dinleyin veya rotayı haritadan izleyin.", icon: "fa-location-dot" },
-            { title: "Miller ve Sıralama", desc: "Her adım değerlidir. Mil kazanın, sıralamada yükselin ve rozetleri açın.", icon: "fa-trophy" },
-            { title: "Dijital Pasaport", desc: "Seyahatleriniz sizinle kalır. Tamamlanan her şehir profilinize vize olarak işlenir.", icon: "fa-passport" }
-        ],
-        footer: "yakında: bdai marketplace, gezginin e-ticaret sitesi."
-    },
-    ar: { 
-        title: "مرحباً بك في bdai", 
-        subtitle: "جولات عالمية مجانية وبالوتيرة التي تناسبك",
-        intro: "استكشف العالم بعمق الخبير المحلي، بدون مواعيد وبشكل مجاني تماماً بفضل ذكائنا الاصطناعي.",
-        btnStart: "ابدأ تجربتك",
-        features: [
-            { title: "جولات مجانية وغير محدودة", desc: "أي مدينة في العالم بين يديك. نقوم بإنشاء دروس تقنية متقدمة فوراً.", icon: "fa-globe" },
-            { title: "Dai: دليلك بالذكاء الاصطناعي", desc: "أسرار تقنية، تاريخ نقي وهندسة. احصل على 'Dai Shot' للصورة المثالية.", icon: "fa-wand-magic-sparkles" },
-            { title: "قراءة، صوت و GPS", desc: "أنت تختار الوتيرة. اقرأ، استمع إلى Dai أو اتبع المسار عبر الخريطة.", icon: "fa-location-dot" },
-            { title: "أميال وتصنيف", desc: "كل خطوة مهمة. اربح الأميال، اصعد في الترتيب العالمي وافتح الأوسمة.", icon: "fa-trophy" },
-            { title: "جواز سفر رقمي", desc: "رحلاتك تبقى معك. كل مدينة تكملها تمنحك تأشيرة رسمية في ملفك الشخصي.", icon: "fa-passport" }
-        ],
-        footer: "قريباً: متجر bdai، التجارة الإلكترونية للمسافر."
-    }
+    es: { title: "Bienvenido a bdai", subtitle: "Tu Masterclass de Viajes", btnNext: "Siguiente", btnBack: "Atrás", btnStart: "¡Comenzar!", btnSkip: "Saltar", steps: [
+        { title: "Tours Gratis e Ilimitados", desc: "Explora cualquier rincón del mundo en tu idioma. Si no ves tu ciudad en la home, búscala. Los tours son gratuitos e ilimitados.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Tu Guía Personal", desc: "Dai te susurra secretos y curiosidades técnicas. Además, te dará el 'Dai Shot': el tip experto para la foto perfecta.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Tú Tienes el Control", desc: "Usa el mapa con GPS. Elige entre 'Play' para audio o lee los secretos a tu ritmo. Tú decides cómo explorar.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Millas e Insignias", desc: "Gana millas en cada parada para subir en el ranking mundial. Consigue insignias según tus intereses (Historia, Arte, Gastro...).", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Pasaporte y Visados", desc: "Tus datos se guardan siempre. El Visado indica que has completado una ciudad. Pausa hoy y termina cuando quieras.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Marketplace de Viaje", desc: "Equípate en nuestra tienda para tus aventuras. Cambia tus datos y mejora tu nivel de explorador.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    en: { title: "Welcome to bdai", subtitle: "Your Travel Masterclass", btnNext: "Next", btnBack: "Back", btnStart: "Start!", btnSkip: "Skip", steps: [
+        { title: "Free & Unlimited Tours", desc: "Explore the world in your language. Search for any city. Tours are free and unlimited.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Your Personal Guide", desc: "Dai reveals secrets and technical curiosities. Get the 'Dai Shot' for the perfect photo.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "You Are in Control", desc: "Use the GPS map. Choose 'Play' for audio or read at your own pace. You decide.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Miles & Badges", desc: "Earn miles to climb the global rankings. Collect badges based on your interests.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Passport & Visas", desc: "Your progress is saved. The Visa shows you completed a city. Start today, finish whenever.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Travel Marketplace", desc: "Gear up in our store. Update your data and level up your explorer status.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    ca: { title: "Benvingut a bdai", subtitle: "La Teva Masterclass", btnNext: "Següent", btnBack: "Enrere", btnStart: "Començar!", btnSkip: "Saltar", steps: [
+        { title: "Tours Gratis", desc: "Explora el món en el teu idioma. Tours gratuïts i il·limitats.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Guia Personal", desc: "Secrets i el 'Dai Shot' per a la foto perfecta.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Tu Tens el Control", desc: "Mapa amb GPS. Tria àudio o lectura al teu ritme.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Milles i Insígnies", desc: "Guanya milles i puja al rànquing mundial.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Passaport i Visats", desc: "Dades guardades sempre. El Visat marca el teu progrés.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Marketplace", desc: "Equipa't a la nostra botiga per a les teves aventures.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    eu: { title: "Ongi etorri bdai-ra", subtitle: "Zure Masterclass-a", btnNext: "Hurrengoa", btnBack: "Atzera", btnStart: "Hasi!", btnSkip: "Saltatu", steps: [
+        { title: "Doako Tourrak", desc: "Esploratu mundua zure hizkuntzan. Tourrak doakoak eta mugagabeak dira.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Zure Gida", desc: "Sekretuak eta 'Dai Shot' argazki perfekturako.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Zuk Daukazu Kontrola", desc: "GPS mapa. Audioa edo irakurketa aukeratu.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Miliak eta Ikurrak", desc: "Irabazi miliak eta igo munduko sailkapenean.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Pasaportea", desc: "Datuak beti gordeta. Bisatuak zure hirien marka dira.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Denda", desc: "Presta zaitez gure dendan zure abenturarako.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    zh: { title: "欢迎来到 bdai", subtitle: "您的旅行大师课", btnNext: "下一步", btnBack: "返回", btnStart: "开始！", btnSkip: "跳过", steps: [
+        { title: "免费无限旅游", desc: "用您的语言探索世界。搜索任何城市。旅游是免费且无限的。", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai：您的私人导游", desc: "Dai 揭示秘密和技术好奇心。获取完美照片的“Dai Shot”。", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "您掌握主动权", desc: "使用 GPS 地图。选择“播放”音频或按自己的步调阅读。", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "里程与徽章", desc: "赚取里程以攀升全球排名。根据您的兴趣收集徽章。", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "护照与签证", desc: "您的进度始终会被保存。签证显示您已完成一个城市。", icon: "fa-passport", color: "text-orange-500" },
+        { title: "旅行市场", desc: "在我们的商店备货。更新您的数据并提升探险家等级。", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    pt: { title: "Bem-vindo ao bdai", subtitle: "Sua Masterclass de Viagem", btnNext: "Próximo", btnBack: "Voltar", btnStart: "Começar!", btnSkip: "Pular", steps: [
+        { title: "Tours Grátis e Ilimitados", desc: "Explore o mundo no seu idioma. Tours gratuitos e sem limites.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Seu Guia Pessoal", desc: "Secrets e o 'Dai Shot' para a foto perfeita.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Você no Controle", desc: "Mapa com GPS. Escolha áudio ou leitura ao seu ritmo.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Milhas e Medalhas", desc: "Ganhe milhas e suba no ranking mundial.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Passaporte e Vistos", desc: "Dados salvos sempre. O Visto marca seu progresso.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Mercado de Viagem", desc: "Equipe-se em nossa loja para suas aventuras.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    fr: { title: "Bienvenue sur bdai", subtitle: "Votre Masterclass Voyage", btnNext: "Suivant", btnBack: "Retour", btnStart: "Commencer !", btnSkip: "Passer", steps: [
+        { title: "Tours Gratuits", desc: "Explorez le monde dans votre langue. Tours gratuits et illimités.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Guide Personnel", desc: "Secrets et 'Dai Shot' pour la photo parfaite.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Vous avez le Contrôle", desc: "Carte avec GPS. Choisissez audio ou lecture.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Miles et Badges", desc: "Gagnez des miles et montez dans le classement mondial.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Passeport et Visas", desc: "Données sauvegardées. Le Visa marque votre succès.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Marketplace", desc: "Équipez-vous dans notre boutique voyage.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    de: { title: "Willkommen bei bdai", subtitle: "Deine Reise-Masterclass", btnNext: "Weiter", btnBack: "Zurück", btnStart: "Start!", btnSkip: "Überspringen", steps: [
+        { title: "Kostenlose Touren", desc: "Erkunde die Welt in deiner Sprache. Kostenlos und unbegrenzt.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Dein Guide", desc: "Geheimnisse und der 'Dai Shot' für das perfekte Foto.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Du hast die Kontrolle", desc: "GPS-Karte. Wähle Audio oder Lesen nach deinem Tempo.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Meilen und Abzeichen", desc: "Sammle Meilen und steige im globalen Ranking.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Reisepass & Visa", desc: "Deine Daten sind sicher. Visa zeigen deinen Erfolg.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Marktplatz", desc: "Rüste dich in unserem Shop für dein Abenteuer aus.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    it: { title: "Benvenuto in bdai", subtitle: "La tua Masterclass di Viaggio", btnNext: "Avanti", btnBack: "Indietro", btnStart: "Inizia!", btnSkip: "Salta", steps: [
+        { title: "Tour Gratuiti", desc: "Esplora il mondo nella tua lingua. Tour gratuiti e illimitati.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Guida Personale", desc: "Segreti e il 'Dai Shot' per la foto perfetta.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Tu hai il Controllo", desc: "Mappa con GPS. Scegli audio o lettura al tuo ritmo.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Miglia e Badge", desc: "Guadagna miglia e sali nella classifica mondiale.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Passaporto e Visti", desc: "Dati salvati sempre. Il Visto indica il tuo progresso.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Marketplace", desc: "Equipaggiati nel nostro store per le tue avventure.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    ru: { title: "Добро пожаловать в bdai", subtitle: "Ваш мастер-класс по путешествиям", btnNext: "Далее", btnBack: "Назад", btnStart: "Начать!", btnSkip: "Пропустить", steps: [
+        { title: "Бесплатные туры", desc: "Исследуйте мир на своем языке. Бесплатно и безлимитно.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Ваш гид", desc: "Секреты и 'Dai Shot' для идеального фото.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Вы у руля", desc: "GPS-карта. Слушайте аудио или читайте в своем темпе.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Мили и значки", desc: "Зарабатывайте мили и растите в мировом рейтинге.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Паспорт и визы", desc: "Прогресс всегда сохранен. Виза — знак успеха.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Магазин", desc: "Снаряжение для ваших приключений в нашем магазине.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    ja: { title: "bdaiへようこそ", subtitle: "あなたの旅行マスタークラス", btnNext: "次へ", btnBack: "戻る", btnStart: "開始！", btnSkip: "スキップ", steps: [
+        { title: "無料無制限ツアー", desc: "あなたの言語で世界を探索。無料かつ無制限です。", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai：専属ガイド", desc: "秘密と完璧な写真のための「Dai Shot」。", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "あなたが主役", desc: "GPSマップ。音声再生か読書か選択可能。", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "マイルとバッジ", desc: "マイルを稼いで世界ランクを上げよう。", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "パスポートとビザ", desc: "データは常に保存。ビザは完了の証です。", icon: "fa-passport", color: "text-orange-500" },
+        { title: "マーケットプレイス", desc: "冒険に必要なものをショップで揃えよう。", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    hi: { title: "bdai में आपका स्वागत है", subtitle: "आपकी यात्रा मास्टरक्लास", btnNext: "अगला", btnBack: "पीछे", btnStart: "शुरू करें!", btnSkip: "छोड़ें", steps: [
+        { title: "मुफ्त और असीमित टूर", desc: "अपनी भाषा में दुनिया की खोज करें।", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: आपका गाइड", desc: "रहस्य और 'Dai Shot' बेहतरीन फोटो के लिए।", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "आपका नियंत्रण", desc: "GPS मैप। ऑडियो सुनें या अपनी गति से पढ़ें।", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "मील और बैज", desc: "मील कमाएं और वैश्विक रैंकिंग में ऊपर बढ़ें।", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "पासपोर्ट और वीजा", desc: "प्रगति हमेशा सुरक्षित। वीजा आपके सफर की निशानी।", icon: "fa-passport", color: "text-orange-500" },
+        { title: "मार्केटप्लेस", desc: "अपनी यात्रा के लिए हमारे स्टोर से खरीदारी करें।", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    ko: { title: "bdai에 오신 것을 환영합니다", subtitle: "당신의 여행 마스터클래스", btnNext: "다음", btnBack: "뒤로", btnStart: "시작!", btnSkip: "건너뛰기", steps: [
+        { title: "무료 무제한 투어", desc: "당신의 언어로 세계를 탐험하세요. 무료입니다.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: 개인 가이드", desc: "비밀과 인생샷을 위한 'Dai Shot' 팁.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "당신이 결정하세요", desc: "GPS 지도. 오디오 또는 읽기 중 선택.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "마일과 배지", desc: "마일을 쌓아 세계 랭킹을 올리세요.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "여권과 비자", desc: "데이터는 항상 저장됩니다. 비자는 완수의 증거.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "마켓플레이스", desc: "탐험을 위한 장비를 상점에서 확인하세요.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    tr: { title: "bdai'ye Hoş Geldiniz", subtitle: "Seyahat Masterclass'ınız", btnNext: "İleri", btnBack: "Geri", btnStart: "Başla!", btnSkip: "Atla", steps: [
+        { title: "Ücretsiz Turlar", desc: "Dünyayı kendi dilinizde keşfedin. Sınırsız ve ücretsiz.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: Rehberiniz", desc: "Sırlar ve mükemmel fotoğraf için 'Dai Shot'.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "Kontrol Sizde", desc: "GPS harita. Sesli dinle veya kendi hızında oku.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "Miller ve Rozetler", desc: "Mil kazanın ve dünya sıralamasında yükselin.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "Pasaport ve Vizeler", desc: "Veriler her zaman kayıtlı. Vize başarınızın kanıtıdır.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "Pazar Yeri", desc: "Maceranız için dükkanımızdan hazırlanın.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]},
+    ar: { title: "مرحباً بك في bdai", subtitle: "ماستر كلاس السفر", btnNext: "التالي", btnBack: "السابق", btnStart: "ابدأ!", btnSkip: "تخطي", steps: [
+        { title: "جولات مجانية", desc: "استكشف العالم بلغتك. جولات مجانية وغير محدودة.", icon: "fa-globe", color: "text-blue-500" },
+        { title: "Dai: دليلك الخاص", desc: "أسرار و'Dai Shot' لأفضل صورة.", icon: "fa-wand-magic-sparkles", color: "text-purple-500" },
+        { title: "أنت المتحكم", desc: "خريطة GPS. اختر الصوت أو القراءة.", icon: "fa-headphones", color: "text-emerald-500" },
+        { title: "أميال وأوسمة", desc: "اكسب الأميال وارفع تصنيفك العالمي.", icon: "fa-trophy", color: "text-yellow-500" },
+        { title: "جواز السفر", desc: "بياناتك محفوظة دائماً. التأشيرة دليل رحلتك.", icon: "fa-passport", color: "text-orange-500" },
+        { title: "سوق السفر", desc: "تجهز لمغامرتك من متجرنا الخاص.", icon: "fa-shopping-bag", color: "text-pink-500" }
+    ]}
+};
+
+const getStepData = (lang: string, index: number) => {
+    const base = CONTENT[lang] || CONTENT['es'];
+    const steps = (CONTENT[lang]?.steps || CONTENT['es'].steps);
+    return { ...base, step: steps[index], totalSteps: steps.length };
 };
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language }) => {
-    // Obtenemos el contenido del idioma actual o español por defecto
-    const baseT = CONTENT[language] || CONTENT['es'];
-    
-    // Fallback de features: si el idioma actual no tiene features definidos, usamos los de español
-    const featuresSource = (baseT.features && baseT.features.length > 0) ? baseT.features : CONTENT['es'].features;
+    const [currentStep, setCurrentStep] = useState(0);
+    const data = getStepData(language, currentStep);
+    const isLast = currentStep === data.totalSteps - 1;
 
     return (
-        <div className="fixed inset-0 z-[10000] bg-[#020617] overflow-y-auto no-scrollbar animate-fade-in flex flex-col text-white pb-32">
-            {/* Cabecera */}
-            <div className="relative pt-20 pb-12 px-8 flex flex-col items-center text-center bg-gradient-to-b from-purple-600/10 to-transparent">
-                <BdaiLogo className="w-20 h-20 mb-6 animate-pulse-logo" />
-                <h1 className="text-4xl font-black lowercase tracking-tighter mb-2">{baseT.title}</h1>
-                <p className="text-[10px] font-black text-purple-500 lowercase tracking-[0.2em] mb-6">{baseT.subtitle}</p>
-                {baseT.intro && (
-                    <p className="text-slate-400 text-sm max-w-xs leading-relaxed font-medium">{baseT.intro}</p>
-                )}
-            </div>
+        <div className="fixed inset-0 z-[10000] bg-[#020617] flex flex-col font-sans overflow-hidden animate-fade-in text-white">
+            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-purple-600/10 to-transparent"></div>
+            
+            <div className="flex-1 flex flex-col items-center justify-center px-8 pb-32">
+                <div className="flex flex-col items-center mb-12 text-center" key={`logo-${currentStep}`}>
+                    <BdaiLogo className="w-20 h-20 mb-6 animate-pulse-logo" />
+                    <h2 className="text-3xl font-black uppercase tracking-tighter">{data.title}</h2>
+                    <p className="text-[10px] font-black text-purple-500 uppercase tracking-[0.4em] mt-2">{data.subtitle}</p>
+                </div>
 
-            {/* Listado de Características (Features) */}
-            <div className="px-8 space-y-10">
-                {featuresSource.map((f: any, i: number) => (
-                    <div key={i} className="flex gap-6 items-start animate-slide-up" style={{ animationDelay: `${i * 0.1}s` }}>
-                        <div className="w-12 h-12 shrink-0 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-purple-500 text-xl shadow-lg">
-                            <i className={`fas ${f.icon}`}></i>
+                <div className="w-full max-w-sm" key={`step-${currentStep}`}>
+                    <div className="bg-white/5 border border-white/10 p-10 rounded-[3rem] flex flex-col items-center text-center shadow-2xl">
+                        <div className={`w-20 h-20 rounded-[2rem] bg-black/40 flex items-center justify-center mb-6 ${data.step.color} text-4xl shadow-inner border border-white/5`}>
+                            <i className={`fas ${data.step.icon}`}></i>
                         </div>
-                        <div className="flex-1">
-                            <h4 className="text-white font-black text-base uppercase tracking-tight mb-1">{f.title}</h4>
-                            <p className="text-slate-500 text-xs leading-relaxed font-medium">{f.desc}</p>
+                        <h4 className="font-black text-xl uppercase tracking-tight mb-4">{data.step.title}</h4>
+                        <p className="text-slate-400 text-sm leading-relaxed font-medium opacity-80">{data.step.desc}</p>
+                        
+                        <div className="flex gap-2 mt-8">
+                            {Array.from({ length: data.totalSteps }).map((_, i) => (
+                                <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentStep ? 'w-8 bg-purple-500' : 'w-2 bg-white/10'}`}></div>
+                            ))}
                         </div>
                     </div>
-                ))}
+                </div>
             </div>
 
-            {/* Footer / CTA */}
-            <div className="mt-16 px-8 flex flex-col items-center gap-6">
-                <div className="w-full h-px bg-white/5"></div>
-                <p className="text-[9px] font-black text-slate-600 lowercase tracking-[0.2em] text-center">{baseT.footer}</p>
-                <button 
-                    onClick={onComplete}
-                    className="w-full max-w-sm py-6 bg-white text-slate-950 rounded-[2rem] font-black lowercase tracking-widest text-[11px] shadow-2xl active:scale-95 transition-all"
-                >
-                    {baseT.btnStart}
-                </button>
+            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent flex flex-col items-center gap-4">
+                <div className="flex w-full max-w-sm gap-3">
+                    {currentStep > 0 && (
+                        <button onClick={() => setCurrentStep(s => s - 1)} className="flex-1 py-6 bg-white/10 text-white rounded-[2rem] font-black uppercase tracking-widest text-[11px] border border-white/10">
+                            {data.btnBack}
+                        </button>
+                    )}
+                    <button onClick={() => isLast ? onComplete() : setCurrentStep(s => s + 1)} className="flex-[2] py-6 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-widest text-[11px] shadow-2xl">
+                        {isLast ? data.btnStart : data.btnNext}
+                    </button>
+                </div>
+                {!isLast && (
+                    <button onClick={onComplete} className="text-[9px] font-black text-slate-500 uppercase tracking-widest py-2">{data.btnSkip}</button>
+                )}
             </div>
         </div>
     );

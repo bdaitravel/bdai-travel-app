@@ -1,114 +1,68 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { Tour, UserProfile, LeaderboardEntry } from '../types';
+import { Tour, UserProfile } from '../types';
 
 const supabaseUrl = process.env.SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const normalizeKey = (city: string | undefined | null) => {
-    if (!city) return "";
-    return city.toString()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") 
-        .replace(/ñ/g, "n")              
-        .replace(/[^a-z0-9]/g, "")       
-        .trim();
-};
-
 /**
- * Busca en la base de datos extrayendo el país del primer tour para mostrarlo en el buscador.
+ * Normaliza nombres de ciudades para evitar duplicados en la caché.
+ * Convierte "Nueva York, USA" -> "nueva_york_usa"
  */
-export const searchCitiesInCache = async (term: string) => {
-    const nTerm = normalizeKey(term);
-    if (!nTerm) return [];
+export const normalizeKey = (city: string | undefined | null, country?: string) => {
+    if (!city) return "";
+    let base = city.trim().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
     
-    const { data } = await supabase.from('tours_cache')
-        .select('city, language, data')
-        .ilike('city', `${nTerm}%`);
-    
-    if (!data) return [];
-
-    const results: any[] = [];
-    const seen = new Set();
-
-    data.forEach(row => {
-        const tours = row.data as Tour[];
-        const countryName = tours[0]?.country || "Archivo";
-        const key = `${row.city}_${countryName}`;
-        
-        if (!seen.has(key)) {
-            seen.add(key);
-            results.push({
-                name: row.city.charAt(0).toUpperCase() + row.city.slice(1),
-                spanishName: row.city.charAt(0).toUpperCase() + row.city.slice(1),
-                country: countryName,
-                isCached: true
-            });
-        }
-    });
-
-    return results;
+    if (country) {
+        let cBase = country.trim().toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_");
+        base = `${base}_${cBase}`;
+    }
+    return base;
 };
 
-export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
-  const nCity = normalizeKey(city);
-  if (!nCity) return null;
+export const validateEmailFormat = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const { data: exactMatch } = await supabase.from('tours_cache')
-    .select('data, language, city')
-    .eq('city', nCity)
+export const getCachedTours = async (city: string, country: string, language: string): Promise<Tour[] | null> => {
+  const nKey = normalizeKey(city, country);
+  const { data, error } = await supabase
+    .from('tours_cache')
+    .select('data')
+    .eq('city', nKey)
     .eq('language', language)
     .maybeSingle();
-
-  if (exactMatch && exactMatch.data) {
-    return { data: exactMatch.data as Tour[], langFound: language, cityName: city };
-  }
-
-  const { data: anyMatch } = await supabase.from('tours_cache')
-    .select('data, language, city')
-    .eq('city', nCity)
-    .limit(1)
-    .maybeSingle();
-
-  if (anyMatch && anyMatch.data) {
-    return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: city };
-  }
-
-  return null; 
+  
+  if (error) return null;
+  return data?.data as Tour[] || null;
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
-  const nCity = normalizeKey(city);
-  if (!nCity) return;
+  const nKey = normalizeKey(city, country);
+  const { error } = await supabase
+    .from('tours_cache')
+    .upsert({ 
+        city: nKey, 
+        language, 
+        data: tours,
+        updated_at: new Date().toISOString()
+    }, { onConflict: 'city,language' });
   
-  await supabase.from('tours_cache').upsert({ 
-    city: nCity, 
-    language, 
-    data: tours 
-  }, { onConflict: 'city,language' });
+  if (error) console.error("Supabase Cache Error:", error);
 };
 
 export const getUserProfileByEmail = async (email: string) => {
   const { data } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
   if (!data) return null;
-  return {
-    ...data,
-    id: data.id,
-    isLoggedIn: true,
-    firstName: data.first_name,
-    lastName: data.last_name,
-    username: data.username || 'explorer',
-    avatar: data.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-    miles: data.miles || 0,
-    language: data.language || 'es'
-  };
+  return { ...data, firstName: data.first_name, lastName: data.last_name, isLoggedIn: true };
 };
 
 export const syncUserProfile = async (profile: UserProfile) => {
-  if (!profile || profile.id === 'guest') return;
+  if (profile.id === 'guest') return;
   await supabase.from('profiles').upsert({
     id: profile.id,
     email: profile.email,
@@ -121,12 +75,66 @@ export const syncUserProfile = async (profile: UserProfile) => {
 };
 
 export const getGlobalRanking = async () => {
-    const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
-    return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username || 'Traveler' }));
+    const { data } = await supabase.from('profiles')
+        .select('id, username, miles, avatar')
+        .order('miles', { ascending: false })
+        .limit(10);
+    return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username }));
 };
 
-export const validateEmailFormat = (email: string) => { return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); };
-export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => null;
-export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => base64;
-export const getCommunityPosts = async (city: string) => [];
-export const addCommunityPost = async (post: any) => ({ success: true });
+export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
+  const hash = btoa(unescape(encodeURIComponent(text.substring(0, 100) + lang))).substring(0, 20);
+  const { data } = await supabase.from('audio_cache').select('base64').eq('text_hash', hash).maybeSingle();
+  return data?.base64 || null;
+};
+
+export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => {
+  const hash = btoa(unescape(encodeURIComponent(text.substring(0, 100) + lang))).substring(0, 20);
+  await supabase.from('audio_cache').upsert({ 
+      text_hash: hash, 
+      base64, 
+      language: lang, 
+      city: normalizeKey(city) 
+  });
+  return base64;
+};
+
+// Added getCommunityPosts function
+export const getCommunityPosts = async (city: string) => {
+  const { data } = await supabase
+    .from('community_posts')
+    .select('*')
+    .eq('city', normalizeKey(city))
+    .order('created_at', { ascending: false });
+    
+  return (data || []).map(p => ({
+    ...p,
+    user: p.user_name,
+    time: new Date(p.created_at).toLocaleTimeString()
+  }));
+};
+
+// Added addCommunityPost function
+export const addCommunityPost = async (post: { city: string, userId: string, user: string, avatar: string, content: string, type: string }) => {
+  const { error } = await supabase
+    .from('community_posts')
+    .insert({
+      city: normalizeKey(post.city),
+      user_id: post.userId,
+      user_name: post.user,
+      avatar: post.avatar,
+      content: post.content,
+      type: post.type,
+      created_at: new Date().toISOString()
+    });
+  if (error) console.error("Supabase Post Error:", error);
+};
+
+// Added deleteCityFromCache function
+export const deleteCityFromCache = async (city: string, language?: string) => {
+  const nKey = normalizeKey(city);
+  let query = supabase.from('tours_cache').delete().eq('city', nKey);
+  if (language) query = query.eq('language', language);
+  const { error } = await query;
+  if (error) console.error("Supabase Delete Error:", error);
+};

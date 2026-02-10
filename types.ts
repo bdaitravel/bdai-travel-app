@@ -35,6 +35,32 @@ export interface UserStats {
   referralsCount: number;
 }
 
+export interface LeaderboardEntry {
+  id: string;
+  username: string;
+  name: string;
+  miles: number;
+  avatar: string;
+  rank?: number;
+}
+
+export interface HubIntel {
+  id: string;
+  title: string;
+  location: string;
+  description: string;
+  details?: string;
+  type: string;
+  icon: string;
+  color: string;
+}
+
+export interface PhotoSpot {
+  angle: string;
+  milesReward: number;
+  secretLocation: string;
+}
+
 export interface UserProfile {
   id: string;
   isLoggedIn: boolean;
@@ -76,21 +102,6 @@ export const APP_BADGES: Badge[] = [
   { id: 'local', name: 'El Local', icon: 'fa-user-secret', description: 'Has visitado 3 pueblos de menos de 5.000 habitantes', category: 'explore', requiredPoints: 0 }
 ];
 
-export interface LeaderboardEntry {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string;
-  miles: number;
-  rank: number;
-}
-
-export interface PhotoSpot {
-  angle: string;
-  milesReward: number;
-  secretLocation: string;
-}
-
 export interface Stop {
   id: string;
   name: string;
@@ -116,20 +127,8 @@ export interface Tour {
   isEssential?: boolean;
 }
 
-export interface HubIntel {
-  id: string;
-  type: string;
-  title: string;
-  location: string;
-  description: string;
-  icon: string;
-  color: string;
-  details?: string;
-}
-
 export enum AppView {
   LOGIN = 'LOGIN',
-  ONBOARDING = 'ONBOARDING',
   HOME = 'HOME',
   CITY_DETAIL = 'CITY_DETAIL',
   TOUR_ACTIVE = 'TOUR_ACTIVE',
@@ -155,7 +154,17 @@ export const LANGUAGES = [
   { code: 'ru', name: 'Русский' },
   { code: 'hi', name: 'हिन्दी' },
   { code: 'ko', name: '한국어' },
-  { code: 'tr', name: 'Türkçe' }
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'gl', name: 'Galego' },
+  { code: 'nl', name: 'Nederlands' },
+  { code: 'pl', name: 'Polski' },
+  { code: 'sv', name: 'Svenska' },
+  { code: 'el', name: 'Ελληνικά' },
+  { code: 'he', name: 'עברית' },
+  { code: 'vi', name: 'Tiếng Việt' },
+  { code: 'th', name: 'ไทย' },
+  { code: 'id', name: 'Bahasa Indonesia' },
+  { code: 'ro', name: 'Română' }
 ];
 
 export const AVATARS = [
