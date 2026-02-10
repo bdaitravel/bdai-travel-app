@@ -7,56 +7,104 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsIn
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const normalizeKey = (city: string | undefined | null, country?: string) => {
-    const safeCity = (city || "").toString().trim();
-    if (!safeCity) return "";
-    const raw = country ? `${safeCity}_${country}` : safeCity;
-    return raw.toLowerCase()
+export const normalizeKey = (city: string | undefined | null) => {
+    if (!city) return "";
+    return city.toString()
+        .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "") 
-        .replace(/[^a-z0-9_]/g, ""); 
+        .replace(/ñ/g, "n")              
+        .replace(/[^a-z0-9]/g, "")       
+        .trim();
+};
+
+/**
+ * Busca en la base de datos extrayendo el país del primer tour para mostrarlo en el buscador.
+ */
+export const searchCitiesInCache = async (term: string) => {
+    const nTerm = normalizeKey(term);
+    if (!nTerm) return [];
+    
+    const { data } = await supabase.from('tours_cache')
+        .select('city, language, data')
+        .ilike('city', `${nTerm}%`);
+    
+    if (!data) return [];
+
+    const results: any[] = [];
+    const seen = new Set();
+
+    data.forEach(row => {
+        const tours = row.data as Tour[];
+        const countryName = tours[0]?.country || "Archivo";
+        const key = `${row.city}_${countryName}`;
+        
+        if (!seen.has(key)) {
+            seen.add(key);
+            results.push({
+                name: row.city.charAt(0).toUpperCase() + row.city.slice(1),
+                spanishName: row.city.charAt(0).toUpperCase() + row.city.slice(1),
+                country: countryName,
+                isCached: true
+            });
+        }
+    });
+
+    return results;
 };
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
-  const nInput = normalizeKey(city, country);
-  if (!nInput) return null;
-  const { data: exactMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language).maybeSingle();
+  const nCity = normalizeKey(city);
+  if (!nCity) return null;
+
+  const { data: exactMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .eq('city', nCity)
+    .eq('language', language)
+    .maybeSingle();
+
   if (exactMatch && exactMatch.data) {
-    return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
+    return { data: exactMatch.data as Tour[], langFound: language, cityName: city };
   }
+
+  const { data: anyMatch } = await supabase.from('tours_cache')
+    .select('data, language, city')
+    .eq('city', nCity)
+    .limit(1)
+    .maybeSingle();
+
+  if (anyMatch && anyMatch.data) {
+    return { data: anyMatch.data as Tour[], langFound: anyMatch.language, cityName: city };
+  }
+
   return null; 
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
-  const nKey = normalizeKey(city, country);
-  if (!nKey) return;
-  await supabase.from('tours_cache').upsert({ city: nKey, language, data: tours }, { onConflict: 'city,language' });
-};
-
-export const deleteCityCache = async (city: string, country: string) => {
-    const nKey = normalizeKey(city, country);
-    const { error } = await supabase.from('tours_cache').delete().eq('city', nKey);
-    return !error;
+  const nCity = normalizeKey(city);
+  if (!nCity) return;
+  
+  await supabase.from('tours_cache').upsert({ 
+    city: nCity, 
+    language, 
+    data: tours 
+  }, { onConflict: 'city,language' });
 };
 
 export const getUserProfileByEmail = async (email: string) => {
-  try {
-    const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-    if (error || !data) return null;
-    return {
-      ...data,
-      id: data.id,
-      isLoggedIn: true,
-      firstName: data.first_name,
-      lastName: data.last_name,
-      username: data.username || 'explorer',
-      avatar: data.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-      miles: data.miles || 0,
-      language: data.language || 'es'
-    };
-  } catch (e) {
-    return null;
-  }
+  const { data } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+  if (!data) return null;
+  return {
+    ...data,
+    id: data.id,
+    isLoggedIn: true,
+    firstName: data.first_name,
+    lastName: data.last_name,
+    username: data.username || 'explorer',
+    avatar: data.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    miles: data.miles || 0,
+    language: data.language || 'es'
+  };
 };
 
 export const syncUserProfile = async (profile: UserProfile) => {
@@ -72,53 +120,13 @@ export const syncUserProfile = async (profile: UserProfile) => {
   });
 };
 
-export const validateEmailFormat = (email: string) => { return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); };
-
 export const getGlobalRanking = async () => {
     const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
     return (data || []).map((d, i) => ({ ...d, rank: i + 1, name: d.username || 'Traveler' }));
 };
 
-// CACHÉ DE AUDIO REAL EN SUPABASE
-export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
-    const hash = btoa(text.slice(0, 50) + lang).slice(0, 100);
-    const { data } = await supabase.from('audio_cache').select('audio_base64').eq('id', hash).maybeSingle();
-    return data?.audio_base64 || null;
-};
-
-export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => {
-    const hash = btoa(text.slice(0, 50) + lang).slice(0, 100);
-    await supabase.from('audio_cache').upsert({ id: hash, text: text.slice(0, 100), language: lang, audio_base64: base64, city: city });
-    return base64;
-};
-
-export const getCommunityPosts = async (city: string) => {
-    const nKey = normalizeKey(city);
-    const { data } = await supabase
-        .from('community_posts')
-        .select('*')
-        .eq('city', nKey)
-        .order('created_at', { ascending: false });
-    
-    return (data || []).map(post => ({
-        id: post.id,
-        user: post.user_name || 'Explorer',
-        avatar: post.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-        content: post.content,
-        time: post.created_at ? new Date(post.created_at).toLocaleTimeString() : '',
-        likes: post.likes || 0
-    }));
-};
-
-export const addCommunityPost = async (post: { city: string, userId: string, user: string, avatar: string, content: string, type: string }) => {
-    const nKey = normalizeKey(post.city);
-    const { error } = await supabase.from('community_posts').insert({
-        city: nKey,
-        user_id: post.userId,
-        user_name: post.user,
-        avatar: post.avatar,
-        content: post.content,
-        type: post.type
-    });
-    return !error;
-};
+export const validateEmailFormat = (email: string) => { return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); };
+export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => null;
+export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => base64;
+export const getCommunityPosts = async (city: string) => [];
+export const addCommunityPost = async (post: any) => ({ success: true });

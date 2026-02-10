@@ -12,7 +12,6 @@
     
     <title>bdai | better destinations</title>
     
-    <!-- He cambiado esto para que use tu logo PNG si lo subes, o use un icono por defecto si no -->
     <link rel="icon" type="image/png" href="/logo.png">
     <link rel="apple-touch-icon" href="/logo.png">
 
@@ -70,11 +69,17 @@
 
       @keyframes pulse-logo {
         0% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(147,51,234,0)); }
-        50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(147,51,234,0.4)); }
+        10% { transform: scale(1.1); filter: drop-shadow(0 0 30px rgba(168,85,247,0.6)); }
+        20% { transform: scale(1.05); }
+        30% { transform: scale(1.15); filter: drop-shadow(0 0 40px rgba(168,85,247,0.8)); }
         100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(147,51,234,0)); }
       }
       .animate-pulse-logo {
-        animation: pulse-logo 3s ease-in-out infinite;
+        animation: pulse-logo 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+
+      .bg-login-glow {
+        background: radial-gradient(circle at center, rgba(88, 28, 135, 0.25) 0%, rgba(2, 6, 23, 1) 70%);
       }
     </style>
   <script type="importmap">

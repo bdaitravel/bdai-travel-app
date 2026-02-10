@@ -129,6 +129,7 @@ export interface HubIntel {
 
 export enum AppView {
   LOGIN = 'LOGIN',
+  ONBOARDING = 'ONBOARDING',
   HOME = 'HOME',
   CITY_DETAIL = 'CITY_DETAIL',
   TOUR_ACTIVE = 'TOUR_ACTIVE',
