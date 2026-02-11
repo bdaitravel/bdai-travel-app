@@ -60,7 +60,9 @@ export const getCachedAudio = async (text: string, lang: string): Promise<string
 
 export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => {
   const hash = generateAudioId(text, lang);
-  const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
+  // Fix: Validación de tipo para evitar split en nulos/indefinidos
+  const safeBase64 = typeof base64 === 'string' ? base64 : "";
+  const cleanBase64 = safeBase64.includes(',') ? safeBase64.split(',')[1] : safeBase64;
   
   try {
     const { error } = await supabase.from('audio_cache').upsert({ 

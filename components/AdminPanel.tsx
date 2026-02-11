@@ -21,7 +21,8 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     const fetchSummary = async () => {
         const { data } = await supabase.from('tours_cache').select('city, language');
         if (data) {
-            const citySet = new Set(data.map(d => d.city.split('_')[0]));
+            // Fix: Añadido fallback (d.city || "") para evitar error split en nulos
+            const citySet = new Set(data.map(d => (d.city || "").split('_')[0]));
             setStats({ totalCities: citySet.size, totalEntries: data.length });
         }
     };
@@ -39,8 +40,10 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         const { data: allRecords } = await supabase.from('tours_cache').select('city, language');
         const cityMap: Record<string, string[]> = {};
         allRecords?.forEach(r => {
-            if (!cityMap[r.city]) cityMap[r.city] = [];
-            cityMap[r.city].push(r.language);
+            if (r.city) {
+                if (!cityMap[r.city]) cityMap[r.city] = [];
+                cityMap[r.city].push(r.language);
+            }
         });
 
         const pendingCities = baseRecords.filter(r => cityMap[r.city]?.length < LANGUAGES.length).slice(0, batchSize);

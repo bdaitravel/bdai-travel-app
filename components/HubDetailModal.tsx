@@ -1,5 +1,6 @@
 
 import React from 'react';
+// Fix: Import HubIntel which is now correctly exported from types.ts
 import { HubIntel } from '../types';
 
 const TEXTS: any = {
@@ -14,7 +15,16 @@ const TEXTS: any = {
   ar: { details: "التفاصيل", save: "حفظ", saved: "تم الحفظ", close: "إغلاق" }
 };
 
-export const HubDetailModal: React.FC<any> = ({ intel, isSaved, onClose, onSave, language }) => {
+// Fix: Use specific interface for props instead of 'any'
+interface HubDetailModalProps {
+  intel: HubIntel;
+  isSaved: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  language: string;
+}
+
+export const HubDetailModal: React.FC<HubDetailModalProps> = ({ intel, isSaved, onClose, onSave, language }) => {
   const t = TEXTS[language] || TEXTS['es'];
   return (
     <div className="fixed inset-0 z-[1000] flex items-end justify-center px-4 pb-12">

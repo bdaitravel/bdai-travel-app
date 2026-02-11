@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, standardizeCityName, translateToursBatch } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
@@ -8,22 +8,35 @@ import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
 import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
-import { FlagIcon } from './components/FlagIcon';
 import { Onboarding } from './components/Onboarding';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase, getUserProfileByEmail, getGlobalRanking, syncUserProfile, getCachedTours, saveToursToCache, validateEmailFormat } from './services/supabaseClient';
 
 const TRANSLATIONS: any = {
-  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando...", fastSync: "traduciendo caché...", apiLimit: "IA Saturada. Reintentando...", retry: "Reintentar", info: "info" },
-  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "better destinations by ai", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "correct", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing...", fastSync: "syncing cache...", apiLimit: "AI Saturated. Retrying...", retry: "Retry", info: "info" }
+  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email no válido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", changeEmail: "corregir", sentTo: "enviado a", loadingTour: "generando masterclass...", analyzing: "analizando...", fastSync: "traduciendo caché...", apiLimit: "IA Saturada. Reintentando...", retry: "Reintentar", info: "info", streak: "Día de racha", activeNow: "Exploradores activos", worldExplorer: "Leyenda del mundo", syncing: "sincronizando idioma..." },
+  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", verify: "validate", tagline: "better destinations by ai", authError: "invalid email", codeError: "8 digits", selectLang: "language", loading: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", changeEmail: "correct", sentTo: "sent to", loadingTour: "generating masterclass...", analyzing: "analyzing...", fastSync: "syncing cache...", apiLimit: "AI Saturated. Retrying...", retry: "Retry", info: "info", streak: "Day streak", activeNow: "Active explorers", worldExplorer: "World Legend", syncing: "syncing language..." },
+  fr: { welcome: "log bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "ton@email.com", userPlaceholder: "utilisateur", login: "demander l'accès", verify: "valider", tagline: "better destinations by ai", authError: "email invalide", codeError: "8 chiffres", selectLang: "langue", loading: "synchronisation...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", changeEmail: "corriger", sentTo: "envoyé à", loadingTour: "génération masterclass...", analyzing: "analyse...", fastSync: "traduction cache...", apiLimit: "IA Saturée. Réessayer...", retry: "Réessayer", info: "info", streak: "Jours de suite", activeNow: "Explorateurs actifs", worldExplorer: "Légende mondiale", syncing: "langue en cours..." },
+  de: { welcome: "bidaer log:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "deine@email.com", userPlaceholder: "benutzer", login: "zugang anfordern", verify: "bestätigen", tagline: "better destinations by ai", authError: "ungültige e-mail", codeError: "8 ziffern", selectLang: "sprache", loading: "synchronisierung...", navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "shop", changeEmail: "korrigieren", sentTo: "gesendet an", loadingTour: "masterclass generieren...", analyzing: "analysieren...", fastSync: "cache übersetzen...", apiLimit: "KI ausgelastet...", retry: "Wiederholen", info: "info", streak: "Tage in Folge", activeNow: "Aktive Entdecker", worldExplorer: "Weltlegende", syncing: "sprache wird sync..." },
+  it: { welcome: "log bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "utente", login: "richiedi accesso", verify: "conferma", tagline: "better destinations by ai", authError: "email non valida", codeError: "8 cifre", selectLang: "lingua", loading: "sincronizzazione...", navElite: "elite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", changeEmail: "correggi", sentTo: "inviato a", loadingTour: "generazione masterclass...", analyzing: "analisi...", fastSync: "traduzione cache...", apiLimit: "IA satura...", retry: "Riprova", info: "info", streak: "Giorni consecutivi", activeNow: "Esploratori attivi", worldExplorer: "Leggenda mondiale", syncing: "sincro lingua..." },
+  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "teu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "gerando masterclass...", analyzing: "analisando...", fastSync: "traduzindo cache...", apiLimit: "IA Saturada...", retry: "Tentar novamente", info: "info", streak: "Dias seguidos", activeNow: "Exploradores ativos", worldExplorer: "Lenda mundial", syncing: "sincro idioma..." },
+  ro: { welcome: "jurnal bidaer:", explorer: "explorator", searchPlaceholder: "oraș...", emailPlaceholder: "email-ul tău...", userPlaceholder: "utilizator", login: "solicită acces", verify: "validează", tagline: "destinații mai bune prin ia", authError: "email invalid", codeError: "8 cifre", selectLang: "limbă", loading: "sincronizare...", navElite: "elită", navHub: "intel", navVisa: "pașaport", navStore: "magazin", changeEmail: "corectează", sentTo: "trimis la", loadingTour: "generare masterclass...", analyzing: "analiză...", fastSync: "traducere cache...", apiLimit: "IA Saturată. Reîncercați...", retry: "Reîncearcă", info: "info", streak: "Zile consecutive", activeNow: "Exploratori activi", worldExplorer: "Legendă mondială", syncing: "sincronizare limbă..." },
+  zh: { welcome: "bidaer 日志:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "你的@email.com", userPlaceholder: "用户名", login: "请求访问", verify: "验证", tagline: "better destinations by ai", authError: "电子邮件无效", codeError: "8位数字", selectLang: "语言", loading: "同步中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", changeEmail: "更正", sentTo: "已发送至", loadingTour: "正在生成大师课...", analyzing: "分析中...", fastSync: "翻译缓存...", apiLimit: "AI 饱和。重试中...", retry: "重试", info: "信息", streak: "连续天数", activeNow: "活跃探险家", worldExplorer: "世界传奇", syncing: "语言同步中..." },
+  ja: { welcome: "bidaer ログ:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール...", userPlaceholder: "ユーザー", login: "アクセスリクエスト", verify: "検証", tagline: "better destinations by ai", authError: "無効なメール", codeError: "8桁", selectLang: "言語", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", changeEmail: "修正", sentTo: "送信先", loadingTour: "マスタークラス生成中...", analyzing: "分析中...", fastSync: "キャッシュ翻訳中...", apiLimit: "AI 飽和。再試行中...", retry: "再試行", info: "情報", streak: "継続日数", activeNow: "活動中の探検家", worldExplorer: "ワールドレジェンド", syncing: "言語同期中..." },
+  hi: { welcome: "bidaer लॉग:", explorer: "अन्वेषक", searchPlaceholder: "शहर...", emailPlaceholder: "आपका@email.com", userPlaceholder: "उपयोगकर्ता नाम", login: "पहुंच का अनुरोध करें", verify: "पुष्टि करें", tagline: "beai द्वारा बेहतर गंतव्य", authError: "अमान्य ईमेल", codeError: "8 अंक", selectLang: "भाषा", loading: "सिंक हो रहा है...", navElite: "कुलीन", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", changeEmail: "सही करें", sentTo: "को भेजा गया", loadingTour: "माстерक्लास बना रहे हैं...", analyzing: "विश्लेषण कर रहे हैं...", fastSync: "कैश सिंक कर रहे हैं...", apiLimit: "IA संतृप्त है...", retry: "पुनः प्रयास करें", info: "जानकारी", streak: "दिनों की लकीर", activeNow: "सक्रिय अन्वेषक", worldExplorer: "विश्व किंवदंती", syncing: "भाषा सिंक हो रही है..." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-  email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, historyPoints: 0, naturePoints: 0, artPoints: 0, archPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0 }, 
+  email: '', language: 'es', miles: 0, rank: 'Turist', culturePoints: 0, foodPoints: 0, photoPoints: 0, historyPoints: 0, naturePoints: 0, artPoints: 0, archPoints: 0, interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }, 
   visitedCities: [], completedTours: [], badges: [], stamps: []
 };
+
+const LangCircle: React.FC<{ code: string; isActive: boolean; onClick: () => void }> = ({ code, isActive, onClick }) => (
+    <button onClick={onClick} className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-90 shrink-0 shadow-lg ${isActive ? 'bg-purple-600 border-purple-400 text-white font-black scale-110' : 'bg-white/5 border-white/10 text-slate-500 font-bold hover:bg-white/10'}`}>
+        <span className="text-[9px] tracking-tighter uppercase">{code}</span>
+    </button>
+);
 
 const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
   <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all flex-1 ${isActive ? 'text-purple-500 scale-105' : 'text-slate-500 opacity-40'}`}>
@@ -43,6 +56,7 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [isSyncingLang, setIsSyncingLang] = useState(false);
   const [searchOptions, setSearchOptions] = useState<{name: string, spanishName: string, country: string}[] | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   
@@ -55,6 +69,12 @@ export default function App() {
   });
 
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  const t = (key: string) => {
+    const currentLang = user.language || 'es';
+    const dict = TRANSLATIONS[currentLang] || TRANSLATIONS['en'] || TRANSLATIONS['es'];
+    return dict[key] || TRANSLATIONS['en'][key] || key;
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -81,22 +101,6 @@ export default function App() {
     };
     checkAuth();
     getGlobalRanking().then(setLeaderboard);
-  }, []);
-
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-            setUserLocation({ 
-                lat: position.coords.latitude, 
-                lng: position.coords.longitude 
-            });
-        },
-        (err) => console.debug("GPS access denied:", err),
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-      return () => navigator.geolocation.clearWatch(watchId);
-    }
   }, []);
 
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
@@ -129,73 +133,45 @@ export default function App() {
     }
   }, [user.language]);
 
-  const t = (key: string) => {
-    const currentLang = user.language || 'es';
-    const dict = TRANSLATIONS[currentLang] || TRANSLATIONS['es'];
-    return dict[key] || TRANSLATIONS['es'][key] || key;
-  };
-
-  const validateTourQuality = (tours: Tour[]): boolean => {
-    if (!tours || tours.length < 3) return false;
-    const firstTour = tours[0];
-    if (!firstTour.stops || firstTour.stops.length < 8) return false;
-    const hasValidCoords = firstTour.stops.every(s => s.latitude !== 0 && s.longitude !== 0 && s.latitude !== undefined);
-    return hasValidCoords;
-  };
-
   const handleCitySearch = async (cityInput: string) => {
     if (!cityInput || !cityInput.trim() || isLoading) return;
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
-    setTours([]);
-    setSearchOptions(null);
-
     try {
-        // Obligamos a desambiguar SIEMPRE para asegurar que el usuario elige el Logroño correcto
         const results = await standardizeCityName(cityInput);
         if (results && results.length > 0) {
             setSearchOptions(results);
             setIsLoading(false);
             return;
         }
-        // Si no hay resultados de IA, intentamos proceso directo por si acaso
         await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" });
     } catch (e: any) { 
         await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" }); 
     } finally {
-        if (!searchOptions) setIsLoading(false);
+        setIsLoading(false);
     }
   };
 
   const processCitySelection = async (official: {name: string, spanishName: string, country: string}) => {
-    if (!official || !official.spanishName) { setIsLoading(false); return; }
     setIsLoading(true); 
     setSearchOptions(null); 
     setSelectedCity(official.spanishName); 
-    setTours([]);
-
     try {
-        // Ahora getCachedTours usa el par ciudad+país, por lo que Logroño España y Logroño Argentina son distintos
         const cached = await getCachedTours(official.spanishName, official.country, user.language);
-        if (cached && cached.data.length > 0 && validateTourQuality(cached.data)) {
+        if (cached && cached.data.length > 0) {
             setTours(cached.data); 
-            if (cached.data[0].city) setSelectedCity(cached.data[0].city);
             setView(AppView.CITY_DETAIL);
-            setIsLoading(false);
             return;
         }
-
         setLoadingMessage(t('loadingTour'));
         const generated = await generateToursForCity(official.spanishName, official.country, user);
         if (generated.length > 0) {
             setTours(generated); 
-            if (generated[0].city) setSelectedCity(generated[0].city);
             await saveToursToCache(official.spanishName, official.country, user.language, generated);
             setView(AppView.CITY_DETAIL);
         }
     } catch (e: any) { 
-        console.error(e); 
-        alert("Dai está saturado. Reintentando...");
+        alert(t('apiLimit'));
     } finally { 
         setIsLoading(false); 
     }
@@ -212,14 +188,10 @@ export default function App() {
       setIsLoading(true);
       try {
           const { error } = await supabase.auth.signInWithOtp({ email });
-          if (error) {
-              const errMsg = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
-              alert(`Error: ${errMsg}`);
-              throw error;
-          }
+          if (error) throw error;
           setLoginStep('CODE');
       } catch (e: any) { 
-          console.error("Login request exception:", e);
+          alert(`Error: ${e.message}`);
       } finally {
           setIsLoading(false);
       }
@@ -247,26 +219,31 @@ export default function App() {
               setShowOnboarding(true);
           }
       } catch (e: any) { 
-        alert(e.message || 'Error de validación del código.'); 
+        alert(e.message); 
       } finally { 
         setIsLoading(false); 
       }
   };
 
   const handleLangChange = (code: string) => {
+      setIsSyncingLang(true);
       setUser(prev => ({ ...prev, language: code }));
       localStorage.setItem('bdai_profile', JSON.stringify({ ...user, language: code }));
+      // Efecto visual de "sincronización de inteligencia"
+      setTimeout(() => setIsSyncingLang(false), 700);
   };
+
+  const currentMayor = useMemo(() => leaderboard[0] || null, [leaderboard]);
 
   if (isVerifyingSession) return <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center"><BdaiLogo className="w-20 h-20 animate-pulse" /></div>;
   if (showOnboarding) return <Onboarding key={user.language} language={user.language} onComplete={() => { setShowOnboarding(false); setView(AppView.HOME); }} />;
 
   return (
     <div className="flex-1 bg-transparent flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      {isLoading && (
+      {(isLoading || isSyncingLang) && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 animate-fade-in">
             <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-            <p className="text-white font-black uppercase text-[9px] tracking-[0.3em] text-center px-8 mb-4">{loadingMessage}</p>
+            <p className="text-white font-black uppercase text-[9px] tracking-[0.3em] text-center px-8 mb-4">{isSyncingLang ? t('syncing') : loadingMessage}</p>
         </div>
       )}
 
@@ -278,12 +255,12 @@ export default function App() {
                   <p className="text-[12px] font-black lowercase tracking-tighter text-purple-500/80 mt-1">{t('tagline')}</p>
               </div>
               
-              <div className="w-full max-w-[240px] mt-4 space-y-4">
+              <div className="w-full max-w-[240px] mt-4 space-y-3">
                   {loginStep === 'EMAIL' ? (
                       <div className="space-y-3 animate-fade-in">
-                          <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-4 px-5 text-center text-white outline-none text-sm font-bold placeholder-slate-400" placeholder={t('userPlaceholder')} />
-                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-4 px-5 text-center text-white outline-none text-sm font-bold placeholder-slate-400" placeholder={t('emailPlaceholder')} />
-                          <button onClick={handleLoginRequest} className="w-full py-5 bg-white text-slate-950 rounded-xl font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all shadow-xl">{t('login')}</button>
+                          <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-5 text-center text-white outline-none text-xs font-bold placeholder-slate-400" placeholder={t('userPlaceholder')} />
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-5 text-center text-white outline-none text-xs font-bold placeholder-slate-400" placeholder={t('emailPlaceholder')} />
+                          <button onClick={handleLoginRequest} className="w-full py-4 bg-white text-slate-950 rounded-xl font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all shadow-xl">{t('login')}</button>
                       </div>
                   ) : (
                       <div className="space-y-6 text-center animate-fade-in">
@@ -296,13 +273,11 @@ export default function App() {
               </div>
 
               <div className="absolute bottom-10 left-0 right-0 px-8 flex flex-col items-center gap-3">
-                <p className="text-[7px] font-black lowercase tracking-[0.3em] text-slate-400 text-center uppercase">{t('selectLang')}</p>
+                <p className="text-[6px] font-black lowercase tracking-[0.3em] text-slate-400 text-center uppercase">{t('selectLang')}</p>
                 <div className="w-full max-w-sm overflow-x-auto no-scrollbar">
                     <div className="flex gap-4 items-center justify-start px-4 py-2">
                       {LANGUAGES.map(lang => (
-                        <button key={lang.code} onClick={() => handleLangChange(lang.code)} className="transition-all active:scale-90 relative shrink-0">
-                          <FlagIcon code={lang.code} className={`w-8 h-8 ${user.language === lang.code ? 'ring-2 ring-purple-500 scale-125 z-10 shadow-lg' : 'grayscale-[0.8] opacity-40 hover:opacity-100 hover:grayscale-0'}`} />
-                        </button>
+                        <LangCircle key={lang.code} code={lang.name} isActive={user.language === lang.code} onClick={() => handleLangChange(lang.code)} />
                       ))}
                     </div>
                 </div>
@@ -316,13 +291,12 @@ export default function App() {
                       <header className="flex justify-between items-center py-4">
                           <div className="flex items-center gap-3"><BdaiLogo className="w-10 h-10"/><span className="font-black text-xl tracking-tighter">bdai</span></div>
                           <div className="flex items-center gap-3">
-                              <button onClick={() => setShowOnboarding(true)} className="bg-white/5 w-8 h-8 rounded-full flex items-center justify-center text-purple-400 border border-white/10 active:scale-90 transition-all">
-                                <i className="fas fa-info text-[10px]"></i>
-                              </button>
+                              <div className="bg-purple-600/10 border border-purple-500/20 px-3 py-1.5 rounded-xl text-[7px] font-black text-purple-400 uppercase tracking-widest"><i className="fas fa-fire mr-1 text-orange-500"></i> {user.stats.streakDays} {t('streak')}</div>
                               <div className="bg-white/10 px-3 py-1.5 rounded-xl text-[8px] font-black"><i className="fas fa-coins text-yellow-500 mr-2"></i> {user.miles.toLocaleString()}</div>
                           </div>
                       </header>
                       <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-tight">{t('welcome')} <br/><span className="text-purple-600/60 block mt-1">{user.username || t('explorer')}.</span></h1>
+                      
                       <div className="relative mt-6 flex gap-3">
                           <input type="text" value={searchVal} onChange={(e) => setSearchVal(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCitySearch(searchVal)} placeholder={t('searchPlaceholder')} className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none font-bold text-xs" />
                           <button onClick={() => handleCitySearch(searchVal)} className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg"><i className="fas fa-search text-sm"></i></button>
@@ -347,9 +321,29 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto">
-                      <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-slate-950/80 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 text-white flex items-center justify-center"><i className="fas fa-arrow-left text-xs"></i></button><h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2></header>
+                      <header className="flex items-center gap-4 mb-4 py-4 sticky top-0 bg-slate-950/80 backdrop-blur-xl z-20"><button onClick={() => setView(AppView.HOME)} className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 text-white flex items-center justify-center"><i className="fas fa-arrow-left text-xs"></i></button><h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2></header>
+                      
+                      {currentMayor && (
+                          <div className="bg-gradient-to-r from-purple-900/40 to-slate-900 p-5 rounded-[2rem] border border-purple-500/20 mb-6 flex items-center justify-between animate-fade-in">
+                              <div className="flex items-center gap-3">
+                                  <div className="relative">
+                                    <img src={currentMayor.avatar} className="w-10 h-10 rounded-xl border border-purple-400" />
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-[8px] text-slate-950 border border-slate-900 font-black"><i className="fas fa-crown"></i></div>
+                                  </div>
+                                  <div className="text-left">
+                                      <p className="text-[7px] font-black text-purple-400 uppercase tracking-widest">{t('worldExplorer')}</p>
+                                      <p className="text-[11px] font-black text-white uppercase truncate">@{currentMayor.username}</p>
+                                  </div>
+                              </div>
+                              <div className="text-right">
+                                  <p className="text-sm font-black text-white">{currentMayor.miles.toLocaleString()}</p>
+                                  <p className="text-[6px] font-black text-slate-500 uppercase">millas</p>
+                              </div>
+                          </div>
+                      )}
+
                       <div className="space-y-4 pb-12">
-                          {tours.length > 0 ? tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => handleStartTour(tour)} language={user.language || 'es'} />) : <div className="text-center py-20 opacity-30 uppercase font-black text-xs tracking-widest">Analizando...</div>}
+                          {tours.length > 0 ? tours.map(tour => <TourCard key={tour.id} tour={tour} onSelect={() => handleStartTour(tour)} language={user.language || 'es'} />) : <div className="text-center py-20 opacity-30 uppercase font-black text-xs tracking-widest">{t('analyzing')}</div>}
                       </div>
                   </div>
                 )}

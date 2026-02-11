@@ -33,6 +33,8 @@ export interface UserStats {
   guidesBought: number;
   sessionsStarted: number;
   referralsCount: number;
+  streakDays: number;
+  lastActive?: string;
 }
 
 export interface UserProfile {
@@ -68,6 +70,20 @@ export interface UserProfile {
   city?: string; 
   country?: string; 
   capturedMoments?: CapturedMoment[];
+}
+
+/**
+ * Interface for intelligence items displayed in the Hub gallery
+ */
+export interface HubIntel {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  type: string;
+  icon: string;
+  color: string;
+  details?: string;
 }
 
 export const APP_BADGES: Badge[] = [
@@ -116,17 +132,6 @@ export interface Tour {
   isEssential?: boolean;
 }
 
-export interface HubIntel {
-  id: string;
-  type: string;
-  title: string;
-  location: string;
-  description: string;
-  icon: string;
-  color: string;
-  details?: string;
-}
-
 export enum AppView {
   LOGIN = 'LOGIN',
   HOME = 'HOME',
@@ -140,39 +145,23 @@ export enum AppView {
 }
 
 export const LANGUAGES = [
-  { code: 'es', name: 'Español' },
-  { code: 'en', name: 'English' },
-  { code: 'zh', name: '中文' },
-  { code: 'ca', name: 'Català' },
-  { code: 'eu', name: 'Euskara' },
-  { code: 'pt', name: 'Português' },
-  { code: 'fr', name: 'Français' },
-  { code: 'de', name: 'Deutsch' },
-  { code: 'it', name: 'Italiano' },
-  { code: 'ja', name: '日本語' },
-  { code: 'ru', name: 'Русский' },
-  { code: 'hi', name: 'हिन्दी' },
-  { code: 'ko', name: '한국어' },
-  { code: 'tr', name: 'Türkçe' },
-  { code: 'ar', name: 'العربية' },
-  { code: 'pl', name: 'Polski' },
-  { code: 'nl', name: 'Nederlands' },
-  { code: 'vi', name: 'Tiếng Việt' },
-  { code: 'th', name: 'ไทย' },
-  { code: 'sv', name: 'Svenska' },
-  { code: 'fi', name: 'Suomi' }
+  { code: 'es', name: 'ES' }, { code: 'en', name: 'EN' }, { code: 'fr', name: 'FR' },
+  { code: 'de', name: 'DE' }, { code: 'it', name: 'IT' }, { code: 'pt', name: 'PT' },
+  { code: 'ro', name: 'RO' }, { code: 'zh', name: 'ZH' }, { code: 'ja', name: 'JA' },
+  { code: 'ru', name: 'RU' }, { code: 'ar', name: 'AR' }, { code: 'hi', name: 'HI' },
+  { code: 'ko', name: 'KO' }, { code: 'tr', name: 'TR' }, { code: 'pl', name: 'PL' },
+  { code: 'nl', name: 'NL' }, { code: 'ca', name: 'CA' }, { code: 'eu', name: 'EU' },
+  { code: 'vi', name: 'VI' }, { code: 'th', name: 'TH' }
 ];
+
+export const RANK_THRESHOLDS: Record<TravelerRank, number> = {
+  'Turist': 0, 'Explorer': 1000, 'Wanderer': 5000, 'Globe-Trotter': 15000, 'Legend': 50000
+};
 
 export const AVATARS = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Spooky"
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=George",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophia",
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=Liam"
 ];
-
-export const RANK_THRESHOLDS: Record<TravelerRank, number> = {
-  'Turist': 0,
-  'Explorer': 1000,
-  'Wanderer': 5000,
-  'Globe-Trotter': 15000,
-  'Legend': 50000
-};
