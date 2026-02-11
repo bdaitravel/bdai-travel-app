@@ -19,17 +19,7 @@ export const FlagIcon = ({ code, className }: { code: string; className?: string
     ko: "https://flagcdn.com/w160/kr.png",
     tr: "https://flagcdn.com/w160/tr.png",
     ca: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Flag_of_Catalonia.svg/160px-Flag_of_Catalonia.svg.png",
-    eu: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Flag_of_the_Basque_Country.svg/160px-Flag_of_the_Basque_Country.svg.png",
-    gl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Flag_of_Galicia.svg/160px-Flag_of_Galicia.svg.png",
-    nl: "https://flagcdn.com/w160/nl.png",
-    pl: "https://flagcdn.com/w160/pl.png",
-    sv: "https://flagcdn.com/w160/se.png",
-    el: "https://flagcdn.com/w160/gr.png",
-    he: "https://flagcdn.com/w160/il.png",
-    vi: "https://flagcdn.com/w160/vn.png",
-    th: "https://flagcdn.com/w160/th.png",
-    id: "https://flagcdn.com/w160/id.png",
-    ro: "https://flagcdn.com/w160/ro.png"
+    eu: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Flag_of_the_Basque_Country.svg/160px-Flag_of_the_Basque_Country.svg.png"
   };
 
   if (hasError || !flags[code]) {
