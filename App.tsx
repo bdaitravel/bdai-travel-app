@@ -18,11 +18,11 @@ const TRANSLATIONS: any = {
   fr: { welcome: "log bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "ton@email.com", userPlaceholder: "utilisateur", login: "demander l'accès", verify: "valider", tagline: "better destinations by ai", authError: "email invalide", codeError: "8 chiffres", selectLang: "langue", loading: "synchronisation...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", changeEmail: "corriger", sentTo: "envoyé à", loadingTour: "génération masterclass...", analyzing: "analyse...", fastSync: "traduction cache...", apiLimit: "IA Saturée. Réessayer...", retry: "Réessayer", info: "info", streak: "Jours de suite", activeNow: "Explorateurs actifs", worldExplorer: "Légende mondiale", syncing: "langue en cours..." },
   de: { welcome: "bidaer log:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "deine@email.com", userPlaceholder: "benutzer", login: "zugang anfordern", verify: "bestätigen", tagline: "better destinations by ai", authError: "ungültige e-mail", codeError: "8 ziffern", selectLang: "sprache", loading: "synchronisierung...", navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "shop", changeEmail: "korrigieren", sentTo: "gesendet an", loadingTour: "masterclass generieren...", analyzing: "analysieren...", fastSync: "cache übersetzen...", apiLimit: "KI ausgelastet...", retry: "Wiederholen", info: "info", streak: "Tage in Folge", activeNow: "Aktive Entdecker", worldExplorer: "Weltlegende", syncing: "sprache wird sync..." },
   it: { welcome: "log bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "utente", login: "richiedi accesso", verify: "conferma", tagline: "better destinations by ai", authError: "email non valida", codeError: "8 cifre", selectLang: "lingua", loading: "sincronizzazione...", navElite: "elite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", changeEmail: "correggi", sentTo: "inviato a", loadingTour: "generazione masterclass...", analyzing: "analisi...", fastSync: "traduzione cache...", apiLimit: "IA satura...", retry: "Riprova", info: "info", streak: "Giorni consecutivi", activeNow: "Esploratori attivi", worldExplorer: "Leggenda mondiale", syncing: "sincro lingua..." },
-  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "teu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "gerando masterclass...", analyzing: "analisando...", fastSync: "traduzindo cache...", apiLimit: "IA Saturada...", retry: "Tentar novamente", info: "info", streak: "Dias seguidos", activeNow: "Exploradores ativos", worldExplorer: "Lenda mundial", syncing: "sincro idioma..." },
+  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "teu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", verify: "validar", tagline: "better destinations by ai", authError: "email inválido", codeError: "8 dígitos", selectLang: "idioma", loading: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", changeEmail: "corregir", sentTo: "enviado para", loadingTour: "gerando masterclass...", analyzing: "analisando...", fastSync: "traduzindo cache...", apiLimit: "IA Saturada...", retry: "Tentar nuevamente", info: "info", streak: "Dias seguidos", activeNow: "Exploradores activos", worldExplorer: "Lenda mundial", syncing: "sincro idioma..." },
   ro: { welcome: "jurnal bidaer:", explorer: "explorator", searchPlaceholder: "oraș...", emailPlaceholder: "email-ul tău...", userPlaceholder: "utilizator", login: "solicită acces", verify: "validează", tagline: "destinații mai bune prin ia", authError: "email invalid", codeError: "8 cifre", selectLang: "limbă", loading: "sincronizare...", navElite: "elită", navHub: "intel", navVisa: "pașaport", navStore: "magazin", changeEmail: "corectează", sentTo: "trimis la", loadingTour: "generare masterclass...", analyzing: "analiză...", fastSync: "traducere cache...", apiLimit: "IA Saturată. Reîncercați...", retry: "Reîncearcă", info: "info", streak: "Zile consecutive", activeNow: "Exploratori activi", worldExplorer: "Legendă mondială", syncing: "sincronizare limbă..." },
   zh: { welcome: "bidaer 日志:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "你的@email.com", userPlaceholder: "用户名", login: "请求访问", verify: "验证", tagline: "better destinations by ai", authError: "电子邮件无效", codeError: "8位数字", selectLang: "语言", loading: "同步中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", changeEmail: "更正", sentTo: "已发送至", loadingTour: "正在生成大师课...", analyzing: "分析中...", fastSync: "翻译缓存...", apiLimit: "AI 饱和。重试中...", retry: "重试", info: "信息", streak: "连续天数", activeNow: "活跃探险家", worldExplorer: "世界传奇", syncing: "语言同步中..." },
   ja: { welcome: "bidaer ログ:", explorer: "探検家", searchPlaceholder: "都市...", emailPlaceholder: "メール...", userPlaceholder: "ユーザー", login: "アクセスリクエスト", verify: "検証", tagline: "better destinations by ai", authError: "無効なメール", codeError: "8桁", selectLang: "言語", loading: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", changeEmail: "修正", sentTo: "送信先", loadingTour: "マスタークラス生成中...", analyzing: "分析中...", fastSync: "キャッシュ翻訳中...", apiLimit: "AI 飽和。再試行中...", retry: "再試行", info: "情報", streak: "継続日数", activeNow: "活動中の探検家", worldExplorer: "ワールドレジェンド", syncing: "言語同期中..." },
-  hi: { welcome: "bidaer लॉग:", explorer: "अन्वेषक", searchPlaceholder: "शहर...", emailPlaceholder: "आपका@email.com", userPlaceholder: "उपयोगकर्ता नाम", login: "पहुंच का अनुरोध करें", verify: "पुष्टि करें", tagline: "beai द्वारा बेहतर गंतव्य", authError: "अमान्य ईमेल", codeError: "8 अंक", selectLang: "भाषा", loading: "सिंक हो रहा है...", navElite: "कुलीन", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", changeEmail: "सही करें", sentTo: "को भेजा गया", loadingTour: "माстерक्लास बना रहे हैं...", analyzing: "विश्लेषण कर रहे हैं...", fastSync: "कैश सिंक कर रहे हैं...", apiLimit: "IA संतृप्त है...", retry: "पुनः प्रयास करें", info: "जानकारी", streak: "दिनों की लकीर", activeNow: "सक्रिय अन्वेषक", worldExplorer: "विश्व किंवदंती", syncing: "भाषा सिंक हो रही है..." }
+  hi: { welcome: "bidaer लॉग:", explorer: "अन्वेषक", searchPlaceholder: "शहर...", emailPlaceholder: "आपका@email.com", userPlaceholder: "उपयोगकर्ता नाम", login: "पहुंच का अनुरोध करें", verify: "पुष्टि करें", tagline: "beai द्वारा बेहतर गंतव्य", authError: "अमान्य ईमेल", codeError: "8 अंक", selectLang: "भाषा", loading: "सिंक हो रहा है...", navElite: "कुलीन", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", changeEmail: "सही करें", sentTo: "को भेजा गया", loadingTour: "मास्टरक्लास बना रहे हैं...", analyzing: "विश्लेषण कर रहे हैं...", fastSync: "कैश सिंक कर रहे हैं...", apiLimit: "IA संतृप्त है...", retry: "पुनः प्रयास करें", info: "जानकारी", streak: "दिनों की लकीर", activeNow: "सक्रिय अन्वेषक", worldExplorer: "विश्व किंवदंती", syncing: "भाषा सिंक हो रही है..." }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -108,6 +108,7 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
 
+  // EFECTO DE TRADUCCIÓN GLOBAL
   useEffect(() => {
     if (tours.length > 0) {
       const translateCurrent = async () => {
@@ -115,13 +116,16 @@ export default function App() {
         setLoadingMessage(t('fastSync'));
         try {
           const translated = await translateToursBatch(tours, user.language);
-          setTours(translated);
-          if (translated.length > 0 && translated[0].city) {
-            setSelectedCity(translated[0].city);
-          }
-          if (activeTour) {
-            const translatedActive = translated.find(t => t.id === activeTour.id);
-            if (translatedActive) setActiveTour(translatedActive);
+          if (translated && translated.length > 0) {
+              setTours(translated);
+              if (translated[0].city) {
+                setSelectedCity(translated[0].city);
+              }
+              // CRÍTICO: Si hay un tour activo, actualizarlo con la versión traducida
+              if (activeTour) {
+                const translatedActive = translated.find(tr => tr.id === activeTour.id);
+                if (translatedActive) setActiveTour(translatedActive);
+              }
           }
         } catch (e) {
           console.error("Auto-translate error:", e);
@@ -227,9 +231,10 @@ export default function App() {
 
   const handleLangChange = (code: string) => {
       setIsSyncingLang(true);
-      setUser(prev => ({ ...prev, language: code }));
-      localStorage.setItem('bdai_profile', JSON.stringify({ ...user, language: code }));
-      // Efecto visual de "sincronización de inteligencia"
+      const updatedUser = { ...user, language: code };
+      setUser(updatedUser);
+      localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
+      if (user.isLoggedIn) syncUserProfile(updatedUser);
       setTimeout(() => setIsSyncingLang(false), 700);
   };
 
@@ -255,12 +260,12 @@ export default function App() {
                   <p className="text-[12px] font-black lowercase tracking-tighter text-purple-500/80 mt-1">{t('tagline')}</p>
               </div>
               
-              <div className="w-full max-w-[240px] mt-4 space-y-3">
+              <div className="w-full max-w-[240px] mt-4 space-y-2.5">
                   {loginStep === 'EMAIL' ? (
-                      <div className="space-y-3 animate-fade-in">
-                          <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-5 text-center text-white outline-none text-xs font-bold placeholder-slate-400" placeholder={t('userPlaceholder')} />
-                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-3 px-5 text-center text-white outline-none text-xs font-bold placeholder-slate-400" placeholder={t('emailPlaceholder')} />
-                          <button onClick={handleLoginRequest} className="w-full py-4 bg-white text-slate-950 rounded-xl font-black lowercase text-[11px] tracking-widest active:scale-95 transition-all shadow-xl">{t('login')}</button>
+                      <div className="space-y-2.5 animate-fade-in">
+                          <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-2 px-5 text-center text-white outline-none text-[9px] font-bold placeholder-slate-400" placeholder={t('userPlaceholder')} />
+                          <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/10 border border-white/20 rounded-xl py-2 px-5 text-center text-white outline-none text-[9px] font-bold placeholder-slate-400" placeholder={t('emailPlaceholder')} />
+                          <button onClick={handleLoginRequest} className="w-full py-3 bg-white text-slate-950 rounded-xl font-black lowercase text-[10px] tracking-widest active:scale-95 transition-all shadow-xl">{t('login')}</button>
                       </div>
                   ) : (
                       <div className="space-y-6 text-center animate-fade-in">

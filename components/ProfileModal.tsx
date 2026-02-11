@@ -16,9 +16,13 @@ const MODAL_TEXTS: any = {
     es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "F. Nacimiento", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Mis Visados", langLabel: "Idioma", user_id: "ID_USUARIO", rank: "RANGO", miles: "MILLAS", admin: "ADMIN", streak: "Racha", changeAvatar: "Toca para cambiar foto" },
     en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", save: "Save", edit: "Edit", logout: "Logout", stamps: "My Visas", langLabel: "Language", user_id: "USER_ID", rank: "RANK", miles: "MILES", admin: "ADMIN", streak: "Streak", changeAvatar: "Tap to change photo" },
     fr: { title: "Passeport Global bdai", subtitle: "ID Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Date de Naissance", save: "Enregistrer", edit: "Modifier", logout: "Déconnexion", stamps: "Mes Visas", langLabel: "Langue", user_id: "ID_UTILISATEUR", rank: "RANG", miles: "MILES", admin: "ADMIN", streak: "Série", changeAvatar: "Appuyez pour changer" },
+    de: { title: "bdai Globaler Pass", subtitle: "Digital Nomad ID", surname: "Nachname", givenNames: "Vorname", city: "Stadt", country: "Land", age: "Alter", birthday: "Geburtstag", save: "Speichern", edit: "Bearbeiten", logout: "Abmelden", stamps: "Visa-Stempel", langLabel: "Sprache", user_id: "USER_ID", rank: "RANG", miles: "MEILEN", admin: "ADMIN", streak: "Serie", changeAvatar: "Foto ändern" },
+    it: { title: "Passaporto Globale bdai", subtitle: "ID Nomade Digitale", surname: "Cognome", givenNames: "Nome", city: "Città", country: "Paese", age: "Età", birthday: "Data di Nascita", save: "Salva", edit: "Modifica", logout: "Esci", stamps: "I Miei Visti", langLabel: "Lingua", user_id: "ID_UTENTE", rank: "RANGO", miles: "MIGLIA", admin: "ADMIN", streak: "Serie", changeAvatar: "Cambia foto" },
+    pt: { title: "Passaporte Global bdai", subtitle: "ID Nómada Digital", surname: "Sobrenome", givenNames: "Nomes", city: "Cidade", country: "País", age: "Idade", birthday: "Data de Nasc.", save: "Guardar", edit: "Editar", logout: "Sair", stamps: "Meus Vistos", langLabel: "Idioma", user_id: "ID_UTILIZADOR", rank: "RANGO", miles: "MILHAS", admin: "ADMIN", streak: "Racha", changeAvatar: "Mudar foto" },
     ro: { title: "Pașaport Global bdai", subtitle: "ID Nomad Digital", surname: "Nume", givenNames: "Prenume", city: "Oraș", country: "Țară", age: "Vârstă", birthday: "Data Nașterii", save: "Salvează", edit: "Editează", logout: "Deconectare", stamps: "Vizele Mele", langLabel: "Limbă", user_id: "ID_UTILIZATOR", rank: "RANG", miles: "MILE", admin: "ADMIN", streak: "Zile", changeAvatar: "Atinge pentru schimbare" },
     ja: { title: "bdai グローバルパスポート", subtitle: "デジタルノマド ID", surname: "姓", givenNames: "名", city: "都市", country: "国", age: "年齢", birthday: "誕生日", save: "保存", edit: "編集", logout: "ログアウト", stamps: "ビザスタンプ", langLabel: "言語", user_id: "ユーザーID", rank: "ランク", miles: "マイル", admin: "管理", streak: "ストリーク", changeAvatar: "タップで変更" },
-    hi: { title: "bdai ग्लोबल पासपोर्ट", subtitle: "डिजिटल नोमैड आईडी", surname: "उपनाम", givenNames: "दिया गया नाम", city: "शहर", country: "देश", age: "आयु", birthday: "जन्म तिथि", save: "सहेजें", edit: "संपादित करें", logout: "लॉगआउट", stamps: "मेरे वीजा", langLabel: "भाषा", user_id: "उपयोगकर्ता_आईडी", rank: "रैंक", miles: "मील", admin: "एडमिन", streak: "लकीर", changeAvatar: "फोटो बदलने के लिए टैप करें" }
+    zh: { title: "bdai 全球护照", subtitle: "数字游民 ID", surname: "姓", givenNames: "名", city: "城市", country: "国家", age: "年龄", birthday: "出生日期", save: "保存", edit: "编辑", logout: "登出", stamps: "我的签证", langLabel: "语言", user_id: "用户ID", rank: "等级", miles: "里程", admin: "管理员", streak: "连续天数", changeAvatar: "点击更改照片" },
+    hi: { title: "bdai ग्लोबल पासपोर्ट", subtitle: "डिजिटल नोमैड आईडी", surname: "उपनाम", givenNames: "दिया गया नाम", city: "शहर", country: "देश", age: "आयु", birthday: "जन्म तिथि", save: "सहेजें", edit: "संपादित करें", logout: "लॉगआउट", stamps: "मेरे वीजा", langLabel: "भाषा", user_id: "उपयोगकर्ता_आईडी", rank: "रैंक", miles: "मील", admin: "एडमिन", streak: "लकीr", changeAvatar: "फोटो बदलें" }
 };
 
 const LangCircle: React.FC<{ code: string; isActive: boolean; onClick: () => void }> = ({ code, isActive, onClick }) => (
@@ -43,8 +47,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   });
 
   const pt = (key: string) => {
-    const lang = formData.language || 'es';
-    return (MODAL_TEXTS[lang] || MODAL_TEXTS['es'])[key] || (MODAL_TEXTS['es'])[key] || key;
+    const lang = user.language || 'es'; // Sincronizar con el idioma global del usuario
+    return (MODAL_TEXTS[lang] || MODAL_TEXTS['en'] || MODAL_TEXTS['es'])[key] || key;
   };
 
   const isAdmin = user.email === 'travelbdai@gmail.com';
@@ -162,7 +166,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 <p className="text-[8px] font-black text-slate-400 uppercase mb-4 tracking-widest">{pt('langLabel')}</p>
                 <div className="flex flex-wrap gap-2 mb-8">
                     {LANGUAGES.map(lang => (
-                        <LangCircle key={lang.code} code={lang.name} isActive={formData.language === lang.code} onClick={() => { setFormData({...formData, language: lang.code}); if(onUpdateUser) onUpdateUser({...user, language: lang.code}); }} />
+                        <LangCircle key={lang.code} code={lang.name} isActive={user.language === lang.code} onClick={() => { if(onUpdateUser) onUpdateUser({...user, language: lang.code}); }} />
                     ))}
                 </div>
 

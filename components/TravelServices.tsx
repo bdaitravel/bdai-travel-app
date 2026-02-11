@@ -12,11 +12,18 @@ const UI_LABELS: Record<string, any> = {
         cityNames: { 'Madrid': 'Madrid', 'Barcelona': 'Barcelona', 'Sevilla': 'Seville', 'Valencia': 'Valencia', 'Málaga': 'Malaga', 'Bilbao': 'Bilbao', 'París': 'Paris', 'Tokio': 'Tokyo', 'Nueva York': 'New York', 'Roma': 'Rome', 'Londres': 'London', 'El Cairo': 'Cairo', 'Estambul': 'Istanbul', 'Kioto': 'Kyoto', 'Tiflis': 'Tbilisi', 'Medellín': 'Medellin', 'Luang Prabang': 'Luang Prabang', 'Gjirokastër': 'Gjirokaster', 'Samarcanda': 'Samarkand', 'Da Nang': 'Da Nang', 'Ciudad de México': 'Mexico City', 'Ho Chi Minh': 'Ho Chi Minh' },
         themes: { 'Madrid': 'Historical Capital', 'Barcelona': 'Modernism', 'Sevilla': 'Mudejar Essence', 'Valencia': 'City of Arts', 'Málaga': 'Picasso\'s Coast', 'Bilbao': 'Titanium Soul', 'París': 'City of Light', 'Tokio': 'Cyberpunk Reality', 'Nueva York': 'World Center', 'Roma': 'The Eternal City', 'Londres': 'Imperial Legacy', 'El Cairo': 'Pharaonic Mystery', 'Estambul': 'Empire Bridge', 'Kioto': 'Zen Tradition' }
     },
+    fr: { 
+        hubTitle: "Intel Global", hubSub: "Galerie des Villes", homeTitle: "Villes Top", homeSub: "Destinations Incontournables", villagesTitle: "Joyaux Ruraux", villagesSub: "Villages de Charme", catVisited: "Icônes", catGrowth: "En Essor", catExotic: "Exotiques", loading: "Synchro...",
+        cityNames: { 'Madrid': 'Madrid', 'Barcelona': 'Barcelone', 'Sevilla': 'Séville', 'París': 'Paris', 'Tokio': 'Tokyo', 'Nueva York': 'New York', 'Londres': 'Londres' }
+    },
+    de: { hubTitle: "Globale Intel", hubSub: "Städtegalerie", homeTitle: "Top Städte", homeSub: "Top-Reiseziele", villagesTitle: "Ländliche Juwelen", cityNames: { 'Madrid': 'Madrid', 'Barcelona': 'Barcelona', 'Sevilla': 'Sevilla' } },
+    it: { hubTitle: "Intel Globale", hubSub: "Galleria Città", homeTitle: "Top Città", homeSub: "Destinazioni Imperdibili", cityNames: { 'Madrid': 'Madrid', 'Barcelona': 'Barcellona', 'Sevilla': 'Siviglia' } },
     zh: { 
         hubTitle: "全球情报", hubSub: "全球城市画廊", homeTitle: "热门城市", homeSub: "必游目的地", villagesTitle: "乡村名胜", villagesSub: "魅力小镇", catVisited: "经典图标", catGrowth: "新兴之星", catExotic: "异域风情", loading: "同步中...",
         cityNames: { 'Madrid': '马德里', 'Barcelona': '巴塞罗那', 'Sevilla': '塞维利亚', 'Valencia': '瓦伦西亚', 'Málaga': '马拉加', 'Bilbao': '毕尔巴鄂', 'París': '巴黎', 'Tokio': '东京', 'Nueva York': '纽约', 'Roma': '罗马', 'Londres': '伦敦', 'El Cairo': '开罗', 'Estambul': '伊斯坦布尔', 'Kioto': '京都', 'Tiflis': '第比利斯', 'Medellín': '麦德林', 'Luang Prabang': '琅勃拉邦', 'Gjirokastër': '吉诺卡斯特', 'Samarcanda': '撒马尔罕', 'Da Nang': '岘港', 'Ciudad de México': '墨西哥城', 'Ho Chi Minh': '胡志明市' },
         themes: { 'Madrid': '历史之都', 'Barcelona': '现代主义', 'Sevilla': '穆德哈尔精髓', 'Valencia': '艺术之城', 'Málaga': '毕加索海岸', 'Bilbao': '钛合金之魂', 'París': '光明之城', 'Tokio': '赛博朋克现实', 'Nueva York': '世界中心', 'Roma': '永恒之城', 'Londres': '帝国遗产', 'El Cairo': '法老之谜', 'Estambul': '帝国之桥', 'Kioto': '禅宗传统' }
-    }
+    },
+    ja: { hubTitle: "グローバル・インテル", homeTitle: "トップ都市", cityNames: { 'Madrid': 'マドリード', 'Barcelona': 'バルセロナ', 'Sevilla': 'セビリア', 'Tokio': '東京' } }
 };
 
 const SPAIN_CITIES = [
@@ -34,13 +41,7 @@ const SPAIN_VILLAGES = [
     { name: 'Ronda', color: 'from-emerald-700 to-slate-900', icon: 'fa-bridge' },
     { name: 'Laguardia', color: 'from-purple-800 to-slate-950', icon: 'fa-wine-glass' },
     { name: 'Trujillo', color: 'from-amber-700 to-slate-900', icon: 'fa-horse' },
-    { name: 'Valldemossa', color: 'from-green-800 to-slate-950', icon: 'fa-tree' },
-    { name: 'Besalú', color: 'from-stone-600 to-slate-950', icon: 'fa-chess-rook' },
-    { name: 'Frigiliana', color: 'from-blue-400 to-slate-900', icon: 'fa-house-chimney-window' },
-    { name: 'Aínsa', color: 'from-orange-800 to-slate-950', icon: 'fa-mountain' },
-    { name: 'Morella', color: 'from-gray-700 to-slate-900', icon: 'fa-chess-castle' },
-    { name: 'Guadalupe', color: 'from-yellow-700 to-slate-950', icon: 'fa-place-of-worship' },
-    { name: 'Alquézar', color: 'from-amber-800 to-slate-900', icon: 'fa-water' }
+    { name: 'Valldemossa', color: 'from-green-800 to-slate-950', icon: 'fa-tree' }
 ];
 
 const HUB_CATEGORIES: any = {
@@ -58,7 +59,6 @@ const HUB_CATEGORIES: any = {
         { name: 'Tiflis', color: 'from-rose-700 to-stone-900', icon: 'fa-mountain-city' },
         { name: 'Medellín', color: 'from-green-700 to-slate-900', icon: 'fa-leaf' },
         { name: 'Luang Prabang', color: 'from-orange-600 to-stone-950', icon: 'fa-dharmachakra' },
-        { name: 'Gjirokastër', color: 'from-slate-600 to-slate-950', icon: 'fa-gem' },
         { name: 'Samarcanda', color: 'from-blue-800 to-slate-900', icon: 'fa-archway' },
         { name: 'Da Nang', color: 'from-teal-600 to-slate-950', icon: 'fa-bridge-water' },
         { name: 'Ciudad de México', color: 'from-amber-800 to-slate-950', icon: 'fa-skull' },
@@ -69,16 +69,13 @@ const HUB_CATEGORIES: any = {
         { name: 'Leh', color: 'from-amber-800 to-stone-950', icon: 'fa-om' },
         { name: 'Bukhara', color: 'from-yellow-600 to-stone-900', icon: 'fa-scroll' },
         { name: 'Kotor', color: 'from-teal-700 to-slate-950', icon: 'fa-ship' },
-        { name: 'Yazd', color: 'from-orange-900 to-stone-950', icon: 'fa-wind' },
-        { name: 'Socotra', color: 'from-green-900 to-slate-950', icon: 'fa-sprout' },
-        { name: 'Lalibela', color: 'from-red-900 to-stone-950', icon: 'fa-cross' },
-        { name: 'Siwa', color: 'from-yellow-800 to-slate-950', icon: 'fa-sun' }
+        { name: 'Yazd', color: 'from-orange-900 to-stone-950', icon: 'fa-wind' }
     ]
 };
 
 const CityItem: React.FC<{ city: any, onSelect: (name: string) => void, language: string, small?: boolean }> = ({ city, onSelect, language, small }) => {
     const l = UI_LABELS[language] || UI_LABELS.en || UI_LABELS.es;
-    const translatedTheme = l.themes?.[city.name] || city.theme || l.defaultTheme || 'Explore';
+    const translatedTheme = l.themes?.[city.name] || l.defaultTheme || 'Explore';
     const translatedName = l.cityNames?.[city.name] || city.name;
     
     return (
