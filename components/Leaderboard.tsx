@@ -10,25 +10,30 @@ interface LeaderboardProps {
 }
 
 const TEXTS: any = {
-    en: { title: "Elite Travelers", you: "Your Status", subtitle: "Global explorer rankings" },
     es: { title: "Ranking Global", you: "Tu Estado", subtitle: "Exploradores de élite" },
-    pt: { title: "Ranking Global", you: "Seu Status", subtitle: "Exploradores de elite" },
+    en: { title: "Elite Travelers", you: "Your Status", subtitle: "Global explorer rankings" },
     it: { title: "Classifica Mondiale", you: "Tuo Stato", subtitle: "Esploratori d'élite" },
-    ru: { title: "Рейтинг", you: "Ваш статус", subtitle: "Элитные исследователи" },
-    hi: { title: "वैश्विक रैंकिंग", you: "आपकी स्थिति", subtitle: "अभिजात वर्ग के खोजकर्ता" },
-    ko: { title: "글로벌 랭킹", you: "나의 상태", subtitle: "엘리트 탐험가 순위" },
-    tr: { title: "Küresel Sıralama", you: "Durumunuz", subtitle: "Seçkin gezginler sıralaması" },
     fr: { title: "Classement Mondial", you: "Votre Statut", subtitle: "Voyageurs d'élite" },
     de: { title: "Bestenliste", you: "Dein Status", subtitle: "Globale Entdecker-Rankings" },
-    ja: { title: "リーダーボード", you: "あなたのステータス", subtitle: "エリート探検家" },
+    pt: { title: "Ranking Global", you: "Seu Status", subtitle: "Exploradores de elite" },
+    ro: { title: "Clasament Global", you: "Statutul Tău", subtitle: "Exploratori de elită" },
+    ca: { title: "Rànquing Global", you: "El Teu Estat", subtitle: "Exploradors d'elit" },
+    nl: { title: "Wereldranglijst", you: "Jouw Status", subtitle: "Elite ontdekkingsreizigers" },
     zh: { title: "全球排行榜", you: "您的状态", subtitle: "精英探险家" },
-    ca: { title: "Ranking Global", you: "El Teu Estat", subtitle: "Exploradors d'elit" },
+    ja: { title: "リーダーボード", you: "あなたのステータス", subtitle: "エリート探検家" },
+    ru: { title: "Рейтинг", you: "Ваш статус", subtitle: "Элитные исследователи" },
+    tr: { title: "Küresel Sıralama", you: "Durumunuz", subtitle: "Seçkin gezginler sıralaması" },
+    pl: { title: "Ranking Globalny", you: "Twój Status", subtitle: "Elitarni odkrywcy" },
+    hi: { title: "वैश्विक रैंकिंग", you: "आपकी स्थिति", subtitle: "अभिजात वर्ग के खोजकर्ता" },
+    ko: { title: "글로벌 랭킹", you: "나의 상태", subtitle: "엘리트 탐험가 순위" },
+    ar: { title: "التصنيف العالمي", you: "حالتك", subtitle: "مستكشفو النخبة" },
     eu: { title: "Sailkapen Orokorra", you: "Zure Egoera", subtitle: "Esploratzaile eliteak" },
-    ar: { title: "التصنيف العالمي", you: "حالتك", subtitle: "مستكشفو النخبة" }
+    vi: { title: "Bảng xếp hạng", you: "Trạng thái", subtitle: "Nhà thám hiểm tinh hoa" },
+    th: { title: "อันดับโลก", you: "สถานะของคุณ", subtitle: "นักสำรวจอีลิท" }
 };
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, onUserClick, language }) => {
-  const t = TEXTS[language] || TEXTS['es'];
+  const t = TEXTS[language] || TEXTS['en'];
   const sorted = [...entries].sort((a, b) => b.miles - a.miles);
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);

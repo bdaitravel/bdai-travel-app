@@ -21,7 +21,6 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     const fetchSummary = async () => {
         const { data } = await supabase.from('tours_cache').select('city, language');
         if (data) {
-            // Fix: Añadido fallback (d.city || "") para evitar error split en nulos
             const citySet = new Set(data.map(d => (d.city || "").split('_')[0]));
             setStats({ totalCities: citySet.size, totalEntries: data.length });
         }
@@ -32,11 +31,9 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         stopRef.current = false;
         addLog(`🚀 INICIANDO LOTE DE ${batchSize} CIUDADES...`);
 
-        // Obtenemos todas las ciudades base (registros en español suelen ser la base)
         const { data: baseRecords } = await supabase.from('tours_cache').select('*').eq('language', 'es');
         if (!baseRecords) { setIsWorking(false); return; }
 
-        // Buscamos cuáles necesitan traducción
         const { data: allRecords } = await supabase.from('tours_cache').select('city, language');
         const cityMap: Record<string, string[]> = {};
         allRecords?.forEach(r => {
@@ -134,7 +131,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
             <div className="flex-1 bg-black/50 border border-white/5 rounded-[2rem] p-6 overflow-y-auto no-scrollbar font-mono shadow-inner">
                 {log.map((m, i) => (
                     <p key={i} className={`text-[9px] lowercase mb-1 ${m.includes('✓') ? 'text-green-400' : m.includes('✗') ? 'text-red-400' : 'text-slate-500'}`}>
-                        &gt; {m}.
+                        &gt; {m}
                     </p>
                 ))}
             </div>
