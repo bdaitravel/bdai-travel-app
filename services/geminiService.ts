@@ -33,15 +33,15 @@ export const generateToursForCity = async (city: string, country: string, user: 
             model: 'gemini-3-pro-preview',
             contents: `ABSOLUTE RULE: ALL TEXT CONTENT IN THE JSON MUST BE EXCLUSIVELY IN THE LANGUAGE CODE: ${user.language}.
             
-            You are a UNESCO expert historian. Generate 3 tours for ${city}, ${country}.
+            You are a UNESCO expert historian. Generate 3 unique tours for ${city}, ${country}.
             
             MASTERCLASS REQUIREMENTS:
-            1. One tour must be 'Essential' with 10 stops.
-            2. EACH STOP MUST HAVE A DESCRIPTION OF AT LEAST 450 WORDS.
-            3. Style: Professional narrative, engineering secrets, and real historical gossip.
-            4. Format: Strict JSON.
-            5. TRANSLATION MANDATE: Translating "stop names", "titles", and "descriptions" into ${user.language} is MANDATORY. 
-            WARNING: IF YOU USE ENGLISH OR SPANISH WORDS FOR A NON-ENGLISH/SPANISH OUTPUT, THE SYSTEM WILL CRASH.`,
+            1. One tour must be 'Essential' with 10 STOPS.
+            2. EACH STOP MUST HAVE A DESCRIPTION OF AT LEAST 500 WORDS. 
+            3. CRITICAL: Avoid repetitions. Focus on engineering secrets, historical gossip, and cinematic details.
+            4. FORMAT: Strict JSON including 'photoSpot' for every stop.
+            5. PHOTO SPOT: Include 'angle' (e.g., "From the south corner at sunset") and 'secretLocation' (specific spot).
+            6. TRANSLATION MANDATE: Translating everything into ${user.language} is MANDATORY.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -68,9 +68,18 @@ export const generateToursForCity = async (city: string, country: string, user: 
                                         description: { type: Type.STRING },
                                         latitude: { type: Type.NUMBER },
                                         longitude: { type: Type.NUMBER },
-                                        type: { type: Type.STRING }
+                                        type: { type: Type.STRING },
+                                        photoSpot: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                angle: { type: Type.STRING },
+                                                milesReward: { type: Type.NUMBER },
+                                                secretLocation: { type: Type.STRING }
+                                            },
+                                            required: ["angle", "secretLocation"]
+                                        }
                                     },
-                                    required: ["id", "name", "description", "latitude", "longitude"]
+                                    required: ["id", "name", "description", "latitude", "longitude", "photoSpot"]
                                 }
                             }
                         },
@@ -169,7 +178,7 @@ export const standardizeCityName = async (input: string) => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Find cities matching: "${input}". JSON format.`,
+            contents: `Find all existing cities matching: "${input}". Provide their official name, local name and country to distinguish between duplicates (e.g. Logroño Spain vs Logroño Argentina). JSON format.`,
             config: { 
                 tools: [{ googleSearch: {} }], 
                 responseMimeType: "application/json",

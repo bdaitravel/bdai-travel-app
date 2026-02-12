@@ -1,28 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 
 const UI_LABELS: Record<string, any> = {
     es: { hubTitle: "Intel Global", hubSub: "Masterclass Mundial", homeTitle: "Ciudades Top", homeSub: "Explora el mundo", catVisited: "Iconos", catGrowth: "En Auge", catExotic: "Ingeniería", loading: "Cargando intel...", defaultTheme: "Explorar" },
-    en: { hubTitle: "Global Intel", hubSub: "World Masterclass", homeTitle: "Top Cities", homeSub: "Explore the world", catVisited: "Icons", catGrowth: "Rising Stars", catExotic: "Engineering", loading: "Syncing...", defaultTheme: "Explore" },
-    it: { hubTitle: "Intel Globale", hubSub: "Masterclass Mondiale", homeTitle: "Città Top", homeSub: "Esplora il mondo", catVisited: "Icone", catGrowth: "In Ascesa", catExotic: "Ingegneria", loading: "Caricamento...", defaultTheme: "Esplora" },
-    fr: { hubTitle: "Intel Global", hubSub: "Masterclass Mondiale", homeTitle: "Top Villes", homeSub: "Explorer le monde", catVisited: "Icônes", catGrowth: "En Hausse", catExotic: "Ingénierie", loading: "Chargement...", defaultTheme: "Explorer" },
-    de: { hubTitle: "Globale Intel", hubSub: "Welt-Masterclass", homeTitle: "Top-Städte", homeSub: "Entdecke die Welt", catVisited: "Ikonen", catGrowth: "Aufstrebend", catExotic: "Engineering", loading: "Lade...", defaultTheme: "Erkunden" },
-    pt: { hubTitle: "Intel Global", hubSub: "Masterclass Mundial", homeTitle: "Cidades Top", homeSub: "Explore o mundo", catVisited: "Ícones", catGrowth: "Em Ascensão", catExotic: "Engenharia", loading: "Carregando...", defaultTheme: "Explorar" },
-    ro: { hubTitle: "Intel Global", hubSub: "Masterclass Mondial", homeTitle: "Orașe Top", homeSub: "Explorează lumea", catVisited: "Icoane", catGrowth: "În Creștere", catExotic: "Inginerie", loading: "Se încarcă...", defaultTheme: "Explorează" },
-    ca: { hubTitle: "Intel Global", hubSub: "Masterclass Mundial", homeTitle: "Ciutats Top", homeSub: "Explora el món", catVisited: "Icones", catGrowth: "En auge", catExotic: "Enginyeria", loading: "Carregant...", defaultTheme: "Explorar" },
-    nl: { hubTitle: "Globale Intel", hubSub: "Wereld Masterclass", homeTitle: "Top Steden", homeSub: "Ontdek de wereld", catVisited: "Iconen", catGrowth: "In opkomst", catExotic: "Techniek", loading: "Laden...", defaultTheme: "Ontdekken" },
-    zh: { hubTitle: "全球情报", hubSub: "世界大师课", homeTitle: "热门城市", homeSub: "探索世界", catVisited: "图腾", catGrowth: "兴起", catExotic: "工程", loading: "加载中...", defaultTheme: "探索" },
-    ja: { hubTitle: "グローバルインテル", hubSub: "世界マスタークラス", homeTitle: "トップ都市", homeSub: "世界を探索する", catVisited: "アイコン", catGrowth: "急成長中", catExotic: "エンジニアリング", loading: "ロード中...", defaultTheme: "探索" },
-    ru: { hubTitle: "Глобальный интеллект", hubSub: "Мировой мастер-класс", homeTitle: "Лучшие города", homeSub: "Исследуй мир", catVisited: "Иконы", catGrowth: "На подъеме", catExotic: "Инженерия", loading: "Загрузка...", defaultTheme: "Исследовать" },
-    tr: { hubTitle: "Küresel Intel", hubSub: "Dünya Masterclass", homeTitle: "En İyi Şehirler", homeSub: "Dünyayı keşfet", catVisited: "İkonlar", catGrowth: "Yükselen", catExotic: "Mühendislik", loading: "Yükleniyor...", defaultTheme: "Keşfet" },
-    pl: { hubTitle: "Globalny Intel", hubSub: "Światowy Masterclass", homeTitle: "Top Miasta", homeSub: "Odkrywaj świat", catVisited: "Ikony", catGrowth: "Na fali", catExotic: "Inżynieria", loading: "Ładowanie...", defaultTheme: "Odkrywaj" },
-    hi: { hubTitle: "ग्लोबल इंटेल", hubSub: "WORLD MASTERCLASS", homeTitle: "शीर्ष शहर", homeSub: "दुनिया का अन्वेषण करें", catVisited: "प्रतीक", catGrowth: "उभरते", catExotic: "इंजीनियरिंग", loading: "लोड हो रहा है...", defaultTheme: "अन्वेषण" },
-    ko: { hubTitle: "글로벌 인텔", hubSub: "WORLD MASTERCLASS", homeTitle: "인기 도시", homeSub: "세계 탐험", catVisited: "아이콘", catGrowth: "상승세", catExotic: "공학", loading: "로딩 중...", defaultTheme: "탐색" },
-    ar: { hubTitle: "الذكاء العالمي", hubSub: "ماستركلاس عالمي", homeTitle: "أفضل المدن", homeSub: "استكشف العالم", catVisited: "أيقونات", catGrowth: "في صعود", catExotic: "هندسة", loading: "جاري التحميل...", defaultTheme: "استكشف" },
-    eu: { hubTitle: "Intel Globala", hubSub: "Mundu Masterclassa", homeTitle: "Hiri Onenak", homeSub: "Mundua esploratu", catVisited: "Ikonoak", catGrowth: "Hazten", catExotic: "Ingeniaritza", loading: "Kargatzen...", defaultTheme: "Esploratu" },
-    vi: { hubTitle: "Thông tin Toàn cầu", hubSub: "Lớp học Thế giới", homeTitle: "Thành phố Hàng đầu", homeSub: "Khám phá thế giới", catVisited: "Biểu tượng", catGrowth: "Đang phát triển", catExotic: "Kỹ thuật", loading: "Đang tải...", defaultTheme: "Khám phá" },
-    th: { hubTitle: "ข้อมูลทั่วโลก", hubSub: "มาสเตอร์คลาสระดับโลก", homeTitle: "เมืองยอดนิยม", homeSub: "สำรวจโลก", catVisited: "ไอคอน", catGrowth: "กำลังเติเติบโต", catExotic: "วิศวกรรม", loading: "กำลังโหลด...", defaultTheme: "สำรวจ" }
+    en: { hubTitle: "Global Intel", hubSub: "World Masterclass", homeTitle: "Top Cities", homeSub: "Explore the world", catVisited: "Icons", catGrowth: "Rising Stars", catExotic: "Engineering", loading: "Syncing...", defaultTheme: "Explore" }
 };
 
 const CityItem: React.FC<{ city: any, onSelect: (name: string) => void, language: string, small?: boolean }> = ({ city, onSelect, language, small }) => {
@@ -61,16 +42,18 @@ export const TravelServices: React.FC<any> = ({ mode, language = 'es', onCitySel
         const fetchCities = async () => {
             setLoading(true);
             try {
+                // Quitamos el filtro eq('language', 'es') para mostrar TODO el mundo
                 const { data } = await supabase
                     .from('tours_cache')
                     .select('city, language')
-                    .eq('language', 'es')
-                    .limit(40);
+                    .limit(50);
                 
                 if (data) {
-                    const formatted = data.map(d => ({
-                        city: d.city,
-                        spanishName: d.city.split('_')[0].charAt(0).toUpperCase() + d.city.split('_')[0].slice(1)
+                    // Fix: Explicitly type uniqueCities as string[] to ensure 'c' in map is correctly typed for split() call
+                    const uniqueCities: string[] = Array.from(new Set(data.map((d: any) => d.city as string)));
+                    const formatted = uniqueCities.map(c => ({
+                        city: c,
+                        spanishName: c.split('_')[0].charAt(0).toUpperCase() + c.split('_')[0].slice(1)
                     }));
                     setCities(formatted.sort(() => Math.random() - 0.5));
                 }
@@ -98,7 +81,7 @@ export const TravelServices: React.FC<any> = ({ mode, language = 'es', onCitySel
                     ))}
                 </div>
                 <section className="grid grid-cols-2 gap-3">
-                    {cities.slice(0, 16).map((city: any) => (
+                    {cities.slice(0, 20).map((city: any) => (
                         <CityItem key={city.city} city={city} onSelect={onCitySelect} language={language} small />
                     ))}
                 </section>
