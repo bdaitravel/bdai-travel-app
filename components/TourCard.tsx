@@ -75,6 +75,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [showCompletion, setShowCompletion] = useState(false);
 
     const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
+    const [isAudioLoading, setIsAudioLoading] = useState(false);
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
 
@@ -91,10 +92,10 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             sourceNodeRef.current = null;
         }
         setAudioPlayingId(null);
+        setIsAudioLoading(false);
     };
 
     const handleFinishTour = async () => {
-        // Registrar el visado en el pasaporte
         const newStamp: VisaStamp = {
             city: tour.city,
             country: tour.country || "",
@@ -127,7 +128,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 });
             } catch (e) { console.error("Error sharing", e); }
         } else {
-            // Fallback: copy to clipboard
             navigator.clipboard.writeText(shareText);
             alert("Enlace copiado al portapapeles.");
         }
@@ -136,9 +136,13 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const handlePlayAudio = async (stopId: string, text: string) => {
         if (audioPlayingId === stopId) { stopAudio(); return; }
         stopAudio();
+        setIsAudioLoading(true);
         try {
             const base64 = await generateAudio(text, user.language, tour.city);
-            if (!base64) return;
+            if (!base64) {
+                setIsAudioLoading(false);
+                return;
+            }
             if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
             const ctx = audioContextRef.current;
             const binaryString = atob(base64);
@@ -155,12 +159,15 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             sourceNodeRef.current = source;
             source.start(0);
             setAudioPlayingId(stopId);
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e); 
+        } finally {
+            setIsAudioLoading(false);
+        }
     };
 
     return (
         <div className="fixed inset-0 bg-slate-50 flex flex-col z-[5000] overflow-hidden">
-             {/* MODAL DE CONSEJO DAI */}
              {showPhotoTip && (
                  <div className="fixed inset-0 z-[9500] flex items-center justify-center p-6 animate-fade-in">
                      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowPhotoTip(false)}></div>
@@ -176,7 +183,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                  </div>
              )}
 
-             {/* MODAL DE ITINERARIO */}
              {showItinerary && (
                  <div className="fixed inset-0 z-[9500] flex flex-col items-center justify-end animate-fade-in">
                      <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setShowItinerary(false)}></div>
@@ -197,7 +203,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                  </div>
              )}
 
-             {/* MODAL DE FINALIZACIÓN (Boarding Pass / Visa) */}
              {showCompletion && (
                  <div className="fixed inset-0 z-[9900] flex items-center justify-center p-6 animate-fade-in">
                      <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-2xl"></div>
@@ -222,7 +227,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                              <div className="grid grid-cols-2 gap-4 pt-4 relative">
                                  <div className="text-left"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.rewardTotal}</p><p className="text-xl font-black text-slate-900">+250 mi</p></div>
                                  <div className="text-right"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.approved}</p><i className="fas fa-check-circle text-green-500 text-xl"></i></div>
-                                 {/* Visual Badge/Stamp icon */}
                                  <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform rotate-12 -translate-y-4">
                                      <i className="fas fa-stamp text-8xl"></i>
                                  </div>
@@ -236,17 +240,25 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                  </div>
              )}
 
-             <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0">
+             <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 gap-3">
                 <button onClick={onBack} className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center shrink-0"><i className="fas fa-arrow-left text-xs"></i></button>
-                <button onClick={() => setShowItinerary(true)} className="flex-1 mx-4 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between">
+                <button onClick={() => setShowItinerary(true)} className="flex-1 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between min-w-0">
                     <div className="flex flex-col text-left truncate">
                         <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">{tl.stop} {currentStopIndex + 1}</p>
                         <h2 className="text-[10px] font-black text-slate-900 uppercase truncate leading-tight">{currentStop.name}</h2>
                     </div>
-                    <i className="fas fa-list-ul text-[10px] text-slate-400"></i>
+                    <i className="fas fa-list-ul text-[10px] text-slate-400 ml-2 shrink-0"></i>
                 </button>
-                <button onClick={() => handlePlayAudio(currentStop.id, (currentStop.description || ""))} className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'}`}>
-                    <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-play'} text-xs`}></i>
+                <button 
+                    onClick={() => handlePlayAudio(currentStop.id, (currentStop.description || ""))} 
+                    disabled={isAudioLoading}
+                    className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'} disabled:opacity-70`}
+                >
+                    {isAudioLoading ? (
+                        <i className="fas fa-spinner fa-spin text-xs"></i>
+                    ) : (
+                        <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-play'} text-xs`}></i>
+                    )}
                 </button>
              </div>
 
