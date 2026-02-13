@@ -1,13 +1,14 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Tour, Stop, UserProfile, VisaStamp, RANK_THRESHOLDS, TravelerRank } from '../types';
+import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
 import { generateAudio } from '../services/geminiService';
 import { syncUserProfile } from '../services/supabaseClient';
 
 const TEXTS: any = {
     es: { start: "Lanzar", stop: "Parada", of: "de", daiShot: "Consejo Dai", angleLabel: "Ángulo Dai:", photoTipFallback: "Busca una perspectiva lateral para captar la profundidad de la estructura.", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Siguiente", meters: "m", itinerary: "Itinerario", finish: "Finalizar Tour", congrats: "¡Tour Completado!", stampDesc: "Has ganado un nuevo sello", shareIg: "Compartir (+100 Millas)", close: "Cerrar", tooFar: "GPS Incierto", checkIn: "Check-in GPS", checkedIn: "Verificada", distance: "Distancia", duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS", visaId: "VISADO", boardingPass: "TARJETA DE EMBARQUE", approved: "APROBADO", rewardTotal: "Recompensa total", rankUp: "Rango actualizado", shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️" },
-    en: { start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:", photoTipFallback: "Look for a side perspective to capture the depth of the structure.", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", finish: "Finish Tour", congrats: "Tour Completed!", stampDesc: "You earned a new stamp", shareIg: "Share (+100 Miles)", close: "Close", tooFar: "GPS Uncertain", checkIn: "GPS Check-in", checkedIn: "Verified", distance: "Distance", duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "BOARDING PASS", approved: "APPROVED", rewardTotal: "Total reward", rankUp: "Rank updated", shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️" }
+    en: { start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:", photoTipFallback: "Look for a side perspective to capture the depth of the structure.", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", finish: "Finish Tour", congrats: "Tour Completed!", stampDesc: "You earned a new stamp", shareIg: "Share (+100 Miles)", close: "Close", tooFar: "GPS Uncertain", checkIn: "GPS Check-in", checkedIn: "Verified", distance: "Distance", duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "BOARDING PASS", approved: "APPROVED", rewardTotal: "Total reward", rankUp: "Rank updated", shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️" },
+    fr: { start: "Lancer", stop: "Arrêt", of: "sur", daiShot: "Conseil Dai", angleLabel: "Angle Dai :", photoTipFallback: "Cherchez une perspective latérale pour capturer la profondeur de la structure.", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Précédent", next: "Suivant", meters: "m", itinerary: "Itinéraire", finish: "Terminer le Tour", congrats: "Tour Terminé!", stampDesc: "Nouveau tampon gagné", shareIg: "Partager (+100 Miles)", close: "Fermer", tooFar: "GPS Incertain", checkIn: "Check-in GPS", checkedIn: "Vérifié", distance: "Distance", duration: "Durée", nearbyAlert: "Arrêt Proche", jumpTo: "Aller ici", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "CARTE D'EMBARQUEMENT", approved: "APPROUVÉ", rewardTotal: "Récompense totale", rankUp: "Rang mis à jour", shareText: "Je viens de terminer la Masterclass {city} sur bdai ! +250 miles gagnés. 🌍✈️" }
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -37,22 +38,25 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
   return (
     <div onClick={handleLaunch} className="group bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden p-8 mb-6 cursor-pointer relative active:scale-[0.98] transition-all hover:border-purple-500/40 shadow-2xl">
       <div className="flex flex-col">
-          <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
-          <p className="text-slate-400 text-[10px] leading-relaxed line-clamp-2 mb-6 font-medium uppercase tracking-wider">{tour.description}</p>
+          <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
+          <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-6 font-medium">{tour.description}</p>
           <div className="flex items-center justify-between pt-6 border-t border-white/5">
                <div className="flex gap-4">
                   <div className="flex flex-col">
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.duration}</span>
-                    <span className="text-white font-black text-[10px] uppercase tracking-tighter">{tour.duration}</span>
+                    <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.duration}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.distance}</span>
-                    <span className="text-white font-black text-[10px] uppercase tracking-tighter">{tour.distance}</span>
+                    <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.distance}</span>
                   </div>
                </div>
                <div className="flex items-center gap-3">
-                 <div className={`w-10 h-10 aspect-square rounded-2xl flex items-center justify-center shadow-xl transition-all shrink-0 ${isLaunching ? 'bg-purple-600 text-white animate-spin' : 'bg-white text-slate-950 group-hover:bg-purple-500 group-hover:text-white'}`}>
-                   <i className={`fas ${isLaunching ? 'fa-spinner' : 'fa-play'} text-[10px]`}></i>
+                 <span className={`${isLaunching ? 'text-purple-400 animate-pulse' : 'text-purple-500'} font-black text-[10px] uppercase tracking-widest`}>
+                    {isLaunching ? 'Syncing...' : tl.start}
+                 </span>
+                 <div className={`w-11 h-11 aspect-square rounded-2xl flex items-center justify-center shadow-xl transition-all shrink-0 ${isLaunching ? 'bg-purple-600 text-white animate-spin' : 'bg-white text-slate-950 group-hover:bg-purple-500 group-hover:text-white'}`}>
+                   <i className={`fas ${isLaunching ? 'fa-spinner' : 'fa-play'} text-[10px] ${!isLaunching && 'ml-0.5'}`}></i>
                  </div>
                </div>
           </div>
@@ -69,6 +73,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [showPhotoTip, setShowPhotoTip] = useState(false);
     const [showItinerary, setShowItinerary] = useState(false);
     const [showCompletion, setShowCompletion] = useState(false);
+
     const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
@@ -78,7 +83,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         return Math.round(calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
     }, [userLocation, currentStop]);
 
-    const IS_IN_RANGE = distToTarget !== null && distToTarget <= 150;
+    const IS_IN_RANGE = distToTarget !== null && distToTarget <= 100;
 
     const stopAudio = () => {
         if (sourceNodeRef.current) {
@@ -88,38 +93,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         setAudioPlayingId(null);
     };
 
-    const calculateNewRank = (miles: number): TravelerRank => {
-        if (miles >= RANK_THRESHOLDS.Legend) return 'Legend';
-        if (miles >= RANK_THRESHOLDS['Globe-Trotter']) return 'Globe-Trotter';
-        if (miles >= RANK_THRESHOLDS.Wanderer) return 'Wanderer';
-        if (miles >= RANK_THRESHOLDS.Explorer) return 'Explorer';
-        return 'Turist';
-    };
-
-    const handleCheckIn = async () => {
-        if (!IS_IN_RANGE) {
-            alert(`${tl.tooFar}: ${distToTarget}m`);
-            return;
-        }
-        setRewardClaimed(true);
-        
-        // Sumar puntos por tipo de parada
-        let updatedUser = { ...user, miles: user.miles + 50 };
-        const stopType = currentStop.type;
-        if (stopType === 'architecture') updatedUser.archPoints = (updatedUser.archPoints || 0) + 10;
-        if (stopType === 'historical') updatedUser.historyPoints = (updatedUser.historyPoints || 0) + 10;
-        if (stopType === 'food') updatedUser.foodPoints = (updatedUser.foodPoints || 0) + 10;
-        if (stopType === 'photo') updatedUser.photoPoints = (updatedUser.photoPoints || 0) + 10;
-        
-        updatedUser.rank = calculateNewRank(updatedUser.miles);
-        onUpdateUser(updatedUser);
-        if (user.isLoggedIn) await syncUserProfile(updatedUser);
-    };
-
     const handleFinishTour = async () => {
+        // Registrar el visado en el pasaporte
         const newStamp: VisaStamp = {
             city: tour.city,
-            country: tour.country || "Earth",
+            country: tour.country || "",
             date: new Date().toLocaleDateString(),
             color: ['#9333ea', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 4)]
         };
@@ -130,11 +108,29 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             stamps: [...(user.stamps || []), newStamp],
             completedTours: [...(user.completedTours || []), tour.id]
         };
-        updatedUser.rank = calculateNewRank(updatedUser.miles);
 
         onUpdateUser(updatedUser);
-        if (user.isLoggedIn) await syncUserProfile(updatedUser);
+        if (user.isLoggedIn) {
+            await syncUserProfile(updatedUser);
+        }
         setShowCompletion(true);
+    };
+
+    const handleShare = async () => {
+        const shareText = tl.shareText.replace('{city}', tour.city);
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `bdai Passport - ${tour.city}`,
+                    text: shareText,
+                    url: window.location.href
+                });
+            } catch (e) { console.error("Error sharing", e); }
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(shareText);
+            alert("Enlace copiado al portapapeles.");
+        }
     };
 
     const handlePlayAudio = async (stopId: string, text: string) => {
@@ -205,7 +201,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              {showCompletion && (
                  <div className="fixed inset-0 z-[9900] flex items-center justify-center p-6 animate-fade-in">
                      <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-2xl"></div>
-                     <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl relative z-10 flex flex-col overflow-hidden text-slate-900 border-4 border-slate-900">
+                     <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl relative z-10 flex flex-col overflow-hidden text-slate-900 border-4 border-slate-900 animate-slide-up">
                          <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
                              <div className="flex flex-col">
                                  <span className="text-[7px] font-black uppercase tracking-[0.3em] opacity-50">{tl.boardingPass}</span>
@@ -220,16 +216,21 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                              </div>
                              <div className="flex items-center justify-between gap-4">
                                  <div className="flex-1 text-left"><p className="text-[8px] font-black text-slate-400 uppercase mb-1">Origin</p><p className="text-2xl font-black uppercase tracking-tighter leading-none">BDI</p></div>
-                                 <i className="fas fa-arrow-right text-slate-300"></i>
-                                 <div className="flex-1 text-right"><p className="text-[8px] font-black text-slate-400 uppercase mb-1">Dest</p><p className="text-2xl font-black uppercase tracking-tighter leading-none text-purple-600">{tour.city.substring(0,3).toUpperCase()}</p></div>
+                                 <div className="flex flex-col items-center gap-1"><i className="fas fa-arrow-right text-slate-300"></i></div>
+                                 <div className="flex-1 text-right"><p className="text-[8px] font-black text-slate-400 uppercase mb-1">Destination</p><p className="text-2xl font-black uppercase tracking-tighter leading-none text-purple-600">{tour.city.substring(0,3).toUpperCase()}</p></div>
                              </div>
-                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                             <div className="grid grid-cols-2 gap-4 pt-4 relative">
                                  <div className="text-left"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.rewardTotal}</p><p className="text-xl font-black text-slate-900">+250 mi</p></div>
-                                 <div className="text-right flex items-center justify-end"><div className="w-14 h-14 bg-red-600/10 rounded-full border-4 border-red-600/30 flex items-center justify-center -rotate-12"><span className="text-[8px] font-black text-red-600 uppercase">VISADO</span></div></div>
+                                 <div className="text-right"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.approved}</p><i className="fas fa-check-circle text-green-500 text-xl"></i></div>
+                                 {/* Visual Badge/Stamp icon */}
+                                 <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform rotate-12 -translate-y-4">
+                                     <i className="fas fa-stamp text-8xl"></i>
+                                 </div>
                              </div>
                          </div>
                          <div className="p-6 bg-slate-50 border-t-2 border-slate-100 space-y-3">
-                             <button onClick={onBack} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all">{tl.close}</button>
+                             <button onClick={handleShare} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"><i className="fab fa-instagram text-sm"></i> {tl.shareIg}</button>
+                             <button onClick={onBack} className="w-full py-4 bg-slate-200 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest">{tl.close}</button>
                          </div>
                      </div>
                  </div>
@@ -237,11 +238,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
              <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0">
                 <button onClick={onBack} className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center shrink-0"><i className="fas fa-arrow-left text-xs"></i></button>
-                <button onClick={() => setShowItinerary(true)} className="flex-1 mx-4 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between overflow-hidden">
+                <button onClick={() => setShowItinerary(true)} className="flex-1 mx-4 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between">
                     <div className="flex flex-col text-left truncate">
                         <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">{tl.stop} {currentStopIndex + 1}</p>
-                        <h2 className="text-[9px] font-black text-slate-900 uppercase truncate leading-tight">{currentStop.name}</h2>
+                        <h2 className="text-[10px] font-black text-slate-900 uppercase truncate leading-tight">{currentStop.name}</h2>
                     </div>
+                    <i className="fas fa-list-ul text-[10px] text-slate-400"></i>
                 </button>
                 <button onClick={() => handlePlayAudio(currentStop.id, (currentStop.description || ""))} className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'}`}>
                     <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-play'} text-xs`}></i>
@@ -249,12 +251,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              </div>
 
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50">
-                <div className="h-[40vh] w-full">
+                <div className="h-[45vh] w-full">
                     <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
-                <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-xl z-[200] relative min-h-[60vh]">
+                <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-xl z-[200] relative min-h-[55vh]">
                     <div className="grid grid-cols-2 gap-4">
-                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
+                        <button onClick={() => { if(IS_IN_RANGE) setRewardClaimed(true); else alert(`${tl.tooFar}: ${distToTarget}m`); }} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
                             <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg mb-1`}></i>
                             <span className="text-[9px]">{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
                         </button>
@@ -270,11 +272,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              </div>
 
              <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 p-6 flex gap-3 z-[6000] pb-safe-iphone">
-                <button onClick={() => { onPrev(); stopAudio(); setRewardClaimed(false); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0">{tl.prev}</button>
+                <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0">{tl.prev}</button>
                 {currentStopIndex === tour.stops.length - 1 ? (
                     <button onClick={handleFinishTour} className="flex-[2] py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98]">{tl.finish}</button>
                 ) : (
-                    <button onClick={() => { onNext(); stopAudio(); setRewardClaimed(false); }} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98]">{tl.next}</button>
+                    <button onClick={() => { onNext(); stopAudio(); }} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98]">{tl.next}</button>
                 )}
              </div>
         </div>
