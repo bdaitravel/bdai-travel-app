@@ -72,9 +72,6 @@ export interface UserProfile {
   capturedMoments?: CapturedMoment[];
 }
 
-/**
- * Interface for intelligence items displayed in the Hub gallery
- */
 export interface HubIntel {
   id: string;
   title: string;
@@ -88,8 +85,9 @@ export interface HubIntel {
 
 export const APP_BADGES: Badge[] = [
   { id: 'owl', name: 'El Búho', icon: 'fa-owl', description: 'Has completado un tour después de las 20:00', category: 'night', requiredPoints: 0 },
-  { id: 'mayor', name: 'El Alcalde', icon: 'fa-crown', description: 'Eres el líder del ranking local', category: 'rank', requiredPoints: 0 },
-  { id: 'local', name: 'El Local', icon: 'fa-user-secret', description: 'Has visitado 3 pueblos de menos de 5.000 habitantes', category: 'explore', requiredPoints: 0 }
+  { id: 'early', name: 'Madrugador', icon: 'fa-sun', description: 'Check-in antes de las 08:00 AM', category: 'time', requiredPoints: 0 },
+  { id: 'poly', name: 'Políglota', icon: 'fa-language', description: 'Usa la app en 3 idiomas distintos', category: 'skill', requiredPoints: 0 },
+  { id: 'engineer', name: 'Maestro de Obra', icon: 'fa-drafting-compass', description: 'Completa 5 paradas de arquitectura', category: 'skill', requiredPoints: 0 }
 ];
 
 export interface LeaderboardEntry {

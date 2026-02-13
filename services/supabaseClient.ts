@@ -84,11 +84,24 @@ export const syncUserProfile = async (profile: UserProfile) => {
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
+  const nSimple = normalizeKey(city); // Intento sin país para rescatar tours antiguos
+  
   if (!nInput) return null;
+  
   try {
+    // 1. Intentar con el nombre oficial (ciudad_pais)
     const { data: exactMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language).maybeSingle();
     if (exactMatch && exactMatch.data) {
       return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
+    }
+
+    // 2. Si no hay match oficial, intentar con el nombre simple (legacy migration)
+    if (nInput !== nSimple) {
+        const { data: legacyMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nSimple).eq('language', language).maybeSingle();
+        if (legacyMatch && legacyMatch.data) {
+            // Opcional: Podríamos actualizar el registro aquí para que ya sea 'nInput'
+            return { data: legacyMatch.data as Tour[], langFound: language, cityName: legacyMatch.city };
+        }
     }
   } catch (e) {}
   return null; 
