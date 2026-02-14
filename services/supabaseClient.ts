@@ -2,31 +2,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
-const supabaseUrl = process.env.SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
 
-let supabase: any;
-try {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-} catch (e) {
-  console.error("Critical Supabase Init Error:", e);
-  supabase = {
-    auth: { getSession: async () => ({ data: { session: null } }) },
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }), upsert: async () => ({}) })
-  };
-}
-
-export { supabase };
-
-const generateAudioId = (text: string, lang: string) => {
-  let hash = 0;
-  const str = `${lang}_${text.substring(0, 150)}`; 
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return `h_${Math.abs(hash).toString(36)}`;
-};
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const normalizeKey = (city: string | undefined | null, country?: string) => {
     const safeCity = (city || "").toString().trim();
@@ -90,21 +69,10 @@ export const syncUserProfile = async (profile: UserProfile) => {
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
-  const nSimple = normalizeKey(city); 
-  
-  if (!nInput) return null;
-  
   try {
     const { data: exactMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language).maybeSingle();
     if (exactMatch && exactMatch.data) {
       return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
-    }
-
-    if (nInput !== nSimple) {
-        const { data: legacyMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nSimple).eq('language', language).maybeSingle();
-        if (legacyMatch && legacyMatch.data) {
-            return { data: legacyMatch.data as Tour[], langFound: language, cityName: legacyMatch.city };
-        }
     }
   } catch (e) {}
   return null; 
@@ -118,19 +86,58 @@ export const saveToursToCache = async (city: string, country: string, language: 
   } catch (e) {}
 };
 
-export const validateEmailFormat = (email: string) => { 
-  return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); 
-};
-
 export const getGlobalRanking = async () => {
   try {
     const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
     return (data || []).map((d: any, i: number) => ({ ...d, rank: i + 1, name: d.username || 'Traveler' }));
-  } catch (e) {
-    return [];
-  }
+  } catch (e) { return []; }
 };
-export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => { return null; };
-export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => { return base64; };
-export const getCommunityPosts = async (city: string) => { return []; };
-export const addCommunityPost = async (post: any) => { return { success: true }; };
+
+export const getCachedAudio = async (text: string, lang: string) => {
+    try {
+        const key = `${lang}_${text.substring(0, 30).replace(/\s+/g, '_')}`;
+        const { data } = await supabase.from('audio_cache').select('base64').eq('id', key).maybeSingle();
+        return data?.base64 || null;
+    } catch (e) { return null; }
+};
+
+export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string) => {
+    try {
+        const key = `${lang}_${text.substring(0, 30).replace(/\s+/g, '_')}`;
+        await supabase.from('audio_cache').upsert({ id: key, base64, city: normalizeKey(city) });
+        return base64;
+    } catch (e) { return base64; }
+};
+
+export const getCommunityPosts = async (city: string) => {
+    try {
+        const nCity = normalizeKey(city);
+        const { data } = await supabase.from('community_posts').select('*').eq('city', nCity).order('created_at', { ascending: false });
+        return (data || []).map((p: any) => ({
+            id: p.id,
+            user: p.user_name,
+            avatar: p.avatar,
+            content: p.content,
+            time: new Date(p.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            likes: p.likes || 0
+        }));
+    } catch (e) { return []; }
+};
+
+export const addCommunityPost = async (post: any) => {
+    try {
+        const { error } = await supabase.from('community_posts').insert({
+            city: normalizeKey(post.city),
+            user_id: post.userId,
+            user_name: post.user,
+            avatar: post.avatar,
+            content: post.content,
+            type: post.type || 'comment'
+        });
+        return { success: !error };
+    } catch (e) { return { success: false }; }
+};
+
+export const validateEmailFormat = (email: string) => { 
+  return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); 
+};
