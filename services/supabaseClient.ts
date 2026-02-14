@@ -53,6 +53,9 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       miles: data.miles || 0,
       language: data.language || 'es',
       rank: data.rank || 'Turist',
+      birthday: data.birthday || '1995-01-01',
+      city: data.city || '',
+      country: data.country || '',
       isLoggedIn: true,
       culturePoints: 0, foodPoints: 0, photoPoints: 0, historyPoints: 0, naturePoints: 0, artPoints: 0, archPoints: 0,
       interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25,
@@ -75,7 +78,10 @@ export const syncUserProfile = async (profile: UserProfile) => {
       last_name: profile.lastName,
       miles: profile.miles,
       language: profile.language,
-      avatar: profile.avatar
+      avatar: profile.avatar,
+      birthday: profile.birthday,
+      city: profile.city,
+      country: profile.country
     }, { onConflict: 'email' });
   } catch (e) {
     console.error("Sync error", e);
@@ -84,22 +90,19 @@ export const syncUserProfile = async (profile: UserProfile) => {
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
-  const nSimple = normalizeKey(city); // Intento sin país para rescatar tours antiguos
+  const nSimple = normalizeKey(city); 
   
   if (!nInput) return null;
   
   try {
-    // 1. Intentar con el nombre oficial (ciudad_pais)
     const { data: exactMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language).maybeSingle();
     if (exactMatch && exactMatch.data) {
       return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
     }
 
-    // 2. Si no hay match oficial, intentar con el nombre simple (legacy migration)
     if (nInput !== nSimple) {
         const { data: legacyMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nSimple).eq('language', language).maybeSingle();
         if (legacyMatch && legacyMatch.data) {
-            // Opcional: Podríamos actualizar el registro aquí para que ya sea 'nInput'
             return { data: legacyMatch.data as Tour[], langFound: language, cityName: legacyMatch.city };
         }
     }

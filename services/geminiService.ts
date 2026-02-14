@@ -80,16 +80,22 @@ const TOUR_SCHEMA = {
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const userPersonaContext = `The user is ${user.age} years old and interested in ${user.interests.join(', ') || 'general history and culture'}.`;
+        
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
-            contents: `As a Master Historian and National Geographic Photographer, generate 3 tours for ${city}, ${country} in ${user.language}.
+            contents: `As a charismatic, world-class "Free Tour" Guide with a passion for storytelling and deep knowledge in history and engineering, generate 3 unique tours for ${city}, ${country} in ${user.language}.
             
+            ${userPersonaContext}
+
             STRICT RULES:
-            1. The FIRST tour MUST be marked as 'isEssential: true' and MUST HAVE EXACTLY 10 STOPS. DO NOT GENERATE FEWER.
-            2. Each stop description MUST exceed 450 words. Focus on engineering secrets and historical gossip.
-            3. Each 'photoSpot' MUST be specific to the stop. NO REPETITIONS.
-            4. If the city is a small town, find 10 points of interest even if they are small details.
-            5. ALL CONTENT MUST BE IN ${user.language}.`,
+            1. PERSONA: Write like a vibrant local guide. Use an engaging, conversational, and slightly irreverent tone. Tell stories, not just facts.
+            2. STRUCTURE: The FIRST tour MUST be marked as 'isEssential: true' and MUST HAVE EXACTLY 10 STOPS.
+            3. CONTENT: Each stop description MUST exceed 450 words. Focus on engineering secrets, historical "salseo" (gossip), and hidden details that a normal tourist would miss.
+            4. ADAPTATION: Tailor the narrative to the user's interests (${user.interests.join(', ')}) and age (${user.age}).
+            5. PHOTOGRAPHY: Each 'photoSpot' MUST be specific, providing professional technical advice for the perfect shot.
+            6. SMALL TOWNS: If the city is small, find 10 fascinating points of interest even if they are micro-details or local legends.
+            7. LANGUAGE: ALL CONTENT MUST BE IN ${user.language}.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -107,8 +113,8 @@ export const generateThematicTour = async (city: string, country: string, theme:
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
-            contents: `Generate ONE thematic tour for ${city}, ${country} with theme: "${theme}". 
-            This tour MUST have at least 8 stops. Detailed descriptions in ${user.language}.`,
+            contents: `Generate ONE thematic "Free Tour" style adventure for ${city}, ${country} with theme: "${theme}". 
+            Persona: Charismatic local expert. Minimum 8 stops. Detailed, story-driven descriptions in ${user.language}.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: TOUR_SCHEMA
@@ -145,7 +151,8 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
+            contents: `Translate the following tours to ${targetLanguage}: ${JSON.stringify(tours)}. 
+            Maintain the "Free Tour Guide" charismatic tone and technical photo advice.`,
             config: { responseMimeType: "application/json" }
         });
         return JSON.parse(response.text || "[]");
@@ -157,7 +164,7 @@ export const standardizeCityName = async (input: string) => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Identify cities matching "${input}". Return JSON array.`,
+            contents: `Identify the most likely cities matching "${input}". Return a JSON array.`,
             config: { 
                 tools: [{ googleSearch: {} }], 
                 responseMimeType: "application/json",
@@ -183,7 +190,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Is this text safe? "${text}"`,
+            contents: `Analyze if this text is safe for a travel community: "${text}"`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -201,7 +208,7 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: `Postcard of ${city}` }] },
+            contents: { parts: [{ text: `A vibrant, high-quality travel postcard of ${city} highlighting ${interests.join(', ') || 'landmarks'} in a cinematic style.` }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
         const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
