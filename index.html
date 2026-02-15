@@ -95,16 +95,6 @@
   <body class="text-slate-100 antialiased selection:bg-purple-500/30">
     <div id="root"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script type="module" crossorigin="anonymous" src="/index.tsx?v=2.0.2"></script>
-    <script>
-      // Forzar actualización de Service Worker si existe
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.update();
-          }
-        });
-      }
-    </script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

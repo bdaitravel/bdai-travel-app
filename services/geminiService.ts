@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
 // Removed getCachedAudio and saveAudioToCache as they are not exported by supabaseClient.ts
@@ -156,11 +155,11 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
 export const standardizeCityName = async (input: string) => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        // Removed googleSearch tool as it's often incompatible with responseMimeType: "application/json" and parsing rules.
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Identify cities matching "${input}". Return JSON array.`,
             config: { 
-                tools: [{ googleSearch: {} }], 
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.ARRAY,
