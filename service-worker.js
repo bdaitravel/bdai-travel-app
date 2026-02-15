@@ -1,28 +1,19 @@
 
-const CACHE_NAME = 'bdai-v3-0-0-reboot';
-
-self.addEventListener('install', (event) => {
+// SW Kill-Switch para BD AI
+self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
-      keys.map((key) => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      })
-    ))
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  // Siempre intentar red primero para archivos JS/TSX
-  if (event.request.url.includes('.tsx') || event.request.url.includes('.js')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((k) => caches.delete(k)));
+    }).then(() => {
+      return self.registration.unregister();
+    }).then(() => {
+      return self.clients.matchAll();
+    }).then((clients) => {
+      clients.forEach(client => client.navigate(client.url));
+    })
   );
 });

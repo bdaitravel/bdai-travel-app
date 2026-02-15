@@ -4,75 +4,58 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="bdai">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#020617">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     
     <title>bdai | better destinations</title>
     
-    <link rel="icon" type="image/png" href="/logo.png">
-    <link rel="apple-touch-icon" href="/logo.png">
-
-    <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-      :root { --font-heading: 'Outfit', sans-serif; }
-      body {
-        font-family: 'Outfit', sans-serif;
-        background: #020617;
-        overscroll-behavior: none;
-        -webkit-tap-highlight-color: transparent;
-        margin: 0; padding: 0;
-        height: 100dvh; width: 100vw;
-        overflow: hidden;
+      body { font-family: 'Outfit', sans-serif; background: #020617; margin: 0; overflow: hidden; color: white; }
+      #root { height: 100dvh; display: flex; flex-direction: column; }
+      .loading-screen {
+        position: fixed; inset: 0; background: #020617;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        z-index: 9999;
       }
-      #root { height: 100%; display: flex; flex-direction: column; }
-      .pt-safe-iphone { padding-top: calc(env(safe-area-inset-top, 20px) + 1.5rem) !important; }
-      .pb-safe-iphone { padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 1rem) !important; }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      input, textarea { font-size: 16px !important; }
-
-      @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
-      .animate-scan { animation: scan 3s linear infinite; }
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      .animate-fade-in { animation: fadeIn 0.4s ease-out; }
-      @keyframes pulse-logo {
-        0% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(147,51,234,0)); }
-        50% { transform: scale(1.08); filter: drop-shadow(0 0 30px rgba(147,51,234,0.6)); }
-        100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(147,51,234,0)); }
+      .btn-emergency {
+        margin-top: 20px; padding: 10px 20px; background: #7c3aed; color: white;
+        border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase;
+        letter-spacing: 1px; display: none; cursor: pointer; border: none;
       }
-      .animate-pulse-logo { animation: pulse-logo 3.5s ease-in-out infinite; }
     </style>
+    
     <script>
       (function() {
-        const VERSION_TAG = '3.1.0-VERCEL-' + Date.now(); 
-        console.log("%c BDAI SYSTEM VERSION: " + VERSION_TAG, "color: #9333ea; font-weight: bold; font-size: 16px;");
-        
-        if (localStorage.getItem('bdai_v_check') !== '3.1.0') {
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(regs => {
-              for(let r of regs) r.unregister();
-            });
-          }
-          if ('caches' in window) {
-            caches.keys().then(names => {
-              for (let n of names) caches.delete(n);
-            });
-          }
-          localStorage.clear();
-          localStorage.setItem('bdai_v_check', '3.1.0');
+        const VERSION = '3.2.3';
+        console.log("%c [SYSTEM] BOOTING V" + VERSION, "color: #a855f7; font-weight: bold;");
+
+        // Limpieza agresiva de cualquier rastro previo
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
         }
+        
+        // Si el loader no desaparece en 4 segundos, mostrar botón de auxilio
+        setTimeout(() => {
+          const btn = document.getElementById('emergency-btn');
+          if (btn) btn.style.display = 'block';
+        }, 4000);
+
+        window.forceReset = function() {
+          localStorage.clear();
+          sessionStorage.clear();
+          if ('caches' in window) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+          window.location.reload(true);
+        };
       })();
     </script>
-  <script type="importmap">
+
+    <script type="importmap">
 {
   "imports": {
     "@google/genai": "https://esm.sh/@google/genai@1.30.0",
@@ -87,16 +70,18 @@
   }
 }
 </script>
-</head>
-  <body class="text-slate-100 antialiased selection:bg-purple-500/30">
-    <div id="root"></div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script type="module" crossorigin="anonymous">
-      const ts = new Date().getTime();
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = '/index.tsx?v=3.1.0&nc=' + ts;
-      document.body.appendChild(script);
-    </script>
+  </head>
+  <body>
+    <div id="root">
+      <div class="loading-screen" id="initial-loader">
+        <div class="w-10 h-10 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-4"></div>
+        <p style="font-size: 8px; letter-spacing: 0.3em; color: #475569;">INICIANDO BDAI 3.2.3</p>
+        <button id="emergency-btn" class="btn-emergency" onclick="forceReset()">Forzar Limpieza de Caché</button>
+      </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Importación limpia con Cache Busting -->
+    <script type="module" src="/index.tsx?v=3.2.3"></script>
   </body>
 </html>
