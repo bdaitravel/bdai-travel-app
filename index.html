@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
   <head>
@@ -28,8 +29,7 @@
       }
       body {
         font-family: 'Outfit', sans-serif;
-        background: radial-gradient(circle at top right, #3b0764 0%, #020617 100%);
-        background-attachment: fixed;
+        background: #020617;
         overscroll-behavior: none;
         -webkit-tap-highlight-color: transparent;
         margin: 0;
@@ -76,6 +76,30 @@
         animation: pulse-logo 3.5s ease-in-out infinite;
       }
     </style>
+    <script>
+      /**
+       * LIMPIEZA TOTAL DE CACHÉ Y SW
+       */
+      (function() {
+        const VERSION = '2.0.8';
+        if (localStorage.getItem('app_v') !== VERSION) {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+              for(let r of regs) r.unregister();
+            });
+          }
+          if ('caches' in window) {
+            caches.keys().then(names => {
+              for (let n of names) caches.delete(n);
+            });
+          }
+          localStorage.clear();
+          localStorage.setItem('app_v', VERSION);
+          // Forzar recarga desde servidor
+          window.location.reload(true);
+        }
+      })();
+    </script>
   <script type="importmap">
 {
   "imports": {
@@ -95,6 +119,6 @@
   <body class="text-slate-100 antialiased selection:bg-purple-500/30">
     <div id="root"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script type="module" crossorigin="anonymous" src="/index.tsx"></script>
+    <script type="module" crossorigin="anonymous" src="/index.tsx?v=2.0.8"></script>
   </body>
 </html>

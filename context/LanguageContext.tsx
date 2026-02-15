@@ -10,12 +10,14 @@ type LanguageContextType = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export const LanguageProvider: React.FC<{ children: React.ReactNode, initialLanguage?: string }> = ({ children, initialLanguage = 'es' }) => {
-  const [language, setLangState] = useState(initialLanguage);
+export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [language, setLangState] = useState('es');
 
   useEffect(() => {
     const saved = localStorage.getItem('bdai_lang');
-    if (saved) setLangState(saved);
+    if (saved && TRANSLATIONS[saved]) {
+      setLangState(saved);
+    }
   }, []);
 
   const setLanguage = (lang: string) => {
@@ -24,18 +26,31 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode, initialLang
   };
 
   const t = useCallback((key: string) => {
-    const dict = TRANSLATIONS[language] || TRANSLATIONS['en'];
     const keys = key.split('.');
-    let result: any = dict;
     
-    for (const k of keys) {
-      if (result && result[k]) {
-        result = result[k];
-      } else {
-        return TRANSLATIONS['en'][key] || key;
+    const getVal = (dict: any, path: string[]) => {
+      if (!dict) return null;
+      let current = dict;
+      for (const k of path) {
+        if (current && current[k]) {
+          current = current[k];
+        } else {
+          return null;
+        }
       }
+      return current;
+    };
+
+    // 1. Intentar en el idioma actual
+    let translation = getVal(TRANSLATIONS[language], keys);
+    
+    // 2. Fallback al inglés si el idioma actual no tiene la clave
+    if (!translation && language !== 'en') {
+      translation = getVal(TRANSLATIONS['en'], keys);
     }
-    return result;
+
+    // 3. Si sigue sin existir, devolver la clave limpia (ej: 'user' en lugar de 'auth.user' como último recurso)
+    return translation || keys[keys.length - 1];
   }, [language]);
 
   return (

@@ -16,48 +16,55 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ username, email, onUse
   const { language, setLanguage, t } = useLanguage();
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617] animate-fade-in">
-      <div className="text-center flex flex-col items-center mb-10 mt-[-10dvh]">
-        <BdaiLogo className="w-44 h-44 animate-pulse-logo" />
-        <h1 className="text-6xl font-black lowercase tracking-tighter text-white/95 -mt-8">bdai</h1>
-        <p className="text-[10px] font-black lowercase tracking-[0.3em] text-purple-500 mt-2 uppercase">{t('auth.tagline')}</p>
+    <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617] animate-fade-in overflow-hidden">
+      {/* Glow Effect */}
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_100%)] from-purple-900/10 to-transparent pointer-events-none"></div>
+
+      <div className="text-center flex flex-col items-center mb-10 relative z-10">
+        <BdaiLogo className="w-40 h-40 animate-pulse-logo" />
+        <h1 className="text-6xl font-black lowercase tracking-tighter text-white/95 -mt-6">bdai</h1>
+        <p className="text-[10px] font-black lowercase tracking-[0.4em] text-purple-500 mt-2 uppercase">{t('auth.tagline')}</p>
       </div>
       
-      <div className="w-full max-w-[240px] mt-2 space-y-2">
-        <input 
-          type="text" 
-          value={username} 
-          onChange={e => onUsernameChange(e.target.value)} 
-          className="w-full h-11 bg-white/[0.03] border border-white/5 rounded-xl px-4 text-center text-white outline-none text-[10px] font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/30 transition-all" 
-          placeholder={t('auth.userPlaceholder')} 
-        />
-        <input 
-          type="email" 
-          value={email} 
-          onChange={e => onEmailChange(e.target.value)} 
-          className="w-full h-11 bg-white/[0.03] border border-white/5 rounded-xl px-4 text-center text-white outline-none text-[10px] font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/30 transition-all" 
-          placeholder={t('auth.emailPlaceholder')} 
-        />
+      <div className="w-full max-w-[280px] space-y-3 relative z-10">
+        <div className="space-y-2">
+            <input 
+              type="text" 
+              value={username} 
+              onChange={e => onUsernameChange(e.target.value)} 
+              className="w-full h-12 bg-white/[0.05] border border-white/10 rounded-2xl px-5 text-center text-white outline-none text-[13px] font-bold placeholder-slate-400 shadow-inner focus:border-purple-500/50 transition-all focus:bg-white/[0.08]" 
+              placeholder={t('auth.user')} 
+            />
+            <input 
+              type="email" 
+              value={email} 
+              onChange={e => onEmailChange(e.target.value)} 
+              className="w-full h-12 bg-white/[0.05] border border-white/10 rounded-2xl px-5 text-center text-white outline-none text-[13px] font-bold placeholder-slate-400 shadow-inner focus:border-purple-500/50 transition-all focus:bg-white/[0.08]" 
+              placeholder={t('auth.email')} 
+            />
+        </div>
         <button 
           onClick={onLogin} 
-          className="w-full mt-4 h-12 bg-white text-slate-950 rounded-xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all"
+          className="w-full h-14 bg-white text-slate-950 rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-[0_10px_30px_rgba(255,255,255,0.1)] active:scale-[0.97] transition-all hover:bg-slate-100"
         >
           {t('auth.login')}
         </button>
       </div>
 
-      <div className="absolute bottom-12 left-0 right-0 px-8 flex flex-col items-center gap-4">
-        <p className="text-[7px] font-black uppercase tracking-[0.4em] text-white/20">{t('auth.selectLang')}</p>
-        <div className="w-full max-w-full overflow-x-auto no-scrollbar flex gap-2 px-6 py-4 bg-white/[0.02] rounded-full border border-white/[0.05]">
-          {LANGUAGES.map(lang => (
-            <button 
-              key={lang.code}
-              onClick={() => setLanguage(lang.code)}
-              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-90 shrink-0 ${language === lang.code ? 'bg-purple-600 border-purple-400 text-white font-black scale-110 shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 font-bold hover:bg-white/10'}`}
-            >
-              <span className="text-[9px] uppercase tracking-tighter">{lang.name}</span>
-            </button>
-          ))}
+      <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center gap-4">
+        <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/30">{t('auth.selectLang')}</p>
+        <div className="w-full max-w-sm overflow-x-auto no-scrollbar px-6 flex justify-start">
+            <div className="flex gap-3 pb-2 snap-x snap-mandatory px-4 min-w-max">
+              {LANGUAGES.map(lang => (
+                <button 
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  className={`snap-center w-11 h-11 rounded-full border flex items-center justify-center transition-all shrink-0 ${language === lang.code ? 'bg-purple-600 border-purple-400 text-white font-black scale-110 shadow-[0_0_15px_rgba(147,51,234,0.4)]' : 'bg-white/5 border-white/10 text-slate-500 font-bold hover:bg-white/10'}`}
+                >
+                  <span className="text-[10px] uppercase tracking-tighter">{lang.name}</span>
+                </button>
+              ))}
+            </div>
         </div>
       </div>
     </div>
