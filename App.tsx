@@ -47,11 +47,11 @@ const AppContent = () => {
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
 
   useEffect(() => {
+    console.info("APP CONTENT VERSION 3.0.0 MOUNTED");
     const saved = localStorage.getItem('bdai_profile');
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            // Migración: Asegurar que campos nuevos existan
             const migratedProfile = { ...GUEST_PROFILE, ...parsed };
             setUser(migratedProfile);
             setLanguage(migratedProfile.language || 'es');
