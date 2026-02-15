@@ -1,19 +1,39 @@
 
-// SW Kill-Switch para BD AI
-self.addEventListener('install', (e) => {
+const CACHE_NAME = 'bdai-v4-forced-refresh'; 
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json'
+];
+
+self.addEventListener('install', (event) => {
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(keys.map((k) => caches.delete(k)));
-    }).then(() => {
-      return self.registration.unregister();
-    }).then(() => {
-      return self.clients.matchAll();
-    }).then((clients) => {
-      clients.forEach(client => client.navigate(client.url));
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Borrando caché antigua de forma agresiva:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
     })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  // Priorizar siempre la red para asegurar que los cambios se reflejen de inmediato
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
