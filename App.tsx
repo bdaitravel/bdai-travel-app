@@ -45,13 +45,42 @@ const AppContent = () => {
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
+  
+  // Estado para la ubicación del usuario
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  // Efecto para activar el GPS
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.warn("Geolocation not supported");
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        });
+      },
+      (err) => {
+        console.error("GPS Error:", err.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('bdai_profile');
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            // Migración: Asegurar que campos nuevos existan
             const migratedProfile = { ...GUEST_PROFILE, ...parsed };
             setUser(migratedProfile);
             setLanguage(migratedProfile.language || 'es');
@@ -170,7 +199,17 @@ const AppContent = () => {
             )}
             
             {view === AppView.TOUR_ACTIVE && activeTour && (
-              <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={setCurrentStopIndex} onUpdateUser={setUser} onBack={() => setView(AppView.CITY_DETAIL)} />
+              <ActiveTourCard 
+                tour={activeTour} 
+                user={user} 
+                currentStopIndex={currentStopIndex} 
+                onNext={() => setCurrentStopIndex(i => i + 1)} 
+                onPrev={() => setCurrentStopIndex(i => i - 1)} 
+                onJumpTo={setCurrentStopIndex} 
+                onUpdateUser={setUser} 
+                onBack={() => setView(AppView.CITY_DETAIL)} 
+                userLocation={userLocation}
+              />
             )}
             
             {view === AppView.LEADERBOARD && <Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={language} />}

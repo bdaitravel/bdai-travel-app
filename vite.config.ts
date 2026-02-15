@@ -1,14 +1,20 @@
+
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Use process.cwd() from imported process to avoid type errors in some environments
-  const env = loadEnv(mode, process.cwd(), '');
+  // Use path.resolve('.') instead of process.cwd() to resolve the directory for loadEnv to satisfy TypeScript environment types
+  const env = loadEnv(mode, path.resolve('.'), '');
   
   return {
     plugins: [react()],
+    resolve: {
+      alias: {
+        '@': path.resolve(path.dirname(fileURLToPath(import.meta.url)), './src'),
+      },
+    },
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || ""),
       'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL || env.VITE_SUPABASE_URL || ""),
@@ -17,9 +23,20 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
+      assetsDir: 'assets',
       sourcemap: false,
       minify: 'esbuild',
-      target: 'esnext'
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'leaflet'],
+            ai: ['@google/genai']
+          }
+        }
+      }
+    },
+    server: {
+      port: 3000
     }
   }
 })

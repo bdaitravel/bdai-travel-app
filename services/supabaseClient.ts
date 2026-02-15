@@ -2,18 +2,29 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
-const supabaseUrl = process.env.SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
 
 let supabase: any;
-try {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-} catch (e) {
-  console.error("Critical Supabase Init Error:", e);
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn("Supabase variables missing. Application running in local/degraded mode.");
   supabase = {
     auth: { getSession: async () => ({ data: { session: null } }) },
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }), upsert: async () => ({}) })
+    from: () => ({ 
+      select: () => ({ 
+        eq: () => ({ 
+          maybeSingle: async () => ({ data: null, error: null }),
+          order: () => ({ limit: async () => ({ data: [], error: null }) })
+        }),
+        order: () => ({ limit: async () => ({ data: [], error: null }) }),
+        limit: async () => ({ data: [], error: null })
+      }), 
+      upsert: async () => ({ error: null }) 
+    })
   };
+} else {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 
 export { supabase };
@@ -56,7 +67,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
 };
 
 export const syncUserProfile = async (profile: UserProfile) => {
-  if (!profile || !profile.email) return;
+  if (!profile || !profile.email || !supabaseUrl) return;
   try {
     await supabase.from('profiles').upsert({
       id: profile.id,
@@ -79,6 +90,7 @@ export const syncUserProfile = async (profile: UserProfile) => {
 };
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
+  if (!supabaseUrl) return null;
   const nInput = normalizeKey(city, country);
   if (!nInput) return null;
   try {
@@ -91,6 +103,7 @@ export const getCachedTours = async (city: string, country: string, language: st
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
+  if (!supabaseUrl) return;
   const nKey = normalizeKey(city, country);
   if (!nKey) return;
   try {
@@ -103,6 +116,7 @@ export const validateEmailFormat = (email: string) => {
 };
 
 export const getGlobalRanking = async () => {
+  if (!supabaseUrl) return [];
   try {
     const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
     return (data || []).map((d: any, i: number) => ({ ...d, rank: i + 1, name: d.username || 'Traveler' }));
