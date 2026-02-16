@@ -87,6 +87,7 @@ export default function App() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
   const t = useCallback((key: string) => {
     const dict = TRANSLATIONS[user.language] || TRANSLATIONS['en'];
@@ -126,10 +127,31 @@ export default function App() {
     getGlobalRanking().then(setLeaderboard);
   }, []);
 
-  const processCitySelection = async (official: {name: string, spanishName: string, country: string}, langCode: string) => {
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+            setUserLocation({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude
+            });
+        },
+        (err) => console.error("GPS Sensor Error:", err),
+        {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  const processCitySelection = async (official: {name: string, localizedName: string, spanishName: string, country: string}, langCode: string) => {
     setIsLoading(true); 
     setSearchOptions(null); 
-    setSelectedCity(official.spanishName); 
+    setSelectedCity(official.localizedName || official.spanishName); 
     try {
         setTours([]);
         const cached = await getCachedTours(official.spanishName, official.country, langCode);
@@ -158,7 +180,8 @@ export default function App() {
       
       setTours([]);
       if (selectedCity && (view === AppView.CITY_DETAIL || view === AppView.TOUR_ACTIVE)) {
-          processCitySelection({ name: selectedCity, spanishName: selectedCity, country: "" }, code);
+          // Re-localizar la ciudad actual al cambiar idioma
+          handleCitySearch(selectedCity);
       }
       
       setTimeout(() => setIsSyncingLang(false), 500);
@@ -189,10 +212,10 @@ export default function App() {
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
     try {
-        const results = await standardizeCityName(cityInput);
+        const results = await standardizeCityName(cityInput, user.language);
         if (results && results.length > 0) { setSearchOptions(results); }
-        else { await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" }, user.language); }
-    } catch (e) { await processCitySelection({ name: cityInput, spanishName: cityInput, country: "" }, user.language); } finally { setIsLoading(false); }
+        else { await processCitySelection({ name: cityInput, localizedName: cityInput, spanishName: cityInput, country: "" }, user.language); }
+    } catch (e) { await processCitySelection({ name: cityInput, localizedName: cityInput, spanishName: cityInput, country: "" }, user.language); } finally { setIsLoading(false); }
   };
 
   const updateUserAndSync = (updatedUser: UserProfile) => {
@@ -272,7 +295,7 @@ export default function App() {
                                 <button key={i} onClick={() => processCitySelection(opt, user.language)} className="w-full p-4 bg-white/5 rounded-2xl flex items-center justify-between border border-white/5 active:bg-purple-600/20 transition-all">
                                     <div className="flex items-center gap-4 text-left text-white">
                                         <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center shadow-lg"><i className="fas fa-map-marker-alt text-purple-500 text-sm"></i></div>
-                                        <div className="min-w-0"><span className="text-white font-black uppercase text-xs block truncate">{opt.spanishName}</span><span className="text-[8px] text-slate-600 font-bold uppercase tracking-widest">{opt.country}</span></div>
+                                        <div className="min-w-0"><span className="text-white font-black uppercase text-xs block truncate">{opt.localizedName || opt.spanishName}</span><span className="text-[8px] text-slate-600 font-bold uppercase tracking-widest">{opt.country}</span></div>
                                     </div>
                                     <i className="fas fa-chevron-right text-purple-500 text-[10px]"></i>
                                 </button>
@@ -298,7 +321,7 @@ export default function App() {
                 )}
                 
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} />
+                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} />
                 )}
                 
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}

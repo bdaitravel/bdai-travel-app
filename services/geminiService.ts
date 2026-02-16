@@ -119,7 +119,15 @@ export const generateThematicTour = async (city: string, country: string, theme:
 };
 
 const VOICE_MAP: Record<string, string> = {
-    es: 'Kore', en: 'Zephyr', fr: 'Stella', de: 'Casper', it: 'Bella', pt: 'Stella', ja: 'Puck', zh: 'Puck', ro: 'Kore'
+    es: 'Kore', 
+    en: 'Zephyr', 
+    fr: 'Charon', 
+    de: 'Fenrir', 
+    it: 'Puck', 
+    pt: 'Charon', 
+    ja: 'Puck', 
+    zh: 'Puck', 
+    ro: 'Kore'
 };
 
 export const generateAudio = async (text: string, language: string, city: string): Promise<string> => {
@@ -152,12 +160,12 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
     });
 };
 
-export const standardizeCityName = async (input: string) => {
+export const standardizeCityName = async (input: string, lang: string) => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Identify cities matching "${input}". Return JSON array.`,
+            contents: `Identify cities matching "${input}". Translate the names to language code: ${lang}. Return JSON array.`,
             config: { 
                 tools: [{ googleSearch: {} }], 
                 responseMimeType: "application/json",
@@ -166,10 +174,12 @@ export const standardizeCityName = async (input: string) => {
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            name: { type: Type.STRING },
+                            name: { type: Type.STRING, description: "Official English name" },
+                            localizedName: { type: Type.STRING, description: `Name of the city in ${lang}` },
                             spanishName: { type: Type.STRING },
                             country: { type: Type.STRING }
-                        }
+                        },
+                        required: ["name", "localizedName", "spanishName", "country"]
                     }
                 }
             }
