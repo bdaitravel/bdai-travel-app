@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, AVATARS } from '../types';
 import { syncUserProfile } from '../services/supabaseClient';
 
@@ -42,9 +42,10 @@ const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onC
     </button>
 );
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin, onLangChange }) => {
+export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin, language, onLangChange }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
       firstName: user.firstName || '',
@@ -57,20 +58,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       language: user.language || 'es'
   });
 
-  // Asegurar que el formulario local se actualice si el usuario global cambia (ej. idioma)
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      language: user.language,
-      avatar: user.avatar,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
-      city: user.city,
-      country: user.country,
-      birthday: user.birthday
-    }));
-  }, [user.id, user.language, user.avatar]);
+    setFormData({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      username: user.username || 'traveler',
+      city: user.city || '',
+      country: user.country || '',
+      avatar: user.avatar || AVATARS[0],
+      birthday: user.birthday || '1995-01-01',
+      language: user.language || 'es'
+    });
+  }, [user]);
 
   const pt = (key: string) => {
     return (MODAL_TEXTS[user.language] || MODAL_TEXTS['en'] || MODAL_TEXTS['es'])[key] || key;
@@ -78,22 +77,28 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
   const isAdmin = user.email === 'travelbdai@gmail.com';
 
-  const handleAvatarChange = async () => {
-      const currentIndex = AVATARS.indexOf(formData.avatar);
-      const nextIndex = (currentIndex + 1) % AVATARS.length;
-      const newAvatar = AVATARS[nextIndex];
-      
-      // Actualización local inmediata
-      setFormData(prev => ({ ...prev, avatar: newAvatar }));
-      
-      // Sincronización inmediata con el estado global y Supabase
-      const updatedUser = { ...user, avatar: newAvatar };
-      if (onUpdateUser) {
-          onUpdateUser(updatedUser);
-      }
-      if (user.isLoggedIn) {
-          await syncUserProfile(updatedUser);
-      }
+  const handleAvatarClick = () => {
+      // Abrimos el selector de archivos
+      fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+          const base64String = reader.result as string;
+          setFormData(prev => ({ ...prev, avatar: base64String }));
+          // Si no estamos en modo edición, actualizamos y sincronizamos directamente
+          if (!isEditing && onUpdateUser) {
+              const updatedUser = { ...user, avatar: base64String };
+              onUpdateUser(updatedUser);
+              // Sincronizar inmediatamente si el usuario lo desea o simplemente esperar al modo edición
+              syncUserProfile(updatedUser);
+          }
+      };
+      reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
@@ -105,15 +110,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
           await syncUserProfile(updatedUser);
           if (onUpdateUser) onUpdateUser(updatedUser);
           setIsEditing(false);
-      } catch (e) {
-          console.error("Save error", e);
-      } finally { setIsSyncing(false); }
+      } catch (e) {} finally { setIsSyncing(false); }
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-950/98 backdrop-blur-2xl" onClick={onClose}></div>
       <div className="bg-[#f3f0e6] w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative z-10 border-[3px] border-[#d7d2c3] flex flex-col max-h-[95vh] text-slate-900">
+        {/* Input de archivo oculto */}
+        <input 
+            type="file" 
+            ref={fileInputRef} 
+            hidden 
+            accept="image/*" 
+            onChange={handleFileChange} 
+        />
+        
         <div className="bg-[#8b2b2b] p-5 flex justify-between items-center shrink-0 border-b-2 border-[#d7d2c3]">
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center text-slate-900 border border-yellow-400 shadow-md"><i className="fas fa-id-card text-xs"></i></div>
@@ -132,14 +144,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
         <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
             <div className="flex gap-6 items-start">
-                <div onClick={handleAvatarChange} className="shrink-0 w-28 h-36 bg-white border-2 border-[#d7d2c3] rounded-xl shadow-lg overflow-hidden p-1 relative cursor-pointer group active:scale-95 transition-transform">
+                <div onClick={handleAvatarClick} className="shrink-0 w-28 h-36 bg-white border-2 border-[#d7d2c3] rounded-xl shadow-lg overflow-hidden p-1 relative cursor-pointer group">
                     <img src={formData.avatar} className="w-full h-full object-cover grayscale contrast-125 saturate-0" />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-[8px] font-black text-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex flex-col items-center gap-2">
-                            <i className="fas fa-sync-alt text-lg"></i>
-                            {pt('changeAvatar')}
-                        </div>
-                    </div>
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-[8px] font-black text-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">{pt('changeAvatar')}</div>
                 </div>
                 <div className="flex-1 space-y-4">
                     <div className="pb-2 border-b border-slate-200">
@@ -176,7 +183,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
             <div className="pt-4 border-t border-slate-200">
                 <p className="text-[8px] font-black text-slate-400 uppercase mb-3 tracking-widest">{pt('stamps')}</p>
                 <div className="grid grid-cols-4 gap-2">
-                    {user.stamps && user.stamps.length > 0 ? user.stamps.slice(0, 4).map((s, i) => (
+                    {user.stamps.length > 0 ? user.stamps.slice(0, 4).map((s, i) => (
                         <div key={i} className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
                             <i className="fas fa-stamp text-slate-300"></i>
                         </div>

@@ -4,26 +4,18 @@ import React, { useState } from 'react';
 const RATES: Record<string, number> = { 'EUR': 1.0, 'USD': 1.17, 'GBP': 0.83, 'JPY': 182.48, 'CNY': 7.75, 'MXN': 19.10, 'BRL': 5.85, 'ARS': 1040.0, 'CAD': 1.52, 'AUD': 1.68 };
 const FLAGS: Record<string, string> = { 'EUR': '🇪🇺', 'USD': '🇺🇸', 'GBP': '🇬🇧', 'JPY': '🇯🇵', 'CNY': '🇨🇳', 'MXN': '🇲🇽', 'BRL': '🇧🇷', 'ARS': '🇦🇷', 'CAD': '🇨🇦', 'AUD': '🇦🇺' };
 const UI_TEXTS: any = {
-    en: { title: "Currency Converter", amount: "Amount", info: "*Rates verified for session.", refreshing: "Refreshing..." },
-    es: { title: "Conversor de Moneda", amount: "Cantidad", info: "*Tipos verificados.", refreshing: "Actualizando..." },
+    en: { title: "Currency Converter", amount: "Amount", info: "*Rates verified for current session.", refreshing: "Refreshing..." },
+    es: { title: "Conversor de Moneda", amount: "Cantidad", info: "*Tipos verificados para la sesión.", refreshing: "Actualizando..." },
+    pt: { title: "Conversor de Moeda", amount: "Quantia", info: "*Taxas verificadas.", refreshing: "Atualizando..." },
+    it: { title: "Convertitore di Valuta", amount: "Importo", info: "*Tassi verificati.", refreshing: "Aggiornamento..." },
+    ru: { title: "Конвертер валют", amount: "Сумма", info: "*Курсы подтверждены.", refreshing: "Обновление..." },
+    hi: { title: "मुद्रा परिवर्तक", amount: "राशि", info: "*सत्र के लिए दरें सत्यापित।", refreshing: "ताज़ा कर रहा है..." },
     fr: { title: "Convertisseur", amount: "Montant", info: "*Vérifié.", refreshing: "Mise à jour..." },
-    de: { title: "Währungsrechner", amount: "Betrag", info: "*Verifiziert.", refreshing: "Aktualisierung..." },
-    it: { title: "Convertitore", amount: "Importo", info: "*Verificato.", refreshing: "Aggiornamento..." },
-    pt: { title: "Conversor", amount: "Quantia", info: "*Verificado.", refreshing: "Atualizando..." },
-    ro: { title: "Convertor", amount: "Suma", info: "*Verificat.", refreshing: "Actualizare..." },
-    zh: { title: "汇率换算", amount: "金额", info: "*汇率已验证。", refreshing: "刷新中..." },
+    de: { title: "Währungsrechner", amount: "Betrag", info: "*Kurse verifiziert.", refreshing: "Aktualisiere..." },
     ja: { title: "通貨換算", amount: "金額", info: "*レート確認済み。", refreshing: "更新中..." },
-    ru: { title: "Конвертер", amount: "Сумма", info: "*Курсы подтверждены.", refreshing: "Обновление..." },
-    ar: { title: "محول العملات", amount: "المبلغ", info: "*الأسعار محدثة.", refreshing: "تحديث..." },
-    hi: { title: "मुद्रा परिवर्तक", amount: "राशि", info: "*दरें सत्यापित।", refreshing: "ताज़ा कर रहा है..." },
-    ko: { title: "환율 계산기", amount: "금액", info: "*환율 확인됨.", refreshing: "업데이트 중..." },
-    tr: { title: "Döviz Çevirici", amount: "Miktar", info: "*Oranlar doğrulandı.", refreshing: "Güncelleniyor..." },
-    pl: { title: "Konwerter walut", amount: "Kwota", info: "*Kursy zweryfikowane.", refreshing: "Odświeżanie..." },
-    nl: { title: "Wisselkoers", amount: "Bedrag", info: "*Koersen geverifieerd.", refreshing: "Vernieuwen..." },
+    zh: { title: "汇率换算", amount: "金额", info: "*汇率已验证。", refreshing: "刷新中..." },
     ca: { title: "Conversor", amount: "Quantitat", info: "*Verificat.", refreshing: "Actualitzant..." },
-    eu: { title: "Bihurtzailea", amount: "Zenbatekoa", info: "*Egiaztatuta.", refreshing: "Eguneratzen..." },
-    vi: { title: "Chuyển đổi tiền", amount: "Số tiền", info: "*Đã xác minh.", refreshing: "Đang cập nhật..." },
-    th: { title: "แปลงสกุลเงิน", amount: "จำนวนเงิน", info: "*อัตราแลกเปลี่ยนได้รับยืนยัน", refreshing: "กำลังอัปเดต..." }
+    eu: { title: "Moneta Bihurtzailea", amount: "Zenbatekoa", info: "*Egiaztatuta.", refreshing: "Eguneratzen..." }
 };
 
 export const CurrencyConverter: React.FC<any> = ({ language = 'es' }) => {
@@ -31,7 +23,7 @@ export const CurrencyConverter: React.FC<any> = ({ language = 'es' }) => {
   const [from, setFrom] = useState<string>('EUR');
   const [to, setTo] = useState<string>('USD');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const t = UI_TEXTS[language] || UI_TEXTS['en'] || UI_TEXTS['es'];
+  const t = UI_TEXTS[language] || UI_TEXTS['es'];
   const handleSwap = () => { const f = from; setFrom(to); setTo(f); };
   const handleRefresh = () => { setIsRefreshing(true); setTimeout(() => setIsRefreshing(false), 800); };
   const result = (parseFloat(amount || '0') * (RATES[to] / RATES[from])).toFixed(2);

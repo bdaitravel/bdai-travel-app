@@ -1,30 +1,21 @@
 
 import React from 'react';
+// Fix: Import HubIntel which is now correctly exported from types.ts
 import { HubIntel } from '../types';
 
 const TEXTS: any = {
-  es: { details: "Detalles del Intel", save: "Guardar en Mi Pasaporte", saved: "Guardado", close: "Cerrar" },
   en: { details: "Intel Details", save: "Save to My Passport", saved: "Saved", close: "Close" },
+  es: { details: "Detalles del Intel", save: "Guardar en Mi Pasaporte", saved: "Guardado", close: "Cerrar" },
+  ca: { details: "Detalls", save: "Desar al Passaport", saved: "Desat", close: "Tancar" },
+  eu: { details: "Xehetasunak", save: "Pasaportean Gorde", saved: "Gordeta", close: "Itxi" },
   fr: { details: "Détails", save: "Enregistrer", saved: "Enregistré", close: "Fermer" },
   de: { details: "Details", save: "Speichern", saved: "Gespeichert", close: "Schließen" },
-  it: { details: "Dettagli", save: "Salva", saved: "Salvato", close: "Chiudi" },
-  pt: { details: "Detalhes", save: "Guardar", saved: "Guardado", close: "Fechar" },
-  ro: { details: "Detalii", save: "Salvează", saved: "Salvat", close: "Închide" },
-  zh: { details: "详细信息", save: "保存", saved: "已保存", close: "关闭" },
   ja: { details: "詳細", save: "保存する", saved: "保存済み", close: "閉じる" },
-  ru: { details: "Детали", save: "Сохранить", saved: "Сохранено", close: "Закрыть" },
-  ar: { details: "التفاصيل", save: "حفظ", saved: "تم الحفظ", close: "إغلاق" },
-  hi: { details: "विवरण", save: "सहेजें", saved: "सहेजा गया", close: "बंद करें" },
-  ko: { details: "상세 정보", save: "저장", saved: "저장됨", close: "닫기" },
-  tr: { details: "Detaylar", save: "Kaydet", saved: "Kaydedildi", close: "Kapat" },
-  pl: { details: "Szczegóły", save: "Zapisz", saved: "Zapisano", close: "Zamknij" },
-  nl: { details: "Details", save: "Opslaan", saved: "Opgeslagen", close: "Sluiten" },
-  ca: { details: "Detalls", save: "Desar al Passaport", saved: "Desat", close: "Tancar" },
-  eu: { details: "Xehetasunak", save: "Gorde", saved: "Gordeta", close: "Itxi" },
-  vi: { details: "Chi tiết", save: "Lưu", saved: "Đã lưu", close: "Đóng" },
-  th: { details: "รายละเอียด", save: "บันทึก", saved: "บันทึกแล้ว", close: "ปิด" }
+  zh: { details: "详细信息", save: "保存", saved: "已保存", close: "关闭" },
+  ar: { details: "التفاصيل", save: "حفظ", saved: "تم الحفظ", close: "إغلاق" }
 };
 
+// Fix: Use specific interface for props instead of 'any'
 interface HubDetailModalProps {
   intel: HubIntel;
   isSaved: boolean;
@@ -34,7 +25,7 @@ interface HubDetailModalProps {
 }
 
 export const HubDetailModal: React.FC<HubDetailModalProps> = ({ intel, isSaved, onClose, onSave, language }) => {
-  const t = TEXTS[language] || TEXTS['en'] || TEXTS['es'];
+  const t = TEXTS[language] || TEXTS['es'];
   return (
     <div className="fixed inset-0 z-[1000] flex items-end justify-center px-4 pb-12">
       <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl animate-fade-in" onClick={onClose}></div>

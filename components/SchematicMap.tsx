@@ -147,7 +147,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
                     html: `
                         <div class="relative transition-all duration-300 ${isActive ? 'scale-125 z-50' : 'opacity-80'}">
                             <div class="w-10 h-10 rounded-2xl border-2 border-slate-800 shadow-2xl flex items-center justify-center text-[12px] font-black ${isActive ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-500'}">
-                                <i class="fas ${STOP_ICONS[stop.type] || 'fa-location-dot'}"></i>
+                                <i class="fas ${STOP_ICONS[stop.type?.toLowerCase()] || 'fa-location-dot'}"></i>
                             </div>
                             <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 ${isActive ? 'bg-purple-600' : 'bg-slate-900'} rotate-45 -z-10"></div>
                         </div>

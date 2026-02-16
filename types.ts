@@ -37,18 +37,6 @@ export interface UserStats {
   lastActive?: string;
 }
 
-// Added HubIntel interface to fix import error in HubDetailModal.tsx
-export interface HubIntel {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  type: string;
-  icon: string;
-  color: string;
-  details?: string;
-}
-
 export interface UserProfile {
   id: string;
   isLoggedIn: boolean;
@@ -81,8 +69,25 @@ export interface UserProfile {
   badges: Badge[];
   city?: string; 
   country?: string; 
-  capturedMoments?: CapturedMoment[];
+  capturedMoments: CapturedMoment[];
 }
+
+export interface HubIntel {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  type: string;
+  icon: string;
+  color: string;
+  details?: string;
+}
+
+export const APP_BADGES: Badge[] = [
+  { id: 'owl', name: 'El Búho', icon: 'fa-owl', description: 'Has completado un tour después de las 20:00', category: 'night', requiredPoints: 0 },
+  { id: 'mayor', name: 'El Alcalde', icon: 'fa-crown', description: 'Eres el líder del ranking local', category: 'rank', requiredPoints: 0 },
+  { id: 'local', name: 'El Local', icon: 'fa-user-secret', description: 'Has visitado 3 pueblos de menos de 5.000 habitantes', category: 'explore', requiredPoints: 0 }
+];
 
 export interface LeaderboardEntry {
   id: string;
@@ -127,7 +132,6 @@ export interface Tour {
 export enum AppView {
   LOGIN = 'LOGIN',
   HOME = 'HOME',
-  HUB = 'HUB',
   CITY_DETAIL = 'CITY_DETAIL',
   TOUR_ACTIVE = 'TOUR_ACTIVE',
   PROFILE = 'PROFILE',
