@@ -21,26 +21,26 @@ import {
 } from './services/supabaseClient';
 
 const TRANSLATIONS: Record<string, any> = {
-  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", tagline: "better destinations by ai", selectLang: "idioma", syncing: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", analyzing: "analizando...", fastSync: "traduciendo...", loadingTour: "generando masterclass...", apiLimit: "IA Saturada", quotaMsg: "Límite gratuito superado", offlineAvailable: "Disponible offline" },
-  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", tagline: "better destinations by ai", selectLang: "language", syncing: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", analyzing: "analyzing...", fastSync: "syncing...", loadingTour: "generating masterclass...", apiLimit: "AI Busy", quotaMsg: "Free limit exceeded", offlineAvailable: "Offline Available" },
-  fr: { welcome: "log bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "utilisateur", login: "demander l'accès", tagline: "better destinations by ai", selectLang: "langue", syncing: "synchronisation...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", analyzing: "analyse...", fastSync: "traduction...", loadingTour: "génération masterclass...", apiLimit: "IA Saturée", quotaMsg: "Limite gratuite dépassée", offlineAvailable: "Disponible hors ligne" },
-  de: { welcome: "bidaer-log:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "ihre@email.com", userPlaceholder: "benutzer", login: "zugang anfordern", tagline: "better destinations by ai", selectLang: "sprache", syncing: "synchronisierung...", navElite: "elite", navHub: "intel", navVisa: "reisepass", navStore: "shop", analyzing: "analyse...", fastSync: "übersetzung...", loadingTour: "generiere masterclass...", apiLimit: "KI ausgelastet", quotaMsg: "Kostenloses Limit überschritten", offlineAvailable: "Offline verfügbar" },
-  it: { welcome: "log bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "utente", login: "richiedi acceso", tagline: "better destinations by ai", selectLang: "lingua", syncing: "sincronizzazione...", navElite: "élite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", analyzing: "analisi...", fastSync: "traduzione...", loadingTour: "generando masterclass...", apiLimit: "IA Satura", quotaMsg: "Limite gratuito superato", offlineAvailable: "Disponibile offline" },
-  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", tagline: "better destinations by ai", selectLang: "idioma", syncing: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", analyzing: "analisando...", fastSync: "traduzindo...", loadingTour: "gerando masterclass...", apiLimit: "IA Saturada", quotaMsg: "Limite gratuito excedido", offlineAvailable: "Disponível offline" },
-  ro: { welcome: "log bidaer:", explorer: "explorator", searchPlaceholder: "oraș...", emailPlaceholder: "email@tau.com", userPlaceholder: "utilizator", login: "solicită acces", tagline: "better destinations by ai", selectLang: "limbă", syncing: "sincronizare...", navElite: "elită", navHub: "intel", navVisa: "pașaport", navStore: "magazin", analyzing: "analiză...", fastSync: "traducere...", loadingTour: "generare masterclass...", apiLimit: "IA Saturată", quotaMsg: "Limita gratuită a fost depășită", offlineAvailable: "Disponibil offline" },
-  ru: { welcome: "журнал bidaer:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "ваш@email.com", userPlaceholder: "пользователь", login: "запросить доступ", tagline: "better destinations by ai", selectLang: "язык", syncing: "синхронизация...", navElite: "элита", navHub: "интел", navVisa: "паспорт", navStore: "магазин", analyzing: "анализ...", fastSync: "перевод...", loadingTour: "генерация мастер-класса...", apiLimit: "IA Satura", quotaMsg: "Бесплатный лимит превышен", offlineAvailable: "Доступно оффлайн" },
-  ar: { welcome: "سجل bidaer:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك الإلكتروني", userPlaceholder: "اسم المستخدم", login: "طلب الدخول", tagline: "وجهات أفضل بواسطة الذكاء الاصطناعي", selectLang: "اللغة", syncing: "مزامنة...", navElite: "نخبة", navHub: "ذكاء", navVisa: "جواز سفر", navStore: "متجر", analyzing: "تحليل...", fastSync: "ترجمة...", loadingTour: "جاري إنشاء الماستركلاس...", apiLimit: "الذكاء الاصطناعي مشغول", quotaMsg: "تم تجاوز الحد", offlineAvailable: "متاح بدون اتصال" },
-  zh: { welcome: "bidaer 日志:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "你的邮箱", userPlaceholder: "用户名", login: "请求访问", tagline: "better destinations by ai", selectLang: "语言", syncing: "同期中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", analyzing: "分析中...", fastSync: "翻译中...", loadingTour: "正在生成大师课...", apiLimit: "AI 繁忙", quotaMsg: "超出免费额度", offlineAvailable: "离线可用" },
-  ja: { welcome: "bidaer ログ:", explorer: "探検家", searchPlaceholder: "都市名...", emailPlaceholder: "メールアドレス", userPlaceholder: "ユーザー名", login: "アクセスをリクエスト", tagline: "better destinations by ai", selectLang: "言語", syncing: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", analyzing: "分析中...", fastSync: "翻訳中...", loadingTour: "マスタークラスを生成中...", apiLimit: "AI 混雑中", quotaMsg: "無料枠を超えました", offlineAvailable: "オフラインで使用可能" },
-  hi: { welcome: "bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "आपका ईमेल", userPlaceholder: "उपयोगकर्ता नाम", login: "पहुँच का अनुरोध करें", tagline: "एआई द्वारा बेहतर गंतव्य", selectLang: "भाषा", syncing: "सिंक हो रहा है...", navElite: "अभिजात वर्ग", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", analyzing: "विश्लेषण...", fastSync: "अनुवाद...", loadingTour: "मास्‍टरक्लास बना रहा है...", apiLimit: "एआई व्यस्त", quotaMsg: "मुफ्त सीमा पार हो गई", offlineAvailable: "ऑफ़लाइन उपलब्ध" },
-  ko: { welcome: "bidaer 로그:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일 주소", userPlaceholder: "사용자 이름", login: "액세스 요청", tagline: "AI 기반 최고의 여행지", selectLang: "언어", syncing: "동기화 중...", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", analyzing: "분석 중...", fastSync: "번역 중...", loadingTour: "마스터클래스 생성 중...", apiLimit: "AI 사용량 초과", quotaMsg: "무료 한도 초과", offlineAvailable: "오프라인 사용 가능" },
-  tr: { welcome: "bidaer günlüğü:", explorer: "kaşif", searchPlaceholder: "şehir...", emailPlaceholder: "e-posta", userPlaceholder: "kullanıcı", login: "erişim iste", tagline: "better destinations by ai", selectLang: "dil", syncing: "senkronize ediliyor...", navElite: "elit", navHub: "intel", navVisa: "pasaport", navStore: "mağaza", analyzing: "analiz ediliyor...", fastSync: "çevriliyor...", loadingTour: "masterclass oluşturuluyor...", apiLimit: "IA Satura", quotaMsg: "Limit aşıldı", offlineAvailable: "Çevrimdışı kullanılabilir" },
-  pl: { welcome: "log bidaer:", explorer: "odkrywca", searchPlaceholder: "miasto...", emailPlaceholder: "twój@email.com", userPlaceholder: "użytkownik", login: "poproś o dostęp", tagline: "lepsze cele dzięki AI", selectLang: "język", syncing: "synchronizacja...", navElite: "elita", navHub: "intel", navVisa: "paszport", navStore: "sklep", analyzing: "analizowanie...", fastSync: "tłumaczenie...", loadingTour: "generowanie masterclass...", apiLimit: "AI przeciążone", quotaMsg: "Przekroczono limit", offlineAvailable: "Dostępne offline" },
-  nl: { welcome: "bidaer log:", explorer: "ontdekkingsreiziger", searchPlaceholder: "stad...", emailPlaceholder: "je@email.com", userPlaceholder: "gebruikersnaam", login: "toegang aanvragen", tagline: "betere bestemmingen door AI", selectLang: "taal", syncing: "synchroniseren...", navElite: "elite", navHub: "intel", navVisa: "pasvoort", navStore: "winkel", analyzing: "analyseren...", fastSync: "vertalen...", loadingTour: "masterclass genereren...", apiLimit: "AI Bezet", quotaMsg: "Gratis limiet overschreden", offlineAvailable: "Offline beschikbaar" },
-  ca: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuari", login: "sol·licitar accés", tagline: "millors destinacions per IA", selectLang: "idioma", syncing: "sincronitzant...", navElite: "elit", navHub: "intel", navVisa: "passaport", navStore: "botiga", analyzing: "analitzant...", fastSync: "traduint...", loadingTour: "generant masterclass...", apiLimit: "IA Saturada", quotaMsg: "Límit gratuït superat", offlineAvailable: "Disponible offline" },
-  eu: { welcome: "bidaer log:", explorer: "esploratzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarbidea eskatu", tagline: "helmuga hobeak AI bidez", selectLang: "hizkuntza", syncing: "sinkronizatzen...", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", analyzing: "analizatzen...", fastSync: "itzultzen...", loadingTour: "masterclassa sortzen...", apiLimit: "AI Saturatuta", quotaMsg: "Doako muga gaindituta", offlineAvailable: "Lineaz kanpo erabilgarri" },
-  vi: { welcome: "nhật ký bidaer:", explorer: "nhà thám hiểm", searchPlaceholder: "thành phố...", emailPlaceholder: "email", userPlaceholder: "tên người dùng", login: "yêu cầu truy cập", tagline: "điểm đến tốt hơn nhờ AI", selectLang: "ngôn ngữ", syncing: "đang đồng bộ...", navElite: "tinh hoa", navHub: "thông tin", navVisa: "hộ chiếu", navStore: "cửa hàng", analyzing: "đang phân tích...", fastSync: "đang dịch...", loadingTour: "đang tạo masterclass...", apiLimit: "IA Bận", quotaMsg: "Vượt quá giới hạn", offlineAvailable: "Khả dụng ngoại tuyến" },
-  th: { welcome: "บันทึก bidaer:", explorer: "นักสำรวจ", searchPlaceholder: "เมือง...", emailPlaceholder: "อีเมล", userPlaceholder: "ชื่อผู้ใช้", login: "ขอเข้าถึง", tagline: "จุดหมายปลายทางที่ดีกว่าโดย AI", selectLang: "ภาษา", syncing: "กำลังซิงค์...", navElite: "อีลิท", navHub: "อินเทล", navVisa: "พาสปอร์ต", navStore: "ร้านค้า", analyzing: "กำลังวิเคราะห์...", fastSync: "กำลังแปล...", loadingTour: "กำลังสร้างมาสเตอร์คลาส...", apiLimit: "AI หนาแน่น", quotaMsg: "เกินขีดจำกัด", offlineAvailable: "พร้อมใช้งานแบบออฟไลน์" }
+  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", tagline: "better destinations by ai", selectLang: "idioma", syncing: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", analyzing: "analizando...", fastSync: "traduciendo...", loadingTour: "generando masterclass...", apiLimit: "IA Saturada", quotaMsg: "Límite gratuito superado", offlineAvailable: "⚡ ACCESO INSTANTÁNEO" },
+  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", tagline: "better destinations by ai", selectLang: "language", syncing: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", analyzing: "analyzing...", fastSync: "syncing...", loadingTour: "generating masterclass...", apiLimit: "AI Busy", quotaMsg: "Free limit exceeded", offlineAvailable: "⚡ INSTANT ACCESS" },
+  fr: { welcome: "log bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "utilisateur", login: "demander l'accès", tagline: "better destinations by ai", selectLang: "langue", syncing: "synchronisation...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", analyzing: "analyse...", fastSync: "traduction...", loadingTour: "génération masterclass...", apiLimit: "IA Saturée", quotaMsg: "Limite gratuite dépassée", offlineAvailable: "⚡ ACCÈS INSTANTANÉ" },
+  de: { welcome: "bidaer-log:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "ihre@email.com", userPlaceholder: "benutzer", login: "zugang anfordern", tagline: "better destinations by ai", selectLang: "sprache", syncing: "synchronisierung...", navElite: "elite", navHub: "intel", navVisa: "reisepass", navStore: "shop", analyzing: "analyse...", fastSync: "übersetzung...", loadingTour: "generiere masterclass...", apiLimit: "KI ausgelastet", quotaMsg: "Kostenloses Limit überschritten", offlineAvailable: "⚡ SOFORTIGER ZUGRIFF" },
+  it: { welcome: "log bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "utente", login: "richiedi acceso", tagline: "better destinations by ai", selectLang: "lingua", syncing: "sincronizzazione...", navElite: "élite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", analyzing: "analisi...", fastSync: "traduzione...", loadingTour: "generando masterclass...", apiLimit: "IA Satura", quotaMsg: "Limite gratuito superato", offlineAvailable: "⚡ ACCESSO ISTANTANEO" },
+  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", tagline: "better destinations by ai", selectLang: "idioma", syncing: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", analyzing: "analisando...", fastSync: "traduzindo...", loadingTour: "gerando masterclass...", apiLimit: "IA Saturada", quotaMsg: "Limite gratuito excedido", offlineAvailable: "⚡ ACESSO INSTANTÂNEO" },
+  ro: { welcome: "log bidaer:", explorer: "explorator", searchPlaceholder: "oraș...", emailPlaceholder: "email@tau.com", userPlaceholder: "utilizator", login: "solicită acces", tagline: "better destinations by ai", selectLang: "limbă", syncing: "sincronizare...", navElite: "elită", navHub: "intel", navVisa: "pașaport", navStore: "magazin", analyzing: "analiză...", fastSync: "traducere...", loadingTour: "generare masterclass...", apiLimit: "IA Saturată", quotaMsg: "Limita gratuită a fost depășită", offlineAvailable: "⚡ ACCES INSTANT" },
+  ru: { welcome: "журнал bidaer:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "ваш@email.com", userPlaceholder: "пользователь", login: "запросить доступ", tagline: "better destinations by ai", selectLang: "язык", syncing: "синхронизация...", navElite: "элита", navHub: "интел", navVisa: "паспорт", navStore: "магазин", analyzing: "анализ...", fastSync: "перевод...", loadingTour: "генерация мастер-класса...", apiLimit: "IA Satura", quotaMsg: "Бесплатный лимит превышен", offlineAvailable: "⚡ МГНОВЕННЫЙ ДОСТУП" },
+  ar: { welcome: "سجل bidaer:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك الإلكتروني", userPlaceholder: "اسم المستخدم", login: "طلب الدخول", tagline: "وجهات أفضل بواسطة الذكاء الاصطناعي", selectLang: "اللغة", syncing: "مزامنة...", navElite: "نخبة", navHub: "ذكاء", navVisa: "جواز سفر", navStore: "متجر", analyzing: "تحليل...", fastSync: "ترجمة...", loadingTour: "جاري إنشاء الماستركلاس...", apiLimit: "الذكاء الاصطناعي مشغول", quotaMsg: "تم تجاوز الحد", offlineAvailable: "⚡ وصول فوري" },
+  zh: { welcome: "bidaer 日志:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "你的邮箱", userPlaceholder: "用户名", login: "请求访问", tagline: "better destinations by ai", selectLang: "语言", syncing: "同期中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", analyzing: "分析中...", fastSync: "翻译中...", loadingTour: "正在生成大师课...", apiLimit: "AI 繁忙", quotaMsg: "超出免费额度", offlineAvailable: "⚡ 即时访问" },
+  ja: { welcome: "bidaer ログ:", explorer: "探検家", searchPlaceholder: "都市名...", emailPlaceholder: "メールアドレス", userPlaceholder: "ユーザー名", login: "アクセスをリクエスト", tagline: "better destinations by ai", selectLang: "言語", syncing: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", analyzing: "分析中...", fastSync: "翻訳中...", loadingTour: "マスタークラスを生成中...", apiLimit: "AI 混雑中", quotaMsg: "無料枠を超えました", offlineAvailable: "⚡ 即時アクセス" },
+  hi: { welcome: "bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "आपका ईमेल", userPlaceholder: "उपयोगकर्ता नाम", login: "पहुँच का अनुरोध करें", tagline: "एआई द्वारा बेहतर गंतव्य", selectLang: "भाषा", syncing: "सिंक हो रहा है...", navElite: "अभिजात वर्ग", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", analyzing: "विश्लेषण...", fastSync: "अनुवाद...", loadingTour: "मास्‍टरक्लास बना रहा है...", apiLimit: "एआई व्यस्त", quotaMsg: "मुफ्त सीमा पार हो गई", offlineAvailable: "⚡ तत्काल पहुंच" },
+  ko: { welcome: "bidaer 로그:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일 주소", userPlaceholder: "사용자 이름", login: "액세스 요청", tagline: "AI 기반 최고의 여행지", selectLang: "언어", syncing: "동기화 중...", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", analyzing: "분석 중...", fastSync: "번역 중...", loadingTour: "마스터클래스 생성 중...", apiLimit: "AI 사용량 초과", quotaMsg: "무료 한도 초과", offlineAvailable: "⚡ 즉시 액세스" },
+  tr: { welcome: "bidaer günlüğü:", explorer: "kaşif", searchPlaceholder: "şehir...", emailPlaceholder: "e-posta", userPlaceholder: "kullanıcı", login: "erişim iste", tagline: "better destinations by ai", selectLang: "dil", syncing: "senkronize ediliyor...", navElite: "elit", navHub: "intel", navVisa: "pasaport", navStore: "mağaza", analyzing: "analiz ediliyor...", fastSync: "çevriliyor...", loadingTour: "masterclass oluşturuluyor...", apiLimit: "IA Satura", quotaMsg: "Limit aşıldı", offlineAvailable: "⚡ ANINDA ERİŞİM" },
+  pl: { welcome: "log bidaer:", explorer: "odkrywca", searchPlaceholder: "miasto...", emailPlaceholder: "twój@email.com", userPlaceholder: "użytkownik", login: "poproś o dostęp", tagline: "lepsze cele dzięki AI", selectLang: "język", syncing: "synchronizacja...", navElite: "elita", navHub: "intel", navVisa: "paszport", navStore: "sklep", analyzing: "analizowanie...", fastSync: "tłumaczenie...", loadingTour: "generowanie masterclass...", apiLimit: "AI przeciążone", quotaMsg: "Przekroczono limit", offlineAvailable: "⚡ NATYCHMIASTOWY DOSTĘP" },
+  nl: { welcome: "bidaer log:", explorer: "ontdekkingsreiziger", searchPlaceholder: "stad...", emailPlaceholder: "je@email.com", userPlaceholder: "gebruikersnaam", login: "toegang aanvragen", tagline: "betere bestemmingen door AI", selectLang: "taal", syncing: "synchroniseren...", navElite: "elite", navHub: "intel", navVisa: "pasvoort", navStore: "winkel", analyzing: "analyseren...", fastSync: "vertalen...", loadingTour: "masterclass genereren...", apiLimit: "AI Bezet", quotaMsg: "Gratis limiet overschreden", offlineAvailable: "⚡ DIRECTE TOEGANG" },
+  ca: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuari", login: "sol·licitar accés", tagline: "millors destinacions per IA", selectLang: "idioma", syncing: "sincronitzant...", navElite: "elit", navHub: "intel", navVisa: "passaport", navStore: "botiga", analyzing: "analitzant...", fastSync: "traduint...", loadingTour: "generant masterclass...", apiLimit: "IA Saturada", quotaMsg: "Límit gratuït superat", offlineAvailable: "⚡ ACCÉS INSTANTANI" },
+  eu: { welcome: "bidaer log:", explorer: "esploratzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarbidea eskatu", tagline: "helmuga hobeak AI bidez", selectLang: "hizkuntza", syncing: "sinkronizatzen...", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", analyzing: "analizatzen...", fastSync: "itzultzen...", loadingTour: "masterclassa sortzen...", apiLimit: "AI Saturatuta", quotaMsg: "Doako muga gaindituta", offlineAvailable: "⚡ BEREHALAKO SARBIDEA" },
+  vi: { welcome: "nhật ký bidaer:", explorer: "nhà thám hiểm", searchPlaceholder: "thành phố...", emailPlaceholder: "email", userPlaceholder: "tên người dùng", login: "yêu cầu truy cập", tagline: "điểm đến tốt hơn nhờ AI", selectLang: "ngôn ngữ", syncing: "đang đồng bộ...", navElite: "tinh hoa", navHub: "thông tin", navVisa: "hộ chiếu", navStore: "cửa hàng", analyzing: "đang phân tích...", fastSync: "đang dịch...", loadingTour: "đang tạo masterclass...", apiLimit: "IA Bận", quotaMsg: "Vượt quá giới hạn", offlineAvailable: "⚡ TRUY CẬP TỨC THÌ" },
+  th: { welcome: "บันทึก bidaer:", explorer: "นักสำรวจ", searchPlaceholder: "เมือง...", emailPlaceholder: "อีเมล", userPlaceholder: "ชื่อผู้ใช้", login: "ขอเข้าถึง", tagline: "จุดหมายปลายทางที่ดีกว่าโดย AI", selectLang: "ภาษา", syncing: "กำลังซิงค์...", navElite: "อีลิท", navHub: "อินเทล", navVisa: "พาสปอร์ต", navStore: "ร้านค้า", analyzing: "กำลังวิเคราะห์...", fastSync: "กำลังแปล...", loadingTour: "กำลังสร้างมาสเตอร์คลาส...", apiLimit: "AI หนาแน่น", quotaMsg: "เกินขีดจำกัด", offlineAvailable: "⚡ เข้าถึงได้ทันที" }
 };
 
 const GUEST_PROFILE: UserProfile = { 
@@ -51,6 +51,23 @@ const GUEST_PROFILE: UserProfile = {
   interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, 
   stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }, 
   visitedCities: [], completedTours: [], badges: [], stamps: [], capturedMoments: []
+};
+
+/**
+ * Formats a city name for clean UI display.
+ * Removes underscores, country suffixes, and fixes capitalization.
+ */
+const formatCityDisplayName = (name: string): string => {
+    if (!name) return "";
+    // Remove database specific suffixes like _SPAIN or _FRANCE
+    let clean = name.split('_')[0];
+    // Remove anything after a comma
+    clean = clean.split(',')[0].trim();
+    // Handle all-caps database keys
+    if (clean === clean.toUpperCase()) {
+        clean = clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+    }
+    return clean;
 };
 
 const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onClick: () => void }> = ({ code, label, isActive, onClick }) => (
@@ -152,7 +169,8 @@ export default function App() {
   const processCitySelection = async (official: {name: string, localizedName: string, spanishName: string, country: string, isCached?: boolean}, langCode: string) => {
     setIsLoading(true); 
     setSearchOptions(null); 
-    setSelectedCity(official.localizedName || official.spanishName); 
+    const cleanName = formatCityDisplayName(official.localizedName || official.spanishName);
+    setSelectedCity(cleanName); 
     try {
         setTours([]);
         // OFFLINE FIRST: Try to find in cache first
@@ -173,8 +191,6 @@ export default function App() {
               setView(AppView.CITY_DETAIL);
           }
         } else {
-            // If it was marked as cached but language doesn't match, we might still need to try to translate or show error
-            // For now, if it was in results as cached but lang isn't there, we just fail gracefully or show empty
             alert(t('apiLimit'));
         }
     } catch (e) { 
@@ -226,14 +242,9 @@ export default function App() {
     setIsLoading(true);
     setLoadingMessage(t('analyzing'));
     try {
-        // OFFLINE FIRST: Check Supabase cache for matching cities while typing
         const offlineResults = await searchCitiesInCache(cityInput);
-        
-        // If we found offline results, show them. 
-        // We can still try to call AI to find MORE results if quota allows, but if it fails, we still have offline ones.
         try {
             const aiResults = await standardizeCityName(cityInput, user.language);
-            // Merge results, giving priority to AI but keeping offline ones if they aren't duplicates
             const merged = [...offlineResults];
             aiResults.forEach(ai => {
                 if (!merged.find(m => m.spanishName.toLowerCase() === ai.spanishName.toLowerCase())) {
@@ -242,13 +253,10 @@ export default function App() {
             });
             setSearchOptions(merged);
         } catch (aiError) {
-            // AI failed (likely quota), show only offline results
             console.warn("AI Search failed, using offline cache only:", aiError);
             if (offlineResults.length > 0) {
                 setSearchOptions(offlineResults);
             } else {
-                // If nothing in cache and AI fails, we might still want to try direct selection if user hit enter
-                // but for now just show empty or fail
                 setSearchOptions([]);
             }
         }
@@ -346,16 +354,18 @@ export default function App() {
                                 <button key={i} onClick={() => processCitySelection(opt, user.language)} className="w-full p-4 bg-white/5 rounded-2xl flex items-center justify-between border border-white/5 active:bg-purple-600/20 transition-all">
                                     <div className="flex items-center gap-4 text-left text-white">
                                         <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center shadow-lg">
-                                            <i className={`fas ${opt.isCached ? 'fa-database text-green-500' : 'fa-map-marker-alt text-purple-500'} text-sm`}></i>
+                                            <i className={`fas ${opt.isCached ? 'fa-bolt text-cyan-400' : 'fa-map-marker-alt text-purple-500'} text-sm`}></i>
                                         </div>
                                         <div className="min-w-0">
-                                            <span className="text-white font-black uppercase text-xs block truncate">{opt.localizedName || opt.spanishName}</span>
-                                            <span className="text-[8px] text-slate-600 font-bold uppercase tracking-widest">
+                                            <span className="text-white font-black uppercase text-xs block truncate">
+                                                {formatCityDisplayName(opt.localizedName || opt.spanishName)}
+                                            </span>
+                                            <span className={`text-[8px] font-black uppercase tracking-widest ${opt.isCached ? 'text-cyan-400' : 'text-slate-600'}`}>
                                                 {opt.isCached ? t('offlineAvailable') : opt.country}
                                             </span>
                                         </div>
                                     </div>
-                                    <i className="fas fa-chevron-right text-purple-500 text-[10px]"></i>
+                                    <i className={`fas fa-chevron-right ${opt.isCached ? 'text-cyan-500' : 'text-purple-500'} text-[10px]`}></i>
                                 </button>
                             ))}
                         </div>
