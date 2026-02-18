@@ -13,7 +13,7 @@ try {
   supabase = {
     auth: { getSession: async () => ({ data: { session: null } }) },
     from: () => ({ 
-        select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }), 
+        select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }), ilike: () => ({ limit: async () => ({ data: [] }) }) }), 
         upsert: async () => ({ error: "Supabase no inicializado" }) 
     })
   };
@@ -41,6 +41,43 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "") 
         .replace(/[^a-z0-9_]/g, ""); 
+};
+
+/**
+ * Searches for cities in the database cache that match the query.
+ * Used for offline-first search results.
+ */
+export const searchCitiesInCache = async (query: string): Promise<any[]> => {
+    if (!query || query.length < 2) return [];
+    try {
+        // Query the tours_cache table for city names matching the search
+        const { data, error } = await supabase
+            .from('tours_cache')
+            .select('city, language')
+            .ilike('city', `%${query}%`)
+            .limit(10);
+
+        if (error) throw error;
+
+        // Group by city to avoid duplicates and mark as cached
+        const seen = new Set();
+        return (data || []).reduce((acc: any[], curr: any) => {
+            if (!seen.has(curr.city)) {
+                seen.add(curr.city);
+                acc.push({
+                    name: curr.city,
+                    localizedName: curr.city,
+                    spanishName: curr.city,
+                    country: "Cache", // Marker for UI
+                    isCached: true
+                });
+            }
+            return acc;
+        }, []);
+    } catch (e) {
+        console.warn("Offline search failed:", e);
+        return [];
+    }
 };
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
