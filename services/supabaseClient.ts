@@ -12,11 +12,26 @@ try {
   console.error("Critical Supabase Init Error:", e);
   supabase = {
     auth: { getSession: async () => ({ data: { session: null } }) },
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }), upsert: async () => ({}) })
+    from: () => ({ 
+        select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }), 
+        upsert: async () => ({ error: "Supabase no inicializado" }) 
+    })
   };
 }
 
 export { supabase };
+
+export const testSupabaseConnection = async () => {
+    try {
+        const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+        if (error) throw error;
+        console.log("✅ Supabase Connection: SUCCESS");
+        return true;
+    } catch (e) {
+        console.error("❌ Supabase Connection: FAILED", e);
+        return false;
+    }
+};
 
 export const normalizeKey = (city: string | undefined | null, country?: string) => {
     const safeCity = (city || "").toString().trim();
@@ -33,6 +48,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
     const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
     if (error || !data) return null;
     
+    console.log(`📥 Perfil recuperado para: ${email}`);
     return {
       id: data.id,
       email: data.email,
@@ -75,6 +91,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
 
 export const syncUserProfile = async (profile: UserProfile) => {
   if (!profile || !profile.email) return;
+  console.log("📤 Sincronizando perfil con Supabase...");
   try {
     const payload = {
       id: profile.id,
@@ -113,29 +130,41 @@ export const syncUserProfile = async (profile: UserProfile) => {
 
     const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'email' });
     if (error) throw error;
+    console.log("✅ Sincronización exitosa:");
+    console.table({ email: payload.email, miles: payload.miles, stamps: payload.stamps.length });
   } catch (e) {
-    console.error("Sync Error:", e);
+    console.error("❌ Error de Sincronización:", e);
   }
 };
 
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
   if (!nInput) return null;
+  console.log(`🔍 Buscando cache para: ${nInput} [${language}]`);
   try {
-    const { data: exactMatch } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language).maybeSingle();
+    const { data: exactMatch, error } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language).maybeSingle();
+    if (error) throw error;
     if (exactMatch && exactMatch.data) {
+      console.log(`✅ Cache encontrada para ${nInput}`);
       return { data: exactMatch.data as Tour[], langFound: language, cityName: exactMatch.city };
     }
-  } catch (e) {}
+  } catch (e) {
+      console.warn("⚠️ Fallo al leer cache de Supabase", e);
+  }
   return null; 
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
   const nKey = normalizeKey(city, country);
   if (!nKey) return;
+  console.log(`💾 Guardando cache de tours para ${nKey} [${language}]...`);
   try {
-    await supabase.from('tours_cache').upsert({ city: nKey, language, data: tours }, { onConflict: 'city,language' });
-  } catch (e) {}
+    const { error } = await supabase.from('tours_cache').upsert({ city: nKey, language, data: tours }, { onConflict: 'city,language' });
+    if (error) throw error;
+    console.log(`✅ Tours de ${city} guardados en Supabase.`);
+  } catch (e) {
+      console.error("❌ Error guardando cache:", e);
+  }
 };
 
 export const validateEmailFormat = (email: string) => { 
