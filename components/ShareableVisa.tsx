@@ -39,7 +39,7 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
     if (!visaRef.current || isGenerating) return;
     
     setIsGenerating(true);
-    setStatusText('⚡ GENERATING VISA...');
+    setStatusText('🎨 MINTING VISA...');
     
     try {
       // 1. Capture the component as a high-quality image
@@ -74,30 +74,31 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
             title: `BDAI Passport - ${cityName}`,
             text: `Mission Accomplished in ${cityName} with @bdai.travel! 🌍✨ #TravelTech #AI #DigitalNomad`,
           });
-          // Successful share
+          setStatusText('✅ READY TO SHARE');
         } catch (shareError: any) {
           if (shareError.name === 'AbortError') {
             console.debug("User canceled sharing.");
+            setStatusText('');
           } else {
             // Sharing failed but we have a fallback
             console.error("Native share failed:", shareError);
             triggerDownload(blob, fileName);
-            alert("Sharing failed, but we've saved the Visa to your device/photos! 💾");
+            alert("📸 ¡Visado guardado en Fotos! Abre Instagram o TikTok para compartirlo. ✨");
+            setStatusText('✅ READY TO SHARE');
           }
         }
       } else {
         // 3. Fallback: Direct Download for Desktop/Unsupported browsers
         triggerDownload(blob, fileName);
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            alert("Visa saved to your gallery! 🖼️ Share it manually on your stories.");
-        }
+        alert("📸 ¡Visado guardado en Fotos! Abre Instagram o TikTok para compartirlo. ✨");
+        setStatusText('✅ READY TO SHARE');
       }
     } catch (error: any) {
       console.error("Critical failure during Visa generation:", error);
       alert(`Error: ${error.message || "Could not generate Visa."}`);
+      setStatusText('');
     } finally {
       setIsGenerating(false);
-      setStatusText('');
     }
   };
 
@@ -174,8 +175,8 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
             </>
           ) : (
             <>
-              <i className="fas fa-share-nodes"></i>
-              Share to Social
+              <i className={`fas ${statusText.includes('READY') ? 'fa-check-circle' : 'fa-share-nodes'}`}></i>
+              {statusText || 'Share to Social'}
             </>
           )}
         </button>

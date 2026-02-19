@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, Tour } from '../types';
-import { supabase, saveToursToCache, testSupabaseConnection } from '../services/supabaseClient';
+// Fixed: Removed testSupabaseConnection as it is not exported from supabaseClient.ts and not used in this component.
+import { supabase, saveToursToCache } from '../services/supabaseClient';
 import { translateToursBatch } from '../services/geminiService';
 
 interface CityProgress {

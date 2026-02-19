@@ -1,47 +1,23 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
-import { generateToursForCity, standardizeCityName, QuotaError } from './services/geminiService';
+import { generateToursForCity, translateSearchQuery, QuotaError } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { Leaderboard } from './components/Leaderboard';
 import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
-import { TravelServices } from './components/TravelServices';
+import { TravelServices, formatCityName, formatCountryName } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { AdminPanel } from './components/AdminPanel';
+import { translations } from './data/translations';
 import { 
   supabase, 
   getUserProfileByEmail, 
   getGlobalRanking, 
   syncUserProfile, 
-  getCachedTours, 
-  saveToursToCache, 
   validateEmailFormat,
-  searchCitiesInCache
+  checkIfCityCached
 } from './services/supabaseClient';
-
-const TRANSLATIONS: Record<string, any> = {
-  es: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciudad...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuario", login: "solicitar acceso", tagline: "better destinations by ai", selectLang: "idioma", syncing: "sincronizando...", navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda", analyzing: "analizando...", fastSync: "traduciendo...", loadingTour: "generando masterclass...", apiLimit: "IA Saturada", quotaMsg: "Límite gratuito superado", offlineAvailable: "⚡ ACCESO INSTANTÁNEO" },
-  en: { welcome: "bidaer log:", explorer: "explorer", searchPlaceholder: "city...", emailPlaceholder: "your@email.com", userPlaceholder: "username", login: "request access", tagline: "better destinations by ai", selectLang: "language", syncing: "syncing...", navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store", analyzing: "analyzing...", fastSync: "syncing...", loadingTour: "generating masterclass...", apiLimit: "AI Busy", quotaMsg: "Free limit exceeded", offlineAvailable: "⚡ INSTANT ACCESS" },
-  fr: { welcome: "log bidaer:", explorer: "explorateur", searchPlaceholder: "ville...", emailPlaceholder: "votre@email.com", userPlaceholder: "utilisateur", login: "demander l'accès", tagline: "better destinations by ai", selectLang: "langue", syncing: "synchronisation...", navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique", analyzing: "analyse...", fastSync: "traduction...", loadingTour: "génération masterclass...", apiLimit: "IA Saturée", quotaMsg: "Limite gratuite dépassée", offlineAvailable: "⚡ ACCÈS INSTANTANÉ" },
-  de: { welcome: "bidaer-log:", explorer: "entdecker", searchPlaceholder: "stadt...", emailPlaceholder: "ihre@email.com", userPlaceholder: "benutzer", login: "zugang anfordern", tagline: "better destinations by ai", selectLang: "sprache", syncing: "synchronisierung...", navElite: "elite", navHub: "intel", navVisa: "reisepass", navStore: "shop", analyzing: "analyse...", fastSync: "übersetzung...", loadingTour: "generiere masterclass...", apiLimit: "KI ausgelastet", quotaMsg: "Kostenloses Limit überschritten", offlineAvailable: "⚡ SOFORTIGER ZUGRIFF" },
-  it: { welcome: "log bidaer:", explorer: "esploratore", searchPlaceholder: "città...", emailPlaceholder: "tua@email.com", userPlaceholder: "utente", login: "richiedi acceso", tagline: "better destinations by ai", selectLang: "lingua", syncing: "sincronizzazione...", navElite: "élite", navHub: "intel", navVisa: "passaporto", navStore: "negozio", analyzing: "analisi...", fastSync: "traduzione...", loadingTour: "generando masterclass...", apiLimit: "IA Satura", quotaMsg: "Limite gratuito superato", offlineAvailable: "⚡ ACCESSO ISTANTANEO" },
-  pt: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "cidade...", emailPlaceholder: "seu@email.com", userPlaceholder: "usuário", login: "solicitar acceso", tagline: "better destinations by ai", selectLang: "idioma", syncing: "sincronizando...", navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja", analyzing: "analisando...", fastSync: "traduzindo...", loadingTour: "gerando masterclass...", apiLimit: "IA Saturada", quotaMsg: "Limite gratuito excedido", offlineAvailable: "⚡ ACESSO INSTANTÂNEO" },
-  ro: { welcome: "log bidaer:", explorer: "explorator", searchPlaceholder: "oraș...", emailPlaceholder: "email@tau.com", userPlaceholder: "utilizator", login: "solicită acces", tagline: "better destinations by ai", selectLang: "limbă", syncing: "sincronizare...", navElite: "elită", navHub: "intel", navVisa: "pașaport", navStore: "magazin", analyzing: "analiză...", fastSync: "traducere...", loadingTour: "generare masterclass...", apiLimit: "IA Saturată", quotaMsg: "Limita gratuită a fost depășită", offlineAvailable: "⚡ ACCES INSTANT" },
-  ru: { welcome: "журнал bidaer:", explorer: "исследователь", searchPlaceholder: "город...", emailPlaceholder: "ваш@email.com", userPlaceholder: "пользователь", login: "запросить доступ", tagline: "better destinations by ai", selectLang: "язык", syncing: "синхронизация...", navElite: "элита", navHub: "интел", navVisa: "паспорт", navStore: "магазин", analyzing: "анализ...", fastSync: "перевод...", loadingTour: "генерация мастер-класса...", apiLimit: "IA Satura", quotaMsg: "Бесплатный лимит превышен", offlineAvailable: "⚡ МГНОВЕННЫЙ ДОСТУП" },
-  ar: { welcome: "سجل bidaer:", explorer: "مستكشف", searchPlaceholder: "مدينة...", emailPlaceholder: "بريدك الإلكتروني", userPlaceholder: "اسم المستخدم", login: "طلب الدخول", tagline: "وجهات أفضل بواسطة الذكاء الاصطناعي", selectLang: "اللغة", syncing: "مزامنة...", navElite: "نخبة", navHub: "ذكاء", navVisa: "جواز سفر", navStore: "متجر", analyzing: "تحليل...", fastSync: "ترجمة...", loadingTour: "جاري إنشاء الماستركلاس...", apiLimit: "الذكاء الاصطناعي مشغول", quotaMsg: "تم تجاوز الحد", offlineAvailable: "⚡ وصول فوري" },
-  zh: { welcome: "bidaer 日志:", explorer: "探险家", searchPlaceholder: "城市...", emailPlaceholder: "你的邮箱", userPlaceholder: "用户名", login: "请求访问", tagline: "better destinations by ai", selectLang: "语言", syncing: "同期中...", navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店", analyzing: "分析中...", fastSync: "翻译中...", loadingTour: "正在生成大师课...", apiLimit: "AI 繁忙", quotaMsg: "超出免费额度", offlineAvailable: "⚡ 即时访问" },
-  ja: { welcome: "bidaer ログ:", explorer: "探検家", searchPlaceholder: "都市名...", emailPlaceholder: "メールアドレス", userPlaceholder: "ユーザー名", login: "アクセスをリクエスト", tagline: "better destinations by ai", selectLang: "言語", syncing: "同期中...", navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ショップ", analyzing: "分析中...", fastSync: "翻訳中...", loadingTour: "マスタークラスを生成中...", apiLimit: "AI 混雑中", quotaMsg: "無料枠を超えました", offlineAvailable: "⚡ 即時アクセス" },
-  hi: { welcome: "bidaer लॉग:", explorer: "खोजकर्ता", searchPlaceholder: "शहर...", emailPlaceholder: "आपका ईमेल", userPlaceholder: "उपयोगकर्ता नाम", login: "पहुँच का अनुरोध करें", tagline: "एआई द्वारा बेहतर गंतव्य", selectLang: "भाषा", syncing: "सिंक हो रहा है...", navElite: "अभिजात वर्ग", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर", analyzing: "विश्लेषण...", fastSync: "अनुवाद...", loadingTour: "मास्‍टरक्लास बना रहा है...", apiLimit: "एआई व्यस्त", quotaMsg: "मुफ्त सीमा पार हो गई", offlineAvailable: "⚡ तत्काल पहुंच" },
-  ko: { welcome: "bidaer 로그:", explorer: "탐험가", searchPlaceholder: "도시...", emailPlaceholder: "이메일 주소", userPlaceholder: "사용자 이름", login: "액세스 요청", tagline: "AI 기반 최고의 여행지", selectLang: "언어", syncing: "동기화 중...", navElite: "엘리트", navHub: "인텔", navVisa: "여권", navStore: "상점", analyzing: "분석 중...", fastSync: "번역 중...", loadingTour: "마스터클래스 생성 중...", apiLimit: "AI 사용량 초과", quotaMsg: "무료 한도 초과", offlineAvailable: "⚡ 즉시 액세스" },
-  tr: { welcome: "bidaer günlüğü:", explorer: "kaşif", searchPlaceholder: "şehir...", emailPlaceholder: "e-posta", userPlaceholder: "kullanıcı", login: "erişim iste", tagline: "better destinations by ai", selectLang: "dil", syncing: "senkronize ediliyor...", navElite: "elit", navHub: "intel", navVisa: "pasaport", navStore: "mağaza", analyzing: "analiz ediliyor...", fastSync: "çevriliyor...", loadingTour: "masterclass oluşturuluyor...", apiLimit: "IA Satura", quotaMsg: "Limit aşıldı", offlineAvailable: "⚡ ANINDA ERİŞİM" },
-  pl: { welcome: "log bidaer:", explorer: "odkrywca", searchPlaceholder: "miasto...", emailPlaceholder: "twój@email.com", userPlaceholder: "użytkownik", login: "poproś o dostęp", tagline: "lepsze cele dzięki AI", selectLang: "język", syncing: "synchronizacja...", navElite: "elita", navHub: "intel", navVisa: "paszport", navStore: "sklep", analyzing: "analizowanie...", fastSync: "tłumaczenie...", loadingTour: "generowanie masterclass...", apiLimit: "AI przeciążone", quotaMsg: "Przekroczono limit", offlineAvailable: "⚡ NATYCHMIASTOWY DOSTĘP" },
-  nl: { welcome: "bidaer log:", explorer: "ontdekkingsreiziger", searchPlaceholder: "stad...", emailPlaceholder: "je@email.com", userPlaceholder: "gebruikersnaam", login: "toegang aanvragen", tagline: "betere bestemmingen door AI", selectLang: "taal", syncing: "synchroniseren...", navElite: "elite", navHub: "intel", navVisa: "pasvoort", navStore: "winkel", analyzing: "analyseren...", fastSync: "vertalen...", loadingTour: "masterclass genereren...", apiLimit: "AI Bezet", quotaMsg: "Gratis limiet overschreden", offlineAvailable: "⚡ DIRECTE TOEGANG" },
-  ca: { welcome: "log bidaer:", explorer: "explorador", searchPlaceholder: "ciutat...", emailPlaceholder: "tu@email.com", userPlaceholder: "usuari", login: "sol·licitar accés", tagline: "millors destinacions per IA", selectLang: "idioma", syncing: "sincronitzant...", navElite: "elit", navHub: "intel", navVisa: "passaport", navStore: "botiga", analyzing: "analitzant...", fastSync: "traduint...", loadingTour: "generant masterclass...", apiLimit: "IA Saturada", quotaMsg: "Límit gratuït superat", offlineAvailable: "⚡ ACCÉS INSTANTANI" },
-  eu: { welcome: "bidaer log:", explorer: "esploratzailea", searchPlaceholder: "hiria...", emailPlaceholder: "zure@email.com", userPlaceholder: "erabiltzailea", login: "sarbidea eskatu", tagline: "helmuga hobeak AI bidez", selectLang: "hizkuntza", syncing: "sinkronizatzen...", navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda", analyzing: "analizatzen...", fastSync: "itzultzen...", loadingTour: "masterclassa sortzen...", apiLimit: "AI Saturatuta", quotaMsg: "Doako muga gaindituta", offlineAvailable: "⚡ BEREHALAKO SARBIDEA" },
-  vi: { welcome: "nhật ký bidaer:", explorer: "nhà thám hiểm", searchPlaceholder: "thành phố...", emailPlaceholder: "email", userPlaceholder: "tên người dùng", login: "yêu cầu truy cập", tagline: "điểm đến tốt hơn nhờ AI", selectLang: "ngôn ngữ", syncing: "đang đồng bộ...", navElite: "tinh hoa", navHub: "thông tin", navVisa: "hộ chiếu", navStore: "cửa hàng", analyzing: "đang phân tích...", fastSync: "đang dịch...", loadingTour: "đang tạo masterclass...", apiLimit: "IA Bận", quotaMsg: "Vượt quá giới hạn", offlineAvailable: "⚡ TRUY CẬP TỨC THÌ" },
-  th: { welcome: "บันทึก bidaer:", explorer: "นักสำรวจ", searchPlaceholder: "เมือง...", emailPlaceholder: "อีเมล", userPlaceholder: "ชื่อผู้ใช้", login: "ขอเข้าถึง", tagline: "จุดหมายปลายทางที่ดีกว่าโดย AI", selectLang: "ภาษา", syncing: "กำลังซิงค์...", navElite: "อีลิท", navHub: "อินเทล", navVisa: "พาสปอร์ต", navStore: "ร้านค้า", analyzing: "กำลังวิเคราะห์...", fastSync: "กำลังแปล...", loadingTour: "กำลังสร้างมาสเตอร์คลาส...", apiLimit: "AI หนาแน่น", quotaMsg: "เกินขีดจำกัด", offlineAvailable: "⚡ เข้าถึงได้ทันที" }
-};
 
 const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
@@ -52,32 +28,6 @@ const GUEST_PROFILE: UserProfile = {
   stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }, 
   visitedCities: [], completedTours: [], badges: [], stamps: [], capturedMoments: []
 };
-
-/**
- * Formats a city name for clean UI display.
- * Removes underscores, country suffixes, and fixes capitalization.
- */
-const formatCityDisplayName = (name: string): string => {
-    if (!name) return "";
-    // Remove database specific suffixes like _SPAIN or _FRANCE
-    let clean = name.split('_')[0];
-    // Remove anything after a comma
-    clean = clean.split(',')[0].trim();
-    // Handle all-caps database keys
-    if (clean === clean.toUpperCase()) {
-        clean = clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
-    }
-    return clean;
-};
-
-const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onClick: () => void }> = ({ code, label, isActive, onClick }) => (
-    <button 
-      onClick={onClick} 
-      className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-90 shrink-0 ${isActive ? 'bg-purple-600 border-purple-400 text-white font-black scale-110 shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 font-bold hover:bg-white/10'}`}
-    >
-        <span className="text-[9px] uppercase tracking-tighter">{label}</span>
-    </button>
-);
 
 const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
   <button 
@@ -91,9 +41,10 @@ const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: st
 
 export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
+  const [loginPhase, setLoginPhase] = useState<'EMAIL' | 'OTP'>('EMAIL');
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
+  const [otpToken, setOtpToken] = useState('');
   const [searchVal, setSearchVal] = useState('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -106,30 +57,17 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const searchTimeoutRef = useRef<any>(null);
 
   const t = useCallback((key: string) => {
-    const dict = TRANSLATIONS[user.language] || TRANSLATIONS['en'] || TRANSLATIONS['es'];
-    return dict[key] || TRANSLATIONS['en'][key] || key;
+    const lang = user.language || 'es';
+    const dict = translations[lang] || translations['en'];
+    return dict[key] || translations['en'][key] || key;
   }, [user.language]);
 
   useEffect(() => {
     const checkAuth = async () => {
         try {
-            const saved = localStorage.getItem('bdai_profile');
-            if (saved) {
-              const parsed = JSON.parse(saved);
-              setUser(prev => ({ ...prev, ...parsed, isLoggedIn: true }));
-              setView(AppView.HOME);
-              
-              if (parsed.email) {
-                  const freshProfile = await getUserProfileByEmail(parsed.email);
-                  if (freshProfile) {
-                      setUser(prev => ({ ...prev, ...freshProfile, isLoggedIn: true }));
-                      localStorage.setItem('bdai_profile', JSON.stringify({ ...freshProfile, isLoggedIn: true }));
-                  }
-              }
-            }
-
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
                 const profile = await getUserProfileByEmail(session.user.email || '');
@@ -137,9 +75,19 @@ export default function App() {
                   setUser({ ...profile, isLoggedIn: true });
                   localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
                   setView(AppView.HOME);
+                } else {
+                  const newProfile = { ...GUEST_PROFILE, email: session.user.email || '', id: session.user.id, isLoggedIn: true };
+                  setUser(newProfile);
+                  setView(AppView.HOME);
                 }
+            } else {
+               const saved = localStorage.getItem('bdai_profile');
+               if (saved) {
+                 const parsed = JSON.parse(saved);
+                 setUser(prev => ({ ...prev, language: parsed.language || 'es' }));
+               }
             }
-        } catch (e) { console.error("Auth error", e); } finally { setIsVerifyingSession(false); }
+        } catch (e) { console.error("Auth init error", e); } finally { setIsVerifyingSession(false); }
     };
     checkAuth();
     getGlobalRanking().then(setLeaderboard);
@@ -147,136 +95,138 @@ export default function App() {
 
   useEffect(() => {
     if (!navigator.geolocation) return;
-
     const watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-            setUserLocation({
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude
-            });
-        },
-        (err) => console.error("GPS Sensor Error:", err),
-        {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
-        }
+        (pos) => { setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+        (err) => console.error("GPS Error:", err),
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
-
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  const processCitySelection = async (official: {name: string, localizedName: string, spanishName: string, country: string, isCached?: boolean}, langCode: string) => {
+  const handleRequestOtp = async () => {
+    if (isLoading) return; 
+    if (!validateEmailFormat(email)) { alert("Enter a valid email."); return; }
+    setIsLoading(true);
+    setLoadingMessage("REQUESTING KEY...");
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) throw error;
+      setLoginPhase('OTP');
+    } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (isLoading) return; 
+    if (otpToken.length < 8) return;
+    setIsLoading(true);
+    setLoadingMessage("DECRYPTING ACCESS...");
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({ 
+        email, 
+        token: otpToken, 
+        type: 'email' 
+      });
+      if (error) throw error;
+      if (data.user) {
+        const profile = await getUserProfileByEmail(email);
+        if (profile) {
+          setUser({ ...profile, isLoggedIn: true });
+        } else {
+          const newProfile = { ...GUEST_PROFILE, email, id: data.user.id, isLoggedIn: true };
+          await syncUserProfile(newProfile);
+          setUser(newProfile);
+        }
+        setView(AppView.HOME);
+      }
+    } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
+  };
+
+  const processCitySelection = async (selection: {name: string, country: string}, langCode: string) => {
     setIsLoading(true); 
     setSearchOptions(null); 
-    const cleanName = formatCityDisplayName(official.localizedName || official.spanishName);
+    setSearchVal(''); 
+    const cleanName = selection.name.split(',')[0].trim();
     setSelectedCity(cleanName); 
+
     try {
         setTours([]);
-        // OFFLINE FIRST: Try to find in cache first
-        const cached = await getCachedTours(official.spanishName, official.country === "Cache" ? "" : official.country, langCode);
-        if (cached && cached.data.length > 0) {
+        const { data: cached, error } = await supabase
+          .from('tours_cache')
+          .select('data')
+          .ilike('city', cleanName) 
+          .eq('language', langCode.toLowerCase())
+          .maybeSingle();
+
+        if (!error && cached && cached.data && cached.data.length > 0) {
             setTours(cached.data); 
             setView(AppView.CITY_DETAIL);
+            setIsLoading(false);
             return;
         }
         
-        // Only if not in cache AND not an offline-only selection, try AI
-        if (!official.isCached) {
-          setLoadingMessage(TRANSLATIONS[langCode]?.loadingTour || t('loadingTour'));
-          const generated = await generateToursForCity(official.spanishName, official.country, { ...user, language: langCode } as UserProfile);
-          if (generated.length > 0) {
-              setTours(generated); 
-              await saveToursToCache(official.spanishName, official.country, langCode, generated);
-              setView(AppView.CITY_DETAIL);
-          }
-        } else {
-            alert(t('apiLimit'));
-        }
+        setLoadingMessage(t('generating'));
+        const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
+        if (generated.length > 0) {
+            setTours(generated); 
+            await supabase.from('tours_cache').upsert({
+              city: cleanName.toLowerCase(),
+              language: langCode.toLowerCase(),
+              data: generated
+            }, { onConflict: 'city,language' });
+            setView(AppView.CITY_DETAIL);
+        } else { alert("Location protocol failed."); }
     } catch (e) { 
-        if (e instanceof QuotaError) {
-          alert(t('apiLimit'));
-        } else {
-          console.error("Selection error:", e);
-        }
+        if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
+        else { console.error("Selection error:", e); }
     } finally { setIsLoading(false); }
   };
 
+  const handleCitySearch = async (val: string) => {
+    setSearchVal(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (val.length < 3) { setSearchOptions(null); return; }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+        try {
+            let queryVal = val;
+            const isNonLatin = /[^\u0000-\u007f]/.test(val);
+            if (isNonLatin) {
+                const translation = await translateSearchQuery(val);
+                queryVal = translation.english;
+            }
+
+            const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryVal)}&format=json&addressdetails=1&limit=5&featuretype=city`);
+            const data = await resp.json();
+            const results = await Promise.all(data.map(async (item: any) => {
+                const name = item.address.city || item.address.town || item.address.village || item.address.city_district || item.display_name.split(',')[0];
+                const country = item.address.country;
+                const isCached = await checkIfCityCached(name.toLowerCase(), country);
+                return { name, country, isCached, fullName: `${name}, ${country}` };
+            }));
+            setSearchOptions(results);
+        } catch (e) { console.error("Search protocol error:", e); }
+    }, 500);
+  };
+
   const handleLangChange = (code: string) => {
-      setIsSyncingLang(true);
+      setIsSyncingLang(code !== user.language);
       const updatedUser = { ...user, language: code };
       setUser(updatedUser);
       localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
       if (user.isLoggedIn) syncUserProfile(updatedUser);
-      
-      setTours([]);
-      if (selectedCity && (view === AppView.CITY_DETAIL || view === AppView.TOUR_ACTIVE)) {
-          handleCitySearch(selectedCity);
-      }
-      
+      setTours([]); 
       setTimeout(() => setIsSyncingLang(false), 500);
-  };
-
-  const handleLogin = async () => {
-    if (!validateEmailFormat(email)) { alert("Email inválido."); return; }
-    setIsLoading(true);
-    setLoadingMessage(t('syncing'));
-    try {
-      const profile = await getUserProfileByEmail(email);
-      let activeUser: UserProfile;
-      if (profile) { 
-          activeUser = { ...profile, isLoggedIn: true }; 
-      }
-      else {
-        activeUser = { ...GUEST_PROFILE, email, username: username || email.split('@')[0], isLoggedIn: true, id: `u_${Date.now()}` };
-        await syncUserProfile(activeUser);
-      }
-      setUser(activeUser);
-      localStorage.setItem('bdai_profile', JSON.stringify(activeUser));
-      setView(AppView.HOME);
-    } catch (e) { alert("Error."); } finally { setIsLoading(false); }
-  };
-
-  const handleCitySearch = async (cityInput: string) => {
-    if (!cityInput.trim() || isLoading) return;
-    setIsLoading(true);
-    setLoadingMessage(t('analyzing'));
-    try {
-        const offlineResults = await searchCitiesInCache(cityInput);
-        try {
-            const aiResults = await standardizeCityName(cityInput, user.language);
-            const merged = [...offlineResults];
-            aiResults.forEach(ai => {
-                if (!merged.find(m => m.spanishName.toLowerCase() === ai.spanishName.toLowerCase())) {
-                    merged.push(ai);
-                }
-            });
-            setSearchOptions(merged);
-        } catch (aiError) {
-            console.warn("AI Search failed, using offline cache only:", aiError);
-            if (offlineResults.length > 0) {
-                setSearchOptions(offlineResults);
-            } else {
-                setSearchOptions([]);
-            }
-        }
-    } catch (e) { 
-        console.error("Global search error:", e);
-        setSearchOptions([]);
-    } finally { setIsLoading(false); }
   };
 
   const updateUserAndSync = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
-    if (updatedUser.isLoggedIn) {
-      syncUserProfile(updatedUser);
-    }
+    if (updatedUser.isLoggedIn) { syncUserProfile(updatedUser); }
   };
 
   if (isVerifyingSession) {
     return (
-      <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center">
+      <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center">
         <BdaiLogo className="w-16 h-16 animate-pulse" />
       </div>
     );
@@ -288,32 +238,83 @@ export default function App() {
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 animate-fade-in">
             <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center animate-pulse">
-              {isSyncingLang ? (TRANSLATIONS[user.language]?.fastSync || t('syncing')) : loadingMessage}
+              {isSyncingLang ? "translating interface..." : (loadingMessage || "syncing...")}
             </p>
         </div>
       )}
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617]">
-              <div className="text-center flex flex-col items-center mb-10 mt-[-10dvh] animate-fade-in">
-                  <BdaiLogo className="w-44 h-44 animate-pulse-logo" />
-                  <h1 className="text-6xl font-black lowercase tracking-tighter text-white/95 -mt-8">bdai</h1>
-                  <p className="text-[10px] font-black lowercase tracking-[0.3em] text-purple-500 mt-2 uppercase">{t('tagline')}</p>
-              </div>
-              
-              <div className="w-full max-w-[240px] mt-2 space-y-2">
-                  <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full h-11 bg-white/[0.03] border border-white/5 rounded-xl px-4 text-center text-white outline-none text-[10px] font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/30 transition-all" placeholder={t('userPlaceholder')} />
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full h-11 bg-white/[0.03] border border-white/5 rounded-xl px-4 text-center text-white outline-none text-[10px] font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/30 transition-all" placeholder={t('emailPlaceholder')} />
-                  <button onClick={handleLogin} className="w-full mt-4 h-12 bg-white text-slate-950 rounded-xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">
-                    {t('login')}
-                  </button>
+              <div className="text-center flex flex-col items-center mb-12 mt-[-10dvh] animate-fade-in">
+                  <BdaiLogo className="w-44 h-44 mb-4 animate-pulse-logo" />
+                  <h1 className="text-8xl font-black lowercase tracking-tighter text-white/95 leading-none">bdai</h1>
+                  <p className="text-[11px] font-medium text-purple-400 mt-2 lowercase opacity-80">better destinations by ai</p>
               </div>
 
+              {loginPhase === 'EMAIL' ? (
+                <div className="w-full max-w-[280px] space-y-4 animate-fade-in">
+                    <input 
+                      type="email" 
+                      value={email} 
+                      onChange={e => setEmail(e.target.value)} 
+                      disabled={isLoading}
+                      className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-6 text-center text-white outline-none text-sm font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/50 transition-all" 
+                      placeholder={t('emailPlaceholder')} 
+                    />
+                    <button 
+                      onClick={handleRequestOtp} 
+                      disabled={isLoading}
+                      className="w-full h-14 bg-white text-slate-950 rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {t('requestAccess')}
+                    </button>
+                </div>
+              ) : (
+                <div className="w-full max-w-[280px] space-y-6 animate-fade-in">
+                    <div className="text-center">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('enterCode')}</p>
+                      <p className="text-[10px] font-bold text-purple-400/80 truncate">{email}</p>
+                    </div>
+                    <input 
+                      type="text" 
+                      maxLength={8}
+                      value={otpToken} 
+                      onChange={e => setOtpToken(e.target.value)} 
+                      disabled={isLoading}
+                      className="w-full h-16 bg-white/[0.03] border border-white/10 rounded-2xl px-6 text-center text-white outline-none text-2xl font-black tracking-[0.5em] shadow-inner focus:border-purple-500/50 transition-all" 
+                      placeholder="00000000" 
+                    />
+                    <div className="flex gap-2">
+                        <button 
+                          onClick={() => setLoginPhase('EMAIL')} 
+                          disabled={isLoading}
+                          className="flex-1 h-14 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black lowercase text-[10px] tracking-widest disabled:opacity-50"
+                        >
+                          {t('back')}
+                        </button>
+                        <button 
+                          onClick={handleVerifyOtp} 
+                          disabled={otpToken.length < 8 || isLoading}
+                          className="flex-[2] h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-30"
+                        >
+                          {t('verifyCode')}
+                        </button>
+                    </div>
+                </div>
+              )}
+
               <div className="absolute bottom-12 left-0 right-0 px-8 flex flex-col items-center gap-4">
-                <p className="text-[7px] font-black uppercase tracking-[0.4em] text-white/20">{t('selectLang')}</p>
-                <div className="w-full max-w-full overflow-x-auto no-scrollbar flex gap-2 px-6 py-4 bg-white/[0.02] rounded-full border border-white/[0.05]">
+                <p className="text-[7px] font-black uppercase tracking-[0.4em] text-white/10">switch locale</p>
+                <div className="w-full max-w-full overflow-x-auto no-scrollbar flex gap-2.5 px-6 py-4 bg-white/[0.01] rounded-full border border-white/[0.05]">
                     {LANGUAGES.map(lang => (
-                        <LangCircle key={lang.code} label={lang.name} code={lang.code} isActive={user.language === lang.code} onClick={() => handleLangChange(lang.code)} />
+                        <button 
+                          key={lang.code} 
+                          onClick={() => handleLangChange(lang.code)} 
+                          disabled={isLoading}
+                          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all shrink-0 ${user.language === lang.code ? 'bg-purple-600 border-purple-400 text-white font-black scale-110 shadow-lg' : 'bg-white/5 border-white/10 text-slate-600 font-bold'}`}
+                        >
+                            <span className="text-[8px] uppercase">{lang.name}</span>
+                        </button>
                     ))}
                 </div>
               </div>
@@ -324,61 +325,56 @@ export default function App() {
                 {view === AppView.HOME && (
                   <div className="space-y-6 pt-safe-iphone max-w-md mx-auto animate-fade-in">
                       <header className="flex justify-between items-center py-4 px-6">
-                          <div className="flex items-center gap-3"><BdaiLogo className="w-8 h-8"/><span className="font-black text-xl tracking-tighter">bdai</span></div>
+                          <div className="flex items-center gap-3"><BdaiLogo className="w-8 h-8"/><span className="font-black text-xl tracking-tighter lowercase">bdai</span></div>
                           <div className="bg-white/10 px-4 py-1.5 rounded-xl text-[9px] font-black flex items-center gap-2 shadow-lg border border-white/5"><i className="fas fa-coins text-yellow-500"></i>{user.miles.toLocaleString()}</div>
                       </header>
-                      <div className="py-2 px-6">
-                        <h1 className="text-3xl font-black text-white uppercase tracking-tighter leading-tight">
-                            {t('welcome')} <br/>
-                            <span className="text-purple-600/60 block mt-1">{user.name || user.username || t('explorer')}.</span>
-                        </h1>
-                      </div>
-                      <div className="relative mt-2 flex gap-3 px-6">
-                          <input 
-                            type="text" 
-                            value={searchVal} 
-                            onChange={(e) => {
-                                setSearchVal(e.target.value);
-                                if (e.target.value.length > 2) handleCitySearch(e.target.value);
-                                else setSearchOptions(null);
-                            }} 
-                            onKeyDown={(e) => e.key === 'Enter' && handleCitySearch(searchVal)} 
-                            placeholder={t('searchPlaceholder')} 
-                            className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none font-bold text-sm shadow-inner" 
-                          />
-                          <button onClick={() => handleCitySearch(searchVal)} className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg active:scale-95 transition-all"><i className="fas fa-search text-sm"></i></button>
-                      </div>
-                      {searchOptions && searchOptions.length > 0 && (
-                        <div className="mx-6 mt-4 space-y-3 bg-slate-900/95 backdrop-blur-3xl border border-purple-500/20 p-6 rounded-[2.5rem] shadow-2xl animate-slide-up relative z-[1001]">
-                            {searchOptions.map((opt, i) => (
-                                <button key={i} onClick={() => processCitySelection(opt, user.language)} className="w-full p-4 bg-white/5 rounded-2xl flex items-center justify-between border border-white/5 active:bg-purple-600/20 transition-all">
-                                    <div className="flex items-center gap-4 text-left text-white">
-                                        <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center shadow-lg">
-                                            <i className={`fas ${opt.isCached ? 'fa-bolt text-cyan-400' : 'fa-map-marker-alt text-purple-500'} text-sm`}></i>
-                                        </div>
-                                        <div className="min-w-0">
-                                            <span className="text-white font-black uppercase text-xs block truncate">
-                                                {formatCityDisplayName(opt.localizedName || opt.spanishName)}
-                                            </span>
-                                            <span className={`text-[8px] font-black uppercase tracking-widest ${opt.isCached ? 'text-cyan-400' : 'text-slate-600'}`}>
-                                                {opt.isCached ? t('offlineAvailable') : opt.country}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <i className={`fas fa-chevron-right ${opt.isCached ? 'text-cyan-500' : 'text-purple-500'} text-[10px]`}></i>
-                                </button>
-                            ))}
+
+                      <div className="py-10 px-6 text-center flex flex-col items-center">
+                        <BdaiLogo className="w-32 h-32 mb-6 animate-pulse-logo" />
+                        <h1 className="text-8xl font-black text-white lowercase tracking-tighter leading-none">bdai</h1>
+                        <p className="text-[11px] font-medium text-purple-400 mt-2 lowercase opacity-80 mb-10">better destinations by ai</p>
+                        
+                        <div className="w-full relative">
+                            <div className="flex gap-2">
+                                <input 
+                                  type="text" 
+                                  value={searchVal} 
+                                  onChange={(e) => handleCitySearch(e.target.value)} 
+                                  placeholder={t('searchPlaceholder')} 
+                                  className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none font-bold text-sm shadow-inner focus:border-purple-500/40 transition-all" 
+                                />
+                                <div className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20 transition-transform active:scale-90"><i className="fas fa-search"></i></div>
+                            </div>
+
+                            {searchOptions && searchOptions.length > 0 && (
+                              <div className="absolute left-0 right-0 top-full mt-4 space-y-2 bg-[#0a0f1e]/98 backdrop-blur-3xl border border-white/5 p-3 rounded-[2rem] shadow-2xl animate-slide-up z-[1001]">
+                                  {searchOptions.map((opt, i) => (
+                                      <button key={i} onClick={() => processCitySelection(opt, user.language)} className="w-full p-4 bg-white/[0.03] rounded-xl flex items-center justify-between border border-white/5 active:bg-purple-600/10 transition-all text-left">
+                                          <div className="flex items-center gap-4">
+                                              <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center shrink-0">
+                                                  <i className={`fas ${opt.isCached ? 'fa-bolt text-cyan-400' : 'fa-globe text-purple-500'} text-xs`}></i>
+                                              </div>
+                                              <div className="truncate">
+                                                  <span className="text-white font-black uppercase text-[11px] block">{formatCityName(opt.name, user.language)}</span>
+                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : formatCountryName(opt.country, user.language)}</span>
+                                              </div>
+                                          </div>
+                                          <i className="fas fa-chevron-right text-[9px] text-purple-500/40"></i>
+                                      </button>
+                                  ))}
+                              </div>
+                            )}
                         </div>
-                      )}
-                      <TravelServices mode="HOME" language={user.language} onCitySelect={(name: string) => handleCitySearch(name)} />
+                      </div>
+
+                      <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} />
                   </div>
                 )}
-                
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
-                      <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-slate-950/80 backdrop-blur-xl z-20">
-                        <button onClick={() => setView(AppView.HOME)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left text-xs"></i></button>
-                        <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{selectedCity}</h2>
+                      <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
+                        <button onClick={() => setView(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
+                        <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
                       </header>
                       <div className="space-y-6 pb-12">
                           {tours.map(tour => (
@@ -387,21 +383,19 @@ export default function App() {
                       </div>
                   </div>
                 )}
-                
                 {view === AppView.TOUR_ACTIVE && activeTour && (
                   <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} />
                 )}
-                
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { setView(AppView.LOGIN); localStorage.removeItem('bdai_profile'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
-                {view === AppView.SHOP && <Shop user={user} onPurchase={() => {}} />}
-                {view === AppView.TOOLS && <TravelServices mode="HUB" language={user.language} onCitySelect={(name: string) => handleCitySearch(name)} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
+                {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
+                {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
 
             {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
-                <nav className="bg-slate-900/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm rounded-[2.5rem] pointer-events-auto shadow-2xl">
+                <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm rounded-[2.5rem] pointer-events-auto shadow-2xl">
                     <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
                     <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
                     <button onClick={() => setView(AppView.HOME)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>

@@ -26,55 +26,31 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
     }
 };
 
-const PHOTO_SPOT_SCHEMA = {
-    type: Type.OBJECT,
-    properties: {
-        angle: { 
-            type: Type.STRING, 
-            description: "Expert photography advice: Technical settings (ISO, Aperture) and specific artistic framing for THIS stop." 
-        },
-        milesReward: { type: Type.NUMBER },
-        secretLocation: { 
-            type: Type.STRING, 
-            description: "Precise description of a hidden spot or unique perspective to photograph this monument." 
-        }
-    },
-    required: ["angle", "milesReward", "secretLocation"]
-};
-
-const STOP_SCHEMA = {
-    type: Type.OBJECT,
-    properties: {
-        id: { type: Type.STRING },
-        name: { type: Type.STRING },
-        description: { type: Type.STRING, description: "Detailed narrative of minimum 450 words including history, engineering and secrets." },
-        latitude: { type: Type.NUMBER },
-        longitude: { type: Type.NUMBER },
-        type: { type: Type.STRING },
-        photoSpot: PHOTO_SPOT_SCHEMA
-    },
-    required: ["id", "name", "description", "latitude", "longitude", "photoSpot"]
-};
-
-const TOUR_SCHEMA = {
-    type: Type.OBJECT,
-    properties: {
-        id: { type: Type.STRING },
-        city: { type: Type.STRING },
-        title: { type: Type.STRING },
-        description: { type: Type.STRING },
-        duration: { type: Type.STRING },
-        distance: { type: Type.STRING },
-        difficulty: { type: Type.STRING },
-        theme: { type: Type.STRING },
-        isEssential: { type: Type.BOOLEAN },
-        stops: {
-            type: Type.ARRAY,
-            items: STOP_SCHEMA,
-            description: "List of stops for the tour. Essential tour MUST have exactly 10 stops."
-        }
-    },
-    required: ["id", "city", "title", "description", "stops"]
+/**
+ * Translates a user's search query from any language into English for database matching.
+ * Also returns the original for profiling.
+ */
+export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
+            Return JSON object: { "english": "English Name", "detected": "Detected Language Code" }`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        english: { type: Type.STRING },
+                        detected: { type: Type.STRING }
+                    },
+                    required: ["english", "detected"]
+                }
+            }
+        });
+        return JSON.parse(response.text || '{"english": "' + input + '", "detected": "unknown"}');
+    });
 };
 
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
@@ -94,7 +70,45 @@ export const generateToursForCity = async (city: string, country: string, user: 
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.ARRAY,
-                    items: TOUR_SCHEMA
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            id: { type: Type.STRING },
+                            city: { type: Type.STRING },
+                            title: { type: Type.STRING },
+                            description: { type: Type.STRING },
+                            duration: { type: Type.STRING },
+                            distance: { type: Type.STRING },
+                            difficulty: { type: Type.STRING },
+                            theme: { type: Type.STRING },
+                            isEssential: { type: Type.BOOLEAN },
+                            stops: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        id: { type: Type.STRING },
+                                        name: { type: Type.STRING },
+                                        description: { type: Type.STRING },
+                                        latitude: { type: Type.NUMBER },
+                                        longitude: { type: Type.NUMBER },
+                                        type: { type: Type.STRING },
+                                        photoSpot: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                angle: { type: Type.STRING },
+                                                milesReward: { type: Type.NUMBER },
+                                                secretLocation: { type: Type.STRING }
+                                            },
+                                            required: ["angle", "milesReward", "secretLocation"]
+                                        }
+                                    },
+                                    required: ["id", "name", "description", "latitude", "longitude", "photoSpot"]
+                                }
+                            }
+                        },
+                        required: ["id", "city", "title", "description", "stops"]
+                    }
                 }
             }
         });
@@ -102,37 +116,20 @@ export const generateToursForCity = async (city: string, country: string, user: 
     });
 };
 
-export const generateThematicTour = async (city: string, country: string, theme: string, user: UserProfile): Promise<Tour> => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: `Generate ONE thematic tour for ${city}, ${country} with theme: "${theme}". 
-            This tour MUST have at least 8 stops. Detailed descriptions in ${user.language}.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: TOUR_SCHEMA
-            }
-        });
-        return JSON.parse(response.text || "{}");
-    });
-};
-
 const VOICE_MAP: Record<string, string> = {
-    es: 'Kore', 
-    en: 'Zephyr', 
-    fr: 'Charon', 
-    de: 'Fenrir', 
-    it: 'Puck', 
-    pt: 'Charon', 
-    ja: 'Puck', 
-    zh: 'Puck', 
-    ro: 'Kore'
+    es: 'Kore', en: 'Zephyr', fr: 'Charon', de: 'Fenrir', it: 'Puck', pt: 'Charon', ja: 'Puck', zh: 'Puck', ro: 'Kore'
 };
 
 export const generateAudio = async (text: string, language: string, city: string): Promise<string> => {
+    const cachedUrl = await getCachedAudio(text, language);
+    if (cachedUrl) {
+        const response = await fetch(cachedUrl);
+        const buffer = await response.arrayBuffer();
+        return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    }
+
     const voiceName = VOICE_MAP[language] || 'Kore';
-    return handleAiCall(async () => {
+    const base64 = await handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
@@ -146,6 +143,12 @@ export const generateAudio = async (text: string, language: string, city: string
         });
         return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     });
+
+    if (base64) {
+        saveAudioToCache(text, language, base64, city).catch(err => console.error("Cache save failed", err));
+    }
+
+    return base64;
 };
 
 export const translateToursBatch = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
@@ -155,34 +158,6 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
             model: 'gemini-3-flash-preview',
             contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
             config: { responseMimeType: "application/json" }
-        });
-        return JSON.parse(response.text || "[]");
-    });
-};
-
-export const standardizeCityName = async (input: string, lang: string) => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Identify cities matching "${input}". Translate the names to language code: ${lang}. Return JSON array.`,
-            config: { 
-                tools: [{ googleSearch: {} }], 
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            name: { type: Type.STRING, description: "Official English name" },
-                            localizedName: { type: Type.STRING, description: `Name of the city in ${lang}` },
-                            spanishName: { type: Type.STRING },
-                            country: { type: Type.STRING }
-                        },
-                        required: ["name", "localizedName", "spanishName", "country"]
-                    }
-                }
-            }
         });
         return JSON.parse(response.text || "[]");
     });
