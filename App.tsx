@@ -134,27 +134,25 @@ export default function App() {
   };
 
   const handleGoogleLogin = async () => {
-    if (isLoading) return;
-    setIsLoading(true);
-    setLoadingMessage("CONNECTING TO GOOGLE...");
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-          skipBrowserRedirect: true
-        }
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank', 'width=500,height=600');
+  if (isLoading) return;
+  setIsLoading(true);
+  setLoadingMessage("CONECTANDO CON GOOGLE...");
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        // Quitamos el skipBrowserRedirect y el window.open
+        redirectTo: "https://www.bdai.travel", 
       }
-    } catch (e: any) {
-      alert(e.message || "Google Login failed.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    });
+    if (error) throw error;
+    // El navegador se redirigirá solo a Google ahora
+  } catch (e: any) {
+    alert(e.message || "Error al conectar con Google");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleVerifyOtp = async () => {
     if (isLoading) return; 
