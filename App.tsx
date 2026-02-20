@@ -58,8 +58,81 @@ export default function App() {
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const searchTimeoutRef = useRef<any>(null);
+// --- PEGA ESTO JUSTO AQUÍ ---
 
-  const t = useCallback((key: string) => {
+  // 1. Función para manejar el éxito del login
+  const handleLoginSuccess = async (supabaseUser: any) => {
+    const profile = await getUserProfileByEmail(supabaseUser.email || '');
+    if (profile) {
+      setUser({ ...profile, isLoggedIn: true });
+      localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
+      setView(AppView.HOME);
+    } else {
+      const newProfile = { 
+        ...GUEST_PROFILE, 
+        email: supabaseUser.email || '', 
+        id: supabaseUser.id, 
+        isLoggedIn: true,
+        rank: 'ZERO' 
+      };
+      await syncUserProfile(newProfile);
+      setUser(newProfile);
+      setView(AppView.HOME);
+    }
+  };
+
+  // 2. Función del botón de Google (Arreglada para que no la bloquee el navegador)
+  const handleGoogleLogin = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    setLoadingMessage("CONECTANDO CON GOOGLE...");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: "https://www.bdai.travel",
+        }
+      });
+      if (error) throw error;
+    } catch (e: any) {
+      alert(e.message || "Error al conectar con Google");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 3. Función del botón de Email
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || isLoading) return;
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: "https://www.bdai.travel",
+        },
+      });
+      if (error) throw error;
+      alert("¡Código enviado! Revisa tu email.");
+    } catch (e: any) {
+      alert(e.message || "Error al enviar el email.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 4. El "Oído" que escucha a Google y te deja entrar
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await handleLoginSuccess(session.user);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // --- AQUÍ SIGUE TU CÓDIGO (t = useCallback...) ---  const t = useCallback((key: string) => {
     const lang = user.language || 'es';
     const dict = translations[lang] || translations['en'];
     return dict[key] || translations['en'][key] || key;
