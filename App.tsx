@@ -58,9 +58,9 @@ export default function App() {
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const searchTimeoutRef = useRef<any>(null);
-// --- PEGA ESTO JUSTO AQUÍ ---
+const searchTimeoutRef = useRef<any>(null);
 
-  // 1. Función para manejar el éxito del login
+  // --- FUNCIONES DE LOGIN (Revisadas) ---
   const handleLoginSuccess = async (supabaseUser: any) => {
     const profile = await getUserProfileByEmail(supabaseUser.email || '');
     if (profile) {
@@ -81,7 +81,6 @@ export default function App() {
     }
   };
 
-  // 2. Función del botón de Google (Arreglada para que no la bloquee el navegador)
   const handleGoogleLogin = async () => {
     if (isLoading) return;
     setIsLoading(true);
@@ -89,19 +88,16 @@ export default function App() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: "https://www.bdai.travel",
-        }
+        options: { redirectTo: "https://www.bdai.travel" }
       });
       if (error) throw error;
     } catch (e: any) {
-      alert(e.message || "Error al conectar con Google");
+      alert(e.message || "Error Google");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 3. Función del botón de Email
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || isLoading) return;
@@ -109,20 +105,17 @@ export default function App() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo: "https://www.bdai.travel",
-        },
+        options: { emailRedirectTo: "https://www.bdai.travel" }
       });
       if (error) throw error;
-      alert("¡Código enviado! Revisa tu email.");
+      alert("Código enviado");
     } catch (e: any) {
-      alert(e.message || "Error al enviar el email.");
+      alert(e.message || "Error Email");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 4. El "Oído" que escucha a Google y te deja entrar
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
@@ -132,7 +125,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- AQUÍ SIGUE TU CÓDIGO (t = useCallback...) ---  const t = useCallback((key: string) => {
+  const t = useCallback((key: string) => {
     const lang = user.language || 'es';
     const dict = translations[lang] || translations['en'];
     return dict[key] || translations['en'][key] || key;
