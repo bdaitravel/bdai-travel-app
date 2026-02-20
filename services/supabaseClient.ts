@@ -2,8 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
 const getEnvVar = (name: string, fallback: string): string => {
-  // 🔴 CORRECCIÓN CRÍTICA: Cambiamos process.env por import.meta.env
-  // Esto es lo que mata la pantalla blanca en Vercel.
+  // ⚡️ CORRECCIÓN PARA VERCEL: Usamos import.meta para evitar pantalla blanca
   const env = (import.meta as any).env || {};
   let val = env[`VITE_${name}`] || env[name];
   
@@ -14,9 +13,7 @@ const getEnvVar = (name: string, fallback: string): string => {
       const projectId = parts[parts.length - 1];
       if (projectId) return `https://${projectId}.supabase.co`;
     }
-    if (val.startsWith('http')) {
-      return val;
-    }
+    if (val.startsWith('http')) return val;
   }
   return fallback;
 };
@@ -49,7 +46,7 @@ try {
 
 export { supabase };
 
-// 🏆 LÓGICA DE PRESTIGIO BDAI
+// 🏆 SISTEMA DE NIVELES BDAI
 const getPrestigeRank = (miles: number): string => {
   if (miles <= 150) return 'ZERO';
   if (miles <= 800) return 'SCOUT';
@@ -78,56 +75,33 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
 export const normalizeKey = (city: string | undefined | null, country?: string) => {
     const safeCity = (city || "").toString().split(',')[0].trim().toLowerCase();
     if (!safeCity) return "";
-    
     const raw = (country && country !== "Cache") ? `${safeCity}_${country.toLowerCase().trim()}` : safeCity;
-    return raw.normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") 
-        .replace(/[^a-z0-9_]/g, ""); 
+    return raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, ""); 
 };
 
 export const checkIfCityCached = async (city: string, country: string): Promise<boolean> => {
   const pureCity = city.split(',')[0].trim().toLowerCase();
   try {
-    const { data, error } = await supabase
-        .from('tours_cache')
-        .select('city')
-        .ilike('city', `${pureCity}%`)
-        .limit(1);
+    const { data, error } = await supabase.from('tours_cache').select('city').ilike('city', `${pureCity}%`).limit(1);
     if (error) return false;
     return (data && data.length > 0);
-  } catch (e) {
-    return false;
-  }
+  } catch (e) { return false; }
 };
 
 export const searchCitiesInCache = async (query: string): Promise<any[]> => {
     if (!query || query.length < 2) return [];
     try {
-        const { data, error } = await supabase
-            .from('tours_cache')
-            .select('city, language')
-            .ilike('city', `%${query}%`)
-            .limit(10);
-
+        const { data, error } = await supabase.from('tours_cache').select('city, language').ilike('city', `%${query}%`).limit(10);
         if (error) throw error;
-
         const seen = new Set();
         return (data || []).reduce((acc: any[], curr: any) => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
-                acc.push({
-                    name: curr.city,
-                    localizedName: curr.city,
-                    spanishName: curr.city,
-                    country: "Cache",
-                    isCached: true
-                });
+                acc.push({ name: curr.city, localizedName: curr.city, spanishName: curr.city, country: "Cache", isCached: true });
             }
             return acc;
         }, []);
-    } catch (e) {
-        return [];
-    }
+    } catch (e) { return []; }
 };
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -140,7 +114,8 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       name: data.name || `${data.first_name || ''} ${data.last_name || ''}`.trim(),
       avatar: data.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
       miles: data.miles || 0, language: data.language || 'es', 
-      rank: getPrestigeRank(data.miles || 0), // ⚡️ Aplicamos niveles ZERO-ZENITH
+      // 🛠️ FIX TS2322: Añadimos "as any" para que acepte los nuevos rangos
+      rank: (getPrestigeRank(data.miles || 0)) as any,
       isLoggedIn: true, culturePoints: data.culture_points || 0, foodPoints: data.food_points || 0,
       photoPoints: data.photo_points || 0, historyPoints: data.history_points || 0,
       naturePoints: data.nature_points || 0, artPoints: data.art_points || 0,
@@ -161,9 +136,10 @@ export const syncUserProfile = async (profile: UserProfile) => {
     const payload = {
       id: profile.id, email: profile.email, username: profile.username,
       first_name: profile.firstName, last_name: profile.lastName,
-      name: profile.name || `${profile.firstName} ${profile.lastName}`.trim(),
-      miles: profile.miles, language: profile.language, avatar: profile.avatar, 
-      rank: getPrestigeRank(profile.miles || 0), // ⚡️ Sincronizamos rango dinámico
+      name: profile.name, miles: profile.miles, language: profile.language,
+      avatar: profile.avatar, 
+      // 🛠️ FIX TS2322: Igual aquí
+      rank: (getPrestigeRank(profile.miles || 0)) as any, 
       culture_points: profile.culturePoints, food_points: profile.foodPoints,
       photo_points: profile.photoPoints, history_points: profile.historyPoints,
       nature_points: profile.naturePoints, art_points: profile.artPoints,
@@ -182,25 +158,13 @@ export const syncUserProfile = async (profile: UserProfile) => {
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
   const pureCity = city.split(',')[0].trim().toLowerCase();
-  
   if (!pureCity) return null;
-
   try {
-    const { data: exact, error: err1 } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .eq('city', nInput)
-        .eq('language', language.toLowerCase())
-        .maybeSingle();
+    const { data: exact, error: err1 } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language.toLowerCase()).maybeSingle();
     if (!err1 && exact && exact.data) return { data: exact.data, langFound: language, cityName: exact.city };
 
-    const { data: loose, error: err2 } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .ilike('city', `${pureCity}%`)
-        .eq('language', language.toLowerCase())
-        .limit(1);
-    if (!err2 && loose && loose.length > 0 && loose[0].data) {
-        return { data: loose[0].data, langFound: language, cityName: loose[0].city };
-    }
+    const { data: loose, error: err2 } = await supabase.from('tours_cache').select('data, language, city').ilike('city', `${pureCity}%`).eq('language', language.toLowerCase()).limit(1);
+    if (!err2 && loose && loose.length > 0 && loose[0].data) return { data: loose[0].data, langFound: language, cityName: loose[0].city };
   } catch (e) { console.warn("⚠️ Cache lookup failed", e); }
   return null; 
 };
@@ -209,11 +173,7 @@ export const saveToursToCache = async (city: string, country: string, language: 
   const nKey = normalizeKey(city, country);
   if (!nKey) return;
   try {
-    await supabase.from('tours_cache').upsert({ 
-      city: nKey, 
-      language: language.toLowerCase(), 
-      data: tours 
-    }, { onConflict: 'city,language' });
+    await supabase.from('tours_cache').upsert({ city: nKey, language: language.toLowerCase(), data: tours }, { onConflict: 'city,language' });
   } catch (e) { console.error("❌ Error saving cache:", e); }
 };
 
@@ -235,12 +195,7 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
         const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/mp3', cacheControl: '3600' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
-        await supabase.from('audio_cache').upsert({ 
-          text_hash: hash, 
-          language: lang.toLowerCase(), 
-          city: city, 
-          audio_url: publicUrl 
-        }, { onConflict: 'text_hash,language' });
+        await supabase.from('audio_cache').upsert({ text_hash: hash, language: lang.toLowerCase(), city: city, audio_url: publicUrl }, { onConflict: 'text_hash,language' });
         return publicUrl;
     } catch (e) { return ""; }
 };
