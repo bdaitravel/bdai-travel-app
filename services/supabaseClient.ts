@@ -2,25 +2,24 @@ import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
 const getEnvVar = (name: string, fallback: string): string => {
-  // ⚡️ CORRECCIÓN PARA VERCEL: Usamos import.meta para evitar pantalla blanca
-  const env = (import.meta as any).env || {};
-  let val = env[`VITE_${name}`] || env[name];
-  
+  let val = process.env[name];
   if (val && typeof val === 'string') {
     val = val.trim();
+    // Si el usuario puso la URL del dashboard por error, extraemos el ID y reconstruimos la API URL
     if (val.includes('supabase.com/dashboard/project/')) {
       const parts = val.split('/');
       const projectId = parts[parts.length - 1];
       if (projectId) return `https://${projectId}.supabase.co`;
     }
-    if (val.startsWith('http')) return val;
+    if (val.startsWith('http')) {
+      return val;
+    }
   }
   return fallback;
 };
 
-const env = (import.meta as any).env || {};
-const supabaseUrl = env.VITE_SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
-const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjI0ODU3fQ.Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
+const supabaseUrl = getEnvVar('SUPABASE_URL', "https://slldavgsoxunkphqeamx.supabase.co");
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
 let supabase: any;
 try {
@@ -46,15 +45,6 @@ try {
 
 export { supabase };
 
-// 🏆 SISTEMA DE NIVELES BDAI
-const getPrestigeRank = (miles: number): string => {
-  if (miles <= 150) return 'ZERO';
-  if (miles <= 800) return 'SCOUT';
-  if (miles <= 2500) return 'ROVER';
-  if (miles <= 7000) return 'TITAN';
-  return 'ZENITH';
-};
-
 const generateHash = async (text: string): Promise<string> => {
     const msgUint8 = new TextEncoder().encode(text);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
@@ -72,36 +62,66 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
     return new Blob([bytes], { type: mimeType });
 };
 
+/**
+ * Normalizes keys for database storage/retrieval.
+ * Splits by comma (handling Nominatim output) and converts to lowercase.
+ */
 export const normalizeKey = (city: string | undefined | null, country?: string) => {
     const safeCity = (city || "").toString().split(',')[0].trim().toLowerCase();
     if (!safeCity) return "";
+    
     const raw = (country && country !== "Cache") ? `${safeCity}_${country.toLowerCase().trim()}` : safeCity;
-    return raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, ""); 
+    return raw.normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/[^a-z0-9_]/g, ""); 
 };
 
+/**
+ * Checks if a city exists in cache using loose matching.
+ */
 export const checkIfCityCached = async (city: string, country: string): Promise<boolean> => {
   const pureCity = city.split(',')[0].trim().toLowerCase();
   try {
-    const { data, error } = await supabase.from('tours_cache').select('city').ilike('city', `${pureCity}%`).limit(1);
+    const { data, error } = await supabase
+        .from('tours_cache')
+        .select('city')
+        .ilike('city', `${pureCity}%`)
+        .limit(1);
     if (error) return false;
     return (data && data.length > 0);
-  } catch (e) { return false; }
+  } catch (e) {
+    return false;
+  }
 };
 
 export const searchCitiesInCache = async (query: string): Promise<any[]> => {
     if (!query || query.length < 2) return [];
     try {
-        const { data, error } = await supabase.from('tours_cache').select('city, language').ilike('city', `%${query}%`).limit(10);
+        const { data, error } = await supabase
+            .from('tours_cache')
+            .select('city, language')
+            .ilike('city', `%${query}%`)
+            .limit(10);
+
         if (error) throw error;
+
         const seen = new Set();
         return (data || []).reduce((acc: any[], curr: any) => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
-                acc.push({ name: curr.city, localizedName: curr.city, spanishName: curr.city, country: "Cache", isCached: true });
+                acc.push({
+                    name: curr.city,
+                    localizedName: curr.city,
+                    spanishName: curr.city,
+                    country: "Cache",
+                    isCached: true
+                });
             }
             return acc;
         }, []);
-    } catch (e) { return []; }
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -113,9 +133,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       firstName: data.first_name || '', lastName: data.last_name || '',
       name: data.name || `${data.first_name || ''} ${data.last_name || ''}`.trim(),
       avatar: data.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-      miles: data.miles || 0, language: data.language || 'es', 
-      // 🛠️ FIX TS2322: Añadimos "as any" para que acepte los nuevos rangos
-      rank: (getPrestigeRank(data.miles || 0)) as any,
+      miles: data.miles || 0, language: data.language || 'es', rank: data.rank || 'Turist',
       isLoggedIn: true, culturePoints: data.culture_points || 0, foodPoints: data.food_points || 0,
       photoPoints: data.photo_points || 0, historyPoints: data.history_points || 0,
       naturePoints: data.nature_points || 0, artPoints: data.art_points || 0,
@@ -136,10 +154,8 @@ export const syncUserProfile = async (profile: UserProfile) => {
     const payload = {
       id: profile.id, email: profile.email, username: profile.username,
       first_name: profile.firstName, last_name: profile.lastName,
-      name: profile.name, miles: profile.miles, language: profile.language,
-      avatar: profile.avatar, 
-      // 🛠️ FIX TS2322: Igual aquí
-      rank: (getPrestigeRank(profile.miles || 0)) as any, 
+      name: profile.name || `${profile.firstName} ${profile.lastName}`.trim(),
+      miles: profile.miles, language: profile.language, avatar: profile.avatar, rank: profile.rank,
       culture_points: profile.culturePoints, food_points: profile.foodPoints,
       photo_points: profile.photoPoints, history_points: profile.historyPoints,
       nature_points: profile.naturePoints, art_points: profile.artPoints,
@@ -155,16 +171,35 @@ export const syncUserProfile = async (profile: UserProfile) => {
   } catch (e) { console.error("❌ Sync Error:", e); }
 };
 
+/**
+ * Aggressively searches for cached tours.
+ * 1. Exact match for City_Country.
+ * 2. Case-insensitive match for City Name only using ilike.
+ */
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const nInput = normalizeKey(city, country);
   const pureCity = city.split(',')[0].trim().toLowerCase();
+  
   if (!pureCity) return null;
+
   try {
-    const { data: exact, error: err1 } = await supabase.from('tours_cache').select('data, language, city').eq('city', nInput).eq('language', language.toLowerCase()).maybeSingle();
+    // Attempt 1: Exact normalized match
+    const { data: exact, error: err1 } = await supabase.from('tours_cache')
+        .select('data, language, city')
+        .eq('city', nInput)
+        .eq('language', language.toLowerCase())
+        .maybeSingle();
     if (!err1 && exact && exact.data) return { data: exact.data, langFound: language, cityName: exact.city };
 
-    const { data: loose, error: err2 } = await supabase.from('tours_cache').select('data, language, city').ilike('city', `${pureCity}%`).eq('language', language.toLowerCase()).limit(1);
-    if (!err2 && loose && loose.length > 0 && loose[0].data) return { data: loose[0].data, langFound: language, cityName: loose[0].city };
+    // Attempt 2: Loose match by city prefix using ilike (Fixes Nominatim format issues)
+    const { data: loose, error: err2 } = await supabase.from('tours_cache')
+        .select('data, language, city')
+        .ilike('city', `${pureCity}%`)
+        .eq('language', language.toLowerCase())
+        .limit(1);
+    if (!err2 && loose && loose.length > 0 && loose[0].data) {
+        return { data: loose[0].data, langFound: language, cityName: loose[0].city };
+    }
   } catch (e) { console.warn("⚠️ Cache lookup failed", e); }
   return null; 
 };
@@ -173,7 +208,11 @@ export const saveToursToCache = async (city: string, country: string, language: 
   const nKey = normalizeKey(city, country);
   if (!nKey) return;
   try {
-    await supabase.from('tours_cache').upsert({ city: nKey, language: language.toLowerCase(), data: tours }, { onConflict: 'city,language' });
+    await supabase.from('tours_cache').upsert({ 
+      city: nKey, 
+      language: language.toLowerCase(), 
+      data: tours 
+    }, { onConflict: 'city,language' });
   } catch (e) { console.error("❌ Error saving cache:", e); }
 };
 
@@ -195,7 +234,12 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
         const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/mp3', cacheControl: '3600' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
-        await supabase.from('audio_cache').upsert({ text_hash: hash, language: lang.toLowerCase(), city: city, audio_url: publicUrl }, { onConflict: 'text_hash,language' });
+        await supabase.from('audio_cache').upsert({ 
+          text_hash: hash, 
+          language: lang.toLowerCase(), 
+          city: city, 
+          audio_url: publicUrl 
+        }, { onConflict: 'text_hash,language' });
         return publicUrl;
     } catch (e) { return ""; }
 };

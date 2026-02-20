@@ -59,71 +59,6 @@ export default function App() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const searchTimeoutRef = useRef<any>(null);
 
-  // --- FUNCIONES DE LOGIN (Revisadas) ---
-  const handleLoginSuccess = async (supabaseUser: any) => {
-    const profile = await getUserProfileByEmail(supabaseUser.email || '');
-    if (profile) {
-      setUser({ ...profile, isLoggedIn: true });
-      localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
-      setView(AppView.HOME);
-    } else {
-      const newProfile = { 
-        ...GUEST_PROFILE, 
-        email: supabaseUser.email || '', 
-        id: supabaseUser.id, 
-        isLoggedIn: true,
-      rank: 'ZERO' as any
-      };
-      await syncUserProfile(newProfile);
-      setUser(newProfile);
-      setView(AppView.HOME);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    if (isLoading) return;
-    setIsLoading(true);
-    setLoadingMessage("CONECTANDO CON GOOGLE...");
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: "https://www.bdai.travel" }
-      });
-      if (error) throw error;
-    } catch (e: any) {
-      alert(e.message || "Error Google");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || isLoading) return;
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: "https://www.bdai.travel" }
-      });
-      if (error) throw error;
-      alert("Código enviado");
-    } catch (e: any) {
-      alert(e.message || "Error Email");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
-      if (session?.user) {
-        await handleLoginSuccess(session.user);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
   const t = useCallback((key: string) => {
     const lang = user.language || 'es';
     const dict = translations[lang] || translations['en'];
@@ -161,7 +96,21 @@ export default function App() {
       subscription.unsubscribe();
     };
   }, []);
- 
+
+  const handleLoginSuccess = async (supabaseUser: any) => {
+    const profile = await getUserProfileByEmail(supabaseUser.email || '');
+    if (profile) {
+      setUser({ ...profile, isLoggedIn: true });
+      localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
+      setView(AppView.HOME);
+    } else {
+      const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true };
+      await syncUserProfile(newProfile);
+      setUser(newProfile);
+      setView(AppView.HOME);
+    }
+  };
+
   useEffect(() => {
     if (!navigator.geolocation) return;
     const watchId = navigator.geolocation.watchPosition(
@@ -183,7 +132,30 @@ export default function App() {
       setLoginPhase('OTP');
     } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
   };
-  
+
+  const handleGoogleLogin = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    setLoadingMessage("CONNECTING TO GOOGLE...");
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: true
+        }
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank', 'width=500,height=600');
+      }
+    } catch (e: any) {
+      alert(e.message || "Google Login failed.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleVerifyOtp = async () => {
     if (isLoading) return; 
     if (otpToken.length < 8) return;
