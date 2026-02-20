@@ -72,7 +72,7 @@ export default function App() {
         email: supabaseUser.email || '', 
         id: supabaseUser.id, 
         isLoggedIn: true,
-        rank: 'ZERO' 
+      rank: 'ZERO' as any
       };
       await syncUserProfile(newProfile);
       setUser(newProfile);
@@ -116,7 +116,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       if (session?.user) {
         await handleLoginSuccess(session.user);
       }
@@ -183,27 +183,6 @@ export default function App() {
       setLoginPhase('OTP');
     } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
   };
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!email || isLoading) return;
-
-  setIsLoading(true);
-  try {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        // Asegúrate de que esta URL sea exactamente tu dominio
-        emailRedirectTo: "https://www.bdai.travel",
-      },
-    });
-    if (error) throw error;
-    alert("¡Código enviado! Revisa tu bandeja de entrada.");
-  } catch (e: any) {
-    alert(e.message || "Error al enviar el email.");
-  } finally {
-    setIsLoading(false);
-  }
 };
   const handleVerifyOtp = async () => {
     if (isLoading) return; 
