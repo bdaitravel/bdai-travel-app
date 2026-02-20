@@ -161,21 +161,7 @@ export default function App() {
       subscription.unsubscribe();
     };
   }, []);
-
-  const handleLoginSuccess = async (supabaseUser: any) => {
-    const profile = await getUserProfileByEmail(supabaseUser.email || '');
-    if (profile) {
-      setUser({ ...profile, isLoggedIn: true });
-      localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
-      setView(AppView.HOME);
-    } else {
-      const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true };
-      await syncUserProfile(newProfile);
-      setUser(newProfile);
-      setView(AppView.HOME);
-    }
-  };
-
+ 
   useEffect(() => {
     if (!navigator.geolocation) return;
     const watchId = navigator.geolocation.watchPosition(
