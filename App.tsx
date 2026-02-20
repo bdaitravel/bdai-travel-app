@@ -133,27 +133,27 @@ export default function App() {
     } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
   };
 
-  const handleGoogleLogin = async () => {
-  if (isLoading) return;
+  const handleEmailLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!email || isLoading) return;
+
   setIsLoading(true);
-  setLoadingMessage("CONECTANDO CON GOOGLE...");
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
       options: {
-        // Quitamos el skipBrowserRedirect y el window.open
-        redirectTo: "https://www.bdai.travel", 
-      }
+        // Asegúrate de que esta URL sea exactamente tu dominio
+        emailRedirectTo: "https://www.bdai.travel",
+      },
     });
     if (error) throw error;
-    // El navegador se redirigirá solo a Google ahora
+    alert("¡Código enviado! Revisa tu bandeja de entrada.");
   } catch (e: any) {
-    alert(e.message || "Error al conectar con Google");
+    alert(e.message || "Error al enviar el email.");
   } finally {
     setIsLoading(false);
   }
 };
-
   const handleVerifyOtp = async () => {
     if (isLoading) return; 
     if (otpToken.length < 8) return;
