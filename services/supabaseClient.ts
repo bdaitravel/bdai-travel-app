@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
-// ARREGLO PARA VITE: Sustituimos process.env por import.meta.env
 const getEnvVar = (name: string, fallback: string): string => {
+  // 🔴 CORRECCIÓN CRÍTICA: Cambiamos process.env por import.meta.env
+  // Esto es lo que mata la pantalla blanca en Vercel.
   const env = (import.meta as any).env || {};
   let val = env[`VITE_${name}`] || env[name];
   
@@ -48,6 +49,15 @@ try {
 
 export { supabase };
 
+// 🏆 LÓGICA DE PRESTIGIO BDAI
+const getPrestigeRank = (miles: number): string => {
+  if (miles <= 150) return 'ZERO';
+  if (miles <= 800) return 'SCOUT';
+  if (miles <= 2500) return 'ROVER';
+  if (miles <= 7000) return 'TITAN';
+  return 'ZENITH';
+};
+
 const generateHash = async (text: string): Promise<string> => {
     const msgUint8 = new TextEncoder().encode(text);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
@@ -68,32 +78,56 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
 export const normalizeKey = (city: string | undefined | null, country?: string) => {
     const safeCity = (city || "").toString().split(',')[0].trim().toLowerCase();
     if (!safeCity) return "";
+    
     const raw = (country && country !== "Cache") ? `${safeCity}_${country.toLowerCase().trim()}` : safeCity;
-    return raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_]/g, ""); 
+    return raw.normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/[^a-z0-9_]/g, ""); 
 };
 
 export const checkIfCityCached = async (city: string, country: string): Promise<boolean> => {
   const pureCity = city.split(',')[0].trim().toLowerCase();
   try {
-    const { data, error } = await supabase.from('tours_cache').select('city').ilike('city', `${pureCity}%`).limit(1);
-    return !!(data && data.length > 0);
-  } catch (e) { return false; }
+    const { data, error } = await supabase
+        .from('tours_cache')
+        .select('city')
+        .ilike('city', `${pureCity}%`)
+        .limit(1);
+    if (error) return false;
+    return (data && data.length > 0);
+  } catch (e) {
+    return false;
+  }
 };
 
 export const searchCitiesInCache = async (query: string): Promise<any[]> => {
     if (!query || query.length < 2) return [];
     try {
-        const { data, error } = await supabase.from('tours_cache').select('city, language').ilike('city', `%${query}%`).limit(10);
+        const { data, error } = await supabase
+            .from('tours_cache')
+            .select('city, language')
+            .ilike('city', `%${query}%`)
+            .limit(10);
+
         if (error) throw error;
+
         const seen = new Set();
         return (data || []).reduce((acc: any[], curr: any) => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
-                acc.push({ name: curr.city, country: "Cache", isCached: true });
+                acc.push({
+                    name: curr.city,
+                    localizedName: curr.city,
+                    spanishName: curr.city,
+                    country: "Cache",
+                    isCached: true
+                });
             }
             return acc;
         }, []);
-    } catch (e) { return []; }
+    } catch (e) {
+        return [];
+    }
 };
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -101,10 +135,22 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
     const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
     if (error || !data) return null;
     return {
-      ...data,
-      isLoggedIn: true,
-      rank: data.rank || 'ZERO', // Cambiado a tu sistema ZERO
-      miles: data.miles || 0
+      id: data.id, email: data.email, username: data.username || email.split('@')[0],
+      firstName: data.first_name || '', lastName: data.last_name || '',
+      name: data.name || `${data.first_name || ''} ${data.last_name || ''}`.trim(),
+      avatar: data.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+      miles: data.miles || 0, language: data.language || 'es', 
+      rank: getPrestigeRank(data.miles || 0), // ⚡️ Aplicamos niveles ZERO-ZENITH
+      isLoggedIn: true, culturePoints: data.culture_points || 0, foodPoints: data.food_points || 0,
+      photoPoints: data.photo_points || 0, historyPoints: data.history_points || 0,
+      naturePoints: data.nature_points || 0, artPoints: data.art_points || 0,
+      archPoints: data.arch_points || 0, interests: data.interests || [],
+      accessibility: data.accessibility || 'standard', isPublic: data.is_public ?? false,
+      bio: data.bio || '', age: data.age || 25, birthday: data.birthday,
+      city: data.city || '', country: data.country || '',
+      stats: data.stats || { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 },
+      visitedCities: data.visited_cities || [], completedTours: data.completed_tours || [],
+      badges: data.badges || [], stamps: data.stamps || [], capturedMoments: data.captured_moments || []
     };
   } catch (e) { return null; }
 };
@@ -112,42 +158,89 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
 export const syncUserProfile = async (profile: UserProfile) => {
   if (!profile || !profile.email) return;
   try {
-    await supabase.from('profiles').upsert(profile, { onConflict: 'email' });
+    const payload = {
+      id: profile.id, email: profile.email, username: profile.username,
+      first_name: profile.firstName, last_name: profile.lastName,
+      name: profile.name || `${profile.firstName} ${profile.lastName}`.trim(),
+      miles: profile.miles, language: profile.language, avatar: profile.avatar, 
+      rank: getPrestigeRank(profile.miles || 0), // ⚡️ Sincronizamos rango dinámico
+      culture_points: profile.culturePoints, food_points: profile.foodPoints,
+      photo_points: profile.photoPoints, history_points: profile.historyPoints,
+      nature_points: profile.naturePoints, art_points: profile.artPoints,
+      arch_points: profile.archPoints, interests: profile.interests,
+      accessibility: profile.accessibility, is_public: profile.isPublic,
+      bio: profile.bio, age: profile.age, birthday: profile.birthday,
+      city: profile.city, country: profile.country, stats: profile.stats,
+      visited_cities: profile.visitedCities, completed_tours: profile.completedTours,
+      badges: profile.badges, stamps: profile.stamps, captured_moments: profile.capturedMoments,
+      updated_at: new Date().toISOString()
+    };
+    await supabase.from('profiles').upsert(payload, { onConflict: 'email' });
   } catch (e) { console.error("❌ Sync Error:", e); }
 };
 
-export const getCachedTours = async (city: string, country: string, language: string) => {
+export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
+  const nInput = normalizeKey(city, country);
   const pureCity = city.split(',')[0].trim().toLowerCase();
+  
+  if (!pureCity) return null;
+
   try {
-    const { data, error } = await supabase.from('tours_cache').select('data, language, city').ilike('city', `${pureCity}%`).eq('language', language.toLowerCase()).limit(1);
-    if (!error && data && data.length > 0) return { data: data[0].data, langFound: language, cityName: data[0].city };
-  } catch (e) { console.warn("⚠️ Cache failed", e); }
+    const { data: exact, error: err1 } = await supabase.from('tours_cache')
+        .select('data, language, city')
+        .eq('city', nInput)
+        .eq('language', language.toLowerCase())
+        .maybeSingle();
+    if (!err1 && exact && exact.data) return { data: exact.data, langFound: language, cityName: exact.city };
+
+    const { data: loose, error: err2 } = await supabase.from('tours_cache')
+        .select('data, language, city')
+        .ilike('city', `${pureCity}%`)
+        .eq('language', language.toLowerCase())
+        .limit(1);
+    if (!err2 && loose && loose.length > 0 && loose[0].data) {
+        return { data: loose[0].data, langFound: language, cityName: loose[0].city };
+    }
+  } catch (e) { console.warn("⚠️ Cache lookup failed", e); }
   return null; 
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
   const nKey = normalizeKey(city, country);
+  if (!nKey) return;
   try {
-    await supabase.from('tours_cache').upsert({ city: nKey, language: language.toLowerCase(), data: tours }, { onConflict: 'city,language' });
-  } catch (e) { console.error("❌ Cache Error:", e); }
+    await supabase.from('tours_cache').upsert({ 
+      city: nKey, 
+      language: language.toLowerCase(), 
+      data: tours 
+    }, { onConflict: 'city,language' });
+  } catch (e) { console.error("❌ Error saving cache:", e); }
 };
 
-export const getCachedAudio = async (text: string, lang: string) => {
+export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
     try {
         const hash = await generateHash(text);
-        const { data } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).maybeSingle();
+        const { data, error } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).maybeSingle();
+        if (error) throw error;
         return data?.audio_url || null;
     } catch (e) { return null; }
 };
 
-export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string) => {
+export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => {
     try {
         const hash = await generateHash(text);
-        const fileName = `${city.toLowerCase()}/${Date.now()}.mp3`;
+        const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.mp3`;
         const audioBlob = base64ToBlob(base64, 'audio/mp3');
-        await supabase.storage.from('audios').upload(fileName, audioBlob);
+        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/mp3', cacheControl: '3600' });
+        if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
-        await supabase.from('audio_cache').upsert({ text_hash: hash, language: lang.toLowerCase(), audio_url: publicUrl });
+        await supabase.from('audio_cache').upsert({ 
+          text_hash: hash, 
+          language: lang.toLowerCase(), 
+          city: city, 
+          audio_url: publicUrl 
+        }, { onConflict: 'text_hash,language' });
         return publicUrl;
     } catch (e) { return ""; }
 };
