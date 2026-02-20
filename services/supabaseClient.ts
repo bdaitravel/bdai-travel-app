@@ -1,4 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
+
+// Truco para saltarse los errores de TypeScript y de Vite de un plumazo
+const env = (import.meta as any).env || {};
+
+const supabaseUrl = env.VITE_SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjI0ODU3fQ.Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
 const getEnvVar = (name: string, fallback: string): string => {
