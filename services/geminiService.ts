@@ -189,7 +189,8 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
             contents: { parts: [{ text: `Postcard of ${city}` }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
-        const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
-        return part ? `data:image/png;base64,${part.inlineData.data}` : null;
+        const parts = response.candidates?.[0]?.content?.parts;
+        const part = parts?.find(p => p.inlineData);
+        return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };

@@ -43,7 +43,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         if (!baseRecords) return;
 
         const globalCityMap: Record<string, Set<string>> = {};
-        allRecords.forEach(r => {
+        allRecords.forEach((r: any) => {
             if (r.city) {
                 const baseName = r.city.split('_')[0].toLowerCase();
                 if (!globalCityMap[baseName]) globalCityMap[baseName] = new Set();
@@ -52,7 +52,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         });
 
         let pendingCount = 0;
-        const progressData: CityProgress[] = baseRecords.map(base => {
+        const progressData: CityProgress[] = baseRecords.map((base: any) => {
             const baseName = base.city.split('_')[0].toLowerCase();
             const translatedLangs = Array.from(globalCityMap[baseName] || []);
             const count = translatedLangs.length;
@@ -86,13 +86,13 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         const { data: allRecords } = await supabase.from('tours_cache').select('*');
         if (!allRecords) { setIsWorking(false); return; }
 
-        const shortKeys = allRecords.filter(r => !r.city.includes('_'));
-        const longKeysMap = allRecords.filter(r => r.city.includes('_') && r.language === 'es');
+        const shortKeys = allRecords.filter((r: any) => !r.city.includes('_'));
+        const longKeysMap = allRecords.filter((r: any) => r.city.includes('_') && r.language === 'es');
 
         let repairedCount = 0;
         for (const record of shortKeys) {
             const baseName = record.city.toLowerCase();
-            const matchingLongKey = longKeysMap.find(l => l.city.startsWith(baseName));
+            const matchingLongKey = longKeysMap.find((l: any) => l.city.startsWith(baseName));
 
             if (matchingLongKey) {
                 addLog(`🔧 Migrando: ${record.city} (${record.language}) -> ${matchingLongKey.city}`);
@@ -118,7 +118,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
 
         const { data: allRecords } = await supabase.from('tours_cache').select('city, language');
         const globalCityMap: Record<string, Set<string>> = {};
-        allRecords?.forEach(r => {
+        allRecords?.forEach((r: any) => {
             if (r.city) {
                 const baseName = r.city.split('_')[0].toLowerCase();
                 if (!globalCityMap[baseName]) globalCityMap[baseName] = new Set();

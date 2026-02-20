@@ -25,6 +25,11 @@ export const CITY_TRANSLATIONS: Record<string, any> = {
   "soria": { es: "Soria", en: "Soria", fr: "Soria", de: "Soria", it: "Soria", pt: "Soria", ro: "Soria", zh: "索里亚", ja: "ソリア", ru: "Сория", ar: "سوريا", hi: "सोरिया", ko: "소리아", tr: "Soria", pl: "Soria", nl: "Soria", ca: "Sòria", eu: "Soria", vi: "Soria", th: "โซเรีย" },
   "ubeda": { es: "Úbeda", en: "Ubeda", fr: "Úbeda", de: "Úbeda", it: "Úbeda", pt: "Úbeda", ro: "Úbeda", zh: "乌贝达", ja: "ウベダ", ru: "Убеда", ar: "أبيدة", hi: "उबेदा", ko: "우베다", tr: "Úbeda", pl: "Úbeda", nl: "Úbeda", ca: "Úbeda", eu: "Ubeda", vi: "Úbeda", th: "อูเบดา" },
   "caceres": { es: "Cáceres", en: "Caceres", fr: "Cáceres", de: "Cáceres", it: "Cáceres", pt: "Cáceres", ro: "Cáceres", zh: "卡塞雷斯", ja: "カセレス", ru: "Касерес", ar: "كاثيريس", hi: "कासेरेस", ko: "카세레스", tr: "Cáceres", pl: "Cáceres", nl: "Cáceres", ca: "Càceres", eu: "Caceres", vi: "Cáceres", th: "กาเซเรส" },
+  "cordoba": { es: "Córdoba", en: "Cordoba", fr: "Cordoue", de: "Córdoba", it: "Cordova", pt: "Córdoba", ro: "Córdoba", zh: "科尔多瓦", ja: "コルドバ", ru: "Кордова", ar: "قرطبة", hi: "कोर्डोबा", ko: "코르도바", tr: "Córdoba", pl: "Kordoba", nl: "Córdoba", ca: "Còrdova", eu: "Kordoba", vi: "Córdoba", th: "กอร์โดบา" },
+  "cadiz": { es: "Cádiz", en: "Cadiz", fr: "Cádiz", de: "Cádiz", it: "Cadice", pt: "Cádiz", ro: "Cádiz", zh: "加的斯", ja: "カディス", ru: "Кадис", ar: "قادس", hi: "काडिज", ko: "카디스", tr: "Cádiz", pl: "Kadyks", nl: "Cádiz", ca: "Cadis", eu: "Cadiz", vi: "Cádiz", th: "กาดิซ" },
+  "leon": { es: "León", en: "Leon", fr: "León", de: "León", it: "León", pt: "Leão", ro: "León", zh: "莱昂", ja: "レオン", ru: "Леон", ar: "ليون", hi: "लियोन", ko: "레온", tr: "León", pl: "León", nl: "León", ca: "Lleó", eu: "Leon", vi: "León", th: "เลออน" },
+  "gijon": { es: "Gijón", en: "Gijon", fr: "Gijón", de: "Gijón", it: "Gijón", pt: "Gijón", ro: "Gijón", zh: "希洪", ja: "ヒホン", ru: "Хихон", ar: "خيخون", hi: "गिजों", ko: "히혼", tr: "Gijón", pl: "Gijón", nl: "Gijón", ca: "Gijón", eu: "Gijon", vi: "Gijón", th: "คีคอน" },
+  "logrono": { es: "Logroño", en: "Logrono", fr: "Logroño", de: "Logroño", it: "Logroño", pt: "Logroño", ro: "Logroño", zh: "洛格罗尼奥", ja: "ログローニョ", ru: "Логроньо", ar: "لوغرونيو", hi: "लोग्रोनो", ko: "로그로뇨", tr: "Logroño", pl: "Logroño", nl: "Logroño", ca: "Logronyo", eu: "Logroño", vi: "Logroño", th: "โลโกรโญ" },
   
   // EUROPA
   "paris": { es: "París", en: "Paris", fr: "Paris", de: "Paris", it: "Parigi", pt: "Paris", ro: "Paris", zh: "巴黎", ja: "パリ", ru: "Париж", ar: "باريس", hi: "पेरिस", ko: "파리", tr: "Paris", pl: "Paryż", nl: "Parijs", ca: "París", eu: "Paris", vi: "Paris", th: "ปารีส" },
@@ -48,7 +53,16 @@ export const CITY_TRANSLATIONS: Record<string, any> = {
   "new york": { es: "Nueva York", en: "New York", fr: "New York", de: "New York", it: "New York", pt: "Nova Iorque", ro: "New York", zh: "纽约", ja: "ニューヨーク", ru: "Нью-Йорк", ar: "نيويورك", hi: "न्यूयॉर्क", ko: "뉴욕", tr: "New York", pl: "Nowy Jork", nl: "New York", ca: "Nova York", eu: "New York", vi: "New York", th: "นิวยอร์ก" },
   "mexico city": { es: "Ciudad de México", en: "Mexico City", fr: "Mexico", de: "Mexiko-Stadt", it: "Città del Messico", pt: "Cidade do México", ro: "Ciudad de México", zh: "墨西哥城", ja: "メキシコシティ", ru: "Мехико", ar: "مكسيكو سيتي", hi: "मेक्सिको सिटी", ko: "멕시코 시티", tr: "Meksiko", pl: "Meksyk", nl: "Mexico-Stad", ca: "Ciutat de Mèxic", eu: "Mexiko Hiria", vi: "Thành phố Mexico", th: "เม็กซิโกซิตี" },
   "buenos aires": { es: "Buenos Aires", en: "Buenos Aires", fr: "Buenos Aires", de: "Buenos Aires", it: "Buenos Aires", pt: "Buenos Aires", ro: "Buenos Aires", zh: "布宜诺斯艾利斯", ja: "ブエノスアイレス", ru: "Буэнос-Айрес", ar: "بوينس آيرس", hi: "ब्यूनس आयर्स", ko: "부에노스아이레스", tr: "Buenos Aires", pl: "Buenos Aires", nl: "Buenos Aires", ca: "Buenos Aires", eu: "Buenos Aires", vi: "Buenos Aires", th: "บัวโนสไอเรส" },
-  "rio de janeiro": { es: "Río de Janeiro", en: "Rio de Janeiro", fr: "Rio de Janeiro", de: "Rio de Janeiro", it: "Rio de Janeiro", pt: "Rio de Janeiro", ro: "Rio de Janeiro", zh: "里约热内卢", ja: "リオデジャネイロ", ru: "Рио-де-Жанейро", ar: "ريو دي جانيرو", hi: "रियो डी जनेरियो", ko: "리우데자네이루", tr: "Rio de Janeiro", pl: "Rio de Janeiro", nl: "Rio de Janeiro", ca: "Rio de Janeiro", eu: "Rio de Janeiro", vi: "Rio de Janeiro", th: "รีโอเดจาเนโร" }
+  "rio de janeiro": { es: "Río de Janeiro", en: "Rio de Janeiro", fr: "Rio de Janeiro", de: "Rio de Janeiro", it: "Rio de Janeiro", pt: "Rio de Janeiro", ro: "Rio de Janeiro", zh: "里约热内卢", ja: "リオデジャネイロ", ru: "Рио-де-Жанейро", ar: "ريو دي جانيرو", hi: "रियो डी जनेरियो", ko: "리우데자네이루", tr: "Rio de Janeiro", pl: "Rio de Janeiro", nl: "Rio de Janeiro", ca: "Rio de Janeiro", eu: "Rio de Janeiro", vi: "Rio de Janeiro", th: "รีโอเดจาเนโร" },
+
+  // AFRICA
+  "cairo": { es: "El Cairo", en: "Cairo", fr: "Le Caire", de: "Kairo", it: "Il Cairo", pt: "Cairo", ro: "Cairo", zh: "开罗", ja: "カイロ", ru: "Каир", ar: "القاهرة", hi: "काहिरा", ko: "카이로", tr: "Kahire", pl: "Kair", nl: "Caïro", ca: "El Caire", eu: "Kairo", vi: "Cairo", th: "ไคโร" },
+  "cape town": { es: "Ciudad del Cabo", en: "Cape Town", fr: "Le Cap", de: "Kapstadt", it: "Città del Capo", pt: "Cidade do Cabo", ro: "Cape Town", zh: "开普敦", ja: "ケープタウン", ru: "Кейптаун", ar: "كيب تاون", hi: "केप टाउन", ko: "케이프타운", tr: "Cape Town", pl: "Kapsztad", nl: "Kaapstad", ca: "Ciutat del Cap", eu: "Lurmutur Hiria", vi: "Cape Town", th: "เคปทาวน์" },
+  "marrakech": { es: "Marrakech", en: "Marrakech", fr: "Marrakech", de: "Marrakesch", it: "Marrakech", pt: "Marraquexe", ro: "Marrakech", zh: "马拉喀什", ja: "マラケシュ", ru: "Марракеш", ar: "مراكش", hi: "मैराकेच", ko: "마라케시", tr: "Marakeş", pl: "Marrakesz", nl: "Marrakech", ca: "Marràqueix", eu: "Marrakesh", vi: "Marrakech", th: "มาร์ราเกช" },
+
+  // OCEANIA
+  "sydney": { es: "Sídney", en: "Sydney", fr: "Sydney", de: "Sydney", it: "Sydney", pt: "Sydney", ro: "Sydney", zh: "悉尼", ja: "シドニー", ru: "Сидней", ar: "سيدني", hi: "सिडनी", ko: "시드니", tr: "Sidney", pl: "Sydney", nl: "Sydney", ca: "Sydney", eu: "Sydney", vi: "Sydney", th: "ซิดนีย์" },
+  "melbourne": { es: "Melbourne", en: "Melbourne", fr: "Melbourne", de: "Melbourne", it: "Melbourne", pt: "Melbourne", ro: "Melbourne", zh: "墨尔本", ja: "メルボルン", ru: "Мельбурн", ar: "ملبورن", hi: "मेलबर्न", ko: "멜버른", tr: "Melbourne", pl: "Melbourne", nl: "Melbourne", ca: "Melbourne", eu: "Melbourne", vi: "Melbourne", th: "เมลเบิร์น" }
 };
 
 export const COUNTRY_TRANSLATIONS: Record<string, any> = {
@@ -73,41 +87,52 @@ export const COUNTRY_TRANSLATIONS: Record<string, any> = {
   "netherlands": { es: "Países Bajos", en: "Netherlands", fr: "Pays-Bas", de: "Niederlande", it: "Paesi Bassi", pt: "Países Baixos", ro: "Țările de Jos", zh: "荷兰", ja: "オランダ", ru: "Нидерланды", ar: "هولندا", hi: "नीदरलैंड", ko: "네덜란드", tr: "Hollanda", pl: "Holandia", nl: "Nederland", ca: "Països Baixos", eu: "Herbehereak", vi: "Hà Lan", th: "เนเธอร์แลนด์" },
   "czechia": { es: "Chequia", en: "Czechia", fr: "Tchéquie", de: "Tschechien", it: "Cechia", pt: "Chéquia", ro: "Cehia", zh: "捷克", ja: "チェコ", ru: "Чехия", ar: "التشيك", hi: "चेकिया", ko: "체코", tr: "Çekya", pl: "Czechy", nl: "Tsjechië", ca: "Txèquia", eu: "Txekia", vi: "Séc", th: "เช็ก" },
   "austria": { es: "Austria", en: "Austria", fr: "Autriche", de: "Österreich", it: "Austria", pt: "Áustria", ro: "Austria", zh: "奥地利", ja: "オーストリア", ru: "Австрия", ar: "النمسا", hi: "ऑस्ट्रिया", ko: "오스트리아", tr: "Avusturya", pl: "Austria", nl: "Oostenrijk", ca: "Àustria", eu: "Austria", vi: "Áo", th: "ออสเตรีย" },
-  "greece": { es: "Grecia", en: "Greece", fr: "Grèce", de: "Griechenland", it: "Grecia", pt: "Grécia", ro: "Grecia", zh: "希腊", ja: "ギリシャ", ru: "Греция", ar: "اليونان", hi: "यूनान", ko: "그리스", tr: "Yunanistan", pl: "Grecja", nl: "Griekenland", ca: "Grècia", eu: "Grezia", vi: "Hy Lạp", th: "กรีซ" }
+  "greece": { es: "Grecia", en: "Greece", fr: "Grèce", de: "Griechenland", it: "Grecia", pt: "Grécia", ro: "Grecia", zh: "希腊", ja: "ギリシャ", ru: "Греция", ar: "اليونان", hi: "यूनान", ko: "그리스", tr: "Yunanistan", pl: "Grecja", nl: "Griekenland", ca: "Grècia", eu: "Grezia", vi: "Hy Lạp", th: "กรíซ" },
+  "egypt": { es: "Egipto", en: "Egypt", fr: "Égypte", de: "Ägypten", it: "Egitto", pt: "Egito", ro: "Egipt", zh: "埃及", ja: "エジプト", ru: "Египет", ar: "مصر", hi: "मिस्र", ko: "이집트", tr: "Mısır", pl: "Egipt", nl: "Egypte", ca: "Egipte", eu: "Egipto", vi: "Ai Cập", th: "อียิปต์" },
+  "south africa": { es: "Sudáfrica", en: "South Africa", fr: "Afrique du Sud", de: "Südafrika", it: "Sudafrica", pt: "África do Sul", ro: "Africa de Sud", zh: "南非", ja: "南アフリカ", ru: "ЮАР", ar: "جنوب أفريقيا", hi: "दक्षिण अफ्रीका", ko: "남아프리카 공화국", tr: "Güney Afrika", pl: "RPA", nl: "Zuid-Afrika", ca: "Sud-àfrica", eu: "Hegoafrika", vi: "Nam Phi", th: "แอฟริกาใต้" },
+  "morocco": { es: "Marruecos", en: "Morocco", fr: "Maroc", de: "Marokko", it: "Marocco", pt: "Marrocos", ro: "Maroc", zh: "摩洛哥", ja: "モロッコ", ru: "Марокко", ar: "المغرب", hi: "मोरक्को", ko: "모ロッ코", tr: "Fas", pl: "Maroko", nl: "Marokko", ca: "Marroc", eu: "Maroko", vi: "Ma-rốc", th: "โมร็อกโก" },
+  "australia": { es: "Australia", en: "Australia", fr: "Australie", de: "Australien", it: "Australia", pt: "Australia", ro: "Australia", zh: "澳大利亚", ja: "オーストラリア", ru: "Австралия", ar: "أستراليا", hi: "ऑस्ट्रेलिया", ko: "호주", tr: "Avustralya", pl: "Australia", nl: "Australië", ca: "Austràlia", eu: "Australia", vi: "Úc", th: "ออสเตรเลีย" }
+};
+
+const normalizeKey = (str: string): string => {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 };
 
 export const formatCityName = (rawName: string | null, lang: string): string => {
   if (!rawName) return "";
-  const cleanKey = rawName.split(',')[0].trim().toLowerCase();
+  const cleanKey = normalizeKey(rawName.split(',')[0]);
   const translated = CITY_TRANSLATIONS[cleanKey]?.[lang];
   return (translated || rawName.split(',')[0].trim()).toUpperCase();
 };
 
 export const formatCountryName = (rawCountry: string | null, lang: string): string => {
   if (!rawCountry) return "";
-  const cleanKey = rawCountry.toLowerCase().trim();
+  const cleanKey = normalizeKey(rawCountry);
   const translated = COUNTRY_TRANSLATIONS[cleanKey]?.[lang];
   return (translated || rawCountry).toUpperCase();
 };
 
 const CITY_NAME_MAP_RAW: Record<string, string> = {
-  mad: "Madrid", bcn: "Barcelona", vlc: "Valencia", svq: "Seville", grx: "Granada", agp: "Málaga", pmi: "Palma", bio: "Bilbao", ron: "Ronda", cad: "Cadaqués", alb: "Albarracín", cud: "Cudillero", ter: "Teruel", sor: "Soria", ube: "Úbeda", cac: "Cáceres",
+  mad: "Madrid", bcn: "Barcelona", vlc: "Valencia", svq: "Seville", grx: "Granada", agp: "Málaga", pmi: "Palma", bio: "Bilbao", ron: "Ronda", cad: "Cadaqués", alb: "Albarracín", cud: "Cudillero", ter: "Teruel", sor: "Soria", ube: "Úbeda", cac: "Cáceres", cor: "Córdoba", cdz: "Cádiz", len: "León", gij: "Gijón", log: "Logroño",
   par: "Paris", lon: "London", ber: "Berlin", rom: "Rome", ams: "Amsterdam", prg: "Prague", vie: "Vienna", ath: "Athens", lis: "Lisbon", bud: "Budapest",
   nyc: "New York", mex: "Mexico City", bue: "Buenos Aires", rio: "Rio de Janeiro", bog: "Bogotá", lim: "Lima", scl: "Santiago", yyz: "Toronto", chi: "Chicago", sfo: "San Francisco",
-  tyo: "Tokyo", sel: "Seoul", bkk: "Bangkok", pek: "Beijing", sin: "Singapore", dxb: "Dubai", bom: "Mumbai", ist: "Istanbul", hkg: "Hong Kong", han: "Hanoi"
+  tyo: "Tokyo", sel: "Seoul", bkk: "Bangkok", pek: "Beijing", sin: "Singapore", dxb: "Dubai", bom: "Mumbai", ist: "Istanbul", hkg: "Hong Kong", han: "Hanoi",
+  cai: "Cairo", cpt: "Cape Town", rak: "Marrakech", syd: "Sydney", mel: "Melbourne"
 };
 
 const WORLD_DATA = {
   europa: [{ cityKey: "par", countryKey: "france" }, { cityKey: "lon", countryKey: "united kingdom" }, { cityKey: "ber", countryKey: "germany" }, { cityKey: "rom", countryKey: "italy" }, { cityKey: "ams", countryKey: "netherlands" }, { cityKey: "prg", countryKey: "czechia" }, { cityKey: "vie", countryKey: "austria" }, { cityKey: "ath", countryKey: "greece" }],
   america: [{ cityKey: "nyc", countryKey: "usa" }, { cityKey: "mex", countryKey: "mexico" }, { cityKey: "bue", countryKey: "argentina" }, { cityKey: "rio", countryKey: "brazil" }],
-  asia: [{ cityKey: "tyo", countryKey: "japan" }, { cityKey: "bkk", countryKey: "thailand" }, { cityKey: "sin", countryKey: "singapore" }, { cityKey: "pek", countryKey: "china" }]
+  asia: [{ cityKey: "tyo", countryKey: "japan" }, { cityKey: "bkk", countryKey: "thailand" }, { cityKey: "sin", countryKey: "singapore" }, { cityKey: "pek", countryKey: "china" }],
+  africa: [{ cityKey: "cai", countryKey: "egypt" }, { cityKey: "cpt", countryKey: "south africa" }, { cityKey: "rak", countryKey: "morocco" }],
+  oceania: [{ cityKey: "syd", countryKey: "australia" }, { cityKey: "mel", countryKey: "australia" }]
 };
 
 const SPAIN_DATA = {
-  capitales: [{ cityKey: "mad", countryKey: "spain" }, { cityKey: "bcn", countryKey: "spain" }, { cityKey: "vlc", countryKey: "spain" }, { cityKey: "svq", countryKey: "spain" }],
-  visitadas: [{ cityKey: "grx", countryKey: "spain" }, { cityKey: "agp", countryKey: "spain" }, { cityKey: "pmi", countryKey: "spain" }, { cityKey: "bio", countryKey: "spain" }],
+  capitales: [{ cityKey: "mad", countryKey: "spain" }, { cityKey: "bcn", countryKey: "spain" }, { cityKey: "vlc", countryKey: "spain" }, { cityKey: "svq", countryKey: "spain" }, { cityKey: "cor", countryKey: "spain" }],
+  visitadas: [{ cityKey: "grx", countryKey: "spain" }, { cityKey: "agp", countryKey: "spain" }, { cityKey: "pmi", countryKey: "spain" }, { cityKey: "bio", countryKey: "spain" }, { cityKey: "cdz", countryKey: "spain" }],
   pueblos: [{ cityKey: "ron", countryKey: "spain" }, { cityKey: "cad", countryKey: "spain" }, { cityKey: "alb", countryKey: "spain" }, { cityKey: "cud", countryKey: "spain" }],
-  joyas: [{ cityKey: "ter", countryKey: "spain" }, { cityKey: "sor", countryKey: "spain" }, { cityKey: "ube", countryKey: "spain" }, { cityKey: "cac", countryKey: "spain" }]
+  joyas: [{ cityKey: "ter", countryKey: "spain" }, { cityKey: "sor", countryKey: "spain" }, { cityKey: "ube", countryKey: "spain" }, { cityKey: "cac", countryKey: "spain" }, { cityKey: "len", countryKey: "spain" }, { cityKey: "gij", countryKey: "spain" }, { cityKey: "log", countryKey: "spain" }]
 };
 
 const CityMiniCard: React.FC<{ rawName: string, lang: string, countryKey: string, onSelect: (name: string) => void, colorIdx: number }> = ({ rawName, lang, countryKey, onSelect, colorIdx }) => {
@@ -153,7 +178,7 @@ export const TravelServices = ({ mode, lang, onCitySelect }: { mode: string, lan
         </header>
         <section className="space-y-6">
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-            {['europa', 'america', 'asia'].map(tab => (
+            {['europa', 'america', 'asia', 'africa', 'oceania'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2.5 rounded-xl text-[8px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${activeTab === tab ? 'bg-purple-600 border-purple-500 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'}`}>
                 {tab}
               </button>

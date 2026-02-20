@@ -1,11 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry } from '../types';
 
-const supabaseUrl = process.env.SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
+const getEnvVar = (name: string, fallback: string): string => {
+  let val = process.env[name];
+  if (val && typeof val === 'string') {
+    val = val.trim();
+    // Si el usuario puso la URL del dashboard por error, extraemos el ID y reconstruimos la API URL
+    if (val.includes('supabase.com/dashboard/project/')) {
+      const parts = val.split('/');
+      const projectId = parts[parts.length - 1];
+      if (projectId) return `https://${projectId}.supabase.co`;
+    }
+    if (val.startsWith('http')) {
+      return val;
+    }
+  }
+  return fallback;
+};
+
+const supabaseUrl = getEnvVar('SUPABASE_URL', "https://slldavgsoxunkphqeamx.supabase.co");
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
 let supabase: any;
 try {
+  if (!supabaseUrl || !supabaseUrl.startsWith('http')) {
+    throw new Error("Invalid supabaseUrl: Must start with http/https");
+  }
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 } catch (e) {
   console.error("Critical Supabase Init Error:", e);
