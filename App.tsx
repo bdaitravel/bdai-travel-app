@@ -183,7 +183,7 @@ export default function App() {
       setLoginPhase('OTP');
     } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
   };
-};
+  
   const handleVerifyOtp = async () => {
     if (isLoading) return; 
     if (otpToken.length < 8) return;
