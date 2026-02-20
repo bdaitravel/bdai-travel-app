@@ -58,7 +58,6 @@ export default function App() {
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const searchTimeoutRef = useRef<any>(null);
-const searchTimeoutRef = useRef<any>(null);
 
   // --- FUNCIONES DE LOGIN (Revisadas) ---
   const handleLoginSuccess = async (supabaseUser: any) => {
