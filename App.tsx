@@ -9,6 +9,8 @@ import { Shop } from './components/Shop';
 import { TravelServices, formatCityName, formatCountryName } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { AdminPanel } from './components/AdminPanel';
+import OnboardingModal from './components/OnboardingModal';
+import VisaShare from './components/VisaShare';
 import { translations } from './data/translations';
 import { 
   supabase, 
@@ -61,6 +63,9 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [streamedTourText, setStreamedTourText] = useState<string>('');
+  const [sharingTour, setSharingTour] = useState<Tour | null>(null);
   const searchTimeoutRef = useRef<any>(null);
 
   const t = useCallback((key: string) => {
@@ -75,6 +80,13 @@ export default function App() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
                 handleLoginSuccess(session.user);
+                const profile = await getUserProfileByEmail(session.user.email || '');
+                if (profile && !profile.stats.sessionsStarted) { // Check if it's a new user's first session
+                  setShowOnboarding(true);
+                  const updatedProfile = { ...profile, stats: { ...profile.stats, sessionsStarted: 1 } };
+                  setUser(updatedProfile);
+                  syncUserProfile(updatedProfile);
+                }
             } else {
                const saved = localStorage.getItem('bdai_profile');
                if (saved) {
@@ -222,7 +234,17 @@ export default function App() {
         }
         
         setLoadingMessage(t('generating'));
-        const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
+        setStreamedTourText(''); // Clear previous streamed text
+
+        const stream = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
+        let fullText = '';
+        for await (const chunk of stream) {
+            fullText += chunk.text;
+            setStreamedTourText(fullText); // Update streamed text in real-time
+        }
+
+        const generated: Tour[] = JSON.parse(fullText || "[]");
+
         if (generated.length > 0) {
             setTours(generated); 
             await supabase.from('tours_cache').upsert({
@@ -235,7 +257,10 @@ export default function App() {
     } catch (e) { 
         if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
         else { console.error("Selection error:", e); }
-    } finally { setIsLoading(false); }
+    } finally { 
+        setIsLoading(false);
+        setStreamedTourText(''); // Clear streamed text on finish
+    }
   };
 
   const handleCitySearch = async (val: string) => {
@@ -255,17 +280,20 @@ export default function App() {
             const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(aiResult.city + ' ' + aiResult.country)}&format=json&addressdetails=1&limit=3&featuretype=city`);
             const data = await resp.json();
             
-            const results = data.map((item: any) => {
+            const results = await Promise.all(data.map(async (item: any) => {
                 const name = item.address.city || item.address.town || item.address.village || item.display_name.split(',')[0];
                 const country = item.address.country;
+                const countryCode = item.address.country_code ? item.address.country_code.toUpperCase() : '';
+                const flagUrl = countryCode ? `https://flagsapi.com/${countryCode}/flat/64.png` : '';
                 return { 
                     name, 
                     country, 
                     isCached: false, 
                     fullName: `${name}, ${country}`,
-                    slug: aiResult.slug
+                    slug: aiResult.slug,
+                    flagUrl
                 };
-            });
+            }));
 
             // Combine and prioritize
             const combined = [...cacheResults];
@@ -310,10 +338,17 @@ export default function App() {
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 animate-fade-in">
             <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center animate-pulse">
-              {isSyncingLang ? "translating interface..." : (loadingMessage || "syncing...")}
+              {isSyncingLang ? t("translatingInterface") : (loadingMessage || t("syncing"))}
             </p>
+            {streamedTourText && (
+              <div className="mt-4 text-white text-xs text-center max-w-xs opacity-70 animate-fade-in-up">
+                <p>{streamedTourText.substring(0, 200)}...</p>
+              </div>
+            )}
         </div>
       )}
+
+      {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} language={user.language} />}
 
       {view === AppView.LOGIN ? (
           <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617]">
@@ -423,6 +458,15 @@ export default function App() {
                         <h1 className="text-8xl font-black text-white lowercase tracking-tighter leading-none">bdai</h1>
                         <p className="text-[11px] font-medium text-purple-400 mt-2 lowercase opacity-80 mb-10">better destinations by ai</p>
                         
+                        <a 
+                          href="https://bdai.tech" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="mt-8 text-[10px] font-black text-purple-400 uppercase tracking-widest hover:text-purple-300 transition-colors"
+                        >
+                          {t('travelersShopComingSoon')}
+                        </a>
+                        
                         <div className="w-full relative">
                             <div className="flex gap-2">
                                 <input 
@@ -432,6 +476,7 @@ export default function App() {
                                   placeholder={t('searchPlaceholder')} 
                                   className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none font-bold text-sm shadow-inner focus:border-purple-500/40 transition-all" 
                                 />
+                                <button onClick={() => setShowOnboarding(true)} className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20 transition-transform active:scale-90"><i className="fas fa-question text-lg"></i></button>
                                 <div className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20 transition-transform active:scale-90"><i className="fas fa-search"></i></div>
                             </div>
 
@@ -441,11 +486,17 @@ export default function App() {
                                       <button key={i} onClick={() => processCitySelection(opt, user.language)} className="w-full p-4 bg-white/[0.03] rounded-xl flex items-center justify-between border border-white/5 active:bg-purple-600/10 transition-all text-left">
                                           <div className="flex items-center gap-4">
                                               <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center shrink-0">
-                                                  <i className={`fas ${opt.isCached ? 'fa-bolt text-cyan-400' : 'fa-globe text-purple-500'} text-xs`}></i>
+                                                  {opt.flagUrl ? (
+                                                      <img src={opt.flagUrl} alt={`${opt.country} flag`} className="w-full h-full object-cover rounded-lg" referrerPolicy="no-referrer" />
+                                                  ) : (
+                                                      <i className={`fas ${opt.isCached ? 'fa-bolt text-cyan-400' : 'fa-globe text-purple-500'} text-xs`}></i>
+                                                  )}
                                               </div>
                                               <div className="truncate">
-                                                  <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
-                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : 'AI VERIFIED'}</span>
+                                                  <div className="flex items-center gap-2">
+                                                      <span className="text-white font-bold text-sm">{opt.fullName}</span>
+                                                      {opt.isCached && <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">{t('cached')}</span>}
+                                                  </div>
                                               </div>
                                           </div>
                                           <i className="fas fa-chevron-right text-[9px] text-purple-500/40"></i>
@@ -473,7 +524,22 @@ export default function App() {
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} />
+                  <ActiveTourCard 
+                    tour={activeTour} 
+                    user={user} 
+                    currentStopIndex={currentStopIndex} 
+                    onNext={() => setCurrentStopIndex(i => i + 1)} 
+                    onPrev={() => setCurrentStopIndex(i => i - 1)} 
+                    onJumpTo={(i: number) => setCurrentStopIndex(i)} 
+                    onUpdateUser={(u: any) => updateUserAndSync(u)} 
+                    language={user.language} 
+                    onBack={() => setView(AppView.CITY_DETAIL)} 
+                    userLocation={userLocation} 
+                    onTourComplete={(completedTour) => {
+                        setSharingTour(completedTour);
+                        setView(AppView.CITY_DETAIL);
+                    }}
+                  />
                 )}
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
@@ -481,6 +547,8 @@ export default function App() {
                 {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
+
+            {sharingTour && <VisaShare tour={sharingTour} user={user} onClose={() => setSharingTour(null)} />}
 
             {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
