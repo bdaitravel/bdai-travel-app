@@ -90,16 +90,9 @@ export const normalizeCityWithAI = async (input: string): Promise<{ city: string
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
+        const stream = await ai.models.generateContentStream({
             model: 'gemini-3-pro-preview',
-            contents: `As a Master Historian and National Geographic Photographer, generate 3 tours for ${city}, ${country} in ${user.language}.
-            
-            STRICT RULES:
-            1. The FIRST tour MUST be marked as 'isEssential: true' and MUST HAVE EXACTLY 10 STOPS. DO NOT GENERATE FEWER.
-            2. Each stop description MUST exceed 450 words. Focus on engineering secrets and historical gossip.
-            3. Each 'photoSpot' MUST be specific to the stop. NO REPETITIONS.
-            4. If the city is a small town, find 10 points of interest even if they are small details.
-            5. ALL CONTENT MUST BE IN ${user.language}.`,
+            contents: `As DAI, a female, sarcastic, funny, natural, and highly engaging AI guide, generate 3 unique and captivating tours for ${city}, ${country} in ${user.language}. Your tone should be elegant and witty, never robotic or boring. If the language is Spanish, use the es-ES accent.\n\n            STRICT RULES:\n            1. The FIRST tour MUST be marked as 'isEssential: true' and MUST HAVE EXACTLY 10 STOPS. DO NOT GENERATE FEWER.\n            2. Each stop description MUST exceed 450 words. Focus on engineering secrets and historical gossip, delivered with a touch of sarcasm and humor.\n            3. Each 'photoSpot' MUST be specific to the stop. NO REPETITIONS.\n            4. If the city is a small town, find 10 points of interest even if they are small details.\n            5. ALL CONTENT MUST BE IN ${user.language}.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -146,12 +139,25 @@ export const generateToursForCity = async (city: string, country: string, user: 
                 }
             }
         });
-        return JSON.parse(response.text || "[]");
+
+        let fullText = '';
+        for await (const chunk of stream) {
+            fullText += chunk.text;
+        }
+        return JSON.parse(fullText || "[]");
     });
 };
 
 const VOICE_MAP: Record<string, string> = {
-    es: 'Kore', en: 'Zephyr', fr: 'Charon', de: 'Fenrir', it: 'Puck', pt: 'Charon', ja: 'Puck', zh: 'Puck', ro: 'Kore'
+    es: 'Kore', // es-ES accent
+    en: 'Zephyr', // Neutral English
+    fr: 'Charon', // Neutral French
+    de: 'Fenrir', // Neutral German
+    it: 'Puck', // Neutral Italian
+    pt: 'Charon', // Neutral Portuguese
+    ja: 'Puck', // Neutral Japanese
+    zh: 'Puck', // Neutral Chinese
+    ro: 'Kore'  // Neutral Romanian
 };
 
 export const generateAudio = async (text: string, language: string, city: string): Promise<string> => {
@@ -202,7 +208,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Is this text safe? "${text}"`,
+            contents: `Is this text safe? "${text}"`, 
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
