@@ -110,8 +110,78 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       } catch (e) {} finally { setIsSyncing(false); }
   };
 
+  const [showBragModal, setShowBragModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+
+  const handleShareRank = async () => {
+    const message = pt('shareRankMessage')
+      .replace('{rank}', user.rank)
+      .replace('{miles}', user.miles.toLocaleString());
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'BDAI Rank',
+          text: message,
+          url: 'https://www.bdai.travel'
+        });
+      } catch (e) {
+        // User cancelled or error
+      }
+    } else {
+      navigator.clipboard.writeText(message);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start overflow-y-auto no-scrollbar bg-slate-950/98 backdrop-blur-2xl">
+      {/* TOAST NOTIFICATION */}
+      {showToast && (
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[1000] bg-purple-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl animate-bounce">
+          <i className="fas fa-check-circle mr-2"></i> {pt('copiedToClipboard')}
+        </div>
+      )}
+
+      {/* BRAG MODAL (SHARE CARD) */}
+      {showBragModal && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
+            
+            <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6">
+              <i className="fas fa-crown text-3xl text-white"></i>
+            </div>
+
+            <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
+            <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
+            
+            <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
+               <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
+               <p className="text-2xl font-black text-cyan-400">{user.miles.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
+            </div>
+
+            <button 
+              onClick={() => {
+                handleShareRank();
+                setShowBragModal(false);
+              }}
+              className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4"
+            >
+              <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
+            </button>
+
+            <button 
+              onClick={() => setShowBragModal(false)}
+              className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-sm px-4 pt-12">
         <div className="flex justify-between items-center mb-6 w-full px-2">
             <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-red-500/20">
@@ -214,11 +284,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
                 <div className="pt-4">
                     <button 
-                        onClick={() => {
-                            const bragText = `🚀 ¡He alcanzado el rango ${user.rank} en bdai! Llevo ${user.miles.toLocaleString()} millas recorridas. 🌍✨ @bdai.travel`;
-                            navigator.clipboard.writeText(bragText);
-                            alert("🔥 RANGO COPIADO. ¡PRESÚMELO EN TUS REDES!");
-                        }}
+                        onClick={() => setShowBragModal(true)}
                         className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"
                     >
                         <i className="fas fa-bullhorn text-purple-400"></i>

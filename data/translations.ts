@@ -22,6 +22,8 @@ export const translations: Record<string, any> = {
     sectionPopular: "TOP DESTINATIONS", sectionVillages: "CHARMING VILLAGES", sectionHidden: "HIDDEN SECRETS", countryName: "Spain",
     back: "BACK", discoverTitle: "DISCOVER THE SOUL OF", expertGuide: "BECOME A LOCAL EXPERT",
     socialAccess: "SOCIAL ACCESS", shareRank: "SHARE RANK", myCollection: "MY COLLECTION",
+    shareRankMessage: "I just reached {rank} rank on BDAI! I've traveled {miles} miles conquering the world. Check it out at https://www.bdai.travel",
+    copiedToClipboard: "Text copied! Paste it anywhere to show off your rank.",
     badge_pioneer_desc: "Complete your first stop", badge_streak_desc: "3-day activity streak",
     badge_chronos_desc: "Visit 5 cultural landmarks", badge_savor_desc: "Visit 5 food spots",
     badge_zero_desc: "Initial level reached", badge_scout_desc: "Junior explorer status",
@@ -36,6 +38,8 @@ export const translations: Record<string, any> = {
     sectionPopular: "DESTINOS TOP", sectionVillages: "PUEBLOS CON ENCANTO", sectionHidden: "SECRETOS OCULTOS", countryName: "España",
     back: "ATRÁS", discoverTitle: "DESCUBRE EL ALMA DE", expertGuide: "SÉ UN EXPERTO LOCAL",
     socialAccess: "ACCESO SOCIAL", shareRank: "COMPARTIR RANGO", myCollection: "MI COLECCIÓN",
+    shareRankMessage: "¡He alcanzado el rango {rank} en BDAI! He recorrido {miles} millas conquistando el mundo. Míralo en https://www.bdai.travel",
+    copiedToClipboard: "¡Texto copiado! Pégalo donde quieras para presumir de rango.",
     badge_pioneer_desc: "Completa tu primera parada", badge_streak_desc: "Racha de 3 días activo",
     badge_chronos_desc: "Visita 5 puntos culturales", badge_savor_desc: "Visita 5 puntos gastronómicos",
     badge_zero_desc: "Nivel inicial alcanzado", badge_scout_desc: "Estatus de explorador junior",
@@ -49,7 +53,9 @@ export const translations: Record<string, any> = {
     navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique",
     sectionPopular: "DESTINATIONS TOP", sectionVillages: "VILLAGES DE CHARME", sectionHidden: "SECRETS CACHÉS", countryName: "Espagne",
     back: "RETOUR", discoverTitle: "DÉCOUVREZ L'ÂME DE", expertGuide: "DEVENEZ UN EXPERT LOCAL",
-    socialAccess: "ACCÈS SOCIAL", shareRank: "Partager mon rang", myCollection: "Ma collection"
+    socialAccess: "ACCÈS SOCIAL", shareRank: "Partager mon rang", myCollection: "Ma collection",
+    shareRankMessage: "Je viens d'atteindre le rang {rank} sur BDAI ! J'ai parcouru {miles} miles à la conquête du monde. Découvrez-le sur https://www.bdai.travel",
+    copiedToClipboard: "Texte copié ! Collez-le n'importe où pour afficher votre rang."
   },
   de: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "deine@email.com", 
@@ -58,7 +64,9 @@ export const translations: Record<string, any> = {
     navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "laden",
     sectionPopular: "TOP ZIELE", sectionVillages: "CHARMANTE DÖRFER", sectionHidden: "VERBORGENE GEHEIMNISSE", countryName: "Spanien",
     back: "ZURÜCK", discoverTitle: "ENTDECKE DIE SEELE VON", expertGuide: "WERDEN SIE LOKALER EXPERTE",
-    socialAccess: "SOZIALER ZUGANG", shareRank: "Rang teilen", myCollection: "Meine Sammlung"
+    socialAccess: "SOZIALER ZUGANG", shareRank: "Rang teilen", myCollection: "Meine Sammlung",
+    shareRankMessage: "Ich habe gerade den Rang {rank} auf BDAI erreicht! Ich bin {miles} Meilen gereist, um die Welt zu erobern. Schau es dir an unter https://www.bdai.travel",
+    copiedToClipboard: "Text kopiert! Füge ihn überall ein, um mit deinem Rang zu prahlen."
   },
   it: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "tua@email.com", 
