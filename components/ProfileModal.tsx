@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, AVATARS, APP_BADGES } from '../types';
 import { syncUserProfile } from '../services/supabaseClient';
+import { translations } from '../data/translations';
 
 interface ProfileModalProps {
   user: UserProfile;
@@ -71,8 +72,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   }, [user]);
 
   const pt = (key: string) => {
-    const dict = MODAL_TEXTS[user.language] || MODAL_TEXTS['en'] || MODAL_TEXTS['es'];
-    return dict[key] || key;
+    const lang = user.language || 'es';
+    const dict = MODAL_TEXTS[lang] || MODAL_TEXTS['en'] || MODAL_TEXTS['es'];
+    const globalDict = translations[lang] || translations['en'] || translations['es'];
+    return dict[key] || globalDict[key] || key;
   };
 
   const isAdmin = user.email === 'travelbdai@gmail.com';
@@ -185,7 +188,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 </div>
 
                 <div className="pt-2">
-                    <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('badges')}</p>
+                    <p className="text-[8px] font-black text-slate-500 mb-4 tracking-widest">{pt('myCollection')}</p>
                     <div className="grid grid-cols-3 gap-3">
                         {APP_BADGES.map((b) => {
                             const isEarned = user.badges?.some(ub => ub.id === b.id);
@@ -201,7 +204,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
                                         <i className={`fas ${b.icon} text-sm`}></i>
                                     </div>
-                                    <span className={`text-[6px] font-black uppercase text-center leading-tight ${isEarned ? 'text-slate-900' : 'text-slate-500'}`}>{b.name}</span>
+                                    <span className={`text-[7px] font-black uppercase text-center leading-tight mb-1 ${isEarned ? 'text-slate-900' : 'text-slate-500'}`}>{b.name}</span>
+                                    <span className={`text-[5px] font-medium text-center leading-none opacity-60 ${isEarned ? 'text-slate-700' : 'text-slate-400'}`}>{pt(b.description)}</span>
                                 </div>
                             );
                         })}
@@ -215,10 +219,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             navigator.clipboard.writeText(bragText);
                             alert("🔥 RANGO COPIADO. ¡PRESÚMELO EN TUS REDES!");
                         }}
-                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"
+                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"
                     >
                         <i className="fas fa-bullhorn text-purple-400"></i>
-                        Compartir mi Rango
+                        {pt('shareRank')}
                     </button>
                 </div>
 

@@ -21,7 +21,12 @@ export const translations: Record<string, any> = {
     navElite: "elite", navHub: "intel", navVisa: "passport", navStore: "store",
     sectionPopular: "TOP DESTINATIONS", sectionVillages: "CHARMING VILLAGES", sectionHidden: "HIDDEN SECRETS", countryName: "Spain",
     back: "BACK", discoverTitle: "DISCOVER THE SOUL OF", expertGuide: "BECOME A LOCAL EXPERT",
-    socialAccess: "SOCIAL ACCESS"
+    socialAccess: "SOCIAL ACCESS", shareRank: "SHARE RANK", myCollection: "MY COLLECTION",
+    badge_pioneer_desc: "Complete your first stop", badge_streak_desc: "3-day activity streak",
+    badge_chronos_desc: "Visit 5 cultural landmarks", badge_savor_desc: "Visit 5 food spots",
+    badge_zero_desc: "Initial level reached", badge_scout_desc: "Junior explorer status",
+    badge_rover_desc: "Frequent traveler status", badge_titan_desc: "Master of the terrain",
+    badge_zenith_desc: "Legend of bdai"
   },
   es: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "tu@email.com", 
@@ -30,7 +35,12 @@ export const translations: Record<string, any> = {
     navElite: "élite", navHub: "intel", navVisa: "pasaporte", navStore: "tienda",
     sectionPopular: "DESTINOS TOP", sectionVillages: "PUEBLOS CON ENCANTO", sectionHidden: "SECRETOS OCULTOS", countryName: "España",
     back: "ATRÁS", discoverTitle: "DESCUBRE EL ALMA DE", expertGuide: "SÉ UN EXPERTO LOCAL",
-    socialAccess: "ACCESO SOCIAL"
+    socialAccess: "ACCESO SOCIAL", shareRank: "COMPARTIR RANGO", myCollection: "MI COLECCIÓN",
+    badge_pioneer_desc: "Completa tu primera parada", badge_streak_desc: "Racha de 3 días activo",
+    badge_chronos_desc: "Visita 5 puntos culturales", badge_savor_desc: "Visita 5 puntos gastronómicos",
+    badge_zero_desc: "Nivel inicial alcanzado", badge_scout_desc: "Estatus de explorador junior",
+    badge_rover_desc: "Estatus de viajero frecuente", badge_titan_desc: "Maestro del terreno",
+    badge_zenith_desc: "Leyenda de bdai"
   },
   fr: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "votre@email.com", 
@@ -39,7 +49,7 @@ export const translations: Record<string, any> = {
     navElite: "élite", navHub: "intel", navVisa: "passeport", navStore: "boutique",
     sectionPopular: "DESTINATIONS TOP", sectionVillages: "VILLAGES DE CHARME", sectionHidden: "SECRETS CACHÉS", countryName: "Espagne",
     back: "RETOUR", discoverTitle: "DÉCOUVREZ L'ÂME DE", expertGuide: "DEVENEZ UN EXPERT LOCAL",
-    socialAccess: "ACCÈS SOCIAL"
+    socialAccess: "ACCÈS SOCIAL", shareRank: "Partager mon rang", myCollection: "Ma collection"
   },
   de: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "deine@email.com", 
@@ -48,7 +58,7 @@ export const translations: Record<string, any> = {
     navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "laden",
     sectionPopular: "TOP ZIELE", sectionVillages: "CHARMANTE DÖRFER", sectionHidden: "VERBORGENE GEHEIMNISSE", countryName: "Spanien",
     back: "ZURÜCK", discoverTitle: "ENTDECKE DIE SEELE VON", expertGuide: "WERDEN SIE LOKALER EXPERTE",
-    socialAccess: "SOZIALER ZUGANG"
+    socialAccess: "SOZIALER ZUGANG", shareRank: "Rang teilen", myCollection: "Meine Sammlung"
   },
   it: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "tua@email.com", 
@@ -57,7 +67,7 @@ export const translations: Record<string, any> = {
     navElite: "élite", navHub: "intel", navVisa: "passaporto", navStore: "negozio",
     sectionPopular: "DESTINAZIONI TOP", sectionVillages: "BORGHI INCANTEVOLI", sectionHidden: "SEGRETI NASCOSTI", countryName: "Spagna",
     back: "INDIETRO", discoverTitle: "SCOPRI L'ANIMA DI", expertGuide: "DIVENTA UN ESPERTO LOCALE",
-    socialAccess: "ACCESSO SOCIALE"
+    socialAccess: "ACCESSO SOCIALE", shareRank: "Condividi il mio grado", myCollection: "La mia collezione"
   },
   pt: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "seu@email.com", 
@@ -66,7 +76,7 @@ export const translations: Record<string, any> = {
     navElite: "elite", navHub: "intel", navVisa: "passaporte", navStore: "loja",
     sectionPopular: "PRINCIPAIS DESTINOS", sectionVillages: "VILAS CHARMOSAS", sectionHidden: "SEGREDOS ESCONDIDOS", countryName: "Espanha",
     back: "VOLTAR", discoverTitle: "DESCUBRA A ALMA DA", expertGuide: "TORNE-SE UM ESPECIALISTA LOCAL",
-    socialAccess: "ACESSO SOCIAL"
+    socialAccess: "ACESSO SOCIAL", shareRank: "Compartilhar meu nível", myCollection: "Minha coleção"
   },
   nl: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "uw@email.com", 
@@ -75,7 +85,7 @@ export const translations: Record<string, any> = {
     navElite: "elite", navHub: "intel", navVisa: "paspoort", navStore: "winkel",
     sectionPopular: "TOPBESTEMMINGEN", sectionVillages: "CHARMANTE DORPEN", sectionHidden: "VERBORGEN GEHEIMEN", countryName: "Spanje",
     back: "TERUG", discoverTitle: "ONTDEK DE ZIEL VAN", expertGuide: "WORD EEN LOKALE EXPERT",
-    socialAccess: "SOCIALE TOEGANG"
+    socialAccess: "SOCIALE TOEGANG", shareRank: "Rang delen", myCollection: "Mijn collectie"
   },
   ro: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "email@tau.com", 
@@ -84,7 +94,7 @@ export const translations: Record<string, any> = {
     navElite: "elită", navHub: "intel", navVisa: "pașaport", navStore: "magazin",
     sectionPopular: "DESTINAȚII TOP", sectionVillages: "SATE FERMECĂTOARE", sectionHidden: "SECRETE ASCUNSE", countryName: "Spania",
     back: "ÎNAPOI", discoverTitle: "DESCOPERĂ SUFLETUL", expertGuide: "DEVENIȚI UN EXPERT LOCAL",
-    socialAccess: "ACCES SOCIAL"
+    socialAccess: "ACCES SOCIAL", shareRank: "Partajează rangul", myCollection: "Colecția mea"
   },
   pl: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "twoj@email.com", 
@@ -93,7 +103,7 @@ export const translations: Record<string, any> = {
     navElite: "elita", navHub: "intel", navVisa: "paszport", navStore: "sklep",
     sectionPopular: "TOP MIEJSCA", sectionVillages: "UROKLIWE WIOSKI", sectionHidden: "UKRYTE TAJEMNICE", countryName: "Hiszpania",
     back: "WSTECZ", discoverTitle: "ODKRYJ DUSZĘ", expertGuide: "ZOSTAŃ LOKALNYM EKSPERTEM",
-    socialAccess: "DOSTĘP SPOŁECZNY"
+    socialAccess: "DOSTĘP SPOŁECZNY", shareRank: "Udostępnij rangę", myCollection: "Moja kolekcja"
   },
   sv: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
@@ -102,7 +112,7 @@ export const translations: Record<string, any> = {
     navElite: "elit", navHub: "intel", navVisa: "pass", navStore: "butik",
     sectionPopular: "TOPPDESTINATIONER", sectionVillages: "CHARMIGA BYAR", sectionHidden: "DOLDA HEMLIGHETER", countryName: "Spanien",
     back: "TILLBAKA", discoverTitle: "UPPTÄCK SJÄLEN I", expertGuide: "BLI EN LOKAL EXPERT",
-    socialAccess: "SOCIAL TILLGÅNG"
+    socialAccess: "SOCIAL TILLGÅNG", shareRank: "Dela min rang", myCollection: "Min samling"
   },
   da: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
@@ -111,7 +121,7 @@ export const translations: Record<string, any> = {
     navElite: "elite", navHub: "intel", navVisa: "pas", navStore: "butik",
     sectionPopular: "TOPDESTINATIONER", sectionVillages: "CHARMERENDE BYER", sectionHidden: "SKJULTE HEMMELIGHEDER", countryName: "Spanien",
     back: "TILBAGE", discoverTitle: "OPDAG SJÆLEN I", expertGuide: "BLIV LOKAL EKSPERT",
-    socialAccess: "SOCIAL ADGANG"
+    socialAccess: "SOCIAL ADGANG", shareRank: "Del min rang", myCollection: "Min samling"
   },
   fi: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "sinun@email.com", 
@@ -120,7 +130,7 @@ export const translations: Record<string, any> = {
     navElite: "eliitti", navHub: "intel", navVisa: "passi", navStore: "kauppa",
     sectionPopular: "SUOSITUIMMAT", sectionVillages: "VIEHÄTTÄVÄT KYLÄT", sectionHidden: "PIILOTETUT SALAISUUDET", countryName: "Espanja",
     back: "TAKAISIN", discoverTitle: "LÖYDÄ SIELU", expertGuide: "TULE PAIKALLISEKSI ASIANTUNTIJAKSI",
-    socialAccess: "SOSIAALINEN PÄÄSY"
+    socialAccess: "SOSIAALINEN PÄÄSY", shareRank: "Jaa sijoitukseni", myCollection: "Kokoelmani"
   },
   no: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
@@ -129,7 +139,7 @@ export const translations: Record<string, any> = {
     navElite: "elite", navHub: "intel", navVisa: "pass", navStore: "butikk",
     sectionPopular: "TOPPDESTINASJONER", sectionVillages: "SJARMERENDE BYER", sectionHidden: "SKJULTE HEMMELIGHETER", countryName: "Spania",
     back: "TILBAKE", discoverTitle: "OPPDAG SJELEN I", expertGuide: "BLI EN LOKAL EXPERT",
-    socialAccess: "SOSIAL TILGANG"
+    socialAccess: "SOSIAL TILGANG", shareRank: "Del min rang", myCollection: "Min samling"
   },
   ru: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "vashe@email.com", 
@@ -138,7 +148,7 @@ export const translations: Record<string, any> = {
     navElite: "элита", navHub: "интел", navVisa: "паспорт", navStore: "магазин",
     sectionPopular: "ЛУЧШИЕ НАПРАВЛЕНИЯ", sectionVillages: "КРАСИВЫЕ ДЕРЕВНИ", sectionHidden: "СКРЫТЫЕ ТАЙНЫ", countryName: "Испания",
     back: "НАЗАД", discoverTitle: "ОТКРОЙТЕ ДУШУ", expertGuide: "СТАНЬТЕ МЕСТНЫМ ЭКСПЕРТОМ",
-    socialAccess: "СОЦИАЛЬНЫЙ ДОСТУП"
+    socialAccess: "СОЦИАЛЬНЫЙ ДОСТУП", shareRank: "Поделиться рангом", myCollection: "Моя коллекция"
   },
   zh: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "您的电子邮件", 
@@ -147,7 +157,7 @@ export const translations: Record<string, any> = {
     navElite: "精英", navHub: "情报", navVisa: "护照", navStore: "商店",
     sectionPopular: "热门目的地", sectionVillages: "魅力城镇", sectionHidden: "隐藏秘密", countryName: "西班牙",
     back: "返回", discoverTitle: "探索灵魂之境：", expertGuide: "成为当地专家",
-    socialAccess: "社交登录"
+    socialAccess: "社交登录", shareRank: "分享我的等级", myCollection: "我的收藏"
   },
   ja: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "メールアドレス", 
@@ -156,7 +166,7 @@ export const translations: Record<string, any> = {
     navElite: "エリート", navHub: "インテル", navVisa: "パスポート", navStore: "ストア",
     sectionPopular: "人気の目的地", sectionVillages: "魅力的な村", sectionHidden: "隠された秘密", countryName: "スペイン",
     back: "戻る", discoverTitle: "その魂に触れる：", expertGuide: "現地の達人になる",
-    socialAccess: "ソーシャルアクセス"
+    socialAccess: "ソーシャルアクセス", shareRank: "ランクをシェア", myCollection: "コレクション"
   },
   ko: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "이메일 주소", 
@@ -165,7 +175,7 @@ export const translations: Record<string, any> = {
     navElite: "엘리트", navHub: "インテル", navVisa: "여권", navStore: "상점",
     sectionPopular: "인기 여행지", sectionVillages: "매력적인 마을", sectionHidden: "숨겨진 비밀", countryName: "스เป인",
     back: "뒤로", discoverTitle: "영혼을 발견하다:", expertGuide: "현지 전문가가 되십시오",
-    socialAccess: "소셜 액세스"
+    socialAccess: "소셜 액세스", shareRank: "내 등급 공유", myCollection: "내 컬렉션"
   },
   ar: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "بريدك الإلكتروني", 
@@ -174,7 +184,7 @@ export const translations: Record<string, any> = {
     navElite: "نخبة", navHub: "معلومات", navVisa: "جواز سفر", navStore: "متجر",
     sectionPopular: "أفضل الوجهات", sectionVillages: "قرى ساحرة", sectionHidden: "أسرars خفية", countryName: "إسبانيا",
     back: "عودة", discoverTitle: "اكتشف روح", expertGuide: "كن خبيراً محلياً",
-    socialAccess: "الدخول الاجتماعي"
+    socialAccess: "الدخول الاجتماعي", shareRank: "مشاركة رتبتي", myCollection: "مجموعتي"
   },
   hi: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "आपका ईमेल", 
@@ -183,7 +193,7 @@ export const translations: Record<string, any> = {
     navElite: "अभिजात", navHub: "इंटेल", navVisa: "पासपोर्ट", navStore: "स्टोर",
     sectionPopular: "शीर्ष गंतव्य", sectionVillages: "आकर्षक गाँव", sectionHidden: "छिपे हुए रहस्य", countryName: "स्पेन",
     back: "वापस", discoverTitle: "आत्मा की खोज करें:", expertGuide: "एक स्थानीय विशेषज्ञ बनें",
-    socialAccess: "सामाजिक पहुंच"
+    socialAccess: "सामाजिक पहुंच", shareRank: "मेरी रैंक साझा करें", myCollection: "मेरा संग्रह"
   },
   th: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "อีเมลของคุณ", 
@@ -192,7 +202,7 @@ export const translations: Record<string, any> = {
     navElite: "อีลิท", navHub: "ข้อมูล", navVisa: "พาสปอร์ต", navStore: "ร้านค้า",
     sectionPopular: "จุดหมายยอดนิยม", sectionVillages: "เมืองน่ารัก", sectionHidden: "ความลับที่ซ่อนอยู่", countryName: "สเปน",
     back: "ย้อนกลับ", discoverTitle: "ค้นพบจิตวิญญาณของ", expertGuide: "กลายเป็นผู้เชี่ยวชาญท้องถิ่น",
-    socialAccess: "การเข้าถึงโซเชียล"
+    socialAccess: "การเข้าถึงโซเชียล", shareRank: "แชร์อันดับของฉัน", myCollection: "คอลเลกชันของฉัน"
   },
   vi: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "email@cua.ban", 
@@ -201,7 +211,7 @@ export const translations: Record<string, any> = {
     navElite: "tinh hoa", navHub: "thông tin", navVisa: "hộ chiếu", navStore: "cửa hàng",
     sectionPopular: "Điểm đến Hàng đầu", sectionVillages: "Thị trấn Quyến rũ", sectionHidden: "Bí mật Ẩn giấu", countryName: "Tây Ban Nha",
     back: "QUAY LẠI", discoverTitle: "KHÁM PHÁ LINH HỒN CỦA", expertGuide: "TRỞ THÀNH CHUYÊN GIA ĐỊA PHƯƠNG",
-    socialAccess: "TRUY CẬP MẠNG XÃ HỘI"
+    socialAccess: "TRUY CẬP MẠNG XÃ HỘI", shareRank: "Chia sẻ cấp bậc", myCollection: "Bộ sưu tập của tôi"
   },
   ca: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "el@teu.email", 
@@ -210,7 +220,7 @@ export const translations: Record<string, any> = {
     navElite: "elit", navHub: "intel", navVisa: "passaport", navStore: "botiga",
     sectionPopular: "DESTINS TOP", sectionVillages: "POBLES AMB ENCANT", sectionHidden: "SECRETS OCULTOS", countryName: "Espanya",
     back: "ENRERE", discoverTitle: "DESCOBREIX L'ÀNIMA DE", expertGuide: "SIGUES UN EXPERT LOCAL",
-    socialAccess: "ACCÉS SOCIAL"
+    socialAccess: "ACCÉS SOCIAL", shareRank: "Compartir el meu rang", myCollection: "La meva col·lecció"
   },
   eu: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "zure@emaila.com", 
@@ -219,7 +229,7 @@ export const translations: Record<string, any> = {
     navElite: "elitea", navHub: "intel", navVisa: "pasaportea", navStore: "denda",
     sectionPopular: "HELMUGA NAGUSIAK", sectionVillages: "HERRI XARMAGARRIAK", sectionHidden: "EZKUTUKO SEKRETUAK", countryName: "Espania",
     back: "ATZERA", discoverTitle: "DESCOBREIX ARIMAREN", expertGuide: "BIHURTU TOKIKO ADITU",
-    socialAccess: "SARRERA SOZIALA"
+    socialAccess: "SARRERA SOZIALA", shareRank: "Nire maila partekatu", myCollection: "Nire bilduma"
   },
   tr: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "senin@email.com", 
@@ -228,6 +238,6 @@ export const translations: Record<string, any> = {
     navElite: "seçkin", navHub: "intel", navVisa: "pasaport", navStore: "mağaza",
     sectionPopular: "POPÜLER ROTALAR", sectionVillages: "GÜZEL KASABALAR", sectionHidden: "GİZLİ SIRLAR", countryName: "İspanya",
     back: "GERİ", discoverTitle: "RUHUNU KEŞFET:", expertGuide: "YEREL BİR UZMAN OLUN",
-    socialAccess: "SOSYAL ERİŞİM"
+    socialAccess: "SOSYAL ERİŞİM", shareRank: "Rütbemi paylaş", myCollection: "Koleksiyonum"
   }
 };

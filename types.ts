@@ -84,15 +84,15 @@ export interface HubIntel {
 }
 
 export const APP_BADGES: Badge[] = [
-  { id: 'debutante', name: 'Debutante', icon: 'fa-flag-checkered', description: 'Primer stop completado', category: 'milestone', requiredPoints: 0 },
-  { id: 'onfire', name: 'On Fire', icon: 'fa-fire', description: 'Racha de 3 días', category: 'streak', requiredPoints: 0 },
-  { id: 'historiador', name: 'Historiador', icon: 'fa-landmark', description: '5 stops de cultura visitados', category: 'culture', requiredPoints: 0 },
-  { id: 'foodie', name: 'Foodie', icon: 'fa-utensils', description: '5 stops de comida visitados', category: 'food', requiredPoints: 0 },
-  { id: 'rank_zero', name: 'Rango ZERO', icon: 'fa-circle-dot', description: 'Nivel inicial', category: 'rank', requiredPoints: 0 },
-  { id: 'rank_scout', name: 'Rango SCOUT', icon: 'fa-compass', description: 'Explorador junior', category: 'rank', requiredPoints: 0 },
-  { id: 'rank_rover', name: 'Rango ROVER', icon: 'fa-person-walking', description: 'Viajero frecuente', category: 'rank', requiredPoints: 0 },
-  { id: 'rank_titan', name: 'Rango TITAN', icon: 'fa-mountain', description: 'Maestro del terreno', category: 'rank', requiredPoints: 0 },
-  { id: 'rank_zenith', name: 'Rango ZENITH', icon: 'fa-crown', description: 'Leyenda de bdai', category: 'rank', requiredPoints: 0 }
+  { id: 'debutante', name: 'PIONEER', icon: 'fa-flag-checkered', description: 'badge_pioneer_desc', category: 'milestone', requiredPoints: 0 },
+  { id: 'onfire', name: 'STREAK', icon: 'fa-fire', description: 'badge_streak_desc', category: 'streak', requiredPoints: 0 },
+  { id: 'historiador', name: 'CHRONOS', icon: 'fa-landmark', description: 'badge_chronos_desc', category: 'culture', requiredPoints: 0 },
+  { id: 'foodie', name: 'SAVOR', icon: 'fa-utensils', description: 'badge_savor_desc', category: 'food', requiredPoints: 0 },
+  { id: 'rank_zero', name: 'ZERO', icon: 'fa-circle-dot', description: 'badge_zero_desc', category: 'rank', requiredPoints: 0 },
+  { id: 'rank_scout', name: 'SCOUT', icon: 'fa-compass', description: 'badge_scout_desc', category: 'rank', requiredPoints: 0 },
+  { id: 'rank_rover', name: 'ROVER', icon: 'fa-person-walking', description: 'badge_rover_desc', category: 'rank', requiredPoints: 0 },
+  { id: 'rank_titan', name: 'TITAN', icon: 'fa-mountain', description: 'badge_titan_desc', category: 'rank', requiredPoints: 0 },
+  { id: 'rank_zenith', name: 'ZENITH', icon: 'fa-crown', description: 'badge_zenith_desc', category: 'rank', requiredPoints: 0 }
 ];
 
 export interface LeaderboardEntry {
