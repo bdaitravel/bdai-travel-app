@@ -26,7 +26,7 @@ export interface Badge {
   earnedAt?: string;
 }
 
-export type TravelerRank = 'Turist' | 'Explorer' | 'Wanderer' | 'Globe-Trotter' | 'Legend';
+export type TravelerRank = 'ZERO' | 'SCOUT' | 'ROVER' | 'TITAN' | 'ZENITH';
 
 export interface UserStats {
   photosTaken: number;
@@ -84,9 +84,15 @@ export interface HubIntel {
 }
 
 export const APP_BADGES: Badge[] = [
-  { id: 'owl', name: 'El Búho', icon: 'fa-owl', description: 'Has completado un tour después de las 20:00', category: 'night', requiredPoints: 0 },
-  { id: 'mayor', name: 'El Alcalde', icon: 'fa-crown', description: 'Eres el líder del ranking local', category: 'rank', requiredPoints: 0 },
-  { id: 'local', name: 'El Local', icon: 'fa-user-secret', description: 'Has visitado 3 pueblos de menos de 5.000 habitantes', category: 'explore', requiredPoints: 0 }
+  { id: 'debutante', name: 'Debutante', icon: 'fa-flag-checkered', description: 'Primer stop completado', category: 'milestone', requiredPoints: 0 },
+  { id: 'onfire', name: 'On Fire', icon: 'fa-fire', description: 'Racha de 3 días', category: 'streak', requiredPoints: 0 },
+  { id: 'historiador', name: 'Historiador', icon: 'fa-landmark', description: '5 stops de cultura visitados', category: 'culture', requiredPoints: 0 },
+  { id: 'foodie', name: 'Foodie', icon: 'fa-utensils', description: '5 stops de comida visitados', category: 'food', requiredPoints: 0 },
+  { id: 'rank_zero', name: 'Rango ZERO', icon: 'fa-circle-dot', description: 'Nivel inicial', category: 'rank', requiredPoints: 0 },
+  { id: 'rank_scout', name: 'Rango SCOUT', icon: 'fa-compass', description: 'Explorador junior', category: 'rank', requiredPoints: 0 },
+  { id: 'rank_rover', name: 'Rango ROVER', icon: 'fa-person-walking', description: 'Viajero frecuente', category: 'rank', requiredPoints: 0 },
+  { id: 'rank_titan', name: 'Rango TITAN', icon: 'fa-mountain', description: 'Maestro del terreno', category: 'rank', requiredPoints: 0 },
+  { id: 'rank_zenith', name: 'Rango ZENITH', icon: 'fa-crown', description: 'Leyenda de bdai', category: 'rank', requiredPoints: 0 }
 ];
 
 export interface LeaderboardEntry {
@@ -152,7 +158,7 @@ export const LANGUAGES = [
 ];
 
 export const RANK_THRESHOLDS: Record<TravelerRank, number> = {
-  'Turist': 0, 'Explorer': 1000, 'Wanderer': 5000, 'Globe-Trotter': 15000, 'Legend': 50000
+  'ZERO': 0, 'SCOUT': 251, 'ROVER': 1201, 'TITAN': 4001, 'ZENITH': 10001
 };
 
 export const AVATARS = [

@@ -186,20 +186,43 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
                 <div className="pt-2">
                     <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('badges')}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                        {user.badges.length > 0 ? user.badges.map((b, i) => (
-                            <div key={i} className="bg-purple-600/10 border border-purple-500/20 p-2.5 rounded-xl flex items-center gap-3">
-                                <div className="w-7 h-7 rounded-lg bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-lg"><i className={`fas ${b.icon} text-[10px]`}></i></div>
-                                <div className="min-w-0">
-                                    <p className="text-[7px] font-black text-slate-800 uppercase truncate leading-none mb-1">{b.name}</p>
-                                    <p className="text-[5px] font-bold text-slate-500 uppercase truncate leading-none">Achievement</p>
+                    <div className="grid grid-cols-3 gap-3">
+                        {APP_BADGES.map((b) => {
+                            const isEarned = user.badges?.some(ub => ub.id === b.id);
+                            return (
+                                <div 
+                                    key={b.id} 
+                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${
+                                        isEarned 
+                                        ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105' 
+                                        : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'
+                                    }`}
+                                >
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
+                                        <i className={`fas ${b.icon} text-sm`}></i>
+                                    </div>
+                                    <span className={`text-[6px] font-black uppercase text-center leading-tight ${isEarned ? 'text-slate-900' : 'text-slate-500'}`}>{b.name}</span>
                                 </div>
-                            </div>
-                        )) : <div className="col-span-2 py-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center opacity-40"><i className="fas fa-lock text-slate-300 mb-2"></i><p className="text-[7px] font-black uppercase text-slate-400">Unlock with tours</p></div>}
+                            );
+                        })}
                     </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-4">
+                    <button 
+                        onClick={() => {
+                            const bragText = `🚀 ¡He alcanzado el rango ${user.rank} en bdai! Llevo ${user.miles.toLocaleString()} millas recorridas. 🌍✨ @bdai.travel`;
+                            navigator.clipboard.writeText(bragText);
+                            alert("🔥 RANGO COPIADO. ¡PRESÚMELO EN TUS REDES!");
+                        }}
+                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"
+                    >
+                        <i className="fas fa-bullhorn text-purple-400"></i>
+                        Compartir mi Rango
+                    </button>
+                </div>
+
+                <div className="pt-6">
                     <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('langLabel')}</p>
                     <div className="flex flex-wrap gap-2 mb-20">
                         {LANGUAGES.map(lang => (

@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
 import { generateAudio } from '../services/geminiService';
-import { syncUserProfile } from '../services/supabaseClient';
+import { syncUserProfile, completeTourBonus } from '../services/supabaseClient';
 import { ShareableVisa } from './ShareableVisa';
 
 const TEXTS: any = {
@@ -122,9 +122,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             color: ['#9333ea', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 4)]
         };
 
-        const updatedUser = {
-            ...user,
-            miles: user.miles + 250,
+        // Aplicar bonus y registrar ciudad
+        let updatedUser = completeTourBonus(user, tour.city.toLowerCase());
+        
+        updatedUser = {
+            ...updatedUser,
             stamps: [...(user.stamps || []), newStamp],
             completedTours: [...(user.completedTours || []), tour.id]
         };
@@ -264,8 +266,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              {showSocialVisa && (
                  <ShareableVisa 
                     cityName={tour.city} 
-                    milesEarned={200} 
+                    milesEarned={250} 
                     stampDate={new Date().toLocaleDateString()} 
+                    rank={user.rank}
                     onClose={() => setShowSocialVisa(false)} 
                  />
              )}

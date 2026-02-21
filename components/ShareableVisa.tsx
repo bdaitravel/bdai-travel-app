@@ -6,23 +6,29 @@ interface ShareableVisaProps {
   cityName: string;
   milesEarned: number;
   stampDate: string;
+  rank: string;
   onClose?: () => void;
 }
 
 /**
  * ShareableVisa: High-fidelity Tech-Noir achievement card.
- * Features: High-res canvas capture, Native Share API integration, 
- * and robust download fallback for cross-platform reliability.
  */
 export const ShareableVisa: React.FC<ShareableVisaProps> = ({ 
   cityName, 
   milesEarned, 
   stampDate,
+  rank,
   onClose 
 }) => {
   const visaRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
+
+  const handleCopyLink = () => {
+    const epicLink = `https://bdai.travel/visa/${cityName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+    navigator.clipboard.writeText(epicLink);
+    alert("🚀 LINK ÉPICO COPIADO AL PORTAPAPELES");
+  };
 
   const triggerDownload = (blob: Blob, fileName: string) => {
     const url = URL.createObjectURL(blob);
@@ -139,7 +145,10 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
               <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Protocol Reward</p>
               <p className="text-2xl font-black text-cyan-400">+{milesEarned} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
             </div>
-            <i className="fas fa-bolt-lightning text-cyan-400/50 text-xl animate-pulse"></i>
+            <div className="text-right">
+              <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Current Rank</p>
+              <p className="text-sm font-black text-purple-400 uppercase tracking-tighter">{rank}</p>
+            </div>
           </div>
         </div>
 
@@ -163,23 +172,23 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
 
       {/* CONTROLS */}
       <div className="mt-10 w-full max-w-[340px] space-y-4">
-        <button 
-          onClick={handleShare}
-          disabled={isGenerating}
-          className="w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-[0_10px_40px_rgba(147,51,234,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:bg-slate-800 disabled:text-slate-500"
-        >
-          {isGenerating ? (
-            <>
-              <i className="fas fa-spinner fa-spin"></i>
-              {statusText}
-            </>
-          ) : (
-            <>
-              <i className={`fas ${statusText.includes('READY') ? 'fa-check-circle' : 'fa-share-nodes'}`}></i>
-              {statusText || 'Share to Social'}
-            </>
-          )}
-        </button>
+        <div className="grid grid-cols-2 gap-3">
+            <button 
+                onClick={handleShare}
+                disabled={isGenerating}
+                className="py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-[0_10px_40px_rgba(147,51,234,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:bg-slate-800 disabled:text-slate-500"
+            >
+                <i className="fas fa-camera"></i>
+                {isGenerating ? 'MINTING...' : 'IMAGE'}
+            </button>
+            <button 
+                onClick={handleCopyLink}
+                className="py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+                <i className="fas fa-link"></i>
+                SHARE
+            </button>
+        </div>
 
         <button 
           onClick={onClose}

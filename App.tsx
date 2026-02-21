@@ -16,13 +16,15 @@ import {
   getGlobalRanking, 
   syncUserProfile, 
   validateEmailFormat,
-  checkIfCityCached
+  checkIfCityCached,
+  calculateTravelerRank,
+  checkBadges
 } from './services/supabaseClient';
 
 const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-  email: '', language: 'es', miles: 0, rank: 'Turist', 
+  email: '', language: 'es', miles: 0, rank: 'ZERO', 
   culturePoints: 0, foodPoints: 0, photoPoints: 0, historyPoints: 0, naturePoints: 0, artPoints: 0, archPoints: 0,
   interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, 
   stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }, 
@@ -100,11 +102,19 @@ export default function App() {
   const handleLoginSuccess = async (supabaseUser: any) => {
     const profile = await getUserProfileByEmail(supabaseUser.email || '');
     if (profile) {
-      setUser({ ...profile, isLoggedIn: true });
-      localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
+      // Recalcular rango y badges para asegurar consistencia con el nuevo sistema
+      const updatedProfile = {
+          ...profile,
+          rank: calculateTravelerRank(profile.miles),
+          badges: checkBadges(profile)
+      };
+      setUser({ ...updatedProfile, isLoggedIn: true });
+      localStorage.setItem('bdai_profile', JSON.stringify({ ...updatedProfile, isLoggedIn: true }));
       setView(AppView.HOME);
     } else {
       const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true };
+      newProfile.rank = calculateTravelerRank(newProfile.miles);
+      newProfile.badges = checkBadges(newProfile);
       await syncUserProfile(newProfile);
       setUser(newProfile);
       setView(AppView.HOME);

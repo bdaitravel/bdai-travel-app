@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Tour, UserProfile, LeaderboardEntry } from '../types';
+import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
@@ -129,6 +129,68 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       badges: data.badges || [], stamps: data.stamps || [], capturedMoments: data.captured_moments || []
     };
   } catch (e) { return null; }
+};
+
+export const calculateTravelerRank = (miles: number): TravelerRank => {
+  if (miles <= 250) return 'ZERO';
+  if (miles <= 1200) return 'SCOUT';
+  if (miles <= 4000) return 'ROVER';
+  if (miles <= 10000) return 'TITAN';
+  return 'ZENITH';
+};
+
+export const checkBadges = (profile: UserProfile): Badge[] => {
+  const earnedBadges = [...(profile.badges || [])];
+  const badgeIds = new Set(earnedBadges.map(b => b.id));
+
+  // Debutante
+  if (!badgeIds.has('debutante') && (profile.stats.photosTaken > 0 || profile.completedTours.length > 0)) {
+     const b = APP_BADGES.find(x => x.id === 'debutante');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // On Fire
+  if (!badgeIds.has('onfire') && profile.stats.streakDays >= 3) {
+     const b = APP_BADGES.find(x => x.id === 'onfire');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // Historiador
+  if (!badgeIds.has('historiador') && profile.historyPoints >= 5) {
+     const b = APP_BADGES.find(x => x.id === 'historiador');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // Foodie
+  if (!badgeIds.has('foodie') && profile.foodPoints >= 5) {
+     const b = APP_BADGES.find(x => x.id === 'foodie');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // Rank Badges
+  const currentRank = calculateTravelerRank(profile.miles);
+  const rankBadgeId = `rank_${currentRank.toLowerCase()}`;
+  if (!badgeIds.has(rankBadgeId)) {
+     const b = APP_BADGES.find(x => x.id === rankBadgeId);
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  return earnedBadges;
+};
+
+export const completeTourBonus = (profile: UserProfile, cityId: string): UserProfile => {
+    const updatedCities = Array.from(new Set([...(profile.visitedCities || []), cityId]));
+    const updatedProfile = {
+        ...profile,
+        miles: profile.miles + 50,
+        visitedCities: updatedCities
+    };
+    
+    // Recalcular rango y badges
+    updatedProfile.rank = calculateTravelerRank(updatedProfile.miles);
+    updatedProfile.badges = checkBadges(updatedProfile);
+    
+    return updatedProfile;
 };
 
 export const syncUserProfile = async (profile: UserProfile) => {
