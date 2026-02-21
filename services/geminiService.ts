@@ -53,6 +53,40 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
     });
 };
 
+/**
+ * Normalizes a city search query using Gemini.
+ * Handles typos, nicknames (Donosti -> San Sebastián), and extracts country.
+ */
+export const normalizeCityWithAI = async (input: string): Promise<{ city: string, country: string, slug: string, isCorrection: boolean }> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Normalize this city search: "${input}". 
+            1. Correct typos (e.g., "Vitoiro" -> "Vitoria").
+            2. Resolve nicknames/local names (e.g., "Donosti" -> "San Sebastián").
+            3. Identify the country.
+            4. Create a slug format "city-country" (lowercase, no accents, hyphens for spaces).
+            
+            Return JSON: { "city": "Official Name", "country": "Country Name", "slug": "city-country", "isCorrection": true/false }`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        city: { type: Type.STRING },
+                        country: { type: Type.STRING },
+                        slug: { type: Type.STRING },
+                        isCorrection: { type: Type.BOOLEAN }
+                    },
+                    required: ["city", "country", "slug", "isCorrection"]
+                }
+            }
+        });
+        return JSON.parse(response.text || '{}');
+    });
+};
+
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

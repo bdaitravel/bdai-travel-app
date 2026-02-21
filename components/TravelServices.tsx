@@ -125,7 +125,11 @@ export const COUNTRY_TRANSLATIONS: Record<string, any> = {
 };
 
 const normalizeKey = (str: string): string => {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  return str.normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-');
 };
 
 export const formatCityName = (rawName: string | null, lang: string): string => {

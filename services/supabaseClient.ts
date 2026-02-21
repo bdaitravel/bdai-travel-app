@@ -47,28 +47,35 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
 
 /**
  * Normalizes keys for database storage/retrieval.
- * Splits by comma (handling Nominatim output) and converts to lowercase.
+ * Format: city-country (e.g., madrid-spain)
  */
 export const normalizeKey = (city: string | undefined | null, country?: string) => {
-    const safeCity = (city || "").toString().split(',')[0].trim().toLowerCase();
+    const clean = (text: string) => text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+
+    const safeCity = clean(city || "").split(',')[0];
     if (!safeCity) return "";
     
-    const raw = (country && country !== "Cache") ? `${safeCity}_${country.toLowerCase().trim()}` : safeCity;
-    return raw.normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") 
-        .replace(/[^a-z0-9_]/g, ""); 
+    const safeCountry = country && country !== "Cache" ? clean(country) : "";
+    return safeCountry ? `${safeCity}-${safeCountry}` : safeCity;
 };
 
 /**
- * Checks if a city exists in cache using loose matching.
+ * Checks if a city exists in cache using the new slug format.
  */
 export const checkIfCityCached = async (city: string, country: string): Promise<boolean> => {
-  const pureCity = city.split(',')[0].trim().toLowerCase();
+  const slug = normalizeKey(city, country);
+  if (!slug) return false;
   try {
     const { data, error } = await supabase
         .from('tours_cache')
         .select('city')
-        .ilike('city', `${pureCity}%`)
+        .eq('city', slug)
         .limit(1);
     if (error) return false;
     return (data && data.length > 0);
@@ -80,6 +87,7 @@ export const checkIfCityCached = async (city: string, country: string): Promise<
 export const searchCitiesInCache = async (query: string): Promise<any[]> => {
     if (!query || query.length < 2) return [];
     try {
+        // Fuzzy search: ignore case and accents using ilike
         const { data, error } = await supabase
             .from('tours_cache')
             .select('city, language')
@@ -92,12 +100,17 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
         return (data || []).reduce((acc: any[], curr: any) => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
+                // Extract city and country from slug for display
+                const parts = curr.city.split('-');
+                const cityName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+                const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
+                
                 acc.push({
-                    name: curr.city,
-                    localizedName: curr.city,
-                    spanishName: curr.city,
-                    country: "Cache",
-                    isCached: true
+                    name: cityName,
+                    country: countryName,
+                    fullName: `${cityName}, ${countryName}`,
+                    isCached: true,
+                    slug: curr.city
                 });
             }
             return acc;
@@ -222,39 +235,30 @@ export const syncUserProfile = async (profile: UserProfile) => {
  * 2. Case-insensitive match for City Name only using ilike.
  */
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
-  const nInput = normalizeKey(city, country);
-  const pureCity = city.split(',')[0].trim().toLowerCase();
+  const slug = normalizeKey(city, country);
   
-  if (!pureCity) return null;
+  if (!slug) return null;
 
   try {
-    // Attempt 1: Exact normalized match
-    const { data: exact, error: err1 } = await supabase.from('tours_cache')
+    const { data, error } = await supabase.from('tours_cache')
         .select('data, language, city')
-        .eq('city', nInput)
+        .eq('city', slug)
         .eq('language', language.toLowerCase())
         .maybeSingle();
-    if (!err1 && exact && exact.data) return { data: exact.data, langFound: language, cityName: exact.city };
-
-    // Attempt 2: Loose match by city prefix using ilike (Fixes Nominatim format issues)
-    const { data: loose, error: err2 } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .ilike('city', `${pureCity}%`)
-        .eq('language', language.toLowerCase())
-        .limit(1);
-    if (!err2 && loose && loose.length > 0 && loose[0].data) {
-        return { data: loose[0].data, langFound: language, cityName: loose[0].city };
+    
+    if (!error && data && data.data) {
+        return { data: data.data, langFound: language, cityName: data.city };
     }
   } catch (e) { console.warn("⚠️ Cache lookup failed", e); }
   return null; 
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
-  const nKey = normalizeKey(city, country);
-  if (!nKey) return;
+  const slug = normalizeKey(city, country);
+  if (!slug) return;
   try {
     await supabase.from('tours_cache').upsert({ 
-      city: nKey, 
+      city: slug, 
       language: language.toLowerCase(), 
       data: tours 
     }, { onConflict: 'city,language' });

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
-import { generateToursForCity, translateSearchQuery, QuotaError } from './services/geminiService';
+import { generateToursForCity, translateSearchQuery, QuotaError, normalizeCityWithAI } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { Leaderboard } from './components/Leaderboard';
 import { ProfileModal } from './components/ProfileModal';
@@ -18,7 +18,9 @@ import {
   validateEmailFormat,
   checkIfCityCached,
   calculateTravelerRank,
-  checkBadges
+  checkBadges,
+  searchCitiesInCache,
+  normalizeKey
 } from './services/supabaseClient';
 
 const GUEST_PROFILE: UserProfile = { 
@@ -195,19 +197,20 @@ export default function App() {
     } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
   };
 
-  const processCitySelection = async (selection: {name: string, country: string}, langCode: string) => {
+  const processCitySelection = async (selection: any, langCode: string) => {
     setIsLoading(true); 
     setSearchOptions(null); 
     setSearchVal(''); 
     const cleanName = selection.name.split(',')[0].trim();
     setSelectedCity(cleanName); 
+    const slug = selection.slug || normalizeKey(cleanName, selection.country);
 
     try {
         setTours([]);
         const { data: cached, error } = await supabase
           .from('tours_cache')
           .select('data')
-          .ilike('city', cleanName) 
+          .eq('city', slug) 
           .eq('language', langCode.toLowerCase())
           .maybeSingle();
 
@@ -223,7 +226,7 @@ export default function App() {
         if (generated.length > 0) {
             setTours(generated); 
             await supabase.from('tours_cache').upsert({
-              city: cleanName.toLowerCase(),
+              city: slug,
               language: langCode.toLowerCase(),
               data: generated
             }, { onConflict: 'city,language' });
@@ -242,24 +245,39 @@ export default function App() {
 
     searchTimeoutRef.current = setTimeout(async () => {
         try {
-            let queryVal = val;
-            const isNonLatin = /[^\u0000-\u007f]/.test(val);
-            if (isNonLatin) {
-                const translation = await translateSearchQuery(val);
-                queryVal = translation.english;
-            }
-
-            const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryVal)}&format=json&addressdetails=1&limit=5&featuretype=city`);
+            // 1. Check local cache first (fuzzy search)
+            const cacheResults = await searchCitiesInCache(val);
+            
+            // 2. Use Gemini to normalize and find city/country
+            const aiResult = await normalizeCityWithAI(val);
+            
+            // 3. Use Nominatim as fallback/verification
+            const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(aiResult.city + ' ' + aiResult.country)}&format=json&addressdetails=1&limit=3&featuretype=city`);
             const data = await resp.json();
-            const results = await Promise.all(data.map(async (item: any) => {
-                const name = item.address.city || item.address.town || item.address.village || item.address.city_district || item.display_name.split(',')[0];
+            
+            const results = data.map((item: any) => {
+                const name = item.address.city || item.address.town || item.address.village || item.display_name.split(',')[0];
                 const country = item.address.country;
-                const isCached = await checkIfCityCached(name.toLowerCase(), country);
-                return { name, country, isCached, fullName: `${name}, ${country}` };
-            }));
-            setSearchOptions(results);
+                return { 
+                    name, 
+                    country, 
+                    isCached: false, 
+                    fullName: `${name}, ${country}`,
+                    slug: aiResult.slug
+                };
+            });
+
+            // Combine and prioritize
+            const combined = [...cacheResults];
+            results.forEach((r: any) => {
+                if (!combined.find(c => c.fullName === r.fullName)) {
+                    combined.push(r);
+                }
+            });
+
+            setSearchOptions(combined);
         } catch (e) { console.error("Search protocol error:", e); }
-    }, 500);
+    }, 600);
   };
 
   const handleLangChange = (code: string) => {
@@ -426,8 +444,8 @@ export default function App() {
                                                   <i className={`fas ${opt.isCached ? 'fa-bolt text-cyan-400' : 'fa-globe text-purple-500'} text-xs`}></i>
                                               </div>
                                               <div className="truncate">
-                                                  <span className="text-white font-black uppercase text-[11px] block">{formatCityName(opt.name, user.language)}</span>
-                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : formatCountryName(opt.country, user.language)}</span>
+                                                  <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
+                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : 'AI VERIFIED'}</span>
                                               </div>
                                           </div>
                                           <i className="fas fa-chevron-right text-[9px] text-purple-500/40"></i>
