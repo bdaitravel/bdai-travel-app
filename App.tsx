@@ -236,13 +236,7 @@ export default function App() {
                 queryVal = translation.english;
             }
 
-            const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryVal)}&format=json&addressdetails=1&limit=5&featuretype=city`, {
-                headers: {
-                    'Accept-Language': user.language || 'es',
-                    'User-Agent': 'bdai-app-v1'
-                }
-            });
-            if (!resp.ok) throw new Error(`Search service error: ${resp.status}`);
+            const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryVal)}&format=json&addressdetails=1&limit=5&featuretype=city`);
             const data = await resp.json();
             const results = await Promise.all(data.map(async (item: any) => {
                 const name = item.address.city || item.address.town || item.address.village || item.address.city_district || item.display_name.split(',')[0];

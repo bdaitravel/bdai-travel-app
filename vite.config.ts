@@ -9,10 +9,6 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
-    server: {
-      port: 3000,
-      host: '0.0.0.0',
-    },
     define: {
       // Inyectamos las variables. Si no están en el .env, intentamos leer de process.env del sistema.
       'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || ""),
