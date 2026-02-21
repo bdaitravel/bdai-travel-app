@@ -67,12 +67,17 @@ export const CITY_TRANSLATIONS: Record<string, any> = {
   "marrakech": { es: "Marrakech", en: "Marrakech", fr: "Marrakech", de: "Marrakesch", it: "Marrakech", pt: "Marraquexe", ro: "Marrakech", zh: "马拉喀什", ja: "マラケシュ", ru: "Марракеш", ar: "مراكش", hi: "मैراकेच", ko: "마라케시", tr: "Marakeş", pl: "Marrakesz", nl: "Marrakech", ca: "Marràqueix", eu: "Marrakesh", vi: "Marrakech", th: "มาร์ราเกช" },
   "nairobi": { es: "Nairobi", en: "Nairobi", fr: "Nairobi", de: "Nairobi", it: "Nairobi", pt: "Nairobi", ro: "Nairobi", zh: "内罗毕", ja: "ナイロビ", ru: "Найроби", ar: "نيروبي", hi: "नैरोबी", ko: "나이로비", tr: "Nairobi", pl: "Nairobi", nl: "Nairobi", ca: "Nairobi", eu: "Nairobi", vi: "Nairobi", th: "ไนโรบี" },
   "casablanca": { es: "Casablanca", en: "Casablanca", fr: "Casablanca", de: "Casablanca", it: "Casablanca", pt: "Casablanca", ro: "Casablanca", zh: "卡萨布兰卡", ja: "カサブランカ", ru: "Касабланка", ar: "الدار البيضاء", hi: "कासाब्लांका", ko: "카사블랑카", tr: "Kazablanka", pl: "Casablanca", nl: "Casablanca", ca: "Casablanca", eu: "Casablanca", vi: "Casablanca", th: "คาซาบลังกา" },
+  "lagos": { es: "Lagos", en: "Lagos", fr: "Lagos", de: "Lagos", it: "Lagos", pt: "Lagos", ro: "Lagos", zh: "拉各斯", ja: "ラゴス", ru: "Лагос", ar: "لاغوس", hi: "लागोस", ko: "라고스", tr: "Lagos", pl: "Lagos", nl: "Lagos", ca: "Lagos", eu: "Lagos", vi: "Lagos", th: "ลากอส" },
+  "dakar": { es: "Dakar", en: "Dakar", fr: "Dakar", de: "Dakar", it: "Dakar", pt: "Dacar", ro: "Dakar", zh: "达喀尔", ja: "ダカール", ru: "Дакар", ar: "داكار", hi: "डकार", ko: "다카르", tr: "Dakar", pl: "Dakar", nl: "Dakar", ca: "Dakar", eu: "Dakar", vi: "Dakar", th: "ดาการ์" },
+  "luanda": { es: "Luanda", en: "Luanda", fr: "Luanda", de: "Luanda", it: "Luanda", pt: "Luanda", ro: "Luanda", zh: "罗安达", ja: "ルアンダ", ru: "Луанда", ar: "لواندا", hi: "लुआंडा", ko: "루안다", tr: "Luanda", pl: "Luanda", nl: "Luanda", ca: "Luanda", eu: "Luanda", vi: "Luanda", th: "ลูอันดา" },
 
   // OCEANIA
   "sydney": { es: "Sídney", en: "Sydney", fr: "Sydney", de: "Sydney", it: "Sydney", pt: "Sydney", ro: "Sydney", zh: "悉尼", ja: "シドニー", ru: "Сидней", ar: "سيدني", hi: "सिडनी", ko: "시드니", tr: "Sidney", pl: "Sydney", nl: "Sydney", ca: "Sydney", eu: "Sydney", vi: "Sydney", th: "ซิดนีย์" },
   "melbourne": { es: "Melbourne", en: "Melbourne", fr: "Melbourne", de: "Melbourne", it: "Melbourne", pt: "Melbourne", ro: "Melbourne", zh: "墨尔本", ja: "メルボルン", ru: "Мельбурン", ar: "ملبورن", hi: "मेलबर्न", ko: "멜버른", tr: "Melbourne", pl: "Melbourne", nl: "Melbourne", ca: "Melbourne", eu: "Melbourne", vi: "Melbourne", th: "เมลเบิร์น" },
   "auckland": { es: "Auckland", en: "Auckland", fr: "Auckland", de: "Auckland", it: "Auckland", pt: "Auckland", ro: "Auckland", zh: "奥克兰", ja: "オークランド", ru: "Окленд", ar: "أوكلاند", hi: "ऑकलैंड", ko: "오클랜드", tr: "Auckland", pl: "Auckland", nl: "Auckland", ca: "Auckland", eu: "Auckland", vi: "Auckland", th: "โอ๊คแลนด์" },
-  "perth": { es: "Perth", en: "Perth", fr: "Perth", de: "Perth", it: "Perth", pt: "Perth", ro: "Perth", zh: "珀斯", ja: "パース", ru: "Перт", ar: "بيرث", hi: "पर्थ", ko: "퍼스", tr: "Perth", pl: "Perth", nl: "Perth", ca: "Perth", eu: "Perth", vi: "Perth", th: "เพิร์ท" }
+  "perth": { es: "Perth", en: "Perth", fr: "Perth", de: "Perth", it: "Perth", pt: "Perth", ro: "Perth", zh: "珀斯", ja: "パース", ru: "Перт", ar: "بيرث", hi: "पर्थ", ko: "퍼스", tr: "Perth", pl: "Perth", nl: "Perth", ca: "Perth", eu: "Perth", vi: "Perth", th: "เพิร์ท" },
+  "suva": { es: "Suva", en: "Suva", fr: "Suva", de: "Suva", it: "Suva", pt: "Suva", ro: "Suva", zh: "苏瓦", ja: "スバ", ru: "Сува", ar: "سوفا", hi: "सुवा", ko: "수바", tr: "Suva", pl: "Suva", nl: "Suva", ca: "Suva", eu: "Suva", vi: "Suva", th: "ซูวา" },
+  "gold coast": { es: "Gold Coast", en: "Gold Coast", fr: "Gold Coast", de: "Gold Coast", it: "Gold Coast", pt: "Gold Coast", ro: "Gold Coast", zh: "黄金海岸", ja: "ゴールドコースト", ru: "Голд-Кост", ar: "غولد كوست", hi: "गोल्ड कोस्ट", ko: "골드코스트", tr: "Gold Coast", pl: "Gold Coast", nl: "Gold Coast", ca: "Gold Coast", eu: "Gold Coast", vi: "Gold Coast", th: "โกลด์โคสต์" },
 };
 
 export const COUNTRY_TRANSLATIONS: Record<string, any> = {
@@ -112,7 +117,11 @@ export const COUNTRY_TRANSLATIONS: Record<string, any> = {
   "uae": { es: "EAU", en: "UAE", fr: "EAU", de: "VAE", it: "EAU", pt: "EAU", ro: "EAU", zh: "阿联酋", ja: "アラブ首長国連邦", ru: "ОАЭ", ar: "الإمارات", hi: "संयुक्त अरब अमीरात", ko: "아랍에미리트", tr: "BAE", pl: "ZEA", nl: "VAE", ca: "EAU", eu: "EAU", vi: "UAE", th: "ยูเออี" },
   "india": { es: "India", en: "India", fr: "Inde", de: "Indien", it: "India", pt: "Índia", ro: "India", zh: "印度", ja: "インド", ru: "Индия", ar: "الهند", hi: "भारत", ko: "인도", tr: "Hindistan", pl: "Indie", nl: "India", ca: "Índia", eu: "India", vi: "Ấn Độ", th: "อินเดีย" },
   "turkey": { es: "Turquía", en: "Turkey", fr: "Turquie", de: "Türkei", it: "Turchia", pt: "Turquia", ro: "Turcia", zh: "土耳其", ja: "トルコ", ru: "Турция", ar: "تركيا", hi: "तुर्की", ko: "터키", tr: "Türkiye", pl: "Turcja", nl: "Turkije", ca: "Turquia", eu: "Turkia", vi: "Thổ Nhĩ Kỳ", th: "ตุรกี" },
-  "vietnam": { es: "Vietnam", en: "Vietnam", fr: "Vietnam", de: "Vietnam", it: "Vietnam", pt: "Vietname", ro: "Vietnam", zh: "越南", ja: "ベトナム", ru: "Вьетнам", ar: "فيتنام", hi: "वियतनाम", ko: "베트ナム", tr: "Vietnam", pl: "Wietnam", nl: "Vietnam", ca: "Vietnam", eu: "Vietnam", vi: "Việt Nam", th: "เวียดนาม" }
+  "vietnam": { es: "Vietnam", en: "Vietnam", fr: "Vietnam", de: "Vietnam", it: "Vietnam", pt: "Vietname", ro: "Vietnam", zh: "越南", ja: "ベトナム", ru: "Вьетнам", ar: "فيتنام", hi: "वियतनाम", ko: "베트ナム", tr: "Vietnam", pl: "Wietnam", nl: "Vietnam", ca: "Vietnam", eu: "Vietnam", vi: "Việt Nam", th: "เวียดนาม" },
+  "nigeria": { es: "Nigeria", en: "Nigeria", fr: "Nigéria", de: "Nigeria", it: "Nigeria", pt: "Nigéria", ro: "Nigeria", zh: "尼日利亚", ja: "ナイジェリア", ru: "Нигерия", ar: "نيجيريا", hi: "नाइजीरिया", ko: "나이지리아", tr: "Nijerya", pl: "Nigeria", nl: "Nigeria", ca: "Nigèria", eu: "Nigeria", vi: "Nigeria", th: "ไนจีเรีย" },
+  "senegal": { es: "Senegal", en: "Senegal", fr: "Sénégal", de: "Senegal", it: "Senegal", pt: "Senegal", ro: "Senegal", zh: "塞内加尔", ja: "セネガル", ru: "Сенегал", ar: "السنغال", hi: "सेनेगल", ko: "세네갈", tr: "Senegal", pl: "Senegal", nl: "Senegal", ca: "Senegal", eu: "Senegal", vi: "Senegal", th: "เซเนกัล" },
+  "angola": { es: "Angola", en: "Angola", fr: "Angola", de: "Angola", it: "Angola", pt: "Angola", ro: "Angola", zh: "安哥拉", ja: "アンゴラ", ru: "Ангола", ar: "أنغولا", hi: "अंगोला", ko: "앙골라", tr: "Angola", pl: "Angola", nl: "Angola", ca: "Angola", eu: "Angola", vi: "Angola", th: "แองโกลา" },
+  "fiji": { es: "Fiyi", en: "Fiji", fr: "Fidji", de: "Fidschi", it: "Figi", pt: "Fiji", ro: "Fiji", zh: "斐济", ja: "フィジー", ru: "Фиджи", ar: "فيجي", hi: "फिजी", ko: "피지", tr: "Fiji", pl: "Fidżi", nl: "Fiji", ca: "Fiji", eu: "Fiji", vi: "Fiji", th: "ฟิจิ" }
 };
 
 const normalizeKey = (str: string): string => {
@@ -138,16 +147,16 @@ const CITY_NAME_MAP_RAW: Record<string, string> = {
   par: "Paris", lon: "London", ber: "Berlin", rom: "Rome", ams: "Amsterdam", prg: "Prague", vie: "Vienna", ath: "Athens", lis: "Lisbon", bud: "Budapest",
   nyc: "New York", mex: "Mexico City", bue: "Buenos Aires", rio: "Rio de Janeiro", bog: "Bogotá", lim: "Lima", scl: "Santiago", yyz: "Toronto", chi: "Chicago", sfo: "San Francisco",
   tyo: "Tokyo", sel: "Seoul", bkk: "Bangkok", pek: "Beijing", sin: "Singapore", dxb: "Dubai", bom: "Mumbai", ist: "Istanbul", hkg: "Hong Kong", han: "Hanoi",
-  cai: "Cairo", cpt: "Cape Town", rak: "Marrakech", nbo: "Nairobi", cas: "Casablanca",
-  syd: "Sídney", mel: "Melbourne", akl: "Auckland", per: "Perth"
+  cai: "Cairo", cpt: "Cape Town", rak: "Marrakech", nbo: "Nairobi", cas: "Casablanca", los: "Lagos", dkr: "Dakar", lad: "Luanda",
+  syd: "Sídney", mel: "Melbourne", akl: "Auckland", per: "Perth", suv: "Suva", ool: "Gold Coast"
 };
 
 const WORLD_DATA = {
   europa: [{ cityKey: "par", countryKey: "france" }, { cityKey: "lon", countryKey: "united kingdom" }, { cityKey: "ber", countryKey: "germany" }, { cityKey: "rom", countryKey: "italy" }, { cityKey: "ams", countryKey: "netherlands" }, { cityKey: "prg", countryKey: "czechia" }, { cityKey: "vie", countryKey: "austria" }, { cityKey: "ath", countryKey: "greece" }, { cityKey: "lis", countryKey: "portugal" }],
   america: [{ cityKey: "nyc", countryKey: "usa" }, { cityKey: "mex", countryKey: "mexico" }, { cityKey: "bue", countryKey: "argentina" }, { cityKey: "rio", countryKey: "brazil" }, { cityKey: "lim", countryKey: "peru" }, { cityKey: "bog", countryKey: "colombia" }, { cityKey: "scl", countryKey: "chile" }, { cityKey: "yyz", countryKey: "canada" }, { cityKey: "chi", countryKey: "usa" }, { cityKey: "sfo", countryKey: "usa" }],
   asia: [{ cityKey: "tyo", countryKey: "japan" }, { cityKey: "bkk", countryKey: "thailand" }, { cityKey: "sin", countryKey: "singapore" }, { cityKey: "pek", countryKey: "china" }, { cityKey: "dxb", countryKey: "uae" }, { cityKey: "bom", countryKey: "india" }, { cityKey: "ist", countryKey: "turkey" }, { cityKey: "hkg", countryKey: "china" }, { cityKey: "han", countryKey: "vietnam" }],
-  africa: [{ cityKey: "cai", countryKey: "egypt" }, { cityKey: "cpt", countryKey: "south africa" }, { cityKey: "rak", countryKey: "morocco" }, { cityKey: "nbo", countryKey: "kenya" }, { cityKey: "cas", countryKey: "morocco" }],
-  oceania: [{ cityKey: "syd", countryKey: "australia" }, { cityKey: "mel", countryKey: "australia" }, { cityKey: "akl", countryKey: "new zealand" }, { cityKey: "per", countryKey: "australia" }]
+  africa: [{ cityKey: "cai", countryKey: "egypt" }, { cityKey: "cpt", countryKey: "south africa" }, { cityKey: "rak", countryKey: "morocco" }, { cityKey: "nbo", countryKey: "kenya" }, { cityKey: "cas", countryKey: "morocco" }, { cityKey: "los", countryKey: "nigeria" }, { cityKey: "dkr", countryKey: "senegal" }, { cityKey: "lad", countryKey: "angola" }],
+  oceania: [{ cityKey: "syd", countryKey: "australia" }, { cityKey: "mel", countryKey: "australia" }, { cityKey: "akl", countryKey: "new zealand" }, { cityKey: "per", countryKey: "australia" }, { cityKey: "suv", countryKey: "fiji" }, { cityKey: "ool", countryKey: "australia" }]
 };
 
 const SPAIN_DATA = {
