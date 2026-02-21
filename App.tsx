@@ -127,7 +127,10 @@ export default function App() {
     setIsLoading(true);
     setLoadingMessage("REQUESTING KEY...");
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      const { error } = await supabase.auth.signInWithOtp({ 
+        email,
+        options: { emailRedirectTo: "https://www.bdai.travel" }
+      });
       if (error) throw error;
       setLoginPhase('OTP');
     } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
@@ -141,7 +144,7 @@ export default function App() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: "https://www.bdai.travel",
           skipBrowserRedirect: true
         }
       });
