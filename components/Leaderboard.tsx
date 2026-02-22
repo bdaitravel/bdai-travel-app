@@ -10,8 +10,8 @@ interface LeaderboardProps {
 }
 
 const TEXTS: any = {
-    es: { title: "Ranking Global", you: "Tu Estado", subtitle: "Exploradores de élite" },
-    en: { title: "Elite Travelers", you: "Your Status", subtitle: "Global explorer rankings" },
+    es: { title: "Ranking Global", you: "Tu Estado", subtitle: "Exploradores de élite", catGlobal: "Global", catCountry: "País", catBadges: "Insignias" },
+    en: { title: "Elite Travelers", you: "Your Status", subtitle: "Global explorer rankings", catGlobal: "Global", catCountry: "Country", catBadges: "Badges" },
     it: { title: "Classifica Mondiale", you: "Tuo Stato", subtitle: "Esploratori d'élite" },
     fr: { title: "Classement Mondial", you: "Votre Statut", subtitle: "Voyageurs d'élite" },
     de: { title: "Bestenliste", you: "Dein Status", subtitle: "Globale Entdecker-Rankings" },
@@ -34,15 +34,48 @@ const TEXTS: any = {
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, onUserClick, language }) => {
   const t = TEXTS[language] || TEXTS['en'];
-  const sorted = [...entries].sort((a, b) => b.miles - a.miles);
-  const top3 = sorted.slice(0, 3);
-  const rest = sorted.slice(3);
+  const [category, setCategory] = React.useState<'GLOBAL' | 'COUNTRY' | 'BADGES'>('GLOBAL');
+
+  const filteredEntries = React.useMemo(() => {
+    let result = [...entries];
+    if (category === 'COUNTRY') {
+      result = result.filter(e => e.country === currentUser.country);
+    } else if (category === 'BADGES') {
+      result = result.sort((a, b) => (b.badges?.length || 0) - (a.badges?.length || 0));
+      return result;
+    }
+    return result.sort((a, b) => b.miles - a.miles);
+  }, [entries, category, currentUser.country]);
+
+  const top3 = filteredEntries.slice(0, 3);
+  const rest = filteredEntries.slice(3);
 
   return (
     <div className="w-full h-full pb-24 animate-fade-in flex flex-col pt-12 bg-slate-950 overflow-y-auto no-scrollbar">
-        <div className="text-center mb-12 px-6">
+        <div className="text-center mb-8 px-6">
             <h2 className="text-5xl font-black text-white lowercase tracking-tighter mb-2">{t.title}</h2>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-purple-400 opacity-60">{t.subtitle}</p>
+        </div>
+
+        <div className="flex justify-center gap-2 mb-10 px-6">
+            <button 
+                onClick={() => setCategory('GLOBAL')}
+                className={`px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${category === 'GLOBAL' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'bg-white/5 text-slate-500 border border-white/5'}`}
+            >
+                {t.catGlobal}
+            </button>
+            <button 
+                onClick={() => setCategory('COUNTRY')}
+                className={`px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${category === 'COUNTRY' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'bg-white/5 text-slate-500 border border-white/5'}`}
+            >
+                {t.catCountry}
+            </button>
+            <button 
+                onClick={() => setCategory('BADGES')}
+                className={`px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${category === 'BADGES' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'bg-white/5 text-slate-500 border border-white/5'}`}
+            >
+                {t.catBadges}
+            </button>
         </div>
         
         <div className={`flex justify-center items-end gap-3 mb-16 px-6 h-80 relative ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
@@ -91,7 +124,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                     <img src={user.avatar} className="w-12 h-12 rounded-2xl border border-white/10 object-cover" />
                     <div className={`ml-5 flex-1 ${language === 'ar' ? 'mr-5 ml-0 text-right' : ''}`}>
                         <p className="font-black text-sm text-slate-100">{user.name}</p>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{user.miles.toLocaleString()} miles</p>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                            {category === 'BADGES' ? `${user.badges?.length || 0} badges` : `${user.miles.toLocaleString()} miles`}
+                        </p>
                     </div>
                     <i className={`fas fa-chevron-right text-[10px] text-slate-700 ${language === 'ar' ? 'rotate-180' : ''}`}></i>
                 </div>

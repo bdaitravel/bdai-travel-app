@@ -88,6 +88,7 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
               <div>
                 <p className={`text-[8px] font-black uppercase tracking-widest ${theme.accent} opacity-60`}>Traveler</p>
                 <p className={`text-lg font-black ${theme.text}`}>{user.firstName} {user.lastName}</p>
+                <p className={`text-[7px] font-bold uppercase tracking-widest ${theme.accent} opacity-40 mt-0.5`}>{user.country}</p>
               </div>
               <div className="text-right">
                 <p className={`text-[8px] font-black uppercase tracking-widest ${theme.accent} opacity-60`}>Rank</p>

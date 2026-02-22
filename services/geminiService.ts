@@ -105,8 +105,9 @@ export const generateToursForCity = async (city: string, country: string, user: 
             STRICT RULES:
             1. Generate 1 tour for small towns, 2 for major cities.
             2. EXACTLY 10 STOPS per tour.
-            3. Each stop description: ~300 words.
-            4. ALL CONTENT IN ${user.language}.
+            3. Each stop description: MINIMUM 400 words. Be extremely detailed and engaging.
+            4. The tours MUST be thematic and distinct. DO NOT repeat stops between tours.
+            5. ALL CONTENT IN ${user.language}.
             
             Return a JSON array of tours.`,
             config: {

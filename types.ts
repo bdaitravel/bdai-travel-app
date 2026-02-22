@@ -102,6 +102,8 @@ export interface LeaderboardEntry {
   avatar: string;
   miles: number;
   rank: number;
+  country?: string;
+  badges?: Badge[];
 }
 
 export interface PhotoSpot {

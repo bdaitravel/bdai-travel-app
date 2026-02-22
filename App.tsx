@@ -130,7 +130,10 @@ export default function App() {
       if (updatedProfile.stats.sessionsStarted === 1) {
         setShowOnboarding(true);
       }
-      setView(AppView.HOME);
+      // Only set view to HOME if we are currently in LOGIN or if it's the initial load
+      if (view === AppView.LOGIN || !user.isLoggedIn) {
+        setView(AppView.HOME);
+      }
     } else {
       const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true, stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } };
       newProfile.rank = calculateTravelerRank(newProfile.miles);
@@ -138,7 +141,9 @@ export default function App() {
       await syncUserProfile(newProfile);
       setUser(newProfile);
       setShowOnboarding(true);
-      setView(AppView.HOME);
+      if (view === AppView.LOGIN || !user.isLoggedIn) {
+        setView(AppView.HOME);
+      }
     }
   };
 
@@ -460,7 +465,7 @@ export default function App() {
                                               </div>
                                               <div className="truncate">
                                                   <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
-                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : 'AI VERIFIED'}</span>
+                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : opt.country}</span>
                                               </div>
                                           </div>
                                           <i className="fas fa-chevron-right text-[9px] text-purple-500/40"></i>
@@ -495,12 +500,12 @@ export default function App() {
                     <div className="fixed inset-0 z-[10000] flex items-center justify-center">
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
                         <div className="relative flex flex-col items-center">
-                            <div className="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-pulse mb-6 overflow-hidden border-4 border-white/20">
-                                <i className="fas fa-compass text-4xl text-white"></i>
+                            <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-pulse mb-6 overflow-hidden border-4 border-white/20">
+                                <i className="fas fa-brain text-3xl text-white"></i>
                             </div>
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
-                                <span className="text-white font-black uppercase tracking-[0.3em] text-sm">DAI EXPLORING</span>
+                                <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping"></div>
+                                <span className="text-white font-black uppercase tracking-[0.3em] text-[10px]">bdai exploring</span>
                             </div>
                         </div>
                     </div>
