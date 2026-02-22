@@ -43,18 +43,24 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
   const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
   const [isLaunching, setIsLaunching] = useState(false);
 
-  const handleLaunch = () => {
+  const handleLaunch = (e: React.MouseEvent) => {
+      e.stopPropagation();
       setIsLaunching(true);
       setTimeout(() => {
           onSelect(tour);
           setIsLaunching(false);
-      }, 900);
+      }, 600);
   };
 
   if (!tour) return null;
 
   return (
     <div onClick={handleLaunch} className="group bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden p-8 mb-6 cursor-pointer relative active:scale-[0.98] transition-all hover:border-purple-500/40 shadow-2xl">
+      {isLaunching && (
+          <div className="absolute inset-0 bg-purple-600/20 backdrop-blur-[2px] z-10 flex items-center justify-center animate-fade-in">
+              <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+      )}
       <div className="flex flex-col">
           <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
           <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-6 font-medium">{tour.description}</p>
@@ -168,24 +174,41 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 setIsAudioLoading(false);
                 return;
             }
+            
             if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
             const ctx = audioContextRef.current;
+            
             const binaryString = atob(base64);
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-            const dataInt16 = new Int16Array(bytes.buffer);
-            const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
-            const channelData = buffer.getChannelData(0);
-            for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
-            source.onended = () => setAudioPlayingId(null);
-            sourceNodeRef.current = source;
-            source.start(0);
-            setAudioPlayingId(stopId);
+            
+            // Try decoding as standard audio first (MP3/WAV)
+            try {
+                const audioBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+                const source = ctx.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(ctx.destination);
+                source.onended = () => setAudioPlayingId(null);
+                sourceNodeRef.current = source;
+                source.start(0);
+                setAudioPlayingId(stopId);
+            } catch (decodeError) {
+                // Fallback to raw PCM if decodeAudioData fails (Gemini TTS returns raw PCM)
+                const dataInt16 = new Int16Array(bytes.buffer);
+                const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
+                const channelData = buffer.getChannelData(0);
+                for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
+                
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+                source.onended = () => setAudioPlayingId(null);
+                sourceNodeRef.current = source;
+                source.start(0);
+                setAudioPlayingId(stopId);
+            }
         } catch (e) { 
-            console.error(e); 
+            console.error("Audio playback error:", e); 
         } finally {
             setIsAudioLoading(false);
         }

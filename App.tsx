@@ -240,18 +240,6 @@ export default function App() {
             return;
         }
         
-        // Check for paid API key if using Pro models
-        if (typeof window !== 'undefined' && window.aistudio) {
-            const hasKey = await window.aistudio.hasSelectedApiKey();
-            if (!hasKey) {
-                const confirm = window.confirm("Para generar tours de alta calidad (400+ palabras), Dai necesita una API Key de Google Cloud (Pago por uso). ¿Quieres configurarla ahora?");
-                if (confirm) {
-                    await window.aistudio.openSelectKey();
-                    // After selection, we continue
-                }
-            }
-        }
-
         setLoadingMessage(t('generating'));
         const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
         if (generated.length > 0) {
@@ -507,14 +495,13 @@ export default function App() {
                     <div className="fixed inset-0 z-[10000] flex items-center justify-center">
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
                         <div className="relative flex flex-col items-center">
-                            <div className="w-24 h-24 bg-purple-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-bounce mb-6">
-                                <i className="fas fa-brain text-4xl text-white"></i>
+                            <div className="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-pulse mb-6 overflow-hidden border-4 border-white/20">
+                                <i className="fas fa-compass text-4xl text-white"></i>
                             </div>
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
-                                <span className="text-white font-black uppercase tracking-widest text-xs">Dai is thinking...</span>
+                                <span className="text-white font-black uppercase tracking-[0.3em] text-sm">DAI EXPLORING</span>
                             </div>
-                            <p className="text-slate-400 text-[10px] font-medium uppercase tracking-tighter">Analyzing destination protocols</p>
                         </div>
                     </div>
                 )}

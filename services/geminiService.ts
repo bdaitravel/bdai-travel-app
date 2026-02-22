@@ -61,7 +61,7 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-flash-latest",
             contents: `Identify all major cities or towns globally that match the name: "${input}". 
             For each match:
             1. Provide the official city name.
@@ -95,21 +95,20 @@ export const generateToursForCity = async (city: string, country: string, user: 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: 'gemini-flash-latest',
             contents: `As DAI, a highly intelligent, slightly sarcastic, and elegant AI travel guide, generate 1 or 2 tours for ${city}, ${country} in ${user.language}.
             
             DAI'S PERSONALITY:
-            - You are sophisticated but you have a sharp, witty sense of humor.
-            - You hate boring, generic travel guides.
-            - You focus on engineering secrets, historical gossip, and "hidden gems".
-            - Your tone is natural, engaging, and slightly provocative.
+            - Sophisticated, sharp, witty, and slightly provocative.
+            - Focus on engineering secrets, historical gossip, and "hidden gems".
             
             STRICT RULES:
-            1. If the location is small, generate 1 tour. If it's a major city, generate 2 tours.
-            2. Each tour MUST HAVE EXACTLY 10 STOPS.
-            3. Each stop description MUST exceed 400 words. Infuse it with DAI's personality.
-            4. Each 'photoSpot' MUST be specific to the stop.
-            5. ALL CONTENT MUST BE IN ${user.language}.`,
+            1. Generate 1 tour for small towns, 2 for major cities.
+            2. EXACTLY 10 STOPS per tour.
+            3. Each stop description: ~300 words.
+            4. ALL CONTENT IN ${user.language}.
+            
+            Return a JSON array of tours.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -123,9 +122,6 @@ export const generateToursForCity = async (city: string, country: string, user: 
                             description: { type: Type.STRING },
                             duration: { type: Type.STRING },
                             distance: { type: Type.STRING },
-                            difficulty: { type: Type.STRING },
-                            theme: { type: Type.STRING },
-                            isEssential: { type: Type.BOOLEAN },
                             stops: {
                                 type: Type.ARRAY,
                                 items: {
@@ -178,19 +174,39 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
 };
 
 export const generateAudio = async (text: string, language: string, city: string): Promise<string> => {
-    const cachedUrl = await getCachedAudio(text, language);
+    const cleanText = (text || "").trim();
+    if (!cleanText) return "";
+
+    const cachedUrl = await getCachedAudio(cleanText, language);
     if (cachedUrl) {
-        const response = await fetch(cachedUrl);
-        const buffer = await response.arrayBuffer();
-        return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+        try {
+            const response = await fetch(cachedUrl);
+            const buffer = await response.arrayBuffer();
+            
+            // Use a safer way to convert ArrayBuffer to base64 to avoid stack overflow
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        } catch (e) {
+            console.error("Error loading cached audio:", e);
+        }
     }
 
     const voiceName = VOICE_MAP[language] || 'Kore';
     const base64 = await handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        // Move personality instructions into the prompt for better stability with the TTS model
+        const prompt = language === 'es' 
+            ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
+            : `Act as Dai, an elegant and sarcastic guide. Say this in a natural and engaging tone: ${cleanText}`;
+
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: text }] }],
+            contents: [{ parts: [{ text: prompt }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
                 speechConfig: {
@@ -202,7 +218,7 @@ export const generateAudio = async (text: string, language: string, city: string
     });
 
     if (base64) {
-        saveAudioToCache(text, language, base64, city).catch(err => console.error("Cache save failed", err));
+        saveAudioToCache(cleanText, language, base64, city).catch(err => console.error("Cache save failed", err));
     }
 
     return base64;
