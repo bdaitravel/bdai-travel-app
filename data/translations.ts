@@ -526,4 +526,4 @@ export const translations: Record<string, any> = {
     badge_pioneer_desc: "İlk durağınızı tamamlayın",
     badge_streak_desc: "3 günlük etkinlik serisi",
   },
- };
+};
