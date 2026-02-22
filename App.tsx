@@ -9,7 +9,19 @@ import { Shop } from './components/Shop';
 import { TravelServices, formatCityName, formatCountryName } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { AdminPanel } from './components/AdminPanel';
+import { Onboarding } from './components/Onboarding';
+import { VisaShare } from './components/VisaShare';
 import { translations } from './data/translations';
+
+declare global {
+  interface Window {
+    aistudio: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}
+
 import { 
   supabase, 
   getUserProfileByEmail, 
@@ -53,9 +65,12 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [isSyncingLang, setIsSyncingLang] = useState(false);
   const [searchOptions, setSearchOptions] = useState<any[] | null>(null);
   const [user, setUser] = useState<UserProfile>(GUEST_PROFILE);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
@@ -104,21 +119,25 @@ export default function App() {
   const handleLoginSuccess = async (supabaseUser: any) => {
     const profile = await getUserProfileByEmail(supabaseUser.email || '');
     if (profile) {
-      // Recalcular rango y badges para asegurar consistencia con el nuevo sistema
       const updatedProfile = {
           ...profile,
           rank: calculateTravelerRank(profile.miles),
-          badges: checkBadges(profile)
+          badges: checkBadges(profile),
+          stats: { ...profile.stats, sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1 }
       };
       setUser({ ...updatedProfile, isLoggedIn: true });
       localStorage.setItem('bdai_profile', JSON.stringify({ ...updatedProfile, isLoggedIn: true }));
+      if (updatedProfile.stats.sessionsStarted === 1) {
+        setShowOnboarding(true);
+      }
       setView(AppView.HOME);
     } else {
-      const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true };
+      const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true, stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } };
       newProfile.rank = calculateTravelerRank(newProfile.miles);
       newProfile.badges = checkBadges(newProfile);
       await syncUserProfile(newProfile);
       setUser(newProfile);
+      setShowOnboarding(true);
       setView(AppView.HOME);
     }
   };
@@ -221,6 +240,18 @@ export default function App() {
             return;
         }
         
+        // Check for paid API key if using Pro models
+        if (typeof window !== 'undefined' && window.aistudio) {
+            const hasKey = await window.aistudio.hasSelectedApiKey();
+            if (!hasKey) {
+                const confirm = window.confirm("Para generar tours de alta calidad (400+ palabras), Dai necesita una API Key de Google Cloud (Pago por uso). ¿Quieres configurarla ahora?");
+                if (confirm) {
+                    await window.aistudio.openSelectKey();
+                    // After selection, we continue
+                }
+            }
+        }
+
         setLoadingMessage(t('generating'));
         const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
         if (generated.length > 0) {
@@ -238,46 +269,38 @@ export default function App() {
     } finally { setIsLoading(false); }
   };
 
-  const handleCitySearch = async (val: string) => {
+   const handleCitySearch = async (val: string) => {
     setSearchVal(val);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     if (val.length < 3) { setSearchOptions(null); return; }
 
+    setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
         try {
-            // 1. Check local cache first (fuzzy search)
-            const cacheResults = await searchCitiesInCache(val);
+            // 1. Use Gemini to find all matches globally
+            const aiResults = await normalizeCityWithAI(val, user.language);
             
-            // 2. Use Gemini to normalize and find city/country
-            const aiResult = await normalizeCityWithAI(val);
-            
-            // 3. Use Nominatim as fallback/verification
-            const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(aiResult.city + ' ' + aiResult.country)}&format=json&addressdetails=1&limit=3&featuretype=city`);
-            const data = await resp.json();
-            
-            const results = data.map((item: any) => {
-                const name = item.address.city || item.address.town || item.address.village || item.display_name.split(',')[0];
-                const country = item.address.country;
-                return { 
-                    name, 
-                    country, 
-                    isCached: false, 
-                    fullName: `${name}, ${country}`,
-                    slug: aiResult.slug
+            // 2. Check cache for each result
+            const results = await Promise.all(aiResults.map(async (res) => {
+                const slug = res.slug.replace(/-/g, '_');
+                const isCached = await checkIfCityCached(res.city, slug);
+                return {
+                    name: res.city,
+                    country: res.country,
+                    countryCode: res.countryCode,
+                    slug: slug,
+                    isCached: isCached,
+                    fullName: `${res.city}, ${res.country}`
                 };
-            });
+            }));
 
-            // Combine and prioritize
-            const combined = [...cacheResults];
-            results.forEach((r: any) => {
-                if (!combined.find(c => c.fullName === r.fullName)) {
-                    combined.push(r);
-                }
-            });
-
-            setSearchOptions(combined);
-        } catch (e) { console.error("Search protocol error:", e); }
-    }, 600);
+            setSearchOptions(results);
+        } catch (e) { 
+            console.error("Search protocol error:", e); 
+        } finally {
+            setIsSearching(false);
+        }
+    }, 800);
   };
 
   const handleLangChange = (code: string) => {
@@ -440,8 +463,12 @@ export default function App() {
                                   {searchOptions.map((opt, i) => (
                                       <button key={i} onClick={() => processCitySelection(opt, user.language)} className="w-full p-4 bg-white/[0.03] rounded-xl flex items-center justify-between border border-white/5 active:bg-purple-600/10 transition-all text-left">
                                           <div className="flex items-center gap-4">
-                                              <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center shrink-0">
-                                                  <i className={`fas ${opt.isCached ? 'fa-bolt text-cyan-400' : 'fa-globe text-purple-500'} text-xs`}></i>
+                                              <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                                                  {opt.countryCode ? (
+                                                    <img src={`https://flagsapi.com/${opt.countryCode}/flat/64.png`} alt={opt.country} className="w-full h-full object-cover" />
+                                                  ) : (
+                                                    <i className={`fas ${opt.isCached ? 'fa-bolt text-cyan-400' : 'fa-globe text-purple-500'} text-xs`}></i>
+                                                  )}
                                               </div>
                                               <div className="truncate">
                                                   <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
@@ -473,8 +500,26 @@ export default function App() {
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} />
+                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
                 )}
+                {/* Dai Thinking Overlay */}
+                {(isLoading || isSearching) && (
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+                        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
+                        <div className="relative flex flex-col items-center">
+                            <div className="w-24 h-24 bg-purple-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-bounce mb-6">
+                                <i className="fas fa-brain text-4xl text-white"></i>
+                            </div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full animate-ping"></div>
+                                <span className="text-white font-black uppercase tracking-widest text-xs">Dai is thinking...</span>
+                            </div>
+                            <p className="text-slate-400 text-[10px] font-medium uppercase tracking-tighter">Analyzing destination protocols</p>
+                        </div>
+                    </div>
+                )}
+                {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
+                {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}

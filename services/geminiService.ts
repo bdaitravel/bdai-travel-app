@@ -57,33 +57,37 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
  * Normalizes a city search query using Gemini.
  * Handles typos, nicknames (Donosti -> San Sebastián), and extracts country.
  */
-export const normalizeCityWithAI = async (input: string): Promise<{ city: string, country: string, slug: string, isCorrection: boolean }> => {
+export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<any[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Normalize this city search: "${input}". 
-            1. Correct typos (e.g., "Vitoiro" -> "Vitoria").
-            2. Resolve nicknames/local names (e.g., "Donosti" -> "San Sebastián").
-            3. Identify the country.
-            4. Create a slug format "city-country" (lowercase, no accents, hyphens for spaces).
+            contents: `Identify all major cities or towns globally that match the name: "${input}". 
+            For each match:
+            1. Provide the official city name.
+            2. Provide the country name in ${userLanguage}.
+            3. Provide the ISO 3166-1 alpha-2 country code.
+            4. Create a unique slug in English: "cityname_countryname" (lowercase, no accents, underscores for spaces).
             
-            Return JSON: { "city": "Official Name", "country": "Country Name", "slug": "city-country", "isCorrection": true/false }`,
+            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryCode": "XX", "slug": "city_country" }]`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        city: { type: Type.STRING },
-                        country: { type: Type.STRING },
-                        slug: { type: Type.STRING },
-                        isCorrection: { type: Type.BOOLEAN }
-                    },
-                    required: ["city", "country", "slug", "isCorrection"]
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            city: { type: Type.STRING },
+                            country: { type: Type.STRING },
+                            countryCode: { type: Type.STRING },
+                            slug: { type: Type.STRING }
+                        },
+                        required: ["city", "country", "countryCode", "slug"]
+                    }
                 }
             }
         });
-        return JSON.parse(response.text || '{}');
+        return JSON.parse(response.text || '[]');
     });
 };
 
@@ -92,13 +96,19 @@ export const generateToursForCity = async (city: string, country: string, user: 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
-            contents: `As a Master Historian and National Geographic Photographer, generate 3 tours for ${city}, ${country} in ${user.language}.
+            contents: `As DAI, a highly intelligent, slightly sarcastic, and elegant AI travel guide, generate 1 or 2 tours for ${city}, ${country} in ${user.language}.
+            
+            DAI'S PERSONALITY:
+            - You are sophisticated but you have a sharp, witty sense of humor.
+            - You hate boring, generic travel guides.
+            - You focus on engineering secrets, historical gossip, and "hidden gems".
+            - Your tone is natural, engaging, and slightly provocative.
             
             STRICT RULES:
-            1. The FIRST tour MUST be marked as 'isEssential: true' and MUST HAVE EXACTLY 10 STOPS. DO NOT GENERATE FEWER.
-            2. Each stop description MUST exceed 450 words. Focus on engineering secrets and historical gossip.
-            3. Each 'photoSpot' MUST be specific to the stop. NO REPETITIONS.
-            4. If the city is a small town, find 10 points of interest even if they are small details.
+            1. If the location is small, generate 1 tour. If it's a major city, generate 2 tours.
+            2. Each tour MUST HAVE EXACTLY 10 STOPS.
+            3. Each stop description MUST exceed 400 words. Infuse it with DAI's personality.
+            4. Each 'photoSpot' MUST be specific to the stop.
             5. ALL CONTENT MUST BE IN ${user.language}.`,
             config: {
                 responseMimeType: "application/json",
@@ -152,6 +162,19 @@ export const generateToursForCity = async (city: string, country: string, user: 
 
 const VOICE_MAP: Record<string, string> = {
     es: 'Kore', en: 'Zephyr', fr: 'Charon', de: 'Fenrir', it: 'Puck', pt: 'Charon', ja: 'Puck', zh: 'Puck', ro: 'Kore'
+};
+
+export const generateDaiWelcome = async (user: UserProfile): Promise<string> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `As DAI, welcome a new user named ${user.firstName || 'Traveler'} in ${user.language}.
+            Explain that they are currently rank "ZERO" (the bottom of the food chain) and they need to conquer the world by completing tours to reach "ZENITH".
+            Be sarcastic, witty, and elegant. Keep it under 100 words.`,
+        });
+        return response.text || "Welcome to bdai.";
+    });
 };
 
 export const generateAudio = async (text: string, language: string, city: string): Promise<string> => {

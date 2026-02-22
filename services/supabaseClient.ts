@@ -62,14 +62,19 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
     if (!safeCity) return "";
     
     const safeCountry = country && country !== "Cache" ? clean(country) : "";
-    return safeCountry ? `${safeCity}-${safeCountry}` : safeCity;
+    return safeCountry ? `${safeCity}_${safeCountry}` : safeCity;
 };
 
 /**
  * Checks if a city exists in cache using the new slug format.
  */
-export const checkIfCityCached = async (city: string, country: string): Promise<boolean> => {
-  const slug = normalizeKey(city, country);
+export const checkIfCityCached = async (city: string, countryOrSlug: string): Promise<boolean> => {
+  // If countryOrSlug already looks like a slug (contains a hyphen and is lowercase), use it.
+  // Otherwise, normalize it.
+  const slug = countryOrSlug.includes('-') && countryOrSlug === countryOrSlug.toLowerCase() 
+    ? countryOrSlug 
+    : normalizeKey(city, countryOrSlug);
+    
   if (!slug) return false;
   try {
     const { data, error } = await supabase

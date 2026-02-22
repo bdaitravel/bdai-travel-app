@@ -1,6 +1,6 @@
 {
   "name": "bdai",
-  "description": "bdai- La Masterclass Global de Viajes. Tours de alta densidad informativa con ingeniería, historia y anécdotas reales.",
+  "description": "bdai: better destinations by ai. Un ecosistema de datos turísticos y gamificación Tech-Noir que conecta viajeros con el comercio local.",
   "requestFramePermissions": [
     "geolocation",
     "camera",

@@ -4,7 +4,7 @@ import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '
 import { SchematicMap } from './SchematicMap';
 import { generateAudio } from '../services/geminiService';
 import { syncUserProfile, completeTourBonus } from '../services/supabaseClient';
-import { ShareableVisa } from './ShareableVisa';
+import { VisaShare } from './VisaShare';
 
 const TEXTS: any = {
     es: { start: "Lanzar", stop: "Parada", of: "de", daiShot: "Consejo Dai", angleLabel: "Ángulo Dai:", photoTipFallback: "Busca una perspectiva lateral para captar la profundidad de la estructura.", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Siguiente", meters: "m", itinerary: "Itinerario", finish: "Finalizar Tour", congrats: "¡Tour Completado!", stampDesc: "Has ganado un nuevo sello", shareIg: "Generar Visado Social (+100)", close: "Cerrar", tooFar: "GPS Incierto", checkIn: "Check-in GPS", checkedIn: "Verificada", distance: "Distancia", duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS", visaId: "VISADO", boardingPass: "TARJETA DE EMBARQUE", approved: "APROBADO", rewardTotal: "Recompensa total", rankUp: "Rango actualizado", shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️" },
@@ -92,6 +92,10 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [showItinerary, setShowItinerary] = useState(false);
     const [showCompletion, setShowCompletion] = useState(false);
     const [showSocialVisa, setShowSocialVisa] = useState(false);
+
+    const totalMiles = useMemo(() => {
+        return tour.stops.reduce((acc: number, s: Stop) => acc + (s.photoSpot?.milesReward || 0), 0);
+    }, [tour]);
 
     const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
     const [isAudioLoading, setIsAudioLoading] = useState(false);
@@ -248,7 +252,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                                  <div className="flex-1 text-right"><p className="text-[8px] font-black text-slate-400 uppercase mb-1">Destination</p><p className="text-2xl font-black uppercase tracking-tighter leading-none text-purple-600">{tour.city.substring(0,3).toUpperCase()}</p></div>
                              </div>
                              <div className="grid grid-cols-2 gap-4 pt-4 relative">
-                                 <div className="text-left"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.rewardTotal}</p><p className="text-xl font-black text-slate-900">+250 mi</p></div>
+                                 <div className="text-left"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.rewardTotal}</p><p className="text-xl font-black text-slate-900">+{totalMiles} mi</p></div>
                                  <div className="text-right"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.approved}</p><i className="fas fa-check-circle text-green-500 text-xl"></i></div>
                                  <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform rotate-12 -translate-y-4">
                                      <i className="fas fa-stamp text-8xl"></i>
@@ -264,13 +268,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              )}
 
              {showSocialVisa && (
-                 <ShareableVisa 
-                    cityName={tour.city} 
-                    milesEarned={250} 
-                    stampDate={new Date().toLocaleDateString()} 
-                    rank={user.rank}
-                    onClose={() => setShowSocialVisa(false)} 
-                 />
+                 <VisaShare 
+                     user={user}
+                     cityName={tour.city} 
+                     milesEarned={totalMiles} 
+                     onClose={() => setShowSocialVisa(false)} 
+                  />
              )}
 
              <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 gap-3">
