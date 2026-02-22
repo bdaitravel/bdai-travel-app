@@ -84,6 +84,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Remplissez votre passeport numérique avec des visas uniques pour chaque visite terminée et partagez vos aventures.",
     onboardingGotIt: "COMPRIS ! COMMENÇONS À EXPLORER",
     badge_pioneer_desc: "Terminez votre premier arrêt", badge_streak_desc: "Série d'activités de 3 jours",
+    },
   de: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "deine@email.com", 
     requestAccess: "CODE ANFORDERN", verifyCode: "BESTÄTIGEN", enterCode: "8-stelligen Code eingeben", 
@@ -104,6 +105,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Füllen Sie Ihren digitalen Reisepass mit einzigartigen Visa für jede abgeschlossene Tour und teilen Sie Ihre Abenteuer.",
     onboardingGotIt: "VERSTANDEN! LASS UNS ERKUNDEN",
     badge_pioneer_desc: "Schließe deinen ersten Halt ab", badge_streak_desc: "3-Tage-Aktivitätsserie",
+    },
   it: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "tua@email.com", 
     requestAccess: "RICHIEDI CODICE", verifyCode: "VERIFICA", enterCode: "Inserisci codice 8 cifre", 
@@ -124,6 +126,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Riempi il tuo passaporto digitale con visti unici per ogni tour completato e condividi le tue avventure.",
     onboardingGotIt: "CAPITO! INIZIAMO AD ESPLORARE",
     badge_pioneer_desc: "Completa la tua prima tappa", badge_streak_desc: "Serie di attività di 3 giorni",
+    },
   pt: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "seu@email.com", 
     requestAccess: "PEDIR CÓDIGO", verifyCode: "VERIFICAR", enterCode: "Digite o código de 8 dígitos", 
@@ -144,6 +147,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Preencha seu passaporte digital com vistos únicos para cada passeio concluído e compartilhe suas aventuras.",
     onboardingGotIt: "ENTENDIDO! VAMOS COMEÇAR A EXPLORAR",
     badge_pioneer_desc: "Complete sua primeira parada", badge_streak_desc: "Sequência de atividade de 3 dias",
+    },
   nl: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "uw@email.com", 
     requestAccess: "CODE AANVRAGEN", verifyCode: "VERIFIËREN", enterCode: "Voer 8-cijferige code in", 
@@ -164,6 +168,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Vul uw digitale paspoort met unieke visa voor elke voltooide tour en deel uw avonturen.",
     onboardingGotIt: "BEGREPEN! LATEN WE BEGINNEN MET VERKENNEN",
     badge_pioneer_desc: "Voltooi je eerste stop", badge_streak_desc: "3-daagse activiteitenreeks",
+    },
   ro: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "email@tau.com", 
     requestAccess: "SOLICITĂ COD", verifyCode: "VERIFICĂ", enterCode: "Cod 8 cifre", 
@@ -184,6 +189,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Completează-ți pașaportul digital cu vize unice pentru fiecare tur finalizat și împărtășește-ți aventurile.",
     onboardingGotIt: "AM ÎNȚELES! SĂ ÎNCEPEM SĂ EXPLORĂM",
     badge_pioneer_desc: "Finalizează prima ta oprire", badge_streak_desc: "Serie de activități de 3 zile",
+    },
   pl: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "twoj@email.com", 
     requestAccess: "POPROŚ O KOD", verifyCode: "WERYFIKUJ", enterCode: "Wpisz 8-cyfrowy kod", 
@@ -204,6 +210,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Wypełnij swój cyfrowy paszport unikalnymi wizami za każdą ukończoną wycieczkę i dziel się swoimi przygodami.",
     onboardingGotIt: "ROZUMIEM! ZACZNIJMY ODKRYWAĆ",
     badge_pioneer_desc: "Ukończ swój pierwszy przystanek", badge_streak_desc: "3-dniowa seria aktywności",
+    },
   sv: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
     requestAccess: "BEGÄR KOD", verifyCode: "VERIFIERA", enterCode: "Ange 8-siffrig kod", 
@@ -224,6 +231,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Fyll ditt digitala pass med unika visum för varje slutförd tur och dela dina äventyr.",
     onboardingGotIt: "FÖRSTÅTT! LÅT OSS BÖRJA UTFORSKA",
     badge_pioneer_desc: "Slutför ditt första stopp", badge_streak_desc: "3-dagars aktivitetsstreak",
+    },
   da: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
     requestAccess: "ANMOD OM KODE", verifyCode: "BEKRÆFT", enterCode: "Indtast 8-cifret kode", 
@@ -244,6 +252,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Fyld dit digitale pas med unikke visa for hver gennemført tur og del dine eventyr.",
     onboardingGotIt: "FORSTÅET! LAD OS BEGYNDE AT UDFORSKE",
     badge_pioneer_desc: "Gennemfør dit første stop", badge_streak_desc: "3-dages aktivitetsstribe",
+    },
   fi: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "sinun@email.com", 
     requestAccess: "PYYDÄ KOODI", verifyCode: "VAHVISTA", enterCode: "Syötä 8-numeroinen koodi", 
@@ -264,6 +273,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Täytä digitaalinen passisi ainutlaatuisilla viisumeilla jokaisesta suoritetusta matkasta ja jaa seikkailusi.",
     onboardingGotIt: "YMMÄRRETTY! ALOITETAAN TUTKIMINEN",
     badge_pioneer_desc: "Suorita ensimmäinen pysähdyksesi", badge_streak_desc: "3 päivän aktiivisuusputki",
+    },
   no: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
     requestAccess: "BE OM KODE", verifyCode: "BEKREFT", enterCode: "Skriv 8-siffrig kode", 
@@ -284,6 +294,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Fyll ditt digitale pass med unike visum for hver fullførte tur og del dine eventyr.",
     onboardingGotIt: "FORSTÅTT! LA OSS BEGYNNE Å UTFORSKE",
     badge_pioneer_desc: "Fullfør ditt første stopp", badge_streak_desc: "3-dagers aktivitetsrekke",
+    },
   ru: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "vashe@email.com", 
     requestAccess: "ПОЛУЧИТЬ КОД", verifyCode: "ПРОВЕРИТЬ", enterCode: "Введите 8-значный код", 
@@ -324,6 +335,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "用每次完成的旅行的独特签证填充您的数字护照，并分享您的冒险经历。",
     onboardingGotIt: "明白了！让我们开始探索吧",
     badge_pioneer_desc: "完成您的第一站", badge_streak_desc: "3天活动连胜",
+    },
   ja: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "メールアドレス", 
     requestAccess: "コードを請求", verifyCode: "確認", enterCode: "8桁のコードを入力", 
@@ -344,6 +356,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "完了した各ツアーのユニークなビザでデジタルパスポートを埋め、冒険を共有します。",
     onboardingGotIt: "了解しました！探索を始めましょう",
     badge_pioneer_desc: "最初のストップを完了する", badge_streak_desc: "3日間の活動連続",
+    },
   ko: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "이메일 주소", 
     requestAccess: "코드 요청", verifyCode: "확인", enterCode: "8자리 코드 입력", 
@@ -364,6 +377,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "완료된 각 투어에 대한 고유한 비자로 디지털 여권을 채우고 모험을 공유하세요.",
     onboardingGotIt: "알겠습니다! 탐색을 시작합시다",
     badge_pioneer_desc: "첫 번째 정류장 완료", badge_streak_desc: "3일 연속 활동",
+    },
   ar: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "بريدك الإلكتروني", 
     requestAccess: "طلب الرمز", verifyCode: "تحقق", enterCode: "أدخل الرمز المكون من 8 أرقام", 
@@ -384,6 +398,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "املأ جواز سفرك الرقمي بتأشيرات فريدة لكل جولة مكتملة وشارك مغامراتك.",
     onboardingGotIt: "فهمت! لنبدأ الاستكشاف",
     badge_pioneer_desc: "أكمل محطتك الأولى", badge_streak_desc: "سلسلة نشاط لمدة 3 أيام",
+    },
   hi: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "आपका ईमेल", 
     requestAccess: "कोड मांगें", verifyCode: "सत्यापित करें", enterCode: "8-अंकीय कोड डालें", 
@@ -404,6 +419,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "प्रत्येक पूर्ण दौरे के लिए अद्वितीय वीजा के साथ अपना डिजिटल पासपोर्ट भरें, और अपने रोमांच साझा करें।",
     onboardingGotIt: "समझ गया! आइए अन्वेषण शुरू करें",
     badge_pioneer_desc: "अपना पहला स्टॉप पूरा करें", badge_streak_desc: "3-दिवसीय गतिविधि स्ट्रीक",
+    },
   th: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "อีเมลของคุณ", 
     requestAccess: "ขอรหัส", verifyCode: "ยืนยัน", enterCode: "ใส่รหัส 8 หลัก", 
@@ -424,6 +440,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "กรอกหนังสือเดินทางดิจิทัลของคุณด้วยวีซ่าที่ไม่ซ้ำกันสำหรับแต่ละทัวร์ที่เสร็จสมบูรณ์และแบ่งปันการผจญภัยของคุณ",
     onboardingGotIt: "เข้าใจแล้ว! มาเริ่มสำรวจกันเถอะ",
     badge_pioneer_desc: "ทำจุดแวะพักแรกของคุณให้สมบูรณ์", badge_streak_desc: "สตรีคกิจกรรม 3 วัน",
+    },
   vi: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "email@cua.ban", 
     requestAccess: "YÊU CẦU MÃ", verifyCode: "XÁC MINH", enterCode: "Nhập mã 8 số", 
@@ -444,6 +461,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Điền vào hộ chiếu kỹ thuật số của bạn với các thị thực độc đáo cho mỗi chuyến tham quan đã hoàn thành và chia sẻ cuộc phiêu lưu của bạn.",
     onboardingGotIt: "ĐÃ HIỂU! HÃY BẮT ĐẦU KHÁM PHÁ",
     badge_pioneer_desc: "Hoàn thành điểm dừng đầu tiên của bạn", badge_streak_desc: "Chuỗi hoạt động 3 ngày",
+    },
   ca: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "el@teu.email", 
     requestAccess: "DEMANAR CODI", verifyCode: "VERIFICAR", enterCode: "Introdueix el codi de 8 dígits", 
@@ -464,6 +482,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Omple el teu passaport digital amb visats únics per cada tour completat i comparteix les teves aventures.",
     onboardingGotIt: "ENTÈS! ANEM A EXPLORAR",
     badge_pioneer_desc: "Completa la teva primera parada", badge_streak_desc: "Ratxa de 3 dies actiu",
+    },
   eu: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "zure@emaila.com", 
     requestAccess: "KODEA ESKATU", verifyCode: "EGIAZTATU", enterCode: "Sartu 8 digituko kodea", 
@@ -484,6 +503,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Zure pasaporte digitala bete tour bakoitzeko biza bakarrez eta zure abenturak partekatu.",
     onboardingGotIt: "ULERTUTA! HAS GAITEZEN ESPLORATZEN",
     badge_pioneer_desc: "Zure lehen geldialdia osatu", badge_streak_desc: "3 eguneko jarduera jarraia",
+    },
   tr: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "senin@email.com", 
     requestAccess: "KOD İSTE", verifyCode: "DOĞRULA", enterCode: "8 haneli kodu girin", 
