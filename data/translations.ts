@@ -504,6 +504,6 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Tamamladığınız her tur için dijital pasaportunuzu benzersiz vizelerle doldurun ve maceralarınızı paylaşın.",
     onboardingGotIt: "ANLADIM! KEŞFETMEYE BAŞLAYALIM",
     badge_pioneer_desc: "İlk durağınızı tamamlayın",
-    badge_streak_desc: "3 günlük etkinlik serisi" ,
+    badge_streak_desc: "3 günlük etkinlik serisi"
   },
-};
+;
