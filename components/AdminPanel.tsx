@@ -40,6 +40,13 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpe
 
     const L = (window as any).L;
 
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredCityList = cityList.filter(c => 
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        c.key.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     const fetchCityTours = async (key: string) => {
         setIsWorking(true);
         const { data } = await supabase.from('tours_cache').select('data').eq('city', key).eq('language', 'es').single();
@@ -301,9 +308,22 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpe
                 </div>
             </div>
 
+            <div className="mb-4">
+                <div className="relative">
+                    <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
+                    <input 
+                        type="text" 
+                        placeholder="Buscar ciudad para corregir GPS..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-white text-[10px] font-bold outline-none focus:border-purple-500/50 transition-all"
+                    />
+                </div>
+            </div>
+
             <div className="mb-8 overflow-x-auto no-scrollbar">
                 <div className="flex gap-3 pb-2">
-                    {cityList.map(c => (
+                    {filteredCityList.map(c => (
                         <div key={c.key} onClick={() => fetchCityTours(c.key)} className={`px-4 py-3 rounded-2xl border flex flex-col min-w-[140px] transition-all cursor-pointer hover:scale-105 active:scale-95 ${c.isComplete ? 'bg-green-600/20 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-white/5 border-white/10'}`}>
                             <span className="text-[9px] font-black text-white uppercase truncate mb-0.5">{c.name}</span>
                             <span className="text-[6px] font-bold text-slate-600 uppercase mb-2 truncate">ID: {c.key}</span>
