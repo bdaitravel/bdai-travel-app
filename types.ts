@@ -70,6 +70,7 @@ export interface UserProfile {
   city?: string; 
   country?: string; 
   capturedMoments: CapturedMoment[];
+  isAdmin?: boolean;
 }
 
 export interface HubIntel {
@@ -104,6 +105,7 @@ export interface LeaderboardEntry {
   rank: number;
   country?: string;
   badges?: Badge[];
+  travelerRank?: TravelerRank;
 }
 
 export interface PhotoSpot {

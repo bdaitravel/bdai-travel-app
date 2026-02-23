@@ -78,7 +78,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
     return dict[key] || globalDict[key] || key;
   };
 
-  const isAdmin = user.email === 'travelbdai@gmail.com';
+  const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
 
   const handleAvatarClick = () => { fileInputRef.current?.click(); };
 
@@ -211,7 +211,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                     <div className="flex-1 space-y-4">
                         <div className="pb-2 border-b border-slate-200">
                             <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">ID_NOMAD</p>
-                            <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
+                                {formData.country && (
+                                    <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : (formData.country.toLowerCase() === 'españa' ? 'ES' : formData.country.substring(0,2).toUpperCase())}/flat/64.png`} className="w-3 h-3 rounded-full" alt={formData.country} />
+                                )}
+                            </div>
                         </div>
                         <div className="pb-2 border-b border-slate-200">
                             <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('email')}</p>

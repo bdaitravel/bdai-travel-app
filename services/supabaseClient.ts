@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge } from '../types';
+import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
@@ -302,11 +302,51 @@ export const validateEmailFormat = (email: string) => {
   return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); 
 };
 
-export const getGlobalRanking = async () => {
+export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
   try {
-    const { data } = await supabase.from('profiles').select('id, username, miles, avatar').order('miles', { ascending: false }).limit(10);
-    return (data || []).map((d: any, i: number) => ({ ...d, rank: i + 1, name: d.username || 'Traveler' }));
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, username, miles, avatar, country, badges, rank')
+      .order('miles', { ascending: false })
+      .limit(50);
+    return (data || []).map((d: any, i: number) => ({ 
+      ...d, 
+      rank: i + 1, 
+      name: d.username || 'Traveler',
+      travelerRank: d.rank as TravelerRank
+    }));
   } catch (e) { return []; }
+};
+
+export const updateTourStopLocation = async (citySlug: string, language: string, stopId: string, lat: number, lng: number) => {
+  try {
+    const { data: cached } = await supabase
+      .from('tours_cache')
+      .select('data')
+      .eq('city', citySlug)
+      .eq('language', language.toLowerCase())
+      .maybeSingle();
+
+    if (cached && cached.data) {
+      const updatedData = cached.data.map((tour: Tour) => ({
+        ...tour,
+        stops: tour.stops.map((stop: Stop) => 
+          stop.id === stopId ? { ...stop, latitude: lat, longitude: lng } : stop
+        )
+      }));
+
+      await supabase.from('tours_cache').upsert({
+        city: citySlug,
+        language: language.toLowerCase(),
+        data: updatedData
+      }, { onConflict: 'city,language' });
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.error("Error updating stop location:", e);
+    return false;
+  }
 };
 
 export const getCommunityPosts = async (city: string) => { return []; };

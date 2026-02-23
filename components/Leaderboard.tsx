@@ -86,8 +86,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                         <div className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-slate-400 text-slate-950 flex items-center justify-center text-[11px] font-black border-4 border-slate-950 z-20 shadow-lg">2</div>
                     </div>
                     <div className="w-full h-28 bg-white/5 border border-white/10 rounded-t-[2rem] flex flex-col items-center justify-center p-3 backdrop-blur-md shadow-2xl">
-                        <p className="text-[10px] font-black truncate w-full text-center text-slate-200">{top3[1].name}</p>
-                        <p className="text-[9px] text-purple-400 font-bold">{top3[1].miles.toLocaleString()}m</p>
+                        <div className="flex items-center gap-1 mb-1 max-w-full">
+                            <p className="text-[10px] font-black truncate text-slate-200">{top3[1].name}</p>
+                            {top3[1].country && (
+                                <img src={`https://flagsapi.com/${top3[1].country.length === 2 ? top3[1].country.toUpperCase() : top3[1].country.substring(0,2).toUpperCase()}/flat/64.png`} className="w-2.5 h-2.5 rounded-full opacity-80" alt="" />
+                            )}
+                        </div>
+                        <p className="text-[9px] text-purple-400 font-bold">
+                            {category === 'BADGES' ? (top3[1].travelerRank || 'ZERO') : `${top3[1].miles.toLocaleString()}m`}
+                        </p>
                     </div>
                 </div>
             )}
@@ -98,8 +105,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                         <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-yellow-500 text-yellow-950 flex items-center justify-center text-sm font-black border-4 border-slate-950 z-20 shadow-xl">1</div>
                     </div>
                     <div className="w-full h-40 bg-gradient-to-b from-purple-600/30 to-slate-900/80 border border-purple-500/40 rounded-t-[2.5rem] flex flex-col items-center justify-center p-4 backdrop-blur-2xl shadow-2xl">
-                        <p className="text-xs font-black truncate w-full text-center mb-1 text-white">{top3[0].name}</p>
-                        <p className="text-[11px] text-yellow-400 font-black tracking-widest uppercase">{top3[0].miles.toLocaleString()} MILES</p>
+                        <div className="flex items-center justify-center gap-2 mb-1 w-full">
+                            <p className="text-xs font-black truncate text-white">{top3[0].name}</p>
+                            {top3[0].country && (
+                                <img src={`https://flagsapi.com/${top3[0].country.length === 2 ? top3[0].country.toUpperCase() : top3[0].country.substring(0,2).toUpperCase()}/flat/64.png`} className="w-3 h-3 rounded-full" alt="" />
+                            )}
+                        </div>
+                        <p className="text-[11px] text-yellow-400 font-black tracking-widest uppercase">
+                            {category === 'BADGES' ? (top3[0].travelerRank || 'ZERO') : `${top3[0].miles.toLocaleString()} MILES`}
+                        </p>
                     </div>
                 </div>
             )}
@@ -110,8 +124,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                         <div className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-amber-700 text-amber-100 flex items-center justify-center text-[11px] font-black border-4 border-slate-950 z-20 shadow-lg">3</div>
                     </div>
                     <div className="w-full h-20 bg-white/5 border border-white/10 rounded-t-[2rem] flex flex-col items-center justify-center p-3 backdrop-blur-md shadow-2xl">
-                        <p className="text-[10px] font-black truncate w-full text-center text-slate-200">{top3[2].name}</p>
-                        <p className="text-[9px] text-purple-400 font-bold">{top3[2].miles.toLocaleString()}m</p>
+                        <div className="flex items-center gap-1 mb-1 max-w-full">
+                            <p className="text-[10px] font-black truncate text-slate-200">{top3[2].name}</p>
+                            {top3[2].country && (
+                                <img src={`https://flagsapi.com/${top3[2].country.length === 2 ? top3[2].country.toUpperCase() : top3[2].country.substring(0,2).toUpperCase()}/flat/64.png`} className="w-2.5 h-2.5 rounded-full opacity-80" alt="" />
+                            )}
+                        </div>
+                        <p className="text-[9px] text-purple-400 font-bold">
+                            {category === 'BADGES' ? (top3[2].travelerRank || 'ZERO') : `${top3[2].miles.toLocaleString()}m`}
+                        </p>
                     </div>
                 </div>
             )}
@@ -123,9 +144,16 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                     <span className="w-10 text-sm font-black text-slate-600 group-hover:text-purple-400">{idx + 4}</span>
                     <img src={user.avatar} className="w-12 h-12 rounded-2xl border border-white/10 object-cover" />
                     <div className={`ml-5 flex-1 ${language === 'ar' ? 'mr-5 ml-0 text-right' : ''}`}>
-                        <p className="font-black text-sm text-slate-100">{user.name}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="font-black text-sm text-slate-100">{user.name}</p>
+                            {user.country && (
+                                <img src={`https://flagsapi.com/${user.country.length === 2 ? user.country.toUpperCase() : (user.country.toLowerCase() === 'españa' ? 'ES' : user.country.substring(0,2).toUpperCase())}/flat/64.png`} className="w-3 h-3 rounded-full opacity-60" alt={user.country} />
+                            )}
+                        </div>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
-                            {category === 'BADGES' ? `${user.badges?.length || 0} badges` : `${user.miles.toLocaleString()} miles`}
+                            {category === 'BADGES' 
+                                ? `${user.travelerRank || 'ZERO'} • ${user.badges?.length || 0} badges` 
+                                : `${user.miles.toLocaleString()} miles`}
                         </p>
                     </div>
                     <i className={`fas fa-chevron-right text-[10px] text-slate-700 ${language === 'ar' ? 'rotate-180' : ''}`}></i>

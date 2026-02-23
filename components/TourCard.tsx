@@ -3,12 +3,34 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
 import { generateAudio } from '../services/geminiService';
-import { syncUserProfile, completeTourBonus } from '../services/supabaseClient';
+import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey } from '../services/supabaseClient';
 import { VisaShare } from './VisaShare';
 
 const TEXTS: any = {
-    es: { start: "Lanzar", stop: "Parada", of: "de", daiShot: "Consejo Dai", angleLabel: "Ángulo Dai:", photoTipFallback: "Busca una perspectiva lateral para captar la profundidad de la estructura.", capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Siguiente", meters: "m", itinerary: "Itinerario", finish: "Finalizar Tour", congrats: "¡Tour Completado!", stampDesc: "Has ganado un nuevo sello", shareIg: "Generar Visado Social (+100)", close: "Cerrar", tooFar: "GPS Incierto", checkIn: "Check-in GPS", checkedIn: "Verificada", distance: "Distancia", duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS", visaId: "VISADO", boardingPass: "TARJETA DE EMBARQUE", approved: "APROBADO", rewardTotal: "Recompensa total", rankUp: "Rango actualizado", shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️" },
-    en: { start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:", photoTipFallback: "Look for a side perspective to capture the depth of the structure.", capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", meters: "m", itinerary: "Itinerary", finish: "Finish Tour", congrats: "Tour Completed!", stampDesc: "You earned a new stamp", shareIg: "Generate Social Visa (+100)", close: "Close", tooFar: "GPS Uncertain", checkIn: "GPS Check-in", checkedIn: "Verified", distance: "Distance", duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "BOARDING PASS", approved: "APPROVED", rewardTotal: "Total reward", rankUp: "Rank updated", shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️" },
+    es: { 
+        start: "Lanzar", stop: "Parada", of: "de", daiShot: "Consejo Dai", angleLabel: "Ángulo Dai:", 
+        photoTipFallback: "Busca una perspectiva lateral para captar la profundidad de la estructura.", 
+        capture: "Logear Datos", rewardReceived: "Sincronizado", prev: "Atrás", next: "Siguiente", 
+        meters: "m", itinerary: "Itinerario", finish: "Finalizar Tour", congrats: "¡Tour Completado!", 
+        stampDesc: "Has ganado un nuevo sello", shareIg: "Generar Visado Social (+100)", close: "Cerrar", 
+        tooFar: "GPS Incierto", checkIn: "Check-in GPS", checkedIn: "Verificada", distance: "Distancia", 
+        duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS", 
+        visaId: "VISADO", boardingPass: "TARJETA DE EMBARQUE", approved: "APROBADO", rewardTotal: "Recompensa total", 
+        rankUp: "Rango actualizado", fixLocation: "Corregir GPS (Admin)", locationFixed: "GPS Actualizado",
+        shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️" 
+    },
+    en: { 
+        start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:", 
+        photoTipFallback: "Look for a side perspective to capture the depth of the structure.", 
+        capture: "Log Data", rewardReceived: "Synced", prev: "Back", next: "Next", 
+        meters: "m", itinerary: "Itinerary", finish: "Finish Tour", congrats: "Tour Completed!", 
+        stampDesc: "You earned a new stamp", shareIg: "Generate Social Visa (+100)", close: "Close", 
+        tooFar: "GPS Uncertain", checkIn: "GPS Check-in", checkedIn: "Verified", distance: "Distance", 
+        duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES", 
+        visaId: "VISA", boardingPass: "BOARDING PASS", approved: "APPROVED", rewardTotal: "Total reward", 
+        rankUp: "Rank updated", fixLocation: "Fix GPS (Admin)", locationFixed: "GPS Updated",
+        shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️" 
+    },
     fr: { start: "Lancer", stop: "Arrêt", of: "sur", daiShot: "Conseil Dai", angleLabel: "Angle Dai :", photoTipFallback: "Cherchez une perspective latérale pour capturer la profondeur de la structure.", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Précédent", next: "Suivant", meters: "m", itinerary: "Itinéraire", finish: "Terminer le Tour", congrats: "Tour Terminé!", stampDesc: "Nouveau tampon gagné", shareIg: "Générer Visa Social (+100)", close: "Fermer", tooFar: "GPS Incertain", checkIn: "Check-in GPS", checkedIn: "Vérifié", distance: "Distance", duration: "Durée", nearbyAlert: "Arrêt Proche", jumpTo: "Aller ici", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "CARTE D'EMBARQUEMENT", approved: "APPROUVÉ", rewardTotal: "Récompense totale", rankUp: "Rang mis à jour", shareText: "Je viens de terminer la Masterclass {city} sur bdai ! +250 miles gagnés. 🌍✈️" },
     it: { start: "Lancia", stop: "Fermata", of: "di", daiShot: "Consiglio Dai", angleLabel: "Angolo Dai:", photoTipFallback: "Cerca una prospettiva laterale per catturare la profondità.", capture: "Log Dati", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Itinerario", finish: "Finire Tour", congrats: "Tour Completato!", stampDesc: "Nuovo timbro guadagnato", shareIg: "Genera Visto Social (+100)", close: "Chiudi", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificato", distance: "Distanza", duration: "Durata", nearbyAlert: "Fermata Vicina", jumpTo: "Salta qui", rewardMiles: "+50 MIGLIA", visaId: "VISTO", boardingPass: "CARTA D'IMBARCO", approved: "APPROVATO", rewardTotal: "Ricompensa totale", rankUp: "Rango aggiornato", shareText: "Ho appena finito la Masterclass {city} su bdai! +250 miglia guadagnate. 🌍✈️" },
     pt: { start: "Lançar", stop: "Parada", of: "de", daiShot: "Dica Dai", angleLabel: "Ângulo Dai:", photoTipFallback: "Procure uma perspectiva lateral para captar a profundidade.", capture: "Log Dados", rewardReceived: "Sincronizado", prev: "Voltar", next: "Próximo", meters: "m", itinerary: "Itinerário", finish: "Finalizar Tour", congrats: "Tour Completado!", stampDesc: "Novo selo ganho", shareIg: "Gerar Visto Social (+100)", close: "Fechar", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificado", distance: "Distância", duration: "Duração", nearbyAlert: "Parada Próxima", jumpTo: "Pular para aqui", rewardMiles: "+50 MILHAS", visaId: "VISTO", boardingPass: "CARTÃO DE EMBARQUE", approved: "APROVADO", rewardTotal: "Recompensa total", rankUp: "Ranking atualizado", shareText: "Acabei de completar a Masterclass de {city} no bdai! +250 milhas acumuladas. 🌍✈️" },
@@ -98,6 +120,25 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [showItinerary, setShowItinerary] = useState(false);
     const [showCompletion, setShowCompletion] = useState(false);
     const [showSocialVisa, setShowSocialVisa] = useState(false);
+
+    const [isFixing, setIsFixing] = useState(false);
+    const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
+
+    const handleFixLocation = async () => {
+        if (!userLocation || isFixing) return;
+        setIsFixing(true);
+        const citySlug = normalizeKey(tour.city, tour.country);
+        const success = await updateTourStopLocation(citySlug, language, currentStop.id, userLocation.lat, userLocation.lng);
+        if (success) {
+            alert(tl.locationFixed);
+            // Update local state to reflect change immediately
+            currentStop.latitude = userLocation.lat;
+            currentStop.longitude = userLocation.lng;
+        } else {
+            alert("Error updating location.");
+        }
+        setIsFixing(false);
+    };
 
     const totalMiles = useMemo(() => {
         return tour.stops.reduce((acc: number, s: Stop) => acc + (s.photoSpot?.milesReward || 0), 0);
@@ -341,6 +382,17 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                             <span className="text-[9px]">{tl.daiShot}</span>
                         </button>
                     </div>
+
+                    {isAdmin && (
+                        <button 
+                            onClick={handleFixLocation} 
+                            disabled={isFixing || !userLocation}
+                            className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[9px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                        >
+                            <i className={`fas ${isFixing ? 'fa-spinner fa-spin' : 'fa-map-marker-alt'}`}></i>
+                            {isFixing ? 'Fixing...' : tl.fixLocation}
+                        </button>
+                    )}
                     <div className="space-y-6 text-slate-800 text-lg leading-relaxed font-medium">
                         {(currentStop.description || "").split('\n\n').map((p, i) => <p key={i} className="animate-fade-in">{p}</p>)}
                     </div>
