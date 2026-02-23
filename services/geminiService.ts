@@ -96,18 +96,25 @@ export const generateToursForCity = async (city: string, country: string, user: 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-flash-latest',
-            contents: `As DAI, a highly intelligent, slightly sarcastic, and elegant AI travel guide, generate 1 or 2 tours for ${city}, ${country} in ${user.language}.
+            contents: `As DAI, a highly intelligent, elegant, and engaging AI travel guide (think of a top-tier free tour guide), generate 3 to 4 distinct tours for ${city}, ${country} in ${user.language}.
             
             DAI'S PERSONALITY:
-            - Sophisticated, sharp, witty, and slightly provocative.
-            - Focus on engineering secrets, historical gossip, and "hidden gems".
+            - Sophisticated, sharp, witty, and passionate.
+            - NOT a Wikipedia entry. NOT overly technical or "engineering-heavy" unless it's a fascinating secret.
+            - Focus on: History, juicy curiosities, local secrets, culture, and gastronomy.
+            - Tone: Engaging, storytelling-driven, and slightly provocative.
             
             STRICT RULES:
-            1. Generate 1 tour for small towns, 2 for major cities.
-            2. EXACTLY 10 STOPS per tour.
-            3. Each stop description: MINIMUM 400 words. Be extremely detailed and engaging.
-            4. The tours MUST be thematic and distinct. DO NOT repeat stops between tours.
-            5. ALL CONTENT IN ${user.language}.
+            1. Major Cities: Generate 3 to 4 distinct thematic tours.
+            2. Medium Cities: Generate 2 distinct thematic tours.
+            3. Small Towns/Villages: Generate 1 or 2 tours depending on historical/cultural density.
+            4. MINIMUM 10 STOPS per tour.
+            5. Each stop description: MUST be between 310 and 400 words. Be extremely detailed, passionate, and engaging (like a top-tier free tour guide).
+            6. NO REPEATED STOPS between the different tours generated.
+            7. The tours MUST be thematic (e.g., "Secrets of the Old Town", "Gastronomic Soul", "Hidden History").
+            8. Use real, accurate data. Do not invent facts.
+            9. Assign a 'type' to each stop from: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
+            10. ALL CONTENT IN ${user.language}.
             
             Return a JSON array of tours.`,
             config: {

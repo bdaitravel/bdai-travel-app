@@ -283,7 +283,7 @@ export default function App() {
                     countryCode: res.countryCode,
                     slug: slug,
                     isCached: isCached,
-                    fullName: `${res.city}, ${res.country}`
+                    fullName: res.city // Use just city name for primary display
                 };
             }));
 
@@ -293,7 +293,7 @@ export default function App() {
         } finally {
             setIsSearching(false);
         }
-    }, 800);
+    }, 1200);
   };
 
   const handleLangChange = (code: string) => {
@@ -431,7 +431,10 @@ export default function App() {
                   <div className="space-y-6 pt-safe-iphone max-w-md mx-auto animate-fade-in">
                       <header className="flex justify-between items-center py-4 px-6">
                           <div className="flex items-center gap-3"><BdaiLogo className="w-8 h-8"/><span className="font-black text-xl tracking-tighter lowercase">bdai</span></div>
-                          <div className="bg-white/10 px-4 py-1.5 rounded-xl text-[9px] font-black flex items-center gap-2 shadow-lg border border-white/5"><i className="fas fa-coins text-yellow-500"></i>{user.miles.toLocaleString()}</div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setShowOnboarding(true)} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 active:scale-90 transition-all"><i className="fas fa-question text-[10px]"></i></button>
+                            <div className="bg-white/10 px-4 py-1.5 rounded-xl text-[9px] font-black flex items-center gap-2 shadow-lg border border-white/5"><i className="fas fa-coins text-yellow-500"></i>{user.miles.toLocaleString()}</div>
+                          </div>
                       </header>
 
                       <div className="py-10 px-6 text-center flex flex-col items-center">
@@ -441,13 +444,16 @@ export default function App() {
                         
                         <div className="w-full relative">
                             <div className="flex gap-2">
-                                <input 
-                                  type="text" 
-                                  value={searchVal} 
-                                  onChange={(e) => handleCitySearch(e.target.value)} 
-                                  placeholder={t('searchPlaceholder')} 
-                                  className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none font-bold text-sm shadow-inner focus:border-purple-500/40 transition-all" 
-                                />
+                                  <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none font-bold text-sm shadow-inner focus:border-purple-500/40 transition-all flex items-center justify-between">
+                                    <input 
+                                      type="text" 
+                                      value={searchVal} 
+                                      onChange={(e) => handleCitySearch(e.target.value)} 
+                                      placeholder={t('searchPlaceholder')} 
+                                      className="bg-transparent border-none outline-none w-full"
+                                    />
+                                    {isSearching && <i className="fas fa-spinner fa-spin text-purple-500 text-xs"></i>}
+                                  </div>
                                 <div className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20 transition-transform active:scale-90"><i className="fas fa-search"></i></div>
                             </div>
 
@@ -495,8 +501,8 @@ export default function App() {
                 {view === AppView.TOUR_ACTIVE && activeTour && (
                   <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
                 )}
-                {/* Dai Thinking Overlay */}
-                {(isLoading || isSearching) && (
+                {/* Dai Thinking Overlay - Only for full loading, not search */}
+                {isLoading && (
                     <div className="fixed inset-0 z-[10000] flex items-center justify-center">
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
                         <div className="relative flex flex-col items-center">

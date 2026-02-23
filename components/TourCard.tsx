@@ -115,7 +115,16 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
     const currentStop = tour.stops[currentStopIndex] as Stop;
     
-    const [rewardClaimed, setRewardClaimed] = useState(false);
+    const [claimedStops, setClaimedStops] = useState<Set<string>>(new Set());
+    const rewardClaimed = claimedStops.has(currentStop.id);
+
+    const handleCheckIn = () => {
+        if (IS_IN_RANGE) {
+            setClaimedStops(prev => new Set(prev).add(currentStop.id));
+        } else {
+            alert(`${tl.tooFar}: ${distToTarget}m`);
+        }
+    };
     const [showPhotoTip, setShowPhotoTip] = useState(false);
     const [showItinerary, setShowItinerary] = useState(false);
     const [showCompletion, setShowCompletion] = useState(false);
@@ -373,9 +382,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 </div>
                 <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-xl z-[200] relative min-h-[55vh]">
                     <div className="grid grid-cols-2 gap-4">
-                        <button onClick={() => { if(IS_IN_RANGE) setRewardClaimed(true); else alert(`${tl.tooFar}: ${distToTarget}m`); }} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
+                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
                             <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg mb-1`}></i>
                             <span className="text-[9px]">{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
+                            {distToTarget !== null && !rewardClaimed && (
+                                <span className="text-[7px] mt-1 opacity-60">{distToTarget}{tl.meters}</span>
+                            )}
                         </button>
                         <button onClick={() => setShowPhotoTip(true)} className="flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border bg-slate-900 text-white border-slate-800">
                             <i className="fas fa-camera text-lg mb-1"></i>

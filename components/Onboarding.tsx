@@ -55,21 +55,30 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, us
 
                     <div className="w-full space-y-4 mt-8">
                         <div className="flex gap-4 items-center p-4 bg-white/[0.02] rounded-2xl border border-white/5">
-                            <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center shrink-0">
-                                <span className="text-[10px] font-black text-white">ZERO</span>
+                            <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center shrink-0">
+                                <i className="fas fa-search text-white text-xs"></i>
                             </div>
                             <div className="flex-1">
-                                <h4 className="text-white font-black uppercase text-[10px] tracking-widest">Current Status</h4>
-                                <p className="text-slate-500 text-[8px] font-bold uppercase">Bottom of the food chain</p>
+                                <h4 className="text-white font-black uppercase text-[10px] tracking-widest">Explore</h4>
+                                <p className="text-slate-500 text-[8px] font-bold uppercase">Search cities and launch thematic tours</p>
                             </div>
                         </div>
-                        <div className="flex gap-4 items-center p-4 bg-white/[0.02] rounded-2xl border border-white/5 opacity-40">
-                            <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shrink-0">
-                                <span className="text-[10px] font-black text-slate-900">ZENITH</span>
+                        <div className="flex gap-4 items-center p-4 bg-white/[0.02] rounded-2xl border border-white/5">
+                            <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center shrink-0">
+                                <i className="fas fa-location-dot text-white text-xs"></i>
                             </div>
                             <div className="flex-1">
-                                <h4 className="text-white font-black uppercase text-[10px] tracking-widest">Ultimate Goal</h4>
-                                <p className="text-slate-500 text-[8px] font-bold uppercase">Master of the world</p>
+                                <h4 className="text-white font-black uppercase text-[10px] tracking-widest">Verify</h4>
+                                <p className="text-slate-500 text-[8px] font-bold uppercase">Approach stops to earn miles and stamps</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4 items-center p-4 bg-white/[0.02] rounded-2xl border border-white/5">
+                            <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center shrink-0">
+                                <i className="fas fa-ranking-star text-white text-xs"></i>
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="text-white font-black uppercase text-[10px] tracking-widest">Rank Up</h4>
+                                <p className="text-slate-500 text-[8px] font-bold uppercase">From ZERO to ZENITH in the global ranking</p>
                             </div>
                         </div>
                     </div>

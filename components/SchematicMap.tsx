@@ -46,7 +46,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         maxZoom: 19
     }).setView([0, 0], 15);
     
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
     }).addTo(map);
     
@@ -74,13 +74,15 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
             icon: L.divIcon({ 
                 className: '', 
                 html: `
-                    <div class="relative w-8 h-8 flex items-center justify-center">
-                        <div class="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-30"></div>
-                        <div class="w-4 h-4 bg-purple-400 rounded-full border-2 border-white shadow-lg z-10"></div>
+                    <div class="relative w-10 h-10 flex items-center justify-center">
+                        <div class="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-40"></div>
+                        <div class="w-6 h-6 bg-purple-600 rounded-full border-4 border-white shadow-2xl z-10 flex items-center justify-center">
+                            <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+                        </div>
                     </div>
                 `, 
-                iconSize: [32, 32], 
-                iconAnchor: [16, 16] 
+                iconSize: [40, 40], 
+                iconAnchor: [20, 20] 
             }) 
         }).addTo(map);
 
@@ -91,10 +93,10 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
                 [userLocation.lat, userLocation.lng], 
                 [currentStop.latitude, currentStop.longitude]
             ], { 
-                color: '#a855f7', 
-                weight: 4, 
-                dashArray: '8, 12', 
-                opacity: 0.8,
+                color: '#9333ea', 
+                weight: 5, 
+                dashArray: '10, 15', 
+                opacity: 0.9,
                 lineCap: 'round'
             }).addTo(map);
 

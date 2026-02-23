@@ -3,11 +3,11 @@ import { UserProfile } from '../types';
 import React from 'react';
 
 const SHOP_TEXTS: any = {
-    es: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Nuestras Tiendas Oficiales", mainBtn: "Visitar Mercado Global" },
-    en: { title: "bdai marketplace", subtitle: "Official TechTravel Hub", official: "Our Official Stores", mainBtn: "Visit Global Market" },
-    it: { title: "marketplace bdai", subtitle: "Hub Ufficiale TechTravel", official: "Nostri Negozi Ufficiali", mainBtn: "Visita Mercato Globale" },
-    fr: { title: "marketplace bdai", subtitle: "Hub Officiel TechTravel", official: "Nos Boutiques Officielles", mainBtn: "Visiter le Marché Global" },
-    de: { title: "bdai Marktplatz", subtitle: "Offizieller TechTravel Hub", official: "Unsere Offiziellen Shops", mainBtn: "Globalen Markt besuchen" },
+    it: { title: "marketplace bdai", subtitle: "Hub Ufficiale TechTravel", official: "Nostri Negozi Ufficiali", mainBtn: "Visita Mercato Globale", devMsg: "DAI sta viaggiando per il mondo per portarti i migliori prodotti per viaggiatori. Presto disponibili!" },
+    fr: { title: "marketplace bdai", subtitle: "Hub Officiel TechTravel", official: "Nos Boutiques Officielles", mainBtn: "Visiter le Marché Global", devMsg: "DAI voyage à travers le monde pour vous apporter les meilleurs produits pour voyageurs. Bientôt disponible !" },
+    de: { title: "bdai Marktplatz", subtitle: "Offizieller TechTravel Hub", official: "Unsere Offiziellen Shops", mainBtn: "Globalen Markt besuchen", devMsg: "DAI reist um die Welt, um Ihnen die besten Produkte für Reisende zu bringen. Bald verfügbar!" },
+    es: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Nuestras Tiendas Oficiales", mainBtn: "Visitar Mercado Global", devMsg: "DAI está viajando por el mundo para traerte los mejores productos para viajeros. ¡Próximamente!" },
+    en: { title: "bdai marketplace", subtitle: "Official TechTravel Hub", official: "Our Official Stores", mainBtn: "Visit Global Market", devMsg: "DAI is traveling the world to bring you the best traveler essentials. Coming soon!" },
     pt: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Nossas Lojas Oficiais", mainBtn: "Visitar Mercado Global" },
     ro: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Magazinele Noastre Oficiale", mainBtn: "Vizitați Piața Globală" },
     ca: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Les Nostres Botigues", mainBtn: "Visitar Mercat Global" },
@@ -53,6 +53,18 @@ export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) =>
                     <i className="fas fa-external-link-alt"></i>
                     {t.mainBtn}
                 </button>
+
+                {t.devMsg && (
+                    <div className="bg-purple-600/20 border border-purple-500/30 p-6 rounded-[2rem] backdrop-blur-sm">
+                        <div className="flex items-center gap-3 mb-2">
+                            <i className="fas fa-info-circle text-purple-400"></i>
+                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Update</span>
+                        </div>
+                        <p className="text-white/80 text-xs font-medium leading-relaxed italic">
+                            "{t.devMsg}"
+                        </p>
+                    </div>
+                )}
             </header>
 
             <div className="p-8 space-y-6">
