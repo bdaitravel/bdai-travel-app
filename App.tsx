@@ -313,6 +313,12 @@ export default function App() {
       setTimeout(() => setIsSyncingLang(false), 500);
   };
 
+  useEffect(() => {
+    const handleOpenPartner = () => setView(AppView.PARTNER_DASHBOARD);
+    window.addEventListener('open-partner-dashboard', handleOpenPartner);
+    return () => window.removeEventListener('open-partner-dashboard', handleOpenPartner);
+  }, []);
+
   const updateUserAndSync = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));

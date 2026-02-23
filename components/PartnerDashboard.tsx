@@ -104,6 +104,31 @@ export const PartnerDashboard: React.FC<{ onBack: () => void }> = ({ onBack }) =
                     </div>
                 </div>
 
+                <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8">
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                        <i className="fas fa-monument text-emerald-500"></i> Monumentos más visitados
+                    </h3>
+                    <div className="space-y-6">
+                        {[
+                            { name: 'Puerta del Sol', visits: 850, trend: '+12%' },
+                            { name: 'Catedral de San Esteban', visits: 620, trend: '+5%' },
+                            { name: 'Torre Eiffel', visits: 590, trend: '-2%' },
+                            { name: 'Coliseo', visits: 410, trend: '+18%' }
+                        ].map((mon, i) => (
+                            <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <div>
+                                    <p className="text-[10px] font-black text-white uppercase">{mon.name}</p>
+                                    <p className="text-[7px] font-bold text-slate-500 uppercase tracking-widest mt-1">Impacto Local: Alto</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-black text-white">{mon.visits}</p>
+                                    <p className={`text-[8px] font-bold ${mon.trend.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}`}>{mon.trend}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-6 pb-12">
                     <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8">
                         <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-6">Idiomas Guía</h3>
