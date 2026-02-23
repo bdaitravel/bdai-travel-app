@@ -91,6 +91,35 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     });
 };
 
+export const generateSpeech = async (text: string, language: string, city: string): Promise<string | null> => {
+    return handleAiCall(async () => {
+        // Check cache first
+        const cached = await getCachedAudio(text, language);
+        if (cached) return cached;
+
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text: `Lee esto en ${language} con elegancia, ritmo natural y un toque de misterio, como si fueras una guía experta: ${text}` }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: 'Kore' }, // Kore is elegant and sophisticated
+                    },
+                },
+            },
+        });
+
+        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (base64Audio) {
+            const audioUrl = await saveAudioToCache(text, language, base64Audio, city);
+            return audioUrl || null;
+        }
+        return null;
+    });
+};
+
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
