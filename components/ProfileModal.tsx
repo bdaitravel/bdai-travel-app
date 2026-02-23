@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, AVATARS, APP_BADGES } from '../types';
-import { syncUserProfile } from '../services/supabaseClient';
+import { syncUserProfile, supabase } from '../services/supabaseClient';
 import { translations } from '../data/translations';
 
 interface ProfileModalProps {
@@ -305,6 +305,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         ))}
                     </div>
                     {isAdmin && <button onClick={onOpenAdmin} className="w-full py-4 mb-3 bg-slate-900 text-yellow-500 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg"><i className="fas fa-tools text-xs"></i> {pt('admin')}</button>}
+                    <button 
+                        onClick={() => {
+                            supabase.auth.signOut();
+                            onClose();
+                        }}
+                        className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    >
+                        <i className="fas fa-sign-out-alt"></i>
+                        Cerrar Sesión
+                    </button>
                 </div>
             </div>
         </div>

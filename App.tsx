@@ -8,6 +8,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
 import { TravelServices, formatCityName, formatCountryName } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
+import { CityCommunity } from './components/CityCommunity';
 import { AdminPanel } from './components/AdminPanel';
 import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
@@ -71,6 +72,11 @@ export default function App() {
   const [user, setUser] = useState<UserProfile>(GUEST_PROFILE);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
+  const [cityTab, setCityTab] = useState<'TOURS' | 'COMMUNITY'>('TOURS');
+
+  useEffect(() => {
+    if (view !== AppView.CITY_DETAIL) setCityTab('TOURS');
+  }, [view]);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
@@ -293,7 +299,7 @@ export default function App() {
         } finally {
             setIsSearching(false);
         }
-    }, 1200);
+    }, 1500);
   };
 
   const handleLangChange = (code: string) => {
@@ -487,14 +493,36 @@ export default function App() {
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
-                      <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
+                      <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
                         <button onClick={() => setView(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
                         <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
                       </header>
-                      <div className="space-y-6 pb-12">
-                          {tours.map(tour => (
-                            <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
-                          ))}
+
+                      <div className="flex gap-2 mb-8 bg-white/5 p-1.5 rounded-2xl border border-white/5">
+                        <button 
+                            onClick={() => setCityTab('TOURS')}
+                            className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${cityTab === 'TOURS' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                        >
+                            <i className="fas fa-route mr-2"></i> Tours
+                        </button>
+                        <button 
+                            onClick={() => setCityTab('COMMUNITY')}
+                            className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${cityTab === 'COMMUNITY' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                        >
+                            <i className="fas fa-users mr-2"></i> Comunidad
+                        </button>
+                      </div>
+
+                      <div className="pb-12">
+                          {cityTab === 'TOURS' ? (
+                            <div className="space-y-6">
+                                {tours.map(tour => (
+                                    <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
+                                ))}
+                            </div>
+                          ) : (
+                            selectedCity && <CityCommunity citySlug={selectedCity} user={user} language={user.language} />
+                          )}
                       </div>
                   </div>
                 )}
