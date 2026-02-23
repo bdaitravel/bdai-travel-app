@@ -15,6 +15,11 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
         return await fn();
     } catch (error: any) {
         const errorMsg = typeof error === 'string' ? error : JSON.stringify(error);
+        
+        if (errorMsg.includes("403") && errorMsg.includes("REFERRER_BLOCKED")) {
+            throw new Error("ERROR 403: Tu clave de API de Google tiene restricciones de dominio. Por favor, ve a Google Cloud Console y permite el dominio 'aistudio.google.com' o quita las restricciones de HTTP Referrer temporalmente.");
+        }
+
         if (errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED") || errorMsg.includes("quota")) {
             if (retries > 0) {
                 await new Promise(resolve => setTimeout(resolve, delay));

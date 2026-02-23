@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, Tour } from '../types';
 // Fixed: Removed testSupabaseConnection as it is not exported from supabaseClient.ts and not used in this component.
-import { supabase, saveToursToCache } from '../services/supabaseClient';
+import { supabase, saveToursToCache, getAdminStats } from '../services/supabaseClient';
 import { translateToursBatch } from '../services/geminiService';
 
 interface CityProgress {
@@ -20,8 +20,8 @@ interface TranslationTask {
     baseTours: Tour[];
 }
 
-export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = ({ user, onBack }) => {
-    const [stats, setStats] = useState({ totalCities: 0, totalEntries: 0, pendingTasks: 0 });
+export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpenPartnerDashboard: () => void }> = ({ user, onBack, onOpenPartnerDashboard }) => {
+    const [stats, setStats] = useState({ totalCities: 0, totalEntries: 0, pendingTasks: 0, audios: 0, community: 0, users: 0 });
     const [cityList, setCityList] = useState<CityProgress[]>([]);
     const [isWorking, setIsWorking] = useState(false);
     const [log, setLog] = useState<string[]>(['Sistemas listos.']);
@@ -114,6 +114,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     }, []);
 
     const fetchSummary = async () => {
+        const adminStats = await getAdminStats();
         const { data: allRecords } = await supabase.from('tours_cache').select('city, language');
         if (!allRecords) return;
 
@@ -151,8 +152,11 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         setCityList(progressData);
         setStats({ 
             totalCities: progressData.length, 
-            totalEntries: allRecords.length,
-            pendingTasks: pendingCount
+            totalEntries: adminStats.tours,
+            pendingTasks: pendingCount,
+            audios: adminStats.audios,
+            community: adminStats.community,
+            users: adminStats.users
         });
     };
 
@@ -261,21 +265,39 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                     <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Admin Panel</h2>
                     <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mt-2">Gestor de Datos</p>
                 </div>
-                <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white"><i className="fas fa-times"></i></button>
+                <div className="flex gap-4">
+                    <button onClick={onOpenPartnerDashboard} className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 active:scale-90 transition-all"><i className="fas fa-chart-line"></i></button>
+                    <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"><i className="fas fa-times"></i></button>
+                </div>
             </header>
 
-            <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center">
+            <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
                     <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Ciudades</p>
-                    <span className="text-xl font-black text-white">{stats.totalCities}</span>
+                    <span className="text-lg font-black text-white">{stats.totalCities}</span>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center border-purple-500/20">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center border-purple-500/20">
                     <p className="text-[6px] font-black text-purple-500 uppercase tracking-widest mb-1">Pendientes</p>
-                    <span className="text-xl font-black text-purple-400">{stats.pendingTasks}</span>
+                    <span className="text-lg font-black text-purple-400">{stats.pendingTasks}</span>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Entradas</p>
-                    <span className="text-xl font-black text-slate-400">{stats.totalEntries}</span>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
+                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Tours</p>
+                    <span className="text-lg font-black text-slate-400">{stats.totalEntries}</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-8">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
+                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Audios</p>
+                    <span className="text-lg font-black text-blue-400">{stats.audios}</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
+                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Posts</p>
+                    <span className="text-lg font-black text-emerald-400">{stats.community}</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
+                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Usuarios</p>
+                    <span className="text-lg font-black text-yellow-500">{stats.users}</span>
                 </div>
             </div>
 
