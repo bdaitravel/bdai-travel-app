@@ -20,7 +20,7 @@ interface TranslationTask {
     baseTours: Tour[];
 }
 
-export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpenPartnerDashboard: () => void }> = ({ user, onBack, onOpenPartnerDashboard }) => {
+export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = ({ user, onBack }) => {
     const [stats, setStats] = useState({ totalCities: 0, totalEntries: 0, pendingTasks: 0, audios: 0, community: 0, users: 0 });
     const [cityList, setCityList] = useState<CityProgress[]>([]);
     const [isWorking, setIsWorking] = useState(false);
@@ -39,13 +39,6 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpe
     const mapContainerRef = useRef<HTMLDivElement>(null);
 
     const L = (window as any).L;
-
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const filteredCityList = cityList.filter(c => 
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        c.key.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     const fetchCityTours = async (key: string) => {
         setIsWorking(true);
@@ -272,10 +265,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpe
                     <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Admin Panel</h2>
                     <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mt-2">Gestor de Datos</p>
                 </div>
-                <div className="flex gap-4">
-                    <button onClick={onOpenPartnerDashboard} className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 active:scale-90 transition-all"><i className="fas fa-chart-line"></i></button>
-                    <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"><i className="fas fa-times"></i></button>
-                </div>
+                <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white"><i className="fas fa-times"></i></button>
             </header>
 
             <div className="grid grid-cols-3 gap-4 mb-4">
@@ -308,22 +298,9 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpe
                 </div>
             </div>
 
-            <div className="mb-4">
-                <div className="relative">
-                    <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
-                    <input 
-                        type="text" 
-                        placeholder="Buscar ciudad para corregir GPS..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-white text-[10px] font-bold outline-none focus:border-purple-500/50 transition-all"
-                    />
-                </div>
-            </div>
-
             <div className="mb-8 overflow-x-auto no-scrollbar">
                 <div className="flex gap-3 pb-2">
-                    {filteredCityList.map(c => (
+                    {cityList.map(c => (
                         <div key={c.key} onClick={() => fetchCityTours(c.key)} className={`px-4 py-3 rounded-2xl border flex flex-col min-w-[140px] transition-all cursor-pointer hover:scale-105 active:scale-95 ${c.isComplete ? 'bg-green-600/20 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-white/5 border-white/10'}`}>
                             <span className="text-[9px] font-black text-white uppercase truncate mb-0.5">{c.name}</span>
                             <span className="text-[6px] font-bold text-slate-600 uppercase mb-2 truncate">ID: {c.key}</span>

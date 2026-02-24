@@ -9,7 +9,6 @@ import { Shop } from './components/Shop';
 import { TravelServices, formatCityName, formatCountryName } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
 import { CityCommunity } from './components/CityCommunity';
-import { PartnerDashboard } from './components/PartnerDashboard';
 import { AdminPanel } from './components/AdminPanel';
 import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
@@ -313,12 +312,6 @@ export default function App() {
       setTimeout(() => setIsSyncingLang(false), 500);
   };
 
-  useEffect(() => {
-    const handleOpenPartner = () => setView(AppView.PARTNER_DASHBOARD);
-    window.addEventListener('open-partner-dashboard', handleOpenPartner);
-    return () => window.removeEventListener('open-partner-dashboard', handleOpenPartner);
-  }, []);
-
   const updateUserAndSync = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
@@ -557,11 +550,10 @@ export default function App() {
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
                 {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
-                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} onOpenPartnerDashboard={() => setView(AppView.PARTNER_DASHBOARD)} />}
-                {view === AppView.PARTNER_DASHBOARD && <PartnerDashboard onBack={() => setView(AppView.ADMIN)} />}
+                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
 
-            {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && view !== AppView.PARTNER_DASHBOARD && (
+            {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
                 <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm rounded-[2.5rem] pointer-events-auto shadow-2xl">
                     <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
