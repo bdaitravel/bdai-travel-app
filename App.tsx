@@ -282,9 +282,12 @@ export default function App() {
             }, { onConflict: 'city,language' });
             setView(AppView.CITY_DETAIL);
         } else { alert("Location protocol failed."); }
-    } catch (e) { 
+    } catch (e: any) { 
         if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
-        else { console.error("Selection error:", e); }
+        else { 
+            console.error("Selection error:", e);
+            alert(e.message || "Selection protocol failed.");
+        }
     } finally { setIsLoading(false); }
   };
 
@@ -314,8 +317,12 @@ export default function App() {
             }));
 
             setSearchOptions(results);
-        } catch (e) { 
+        } catch (e: any) { 
             console.error("Search protocol error:", e); 
+            if (!e.message.includes("403")) {
+                // Only alert if it's not the 403 we already alert in geminiService
+                alert("Search protocol failed. Check your connection or API key.");
+            }
         } finally {
             setIsSearching(false);
         }
