@@ -17,7 +17,8 @@ const TEXTS: any = {
         duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS", 
         visaId: "VISADO", boardingPass: "TARJETA DE EMBARQUE", approved: "APROBADO", rewardTotal: "Recompensa total", 
         rankUp: "Rango actualizado", fixLocation: "Corregir GPS (Admin)", locationFixed: "GPS Actualizado",
-        shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️" 
+        shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️",
+        reportError: "Reportar Error", download: "Descargar Tour", errorReported: "Error reportado a DAI. ¡Gracias!"
     },
     en: { 
         start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:", 
@@ -29,7 +30,8 @@ const TEXTS: any = {
         duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES", 
         visaId: "VISA", boardingPass: "BOARDING PASS", approved: "APPROVED", rewardTotal: "Total reward", 
         rankUp: "Rank updated", fixLocation: "Fix GPS (Admin)", locationFixed: "GPS Updated",
-        shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️" 
+        shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️",
+        reportError: "Report Error", download: "Download Tour", errorReported: "Error reported to DAI. Thanks!"
     },
     fr: { start: "Lancer", stop: "Arrêt", of: "sur", daiShot: "Conseil Dai", angleLabel: "Angle Dai :", photoTipFallback: "Cherchez une perspective latérale pour capturer la profondeur de la structure.", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Précédent", next: "Suivant", meters: "m", itinerary: "Itinéraire", finish: "Terminer le Tour", congrats: "Tour Terminé!", stampDesc: "Nouveau tampon gagné", shareIg: "Générer Visa Social (+100)", close: "Fermer", tooFar: "GPS Incertain", checkIn: "Check-in GPS", checkedIn: "Vérifié", distance: "Distance", duration: "Durée", nearbyAlert: "Arrêt Proche", jumpTo: "Aller ici", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "CARTE D'EMBARQUEMENT", approved: "APPROUVÉ", rewardTotal: "Récompense totale", rankUp: "Rang mis à jour", shareText: "Je viens de terminer la Masterclass {city} sur bdai ! +250 miles gagnés. 🌍✈️" },
     it: { start: "Lancia", stop: "Fermata", of: "di", daiShot: "Consiglio Dai", angleLabel: "Angolo Dai:", photoTipFallback: "Cerca una prospettiva laterale per catturare la profondità.", capture: "Log Dati", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Itinerario", finish: "Finire Tour", congrats: "Tour Completato!", stampDesc: "Nuovo timbro guadagnato", shareIg: "Genera Visto Social (+100)", close: "Chiudi", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificato", distance: "Distanza", duration: "Durata", nearbyAlert: "Fermata Vicina", jumpTo: "Salta qui", rewardMiles: "+50 MIGLIA", visaId: "VISTO", boardingPass: "CARTA D'IMBARCO", approved: "APPROVATO", rewardTotal: "Ricompensa totale", rankUp: "Rango aggiornato", shareText: "Ho appena finito la Masterclass {city} su bdai! +250 miglia guadagnate. 🌍✈️" },
@@ -227,13 +229,34 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         try {
             const audioUrl = await generateSpeech(text, user.language, tour.city);
             if (!audioUrl) {
-                setIsAudioLoading(true);
+                setIsAudioLoading(false);
                 return;
             }
             
             const audio = new Audio(audioUrl);
+            audio.volume = 1.0;
+            audio.muted = false;
+            
+            // Media Session API for background playback and lock screen controls
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: currentStop.name,
+                    artist: 'DAI - bdai.tech',
+                    album: tour.title,
+                    artwork: [
+                        { src: 'https://picsum.photos/seed/bdai/512/512', sizes: '512x512', type: 'image/png' }
+                    ]
+                });
+            }
+
             audio.onended = () => setAudioPlayingId(null);
-            audio.play();
+            audio.onerror = (e) => {
+                console.error("Audio error", e);
+                setIsAudioLoading(false);
+                setAudioPlayingId(null);
+            };
+
+            await audio.play();
             
             (sourceNodeRef as any).current = audio;
             setAudioPlayingId(stopId);
@@ -372,6 +395,30 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                         <button onClick={() => setShowPhotoTip(true)} className="flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border bg-slate-900 text-white border-slate-800">
                             <i className="fas fa-camera text-lg mb-1"></i>
                             <span className="text-[9px]">{tl.daiShot}</span>
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <button 
+                            onClick={() => {
+                                alert(tl.errorReported);
+                            }} 
+                            className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-white border border-slate-200 text-slate-500 font-black uppercase text-[8px] tracking-widest active:scale-95 transition-all"
+                        >
+                            <i className="fas fa-bug"></i>
+                            {tl.reportError}
+                        </button>
+                        <button 
+                            onClick={() => {
+                                if (window.confirm(tl.download + "?")) {
+                                    // This would call the downloadTour function passed from App
+                                    (window as any).downloadTour?.(tour.id);
+                                }
+                            }} 
+                            className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-white border border-slate-200 text-slate-500 font-black uppercase text-[8px] tracking-widest active:scale-95 transition-all"
+                        >
+                            <i className="fas fa-download"></i>
+                            {tl.download}
                         </button>
                     </div>
 

@@ -266,191 +266,193 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpe
     };
 
     return (
-        <div className="fixed inset-0 z-[200] bg-slate-950 flex flex-col p-8 overflow-hidden font-sans">
-            <header className="flex items-center justify-between mb-8">
+        <div className="fixed inset-0 z-[200] bg-slate-950 flex flex-col p-6 font-sans">
+            <header className="flex items-center justify-between mb-6 shrink-0">
                 <div>
-                    <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Admin Panel</h2>
-                    <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest mt-2">Gestor de Datos</p>
+                    <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Admin Panel</h2>
+                    <p className="text-[7px] font-black text-blue-500 uppercase tracking-widest mt-1">Gestor de Datos</p>
                 </div>
-                <div className="flex gap-4">
-                    <button onClick={onOpenPartnerDashboard} className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 active:scale-90 transition-all"><i className="fas fa-chart-line"></i></button>
-                    <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"><i className="fas fa-times"></i></button>
+                <div className="flex gap-3">
+                    <button onClick={onOpenPartnerDashboard} className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 active:scale-90 transition-all"><i className="fas fa-chart-line text-sm"></i></button>
+                    <button onClick={onBack} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"><i className="fas fa-times text-sm"></i></button>
                 </div>
             </header>
 
-            <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Ciudades</p>
-                    <span className="text-lg font-black text-white">{stats.totalCities}</span>
+            <div className="overflow-y-auto no-scrollbar flex-1 space-y-6 pb-20">
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                        <p className="text-[5px] font-black text-slate-500 uppercase tracking-widest mb-1">Ciudades</p>
+                        <span className="text-sm font-black text-white">{stats.totalCities}</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center border-purple-500/20">
+                        <p className="text-[5px] font-black text-purple-500 uppercase tracking-widest mb-1">Pendientes</p>
+                        <span className="text-sm font-black text-purple-400">{stats.pendingTasks}</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                        <p className="text-[5px] font-black text-slate-500 uppercase tracking-widest mb-1">Tours</p>
+                        <span className="text-sm font-black text-slate-400">{stats.totalEntries}</span>
+                    </div>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center border-purple-500/20">
-                    <p className="text-[6px] font-black text-purple-500 uppercase tracking-widest mb-1">Pendientes</p>
-                    <span className="text-lg font-black text-purple-400">{stats.pendingTasks}</span>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Tours</p>
-                    <span className="text-lg font-black text-slate-400">{stats.totalEntries}</span>
-                </div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Audios</p>
-                    <span className="text-lg font-black text-blue-400">{stats.audios}</span>
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                        <p className="text-[5px] font-black text-slate-500 uppercase tracking-widest mb-1">Audios</p>
+                        <span className="text-sm font-black text-blue-400">{stats.audios}</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                        <p className="text-[5px] font-black text-slate-500 uppercase tracking-widest mb-1">Posts</p>
+                        <span className="text-sm font-black text-emerald-400">{stats.community}</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
+                        <p className="text-[5px] font-black text-slate-500 uppercase tracking-widest mb-1">Usuarios</p>
+                        <span className="text-sm font-black text-yellow-500">{stats.users}</span>
+                    </div>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Posts</p>
-                    <span className="text-lg font-black text-emerald-400">{stats.community}</span>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Usuarios</p>
-                    <span className="text-lg font-black text-yellow-500">{stats.users}</span>
-                </div>
-            </div>
 
-            <div className="mb-4">
-                <div className="relative">
-                    <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
-                    <input 
-                        type="text" 
-                        placeholder="Buscar ciudad para corregir GPS..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-white text-[10px] font-bold outline-none focus:border-purple-500/50 transition-all"
-                    />
+                <div className="sticky top-0 z-10 bg-slate-950 py-2">
+                    <div className="relative">
+                        <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Buscar ciudad para corregir GPS..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 pl-10 pr-4 text-white text-xs font-bold outline-none focus:border-purple-500 transition-all shadow-2xl"
+                        />
+                    </div>
                 </div>
-            </div>
 
-            <div className="mb-8 overflow-x-auto no-scrollbar">
-                <div className="flex gap-3 pb-2">
+                <div className="grid grid-cols-2 gap-3">
                     {filteredCityList.map(c => (
-                        <div key={c.key} onClick={() => fetchCityTours(c.key)} className={`px-4 py-3 rounded-2xl border flex flex-col min-w-[140px] transition-all cursor-pointer hover:scale-105 active:scale-95 ${c.isComplete ? 'bg-green-600/20 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-white/5 border-white/10'}`}>
-                            <span className="text-[9px] font-black text-white uppercase truncate mb-0.5">{c.name}</span>
-                            <span className="text-[6px] font-bold text-slate-600 uppercase mb-2 truncate">ID: {c.key}</span>
-                            <div className="flex items-center justify-between">
-                                <span className={`text-[10px] font-black ${c.isComplete ? 'text-green-400' : 'text-slate-400'}`}>
-                                    {c.isComplete ? 'HECHO' : `${c.count}/20`}
+                        <div key={c.key} onClick={() => fetchCityTours(c.key)} className={`p-4 rounded-2xl border flex flex-col transition-all cursor-pointer hover:scale-[1.02] active:scale-95 ${c.isComplete ? 'bg-green-600/10 border-green-500/50' : 'bg-white/5 border-white/10'}`}>
+                            <span className="text-[10px] font-black text-white uppercase truncate mb-1">{c.name}</span>
+                            <div className="flex items-center justify-between mt-auto">
+                                <span className={`text-[8px] font-black ${c.isComplete ? 'text-green-400' : 'text-slate-500'}`}>
+                                    {c.isComplete ? 'COMPLETO' : `${c.count}/20`}
                                 </span>
                                 {c.isComplete ? <i className="fas fa-check-circle text-green-500 text-[10px]"></i> : (c.isShortKey && <i className="fas fa-exclamation-triangle text-amber-500 text-[10px]"></i>)}
                             </div>
                         </div>
                     ))}
+                    {filteredCityList.length === 0 && (
+                        <div className="col-span-2 py-10 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">No se encontraron ciudades</div>
+                    )}
                 </div>
-            </div>
 
-            {showGpsFixer && (
-                <div className="fixed inset-0 z-[300] bg-slate-950 flex flex-col p-8 animate-fade-in">
-                    <header className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter">GPS Fixer: {selectedCityKey}</h3>
-                        <button onClick={() => { setShowGpsFixer(false); mapRef.current = null; }} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white"><i className="fas fa-times"></i></button>
-                    </header>
+                {showGpsFixer && (
+                    <div className="fixed inset-0 z-[300] bg-slate-950 flex flex-col p-8 animate-fade-in">
+                        <header className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">GPS Fixer: {selectedCityKey}</h3>
+                            <button onClick={() => { setShowGpsFixer(false); mapRef.current = null; }} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white"><i className="fas fa-times"></i></button>
+                        </header>
 
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <select 
-                            value={selectedTourIndex} 
-                            onChange={(e) => { setSelectedTourIndex(Number(e.target.value)); setSelectedStopIndex(0); setTempCoords(null); }}
-                            className="bg-white/5 border border-white/10 rounded-xl p-3 text-white text-xs font-bold outline-none"
-                        >
-                            {cityTours.map((t, i) => <option key={i} value={i} className="bg-slate-900">{t.title}</option>)}
-                        </select>
-                        <select 
-                            value={selectedStopIndex} 
-                            onChange={(e) => { setSelectedStopIndex(Number(e.target.value)); setTempCoords(null); }}
-                            className="bg-white/5 border border-white/10 rounded-xl p-3 text-white text-xs font-bold outline-none"
-                        >
-                            {cityTours[selectedTourIndex]?.stops.map((s, i) => <option key={i} value={i} className="bg-slate-900">{s.name}</option>)}
-                        </select>
-                    </div>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <select 
+                                value={selectedTourIndex} 
+                                onChange={(e) => { setSelectedTourIndex(Number(e.target.value)); setSelectedStopIndex(0); setTempCoords(null); }}
+                                className="bg-white/5 border border-white/10 rounded-xl p-3 text-white text-xs font-bold outline-none"
+                            >
+                                {cityTours.map((t, i) => <option key={i} value={i} className="bg-slate-900">{t.title}</option>)}
+                            </select>
+                            <select 
+                                value={selectedStopIndex} 
+                                onChange={(e) => { setSelectedStopIndex(Number(e.target.value)); setTempCoords(null); }}
+                                className="bg-white/5 border border-white/10 rounded-xl p-3 text-white text-xs font-bold outline-none"
+                            >
+                                {cityTours[selectedTourIndex]?.stops.map((s, i) => <option key={i} value={i} className="bg-slate-900">{s.name}</option>)}
+                            </select>
+                        </div>
 
-                    <div className="flex gap-2 mb-4">
-                        <input 
-                            type="text" 
-                            placeholder="Lat, Lng (ej: 40.4167, -3.7037)" 
-                            className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-white text-[10px] font-mono outline-none"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    const val = (e.target as HTMLInputElement).value;
-                                    const [lat, lng] = val.split(',').map(v => parseFloat(v.trim()));
-                                    if (!isNaN(lat) && !isNaN(lng)) {
-                                        setTempCoords({ lat, lng });
-                                        mapRef.current.setView([lat, lng], 18);
+                        <div className="flex gap-2 mb-4">
+                            <input 
+                                type="text" 
+                                placeholder="Lat, Lng (ej: 40.4167, -3.7037)" 
+                                className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-white text-[10px] font-mono outline-none"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const val = (e.target as HTMLInputElement).value;
+                                        const [lat, lng] = val.split(',').map(v => parseFloat(v.trim()));
+                                        if (!isNaN(lat) && !isNaN(lng)) {
+                                            setTempCoords({ lat, lng });
+                                            mapRef.current.setView([lat, lng], 18);
+                                        }
                                     }
-                                }
-                            }}
-                        />
-                        <div className="px-4 bg-white/5 border border-white/10 rounded-xl flex items-center text-slate-500 text-[8px] uppercase font-black">Enter para ir</div>
-                    </div>
+                                }}
+                            />
+                            <div className="px-4 bg-white/5 border border-white/10 rounded-xl flex items-center text-slate-500 text-[8px] uppercase font-black">Enter para ir</div>
+                        </div>
 
-                    <div className="flex-1 bg-slate-900 rounded-3xl overflow-hidden mb-6 relative">
-                        <div ref={mapContainerRef} className="w-full h-full" />
-                        <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md p-4 rounded-2xl border border-white/10 z-[400] text-[10px] text-white">
-                            <p className="font-black uppercase tracking-widest mb-2">Instrucciones</p>
-                            <p className="opacity-60">Haz click en el mapa para marcar la nueva ubicación.</p>
+                        <div className="flex-1 bg-slate-900 rounded-3xl overflow-hidden mb-6 relative">
+                            <div ref={mapContainerRef} className="w-full h-full" />
+                            <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md p-4 rounded-2xl border border-white/10 z-[400] text-[10px] text-white">
+                                <p className="font-black uppercase tracking-widest mb-2">Instrucciones</p>
+                                <p className="opacity-60">Haz click en el mapa para marcar la nueva ubicación.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button 
+                                disabled={!tempCoords || isWorking}
+                                onClick={saveNewCoords}
+                                className="flex-1 py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                            >
+                                {isWorking ? 'Guardando...' : 'Confirmar Nueva Ubicación'}
+                            </button>
                         </div>
                     </div>
+                )}
 
-                    <div className="flex gap-4">
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
                         <button 
-                            disabled={!tempCoords || isWorking}
-                            onClick={saveNewCoords}
-                            className="flex-1 py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                            disabled={isWorking}
+                            onClick={() => runBatchTranslation(10)}
+                            className="py-5 rounded-2xl bg-white text-slate-950 font-black uppercase text-[9px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
                         >
-                            {isWorking ? 'Guardando...' : 'Confirmar Nueva Ubicación'}
+                            Traducir Lote 10
+                        </button>
+                        <button 
+                            disabled={isWorking}
+                            onClick={() => runBatchTranslation(30)}
+                            className="py-5 rounded-2xl bg-purple-600 text-white font-black uppercase text-[9px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            Traducir Lote 30
                         </button>
                     </div>
-                </div>
-            )}
+                    
+                    <button 
+                        disabled={isWorking}
+                        onClick={repairKeys}
+                        className="w-full py-4 border border-blue-500/30 bg-blue-500/10 text-blue-400 rounded-2xl font-black uppercase text-[8px] tracking-[0.2em] active:scale-95 transition-all"
+                    >
+                        <i className="fas fa-magic mr-2"></i> Reparar Llaves Huérfanas
+                    </button>
 
-            <div className="space-y-4 mb-8">
-                <div className="grid grid-cols-2 gap-3">
-                    <button 
-                        disabled={isWorking}
-                        onClick={() => runBatchTranslation(10)}
-                        className="py-6 rounded-[2rem] bg-white text-slate-950 font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
-                    >
-                        Lote 10
-                    </button>
-                    <button 
-                        disabled={isWorking}
-                        onClick={() => runBatchTranslation(30)}
-                        className="py-6 rounded-[2rem] bg-purple-600 text-white font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all disabled:opacity-50"
-                    >
-                        Lote 30
-                    </button>
+                    {isWorking && (
+                        <button 
+                            onClick={() => { stopRef.current = true; setIsWorking(false); }}
+                            className="w-full py-2 text-red-500 font-black uppercase text-[8px] tracking-[0.3em]"
+                        >
+                            Detener Proceso
+                        </button>
+                    )}
                 </div>
-                
-                <button 
-                    disabled={isWorking}
-                    onClick={repairKeys}
-                    className="w-full py-4 border border-blue-500/30 bg-blue-500/10 text-blue-400 rounded-2xl font-black uppercase text-[8px] tracking-[0.2em] active:scale-95 transition-all"
-                >
-                    <i className="fas fa-magic mr-2"></i> Reparar Llaves Huérfanas
-                </button>
 
                 {isWorking && (
-                    <button 
-                        onClick={() => { stopRef.current = true; setIsWorking(false); }}
-                        className="w-full py-2 text-red-500 font-black uppercase text-[8px] tracking-[0.3em]"
-                    >
-                        Detener Proceso
-                    </button>
+                    <div>
+                        <div className="flex justify-between text-[8px] font-black uppercase text-slate-500 mb-2">
+                            <span>Progreso...</span>
+                            <span>{progress.current} / {progress.total}</span>
+                        </div>
+                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${(progress.current / progress.total) * 100}%` }}></div>
+                        </div>
+                    </div>
                 )}
-            </div>
 
-            {isWorking && (
-                <div className="mb-6">
-                    <div className="flex justify-between text-[8px] font-black uppercase text-slate-500 mb-2">
-                        <span>Progreso...</span>
-                        <span>{progress.current} / {progress.total}</span>
-                    </div>
-                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${(progress.current / progress.total) * 100}%` }}></div>
-                    </div>
+                <div className="bg-black/50 border border-white/5 rounded-3xl p-6 h-40 overflow-y-auto no-scrollbar font-mono shadow-inner text-[8px] lowercase text-slate-500">
+                    {log.map((m, i) => <p key={i} className={`mb-1 ${m.includes('✅') || m.includes('✓') ? 'text-green-400' : m.includes('🚀') ? 'text-blue-400' : ''}`}>&gt; {m}</p>)}
                 </div>
-            )}
-
-            <div className="flex-1 bg-black/50 border border-white/5 rounded-[2rem] p-6 overflow-y-auto no-scrollbar font-mono shadow-inner text-[9px] lowercase text-slate-500">
-                {log.map((m, i) => <p key={i} className={`mb-1 ${m.includes('✅') || m.includes('✓') ? 'text-green-400' : m.includes('🚀') ? 'text-blue-400' : ''}`}>&gt; {m}</p>)}
             </div>
         </div>
     );

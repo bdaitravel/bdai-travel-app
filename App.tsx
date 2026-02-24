@@ -91,6 +91,25 @@ export default function App() {
     return dict[key] || translations['en'][key] || key;
   }, [user.language]);
 
+  const [showLegal, setShowLegal] = useState(false);
+  const [offlineTours, setOfflineTours] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('bdai_offline_tours');
+    if (saved) setOfflineTours(JSON.parse(saved));
+  }, []);
+
+  const downloadTour = (tourId: string) => {
+    const newOffline = [...new Set([...offlineTours, tourId])];
+    setOfflineTours(newOffline);
+    localStorage.setItem('bdai_offline_tours', JSON.stringify(newOffline));
+    alert("Tour descargado para uso offline.");
+  };
+
+  useEffect(() => {
+    (window as any).downloadTour = downloadTour;
+  }, [offlineTours]);
+
   useEffect(() => {
     const checkAuth = async () => {
         try {
@@ -553,6 +572,33 @@ export default function App() {
                 )}
                 {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
                 {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
+                
+                {showLegal && (
+                  <div className="fixed inset-0 z-[10000] bg-slate-950 p-8 overflow-y-auto no-scrollbar animate-fade-in font-sans">
+                      <header className="flex items-center justify-between mb-8">
+                          <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Legal & Privacy</h2>
+                          <button onClick={() => setShowLegal(false)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white"><i className="fas fa-times"></i></button>
+                      </header>
+                      <div className="space-y-8 text-slate-400 text-xs leading-relaxed">
+                          <section>
+                              <h3 className="text-white font-black uppercase tracking-widest mb-3 text-[10px]">Términos y Condiciones</h3>
+                              <p>Toda la información proporcionada por bdai es generada mediante Inteligencia Artificial. Aunque nos esforzamos por la precisión, el contenido puede contener errores factuales o de ubicación. El uso de la aplicación es bajo su propio riesgo.</p>
+                          </section>
+                          <section>
+                              <h3 className="text-white font-black uppercase tracking-widest mb-3 text-[10px]">Política de Privacidad (RGPD)</h3>
+                              <p>Recopilamos su correo electrónico para la gestión de su cuenta y progreso. Sus datos de ubicación se utilizan únicamente para la funcionalidad de la guía en tiempo real y no se comparten con terceros con fines comerciales. Al usar bdai, acepta el procesamiento de sus datos según el RGPD europeo.</p>
+                          </section>
+                          <section>
+                              <h3 className="text-white font-black uppercase tracking-widest mb-3 text-[10px]">IA Responsable</h3>
+                              <p>bdai utiliza modelos de lenguaje avanzados. No somos responsables de cambios en horarios de monumentos, cierres temporales o inexactitudes históricas generadas por el modelo.</p>
+                          </section>
+                      </div>
+                      <footer className="mt-12 pt-8 border-t border-white/5 text-center">
+                          <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.4em]">bdai legal compliance v1.0</p>
+                      </footer>
+                  </div>
+                )}
+
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
@@ -570,6 +616,7 @@ export default function App() {
                     <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
                     <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
                 </nav>
+                <button onClick={() => setShowLegal(true)} className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[7px] font-black text-slate-600 uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">Legal & Privacy</button>
               </div>
             )}
           </div>

@@ -72,14 +72,14 @@ export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) =>
                     <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-purple-500/40 animate-pulse">
                         <i className="fas fa-tools text-3xl text-white"></i>
                     </div>
-                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">Marketplace en Construcción</h3>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t.construction}</h3>
                     <p className="text-slate-400 text-sm font-medium leading-relaxed italic">
                         "{t.devMsg}"
                     </p>
                     <div className="pt-4">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
                             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">DAI está trabajando</span>
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t.working}</span>
                         </div>
                     </div>
                 </div>
