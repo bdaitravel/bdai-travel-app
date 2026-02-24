@@ -38,19 +38,28 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
     
     const map = L.map(mapContainerRef.current, { 
-        zoomControl: false, 
+        zoomControl: true, 
         attributionControl: false, 
         tap: false,
         dragging: true,
         touchZoom: true,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
         maxZoom: 19
     }).setView([0, 0], 15);
+    
+    // Position zoom control to the top right to avoid overlapping with our custom buttons
+    if (map.zoomControl) {
+        map.zoomControl.setPosition('topright');
+    }
     
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
     }).addTo(map);
     
     map.on('dragstart', () => setIsAutoFollowing(false));
+    map.on('zoomstart', () => setIsAutoFollowing(false));
     mapInstanceRef.current = map;
     
     return () => { 
@@ -149,7 +158,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
                     html: `
                         <div class="relative transition-all duration-300 ${isActive ? 'scale-125 z-50' : 'opacity-80'}">
                             <div class="w-10 h-10 rounded-2xl border-2 border-slate-800 shadow-2xl flex items-center justify-center text-[12px] font-black ${isActive ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-500'}">
-                                <i class="fas ${STOP_ICONS[stop.type?.toLowerCase()] || 'fa-location-dot'}"></i>
+                                <i class="fas ${getStopIcon(stop.type)}"></i>
                             </div>
                             <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 ${isActive ? 'bg-purple-600' : 'bg-slate-900'} rotate-45 -z-10"></div>
                         </div>
@@ -167,11 +176,18 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
             markersRef.current.push(marker);
         });
 
-        // IMPORTANTE: Ajustar zoom para ver TODAS las paradas
+        // Solo ajustar zoom al inicio o si se selecciona una parada, no en cada cambio de ubicación
         const group = L.featureGroup(markersRef.current);
-        map.fitBounds(group.getBounds().pad(0.2));
+        if (markersRef.current.length > 0 && isAutoFollowing) {
+            map.fitBounds(group.getBounds().pad(0.2));
+        }
     }
   }, [stops, currentStopIndex]);
+
+  const getStopIcon = (type: string) => {
+    const t = (type || '').toLowerCase().trim();
+    return STOP_ICONS[t] || 'fa-location-dot';
+  };
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-950">
