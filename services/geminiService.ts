@@ -10,6 +10,44 @@ export class QuotaError extends Error {
     }
 }
 
+const safeJsonParse = (text: string, fallback: any = null) => {
+    if (!text) return fallback;
+    // Remove potential markdown code blocks
+    let cleanText = text.trim();
+    if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/i, '').trim();
+    }
+    
+    try {
+        return JSON.parse(cleanText);
+    } catch (e) {
+        try {
+            const startObj = cleanText.indexOf('{');
+            const endObj = cleanText.lastIndexOf('}');
+            const startArr = cleanText.indexOf('[');
+            const endArr = cleanText.lastIndexOf(']');
+            
+            let start = -1;
+            let end = -1;
+            
+            if (startObj !== -1 && (startArr === -1 || (startObj < startArr && startObj !== -1))) {
+                start = startObj;
+                end = endObj;
+            } else if (startArr !== -1) {
+                start = startArr;
+                end = endArr;
+            }
+            
+            if (start !== -1 && end !== -1 && end > start) {
+                return JSON.parse(cleanText.substring(start, end + 1));
+            }
+        } catch (e2) {
+            console.error("Safe JSON parse failed. Original text:", text);
+        }
+        return fallback;
+    }
+};
+
 const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
     try {
         return await fn();
@@ -58,7 +96,7 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
                 }
             }
         });
-        return JSON.parse(response.text || '{"english": "' + input + '", "detected": "unknown"}');
+        return safeJsonParse(response.text || "", { english: input, detected: "unknown" });
     });
 };
 
@@ -97,12 +135,12 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
                 }
             }
         });
-        return JSON.parse(response.text || '[]');
+        return safeJsonParse(response.text || "", []);
     });
 };
 
 export const generateSpeech = async (text: string, language: string, city: string): Promise<string | null> => {
-    const cleanText = (text || "").trim();
+    const cleanText = (text || "").trim().substring(0, 3000); // Truncate to avoid model limits
     if (!cleanText) return null;
 
     return handleAiCall(async () => {
@@ -115,31 +153,39 @@ export const generateSpeech = async (text: string, language: string, city: strin
         
         const voiceName = VOICE_MAP[language] || 'Kore';
         const prompt = language === 'es' 
-            ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
-            : `Act as Dai, an elegant and sarcastic guide. Say this in a natural and engaging tone: ${cleanText}`;
+            ? `Actúa como Dai, una guía de viajes de IA elegante, sarcástica y sofisticada con acento de España. Lee esto con ritmo natural y tono cautivador: ${cleanText}`
+            : `Act as Dai, an elegant, sarcastic, and sophisticated AI travel guide. Read this with natural rhythm and a captivating tone: ${cleanText}`;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: prompt }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: {
-                    voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: voiceName },
+        try {
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash-preview-tts",
+                contents: [{ parts: [{ text: prompt }] }],
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: voiceName },
+                        },
                     },
                 },
-            },
-        });
-        
-        const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        console.log("Gemini TTS response received. Base64 length:", base64?.length);
-        if (base64) {
-            const dataUrl = `data:audio/mp3;base64,${base64}`;
-            // Save to cache in background
-            saveAudioToCache(cleanText, language, base64, city).catch(e => console.error("Cache save failed:", e));
-            return dataUrl;
+            });
+            
+            const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+            const base64 = part?.inlineData?.data;
+            
+            console.log("Gemini TTS response received. Base64 length:", base64?.length || 0);
+            if (base64) {
+                const dataUrl = `data:audio/mp3;base64,${base64}`;
+                // Save to cache in background
+                saveAudioToCache(cleanText, language, base64, city).catch(e => console.error("Cache save failed:", e));
+                return dataUrl;
+            }
+            console.error("No audio data in response parts:", response.candidates?.[0]?.content?.parts);
+            return null;
+        } catch (ttsError) {
+            console.error("TTS Generation Error:", ttsError);
+            throw ttsError;
         }
-        return null;
     });
 };
 
@@ -157,7 +203,7 @@ export const generateToursForCity = async (city: string, country: string, user: 
             1. Use the Google Maps tool to find the EXACT coordinates (latitude/longitude) for every stop.
             2. Major Cities: 3-4 tours. Medium: 2 tours. Small: 1-2 tours.
             3. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
-            4. Each stop description: 310-400 words. Focus on history, curiosities, culture, and gastronomy.
+            4. Each stop description: 150-200 words. Focus on history, curiosities, culture, and gastronomy.
             5. Assign a 'type' from this list ONLY: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
             6. Each stop MUST have a 'photoSpot' object with 'angle', 'milesReward' (10-50), and 'secretLocation'.
             7. Format: Return ONLY a valid JSON array of tours.
@@ -170,9 +216,7 @@ export const generateToursForCity = async (city: string, country: string, user: 
         });
 
         const text = response.text || "[]";
-        // Extract JSON if there's markdown wrapping
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        return JSON.parse(jsonMatch ? jsonMatch[0] : text);
+        return safeJsonParse(text, []);
     });
 };
 
@@ -200,10 +244,10 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
         const ai = new GoogleGenAI({ apiKey: apiKey });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
+            contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice. Return ONLY the JSON array.`,
             config: { responseMimeType: "application/json" }
         });
-        return JSON.parse(response.text || "[]");
+        return safeJsonParse(response.text || "", []);
     });
 };
 
@@ -222,7 +266,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
                 }
             }
         });
-        return JSON.parse(response.text || '{"isSafe": false}').isSafe;
+        return safeJsonParse(response.text || "", { isSafe: false }).isSafe;
     });
 };
 
