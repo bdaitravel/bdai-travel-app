@@ -69,7 +69,18 @@ export default function App() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isSyncingLang, setIsSyncingLang] = useState(false);
-  const [searchOptions, setSearchOptions] = useState<any[] | null>(null);
+  const [searchOptions, setSearchOptions] = useState<any[] | null>(() => {
+    const saved = localStorage.getItem('bdai_search_options');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  useEffect(() => {
+    if (searchOptions) {
+      localStorage.setItem('bdai_search_options', JSON.stringify(searchOptions));
+    } else {
+      localStorage.removeItem('bdai_search_options');
+    }
+  }, [searchOptions]);
   const [user, setUser] = useState<UserProfile>(GUEST_PROFILE);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
@@ -143,6 +154,7 @@ export default function App() {
 
   const downloadTour = (tour: Tour) => {
     try {
+      console.log("Downloading tour:", tour.id);
       const savedTours = JSON.parse(localStorage.getItem('bdai_offline_data') || '{}');
       savedTours[tour.id] = tour;
       localStorage.setItem('bdai_offline_data', JSON.stringify(savedTours));
@@ -150,19 +162,18 @@ export default function App() {
       const newOffline = [...new Set([...offlineTours, tour.id])];
       setOfflineTours(newOffline);
       localStorage.setItem('bdai_offline_tours', JSON.stringify(newOffline));
-      alert("Tour descargado para uso offline.");
+      alert("✅ Tour '" + tour.title + "' descargado correctamente para uso offline.");
     } catch (e) {
-      alert("Error al descargar: Memoria llena o restringida.");
+      console.error("Download error:", e);
+      alert("❌ Error al descargar: Memoria llena o restringida.");
     }
   };
 
   useEffect(() => {
-    (window as any).downloadTour = (tourId: string) => {
-        // Find the tour in current tours state and download it
-        const tourToDownload = tours.find(t => t.id === tourId);
-        if (tourToDownload) downloadTour(tourToDownload);
+    (window as any).downloadTour = (tour: Tour) => {
+        downloadTour(tour);
     };
-  }, [offlineTours, tours]);
+  }, [offlineTours]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -311,8 +322,6 @@ export default function App() {
 
   const processCitySelection = async (selection: any, langCode: string) => {
     setIsLoading(true); 
-    setSearchOptions(null); 
-    setSearchVal(''); 
     const cleanName = selection.name.split(',')[0].trim();
     setSelectedCity(cleanName); 
     const slug = selection.slug || normalizeKey(cleanName, selection.country);
@@ -582,7 +591,7 @@ export default function App() {
                                               </div>
                                               <div className="truncate">
                                                   <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
-                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : opt.country}</span>
+                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.country}</span>
                                               </div>
                                           </div>
                                           <i className="fas fa-chevron-right text-[9px] text-purple-500/40"></i>

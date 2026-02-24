@@ -45,12 +45,25 @@ const TEXTS: any = {
 
 const STOP_ICONS: Record<string, string> = { 
     historical: 'fa-fingerprint', 
+    history: 'fa-fingerprint',
+    monument: 'fa-landmark',
     food: 'fa-utensils', 
+    gastronomy: 'fa-utensils',
+    restaurant: 'fa-utensils',
     art: 'fa-palette', 
+    museum: 'fa-palette',
     nature: 'fa-leaf', 
+    park: 'fa-leaf',
+    garden: 'fa-leaf',
     photo: 'fa-camera', 
+    viewpoint: 'fa-camera',
     culture: 'fa-landmark', 
-    architecture: 'fa-archway' 
+    architecture: 'fa-archway',
+    church: 'fa-church',
+    cathedral: 'fa-church',
+    temple: 'fa-synagogue',
+    castle: 'fa-fort-awesome',
+    bridge: 'fa-bridge'
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -419,8 +432,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                         <button 
                             onClick={() => {
                                 if (window.confirm(tl.download + "?")) {
-                                    // This would call the downloadTour function passed from App
-                                    (window as any).downloadTour?.(tour.id);
+                                    (window as any).downloadTour?.(tour);
                                 }
                             }} 
                             className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-white border border-slate-200 text-slate-500 font-black uppercase text-[8px] tracking-widest active:scale-95 transition-all"
