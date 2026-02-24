@@ -141,37 +141,18 @@ export const generateToursForCity = async (city: string, country: string, user: 
             2. Major Cities: 3-4 tours. Medium: 2 tours. Small: 1-2 tours.
             3. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
             4. Each stop description: 310-400 words. Focus on history, curiosities, culture, and gastronomy.
-            5. Assign a 'type': 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
-            6. ALL CONTENT IN ${user.language}.`,
+            5. Assign a 'type' from this list ONLY: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
+            6. Each stop MUST have a 'photoSpot' object with 'angle', 'milesReward' (10-50), and 'secretLocation'.
+            7. Format: Return ONLY a valid JSON array of tours.
+            8. Each tour: { "id", "city", "title", "description", "duration", "distance", "stops": [] }
+            9. Each stop: { "id", "name", "description", "latitude", "longitude", "type", "photoSpot" }
+            10. ALL CONTENT IN ${user.language}.`,
             config: {
                 tools: [{ googleMaps: {} }],
-                // Note: responseMimeType and responseSchema are NOT allowed with googleMaps tool
             },
         });
 
-        // Since we can't use responseSchema with googleMaps, we parse the text response
-        // We'll ask for a specific format in the prompt to make parsing easier if needed, 
-        // but usually, Gemini is good at following the requested structure.
-        // For safety, I'll add a second pass or a very strict prompt instruction.
-        
-        // Let's refine the prompt to ensure it returns valid JSON even without the schema
-        const refinedResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `As DAI, generate 3 to 4 distinct thematic tours for ${city}, ${country} in ${user.language}.
-            
-            STRICT RULES:
-            1. Use Google Maps to verify EVERY location.
-            2. Format: Return ONLY a valid JSON array of tours.
-            3. Each tour: { "id", "city", "title", "description", "duration", "distance", "stops": [] }
-            4. Each stop: { "id", "name", "description" (310-400 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward", "secretLocation" } }
-            5. NO REPEATED STOPS. 10 stops per tour.
-            6. Content in ${user.language}.`,
-            config: {
-                tools: [{ googleMaps: {} }]
-            }
-        });
-
-        const text = refinedResponse.text || "[]";
+        const text = response.text || "[]";
         // Extract JSON if there's markdown wrapping
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         return JSON.parse(jsonMatch ? jsonMatch[0] : text);

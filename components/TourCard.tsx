@@ -113,6 +113,11 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
   );
 };
 
+const getStopIcon = (type: string) => {
+    const t = (type || '').toLowerCase().trim();
+    return STOP_ICONS[t] || 'fa-location-dot';
+};
+
 export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
     const currentStop = tour.stops[currentStopIndex] as Stop;
@@ -230,10 +235,13 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             const audioUrl = await generateSpeech(text, user.language, tour.city);
             if (!audioUrl) {
                 setIsAudioLoading(false);
+                alert("Audio protocol failed. Check connection.");
                 return;
             }
             
-            const audio = new Audio(audioUrl);
+            const audio = new Audio();
+            audio.src = audioUrl;
+            audio.crossOrigin = "anonymous";
             audio.volume = 1.0;
             audio.muted = false;
             
@@ -294,7 +302,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                              {tour.stops.map((s: Stop, idx: number) => (
                                  <button key={s.id} onClick={() => { onJumpTo(idx); setShowItinerary(false); stopAudio(); }} className={`w-full p-5 rounded-2xl flex items-center gap-4 border transition-all ${idx === currentStopIndex ? 'bg-purple-50 border-purple-200' : 'bg-slate-50 border-slate-100'}`}>
                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${idx === currentStopIndex ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                                         <i className={`fas ${STOP_ICONS[s.type?.toLowerCase()] || 'fa-location-dot'}`}></i>
+                                         <i className={`fas ${getStopIcon(s.type)}`}></i>
                                      </div>
                                      <span className={`text-left font-bold text-sm flex-1 ${idx === currentStopIndex ? 'text-purple-600' : 'text-slate-700'}`}>{s.name}</span>
                                      {idx === currentStopIndex && <i className="fas fa-location-dot text-purple-500"></i>}
@@ -357,7 +365,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 <button onClick={() => setShowItinerary(true)} className="flex-1 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between min-w-0">
                     <div className="flex items-center gap-3 truncate">
                         <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-                            <i className={`fas ${STOP_ICONS[currentStop.type?.toLowerCase()] || 'fa-location-dot'} text-xs`}></i>
+                            <i className={`fas ${getStopIcon(currentStop.type)} text-xs`}></i>
                         </div>
                         <div className="flex flex-col text-left truncate">
                             <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">{tl.stop} {currentStopIndex + 1}</p>

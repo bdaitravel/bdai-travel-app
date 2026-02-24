@@ -74,16 +74,35 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
   const [cityTab, setCityTab] = useState<'TOURS' | 'COMMUNITY'>('TOURS');
-
-  useEffect(() => {
-    if (view !== AppView.CITY_DETAIL) setCityTab('TOURS');
-  }, [view]);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const searchTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (view !== AppView.CITY_DETAIL) setCityTab('TOURS');
+  }, [view]);
+
+  useEffect(() => {
+    if (tours.length > 0) {
+      localStorage.setItem('bdai_current_tours', JSON.stringify(tours));
+    }
+  }, [tours]);
+
+  useEffect(() => {
+    const savedCity = localStorage.getItem('bdai_selected_city');
+    if (savedCity) setSelectedCity(savedCity);
+  }, []);
+
+  useEffect(() => {
+    if (selectedCity) {
+      localStorage.setItem('bdai_selected_city', selectedCity);
+    } else {
+      localStorage.removeItem('bdai_selected_city');
+    }
+  }, [selectedCity]);
 
   const t = useCallback((key: string) => {
     const lang = user.language || 'es';
@@ -94,21 +113,56 @@ export default function App() {
   const [showLegal, setShowLegal] = useState(false);
   const [offlineTours, setOfflineTours] = useState<string[]>([]);
 
+  // History management for hardware back button
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.view) {
+        setView(event.state.view);
+      } else {
+        // If we go back to the very beginning, default to HOME if logged in, else LOGIN
+        setView(user.isLoggedIn ? AppView.HOME : AppView.LOGIN);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    // Push initial state
+    window.history.replaceState({ view: view }, '', '');
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [user.isLoggedIn]);
+
+  const navigateTo = (newView: AppView) => {
+    if (view !== newView) {
+      window.history.pushState({ view: newView }, '', '');
+      setView(newView);
+    }
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('bdai_offline_tours');
     if (saved) setOfflineTours(JSON.parse(saved));
   }, []);
 
-  const downloadTour = (tourId: string) => {
-    const newOffline = [...new Set([...offlineTours, tourId])];
-    setOfflineTours(newOffline);
-    localStorage.setItem('bdai_offline_tours', JSON.stringify(newOffline));
-    alert("Tour descargado para uso offline.");
+  const downloadTour = (tour: Tour) => {
+    try {
+      const savedTours = JSON.parse(localStorage.getItem('bdai_offline_data') || '{}');
+      savedTours[tour.id] = tour;
+      localStorage.setItem('bdai_offline_data', JSON.stringify(savedTours));
+      
+      const newOffline = [...new Set([...offlineTours, tour.id])];
+      setOfflineTours(newOffline);
+      localStorage.setItem('bdai_offline_tours', JSON.stringify(newOffline));
+      alert("Tour descargado para uso offline.");
+    } catch (e) {
+      alert("Error al descargar: Memoria llena o restringida.");
+    }
   };
 
   useEffect(() => {
-    (window as any).downloadTour = downloadTour;
-  }, [offlineTours]);
+    (window as any).downloadTour = (tourId: string) => {
+        // Find the tour in current tours state and download it
+        const tourToDownload = tours.find(t => t.id === tourId);
+        if (tourToDownload) downloadTour(tourToDownload);
+    };
+  }, [offlineTours, tours]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -123,6 +177,14 @@ export default function App() {
                  setUser(prev => ({ ...prev, language: parsed.language || 'es' }));
                }
             }
+
+            // If we have a selected city but no tours, try to reload them
+            if (selectedCity && tours.length === 0) {
+               const savedTours = localStorage.getItem('bdai_current_tours');
+               if (savedTours) {
+                 setTours(JSON.parse(savedTours));
+               }
+            }
         } catch (e) { console.error("Auth init error", e); } finally { setIsVerifyingSession(false); }
     };
 
@@ -131,7 +193,7 @@ export default function App() {
         handleLoginSuccess(session.user);
       } else if (_event === 'SIGNED_OUT') {
         setUser(GUEST_PROFILE);
-        setView(AppView.LOGIN);
+        navigateTo(AppView.LOGIN);
       }
     });
 
@@ -242,7 +304,7 @@ export default function App() {
           await syncUserProfile(newProfile);
           setUser(newProfile);
         }
-        setView(AppView.HOME);
+        navigateTo(AppView.HOME);
       }
     } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
   };
@@ -266,7 +328,17 @@ export default function App() {
 
         if (!error && cached && cached.data && cached.data.length > 0) {
             setTours(cached.data); 
-            setView(AppView.CITY_DETAIL);
+            navigateTo(AppView.CITY_DETAIL);
+            setIsLoading(false);
+            return;
+        }
+
+        // Check offline storage as fallback
+        const offlineData = JSON.parse(localStorage.getItem('bdai_offline_data') || '{}');
+        const offlineToursList = Object.values(offlineData).filter((t: any) => t.city.toLowerCase() === cleanName.toLowerCase());
+        if (offlineToursList.length > 0) {
+            setTours(offlineToursList as Tour[]);
+            navigateTo(AppView.CITY_DETAIL);
             setIsLoading(false);
             return;
         }
@@ -280,7 +352,7 @@ export default function App() {
               language: langCode.toLowerCase(),
               data: generated
             }, { onConflict: 'city,language' });
-            setView(AppView.CITY_DETAIL);
+            navigateTo(AppView.CITY_DETAIL);
         } else { alert("Location protocol failed."); }
     } catch (e: any) { 
         if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
@@ -340,7 +412,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const handleOpenPartner = () => setView(AppView.PARTNER_DASHBOARD);
+    const handleOpenPartner = () => navigateTo(AppView.PARTNER_DASHBOARD);
     window.addEventListener('open-partner-dashboard', handleOpenPartner);
     return () => window.removeEventListener('open-partner-dashboard', handleOpenPartner);
   }, []);
@@ -527,7 +599,7 @@ export default function App() {
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
                       <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
-                        <button onClick={() => setView(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
+                        <button onClick={() => navigateTo(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
                         <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
                       </header>
 
@@ -550,7 +622,7 @@ export default function App() {
                           {cityTab === 'TOURS' ? (
                             <div className="space-y-6">
                                 {tours.map(tour => (
-                                    <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
+                                    <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); navigateTo(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
                                 ))}
                             </div>
                           ) : (
@@ -560,7 +632,7 @@ export default function App() {
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
+                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => navigateTo(AppView.CITY_DETAIL)} userLocation={userLocation} onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
                 )}
                 {/* Dai Thinking Overlay - Only for full loading, not search */}
                 {isLoading && (
@@ -607,21 +679,21 @@ export default function App() {
                 )}
 
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigateTo(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigateTo(AppView.ADMIN)} onLangChange={handleLangChange} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
                 {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
-                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} onOpenPartnerDashboard={() => setView(AppView.PARTNER_DASHBOARD)} />}
-                {view === AppView.PARTNER_DASHBOARD && <PartnerDashboard onBack={() => setView(AppView.ADMIN)} />}
+                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => navigateTo(AppView.PROFILE)} onOpenPartnerDashboard={() => navigateTo(AppView.PARTNER_DASHBOARD)} />}
+                {view === AppView.PARTNER_DASHBOARD && <PartnerDashboard onBack={() => navigateTo(AppView.ADMIN)} />}
             </div>
 
             {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && view !== AppView.PARTNER_DASHBOARD && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
                 <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm rounded-[2.5rem] pointer-events-auto shadow-2xl">
-                    <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
-                    <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
-                    <button onClick={() => setView(AppView.HOME)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>
-                    <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
-                    <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
+                    <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
+                    <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => navigateTo(AppView.TOOLS)} />
+                    <button onClick={() => navigateTo(AppView.HOME)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>
+                    <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => navigateTo(AppView.PROFILE)} />
+                    <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => navigateTo(AppView.SHOP)} />
                 </nav>
                 <button onClick={() => setShowLegal(true)} className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[7px] font-black text-slate-600 uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">Legal & Privacy</button>
               </div>
