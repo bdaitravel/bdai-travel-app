@@ -12,40 +12,47 @@ export class QuotaError extends Error {
 
 const safeJsonParse = (text: string, fallback: any = null) => {
     if (!text) return fallback;
-    // Remove potential markdown code blocks
-    let cleanText = text.trim();
-    if (cleanText.startsWith('```')) {
-        cleanText = cleanText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/i, '').trim();
-    }
     
+    // 1. Try direct parse
+    try {
+        return JSON.parse(text);
+    } catch (e) {}
+
+    // 2. Clean markdown and try again
+    let cleanText = text.trim();
+    cleanText = cleanText.replace(/^```[a-z]*\n/i, '').replace(/\n```$/i, '').trim();
     try {
         return JSON.parse(cleanText);
-    } catch (e) {
-        try {
-            const startObj = cleanText.indexOf('{');
-            const endObj = cleanText.lastIndexOf('}');
-            const startArr = cleanText.indexOf('[');
-            const endArr = cleanText.lastIndexOf(']');
-            
-            let start = -1;
-            let end = -1;
-            
-            if (startObj !== -1 && (startArr === -1 || (startObj < startArr && startObj !== -1))) {
-                start = startObj;
-                end = endObj;
-            } else if (startArr !== -1) {
-                start = startArr;
-                end = endArr;
-            }
-            
-            if (start !== -1 && end !== -1 && end > start) {
-                return JSON.parse(cleanText.substring(start, end + 1));
-            }
-        } catch (e2) {
-            console.error("Safe JSON parse failed. Original text:", text);
+    } catch (e) {}
+
+    // 3. Extract by boundaries
+    try {
+        const startObj = cleanText.indexOf('{');
+        const endObj = cleanText.lastIndexOf('}');
+        const startArr = cleanText.indexOf('[');
+        const endArr = cleanText.lastIndexOf(']');
+        
+        let start = -1;
+        let end = -1;
+        
+        // Determine if we should look for an object or an array first
+        if (startArr !== -1 && (startObj === -1 || startArr < startObj)) {
+            start = startArr;
+            end = endArr;
+        } else if (startObj !== -1) {
+            start = startObj;
+            end = endObj;
         }
-        return fallback;
+        
+        if (start !== -1 && end !== -1 && end > start) {
+            const extracted = cleanText.substring(start, end + 1);
+            return JSON.parse(extracted);
+        }
+    } catch (e) {
+        console.error("Aggressive JSON parse failed. Original text length:", text.length);
     }
+    
+    return fallback;
 };
 
 const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
@@ -146,6 +153,7 @@ export const generateSpeech = async (text: string, language: string, city: strin
     return handleAiCall(async () => {
         // Check cache first
         const cached = await getCachedAudio(cleanText, language);
+        console.log("Audio cache check for text:", cleanText.substring(0, 30) + "...", "Result:", cached ? "FOUND" : "NOT FOUND");
         if (cached) return cached;
 
         const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -203,13 +211,16 @@ export const generateToursForCity = async (city: string, country: string, user: 
             1. Use the Google Maps tool to find the EXACT coordinates (latitude/longitude) for every stop.
             2. Major Cities: 3-4 tours. Medium: 2 tours. Small: 1-2 tours.
             3. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
-            4. Each stop description: 150-200 words. Focus on history, curiosities, culture, and gastronomy.
+            4. Each stop description: 300-450 words. Focus on history, curiosities, culture, and gastronomy.
             5. Assign a 'type' from this list ONLY: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
             6. Each stop MUST have a 'photoSpot' object with 'angle', 'milesReward' (10-50), and 'secretLocation'.
-            7. Format: Return ONLY a valid JSON array of tours.
+            7. Format: Return ONLY a valid JSON array of tours. NO PREAMBLE, NO MARKDOWN, NO CODE BLOCKS.
             8. Each tour: { "id", "city", "title", "description", "duration", "distance", "stops": [] }
             9. Each stop: { "id", "name", "description", "latitude", "longitude", "type", "photoSpot" }
-            10. ALL CONTENT IN ${user.language}.`,
+            10. ALL CONTENT IN ${user.language}.
+            11. NO CITATIONS: Do not include any reference numbers like [1], (1), [2], etc.
+            12. ORIGINAL CONTENT: Do not copy verbatim from Wikipedia; use a unique, engaging, and sophisticated tone.
+            13. QUALITY: Each stop description must be at least 300 words long.`,
             config: {
                 tools: [{ googleMaps: {} }],
             },

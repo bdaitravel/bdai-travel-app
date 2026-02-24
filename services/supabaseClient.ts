@@ -294,8 +294,12 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
           city: city, 
           audio_url: publicUrl 
         }, { onConflict: 'text_hash,language' });
+        console.log("Audio cached successfully in Supabase:", publicUrl);
         return publicUrl;
-    } catch (e) { return ""; }
+    } catch (e) { 
+        console.error("❌ saveAudioToCache Error:", e);
+        return ""; 
+    }
 };
 
 export const getAdminStats = async () => {

@@ -269,41 +269,69 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 return;
             }
             
-            console.log("Audio URL received, playing...");
+            console.log("Audio URL received:", audioUrl.substring(0, 50) + "...");
+            
+            // Create audio element
             const audio = new Audio();
-            audio.src = audioUrl;
-            // Only set crossOrigin if it's a remote URL, not a data: URL
+            
+            // Set up event handlers before setting src
+            audio.onended = () => setAudioPlayingId(null);
+            audio.onerror = (e) => {
+                console.error("Audio element error:", e);
+                setIsAudioLoading(false);
+                setAudioPlayingId(null);
+                alert("Playback protocol failed. Error code: " + (audio.error?.code || 'unknown'));
+            };
+
+            // If it's a remote URL, we try to fetch it first to avoid CORS issues
             if (audioUrl.startsWith('http')) {
-                audio.crossOrigin = "anonymous";
+                try {
+                    const response = await fetch(audioUrl);
+                    if (!response.ok) throw new Error("Fetch failed: " + response.status);
+                    const blob = await response.blob();
+                    audio.src = URL.createObjectURL(blob);
+                } catch (fetchError) {
+                    console.warn("Failed to fetch audio blob, falling back to direct URL:", fetchError);
+                    audio.src = audioUrl;
+                    audio.crossOrigin = "anonymous";
+                }
+            } else {
+                audio.src = audioUrl;
             }
+            
             audio.volume = 1.0;
             audio.muted = false;
             
-            // Media Session API for background playback and lock screen controls
+            // Media Session API
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: currentStop.name,
                     artist: 'DAI - bdai.tech',
                     album: tour.title,
-                    artwork: [
-                        { src: 'https://picsum.photos/seed/bdai/512/512', sizes: '512x512', type: 'image/png' }
-                    ]
+                    artwork: [{ src: 'https://picsum.photos/seed/bdai/512/512', sizes: '512x512', type: 'image/png' }]
                 });
             }
 
-            audio.onended = () => setAudioPlayingId(null);
-            audio.onerror = (e) => {
-                console.error("Audio error", e);
-                setIsAudioLoading(false);
+            // Play with interaction handling
+            try {
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    await playPromise;
+                }
+                (sourceNodeRef as any).current = audio;
+                setAudioPlayingId(stopId);
+            } catch (playError: any) {
+                console.error("Audio play() failed:", playError);
+                if (playError.name === 'NotAllowedError') {
+                    alert("Audio blocked by browser. Please click play again.");
+                } else {
+                    alert("Audio playback failed: " + playError.message);
+                }
                 setAudioPlayingId(null);
-            };
-
-            await audio.play();
-            
-            (sourceNodeRef as any).current = audio;
-            setAudioPlayingId(stopId);
-        } catch (e) {
+            }
+        } catch (e: any) {
             console.error("Audio playback error:", e);
+            alert("Audio system error: " + (e.message || "Unknown error"));
         } finally {
             setIsAudioLoading(false);
         }
