@@ -298,24 +298,6 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
     } catch (e) { return ""; }
 };
 
-export const getAdminStats = async () => {
-  try {
-    const { count: toursCount } = await supabase.from('tours_cache').select('*', { count: 'exact', head: true });
-    const { count: audioCount } = await supabase.from('audio_cache').select('*', { count: 'exact', head: true });
-    const { count: communityCount } = await supabase.from('city_community').select('*', { count: 'exact', head: true });
-    const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-    
-    return {
-      tours: toursCount || 0,
-      audios: audioCount || 0,
-      community: communityCount || 0,
-      users: usersCount || 0
-    };
-  } catch (e) {
-    return { tours: 0, audios: 0, community: 0, users: 0 };
-  }
-};
-
 export const validateEmailFormat = (email: string) => { 
   return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); 
 };
