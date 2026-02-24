@@ -17,8 +17,7 @@ const TEXTS: any = {
         duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS", 
         visaId: "VISADO", boardingPass: "TARJETA DE EMBARQUE", approved: "APROBADO", rewardTotal: "Recompensa total", 
         rankUp: "Rango actualizado", fixLocation: "Corregir GPS (Admin)", locationFixed: "GPS Actualizado",
-        shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️",
-        reportError: "Reportar Error", download: "Descargar Tour", errorReported: "Error reportado a DAI. ¡Gracias!"
+        shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️" 
     },
     en: { 
         start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:", 
@@ -30,8 +29,7 @@ const TEXTS: any = {
         duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES", 
         visaId: "VISA", boardingPass: "BOARDING PASS", approved: "APPROVED", rewardTotal: "Total reward", 
         rankUp: "Rank updated", fixLocation: "Fix GPS (Admin)", locationFixed: "GPS Updated",
-        shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️",
-        reportError: "Report Error", download: "Download Tour", errorReported: "Error reported to DAI. Thanks!"
+        shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️" 
     },
     fr: { start: "Lancer", stop: "Arrêt", of: "sur", daiShot: "Conseil Dai", angleLabel: "Angle Dai :", photoTipFallback: "Cherchez une perspective latérale pour capturer la profondeur de la structure.", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Précédent", next: "Suivant", meters: "m", itinerary: "Itinéraire", finish: "Terminer le Tour", congrats: "Tour Terminé!", stampDesc: "Nouveau tampon gagné", shareIg: "Générer Visa Social (+100)", close: "Fermer", tooFar: "GPS Incertain", checkIn: "Check-in GPS", checkedIn: "Vérifié", distance: "Distance", duration: "Durée", nearbyAlert: "Arrêt Proche", jumpTo: "Aller ici", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "CARTE D'EMBARQUEMENT", approved: "APPROUVÉ", rewardTotal: "Récompense totale", rankUp: "Rang mis à jour", shareText: "Je viens de terminer la Masterclass {city} sur bdai ! +250 miles gagnés. 🌍✈️" },
     it: { start: "Lancia", stop: "Fermata", of: "di", daiShot: "Consiglio Dai", angleLabel: "Angolo Dai:", photoTipFallback: "Cerca una prospettiva laterale per catturare la profondità.", capture: "Log Dati", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Itinerario", finish: "Finire Tour", congrats: "Tour Completato!", stampDesc: "Nuovo timbro guadagnato", shareIg: "Genera Visto Social (+100)", close: "Chiudi", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificato", distance: "Distanza", duration: "Durata", nearbyAlert: "Fermata Vicina", jumpTo: "Salta qui", rewardMiles: "+50 MIGLIA", visaId: "VISTO", boardingPass: "CARTA D'IMBARCO", approved: "APPROVATO", rewardTotal: "Ricompensa totale", rankUp: "Rango aggiornato", shareText: "Ho appena finito la Masterclass {city} su bdai! +250 miglia guadagnate. 🌍✈️" },
@@ -45,25 +43,12 @@ const TEXTS: any = {
 
 const STOP_ICONS: Record<string, string> = { 
     historical: 'fa-fingerprint', 
-    history: 'fa-fingerprint',
-    monument: 'fa-landmark',
     food: 'fa-utensils', 
-    gastronomy: 'fa-utensils',
-    restaurant: 'fa-utensils',
     art: 'fa-palette', 
-    museum: 'fa-palette',
     nature: 'fa-leaf', 
-    park: 'fa-leaf',
-    garden: 'fa-leaf',
     photo: 'fa-camera', 
-    viewpoint: 'fa-camera',
     culture: 'fa-landmark', 
-    architecture: 'fa-archway',
-    church: 'fa-church',
-    cathedral: 'fa-church',
-    temple: 'fa-synagogue',
-    castle: 'fa-fort-awesome',
-    bridge: 'fa-bridge'
+    architecture: 'fa-archway' 
 };
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -79,15 +64,6 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
   const [isLaunching, setIsLaunching] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('bdai_offline_tours');
-    if (saved) {
-      const ids = JSON.parse(saved);
-      setIsOffline(ids.includes(tour.id));
-    }
-  }, [tour.id]);
 
   const handleLaunch = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -111,7 +87,7 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
           <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
           <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-6 font-medium">{tour.description}</p>
           <div className="flex items-center justify-between pt-6 border-t border-white/5">
-               <div className="flex gap-4 items-center">
+               <div className="flex gap-4">
                   <div className="flex flex-col">
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.duration}</span>
                     <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.duration}</span>
@@ -120,12 +96,6 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.distance}</span>
                     <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.distance}</span>
                   </div>
-                  {isOffline && (
-                    <div className="flex items-center gap-1 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
-                      <i className="fas fa-cloud-arrow-down text-[6px] text-green-400"></i>
-                      <span className="text-[6px] font-black text-green-400 uppercase tracking-widest">Offline</span>
-                    </div>
-                  )}
                </div>
                <div className="flex items-center gap-3">
                  <span className={`${isLaunching ? 'text-purple-400 animate-pulse' : 'text-purple-500'} font-black text-[10px] uppercase tracking-widest`}>
@@ -139,11 +109,6 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
       </div>
     </div>
   );
-};
-
-const getStopIcon = (type: string) => {
-    const t = (type || '').toLowerCase().trim();
-    return STOP_ICONS[t] || 'fa-location-dot';
 };
 
 export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
@@ -260,78 +225,20 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         stopAudio();
         setIsAudioLoading(true);
         try {
-            console.log("Requesting audio for:", stopId);
             const audioUrl = await generateSpeech(text, user.language, tour.city);
             if (!audioUrl) {
-                console.error("No audio URL returned");
-                setIsAudioLoading(false);
-                alert("Audio protocol failed. Check connection.");
+                setIsAudioLoading(true);
                 return;
             }
             
-            console.log("Audio URL received:", audioUrl.substring(0, 50) + "...");
-            
-            // Create audio element
-            const audio = new Audio();
-            
-            // Set up event handlers before setting src
+            const audio = new Audio(audioUrl);
             audio.onended = () => setAudioPlayingId(null);
-            audio.onerror = (e) => {
-                console.error("Audio element error:", e);
-                setIsAudioLoading(false);
-                setAudioPlayingId(null);
-                alert("Playback protocol failed. Error code: " + (audio.error?.code || 'unknown'));
-            };
-
-            // If it's a remote URL, we try to fetch it first to avoid CORS issues
-            if (audioUrl.startsWith('http')) {
-                try {
-                    const response = await fetch(audioUrl);
-                    if (!response.ok) throw new Error("Fetch failed: " + response.status);
-                    const blob = await response.blob();
-                    audio.src = URL.createObjectURL(blob);
-                } catch (fetchError) {
-                    console.warn("Failed to fetch audio blob, falling back to direct URL:", fetchError);
-                    audio.src = audioUrl;
-                    audio.crossOrigin = "anonymous";
-                }
-            } else {
-                audio.src = audioUrl;
-            }
+            audio.play();
             
-            audio.volume = 1.0;
-            audio.muted = false;
-            
-            // Media Session API
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: currentStop.name,
-                    artist: 'DAI - bdai.tech',
-                    album: tour.title,
-                    artwork: [{ src: 'https://picsum.photos/seed/bdai/512/512', sizes: '512x512', type: 'image/png' }]
-                });
-            }
-
-            // Play with interaction handling
-            try {
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    await playPromise;
-                }
-                (sourceNodeRef as any).current = audio;
-                setAudioPlayingId(stopId);
-            } catch (playError: any) {
-                console.error("Audio play() failed:", playError);
-                if (playError.name === 'NotAllowedError') {
-                    alert("Audio blocked by browser. Please click play again.");
-                } else {
-                    alert("Audio playback failed: " + playError.message);
-                }
-                setAudioPlayingId(null);
-            }
-        } catch (e: any) {
+            (sourceNodeRef as any).current = audio;
+            setAudioPlayingId(stopId);
+        } catch (e) {
             console.error("Audio playback error:", e);
-            alert("Audio system error: " + (e.message || "Unknown error"));
         } finally {
             setIsAudioLoading(false);
         }
@@ -364,7 +271,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                              {tour.stops.map((s: Stop, idx: number) => (
                                  <button key={s.id} onClick={() => { onJumpTo(idx); setShowItinerary(false); stopAudio(); }} className={`w-full p-5 rounded-2xl flex items-center gap-4 border transition-all ${idx === currentStopIndex ? 'bg-purple-50 border-purple-200' : 'bg-slate-50 border-slate-100'}`}>
                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${idx === currentStopIndex ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                                         <i className={`fas ${getStopIcon(s.type)}`}></i>
+                                         <i className={`fas ${STOP_ICONS[s.type?.toLowerCase()] || 'fa-location-dot'}`}></i>
                                      </div>
                                      <span className={`text-left font-bold text-sm flex-1 ${idx === currentStopIndex ? 'text-purple-600' : 'text-slate-700'}`}>{s.name}</span>
                                      {idx === currentStopIndex && <i className="fas fa-location-dot text-purple-500"></i>}
@@ -427,7 +334,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 <button onClick={() => setShowItinerary(true)} className="flex-1 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between min-w-0">
                     <div className="flex items-center gap-3 truncate">
                         <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-                            <i className={`fas ${getStopIcon(currentStop.type)} text-xs`}></i>
+                            <i className={`fas ${STOP_ICONS[currentStop.type?.toLowerCase()] || 'fa-location-dot'} text-xs`}></i>
                         </div>
                         <div className="flex flex-col text-left truncate">
                             <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">{tl.stop} {currentStopIndex + 1}</p>
@@ -465,29 +372,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                         <button onClick={() => setShowPhotoTip(true)} className="flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border bg-slate-900 text-white border-slate-800">
                             <i className="fas fa-camera text-lg mb-1"></i>
                             <span className="text-[9px]">{tl.daiShot}</span>
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <button 
-                            onClick={() => {
-                                alert(tl.errorReported);
-                            }} 
-                            className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-white border border-slate-200 text-slate-500 font-black uppercase text-[8px] tracking-widest active:scale-95 transition-all"
-                        >
-                            <i className="fas fa-bug"></i>
-                            {tl.reportError}
-                        </button>
-                        <button 
-                            onClick={() => {
-                                if (window.confirm(tl.download + "?")) {
-                                    (window as any).downloadTour?.(tour);
-                                }
-                            }} 
-                            className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-white border border-slate-200 text-slate-500 font-black uppercase text-[8px] tracking-widest active:scale-95 transition-all"
-                        >
-                            <i className="fas fa-download"></i>
-                            {tl.download}
                         </button>
                     </div>
 

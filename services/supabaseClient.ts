@@ -55,8 +55,8 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .trim()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
 
     const safeCity = clean(city || "").split(',')[0];
     if (!safeCity) return "";
@@ -69,9 +69,9 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
  * Checks if a city exists in cache using the new slug format.
  */
 export const checkIfCityCached = async (city: string, countryOrSlug: string): Promise<boolean> => {
-  // If countryOrSlug already looks like a slug (contains an underscore and is lowercase), use it.
+  // If countryOrSlug already looks like a slug (contains a hyphen and is lowercase), use it.
   // Otherwise, normalize it.
-  const slug = countryOrSlug.includes('_') && countryOrSlug === countryOrSlug.toLowerCase() 
+  const slug = countryOrSlug.includes('-') && countryOrSlug === countryOrSlug.toLowerCase() 
     ? countryOrSlug 
     : normalizeKey(city, countryOrSlug);
     
@@ -106,7 +106,7 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
                 // Extract city and country from slug for display
-                const parts = curr.city.split('_');
+                const parts = curr.city.split('-');
                 const cityName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
                 const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
                 
@@ -294,12 +294,8 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
           city: city, 
           audio_url: publicUrl 
         }, { onConflict: 'text_hash,language' });
-        console.log("Audio cached successfully in Supabase:", publicUrl);
         return publicUrl;
-    } catch (e) { 
-        console.error("❌ saveAudioToCache Error:", e);
-        return ""; 
-    }
+    } catch (e) { return ""; }
 };
 
 export const getAdminStats = async () => {
