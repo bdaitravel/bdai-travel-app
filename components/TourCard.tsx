@@ -79,6 +79,15 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
   const [isLaunching, setIsLaunching] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('bdai_offline_tours');
+    if (saved) {
+      const ids = JSON.parse(saved);
+      setIsOffline(ids.includes(tour.id));
+    }
+  }, [tour.id]);
 
   const handleLaunch = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -102,7 +111,7 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
           <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
           <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-6 font-medium">{tour.description}</p>
           <div className="flex items-center justify-between pt-6 border-t border-white/5">
-               <div className="flex gap-4">
+               <div className="flex gap-4 items-center">
                   <div className="flex flex-col">
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.duration}</span>
                     <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.duration}</span>
@@ -111,6 +120,12 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.distance}</span>
                     <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.distance}</span>
                   </div>
+                  {isOffline && (
+                    <div className="flex items-center gap-1 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
+                      <i className="fas fa-cloud-arrow-down text-[6px] text-green-400"></i>
+                      <span className="text-[6px] font-black text-green-400 uppercase tracking-widest">Offline</span>
+                    </div>
+                  )}
                </div>
                <div className="flex items-center gap-3">
                  <span className={`${isLaunching ? 'text-purple-400 animate-pulse' : 'text-purple-500'} font-black text-[10px] uppercase tracking-widest`}>
@@ -245,16 +260,22 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         stopAudio();
         setIsAudioLoading(true);
         try {
+            console.log("Requesting audio for:", stopId);
             const audioUrl = await generateSpeech(text, user.language, tour.city);
             if (!audioUrl) {
+                console.error("No audio URL returned");
                 setIsAudioLoading(false);
                 alert("Audio protocol failed. Check connection.");
                 return;
             }
             
+            console.log("Audio URL received, playing...");
             const audio = new Audio();
             audio.src = audioUrl;
-            audio.crossOrigin = "anonymous";
+            // Only set crossOrigin if it's a remote URL, not a data: URL
+            if (audioUrl.startsWith('http')) {
+                audio.crossOrigin = "anonymous";
+            }
             audio.volume = 1.0;
             audio.muted = false;
             

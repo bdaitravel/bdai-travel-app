@@ -132,6 +132,7 @@ export const generateSpeech = async (text: string, language: string, city: strin
         });
         
         const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        console.log("Gemini TTS response received. Base64 length:", base64?.length);
         if (base64) {
             const dataUrl = `data:audio/mp3;base64,${base64}`;
             // Save to cache in background

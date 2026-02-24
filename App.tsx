@@ -70,15 +70,15 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [isSyncingLang, setIsSyncingLang] = useState(false);
   const [searchOptions, setSearchOptions] = useState<any[] | null>(() => {
-    const saved = localStorage.getItem('bdai_search_options');
+    const saved = sessionStorage.getItem('bdai_search_options');
     return saved ? JSON.parse(saved) : null;
   });
 
   useEffect(() => {
     if (searchOptions) {
-      localStorage.setItem('bdai_search_options', JSON.stringify(searchOptions));
+      sessionStorage.setItem('bdai_search_options', JSON.stringify(searchOptions));
     } else {
-      localStorage.removeItem('bdai_search_options');
+      sessionStorage.removeItem('bdai_search_options');
     }
   }, [searchOptions]);
   const [user, setUser] = useState<UserProfile>(GUEST_PROFILE);
@@ -103,15 +103,15 @@ export default function App() {
   }, [tours]);
 
   useEffect(() => {
-    const savedCity = localStorage.getItem('bdai_selected_city');
+    const savedCity = sessionStorage.getItem('bdai_selected_city');
     if (savedCity) setSelectedCity(savedCity);
   }, []);
 
   useEffect(() => {
     if (selectedCity) {
-      localStorage.setItem('bdai_selected_city', selectedCity);
+      sessionStorage.setItem('bdai_selected_city', selectedCity);
     } else {
-      localStorage.removeItem('bdai_selected_city');
+      sessionStorage.removeItem('bdai_selected_city');
     }
   }, [selectedCity]);
 
