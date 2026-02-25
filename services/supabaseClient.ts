@@ -1,23 +1,33 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || (typeof process !== 'undefined' ? process.env.SUPABASE_URL : '')) || "https://slldavgsoxunkphqeamx.supabase.co";
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || (typeof process !== 'undefined' ? process.env.SUPABASE_ANON_KEY : '')) || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
 let supabase: any;
 try {
-  if (!supabaseUrl || !supabaseUrl.startsWith('http')) {
-    throw new Error("Invalid supabaseUrl: Must start with http/https");
+  if (!supabaseUrl || typeof supabaseUrl !== 'string' || !supabaseUrl.startsWith('http')) {
+    throw new Error(`Invalid supabaseUrl: ${supabaseUrl}`);
   }
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 } catch (e) {
   console.error("Critical Supabase Init Error:", e);
+  // Improved mock object to prevent crashes in App.tsx
   supabase = {
-    auth: { getSession: async () => ({ data: { session: null } }) },
+    auth: { 
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signOut: async () => ({})
+    },
     from: () => ({ 
         select: () => ({ 
-          eq: () => ({ maybeSingle: async () => ({ data: null }), limit: async () => ({ data: [] }) }), 
-          ilike: () => ({ eq: () => ({ limit: async () => ({ data: [] }) }), limit: async () => ({ data: [] }) }) 
+          eq: () => ({ 
+            maybeSingle: async () => ({ data: null }), 
+            limit: async () => ({ data: [] }),
+            order: () => ({ limit: async () => ({ data: [] }) })
+          }), 
+          ilike: () => ({ eq: () => ({ limit: async () => ({ data: [] }) }), limit: async () => ({ data: [] }) }),
+          order: () => ({ limit: async () => ({ data: [] }) })
         }), 
         upsert: async () => ({ error: "Supabase not initialized" }),
         delete: () => ({ eq: () => ({ eq: async () => ({}) }) })
