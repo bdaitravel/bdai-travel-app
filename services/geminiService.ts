@@ -68,8 +68,9 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
             2. Provide the country name in ${userLanguage}.
             3. Provide the ISO 3166-1 alpha-2 country code.
             4. Create a unique slug in English: "cityname_countryname" (lowercase, no accents, underscores for spaces).
+            5. Provide the approximate latitude and longitude of the city center.
             
-            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryCode": "XX", "slug": "city_country" }]`,
+            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryCode": "XX", "slug": "city_country", "lat": 0.0, "lng": 0.0 }]`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -80,9 +81,11 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
                             city: { type: Type.STRING },
                             country: { type: Type.STRING },
                             countryCode: { type: Type.STRING },
-                            slug: { type: Type.STRING }
+                            slug: { type: Type.STRING },
+                            lat: { type: Type.NUMBER },
+                            lng: { type: Type.NUMBER }
                         },
-                        required: ["city", "country", "countryCode", "slug"]
+                        required: ["city", "country", "countryCode", "slug", "lat", "lng"]
                     }
                 }
             }
@@ -91,54 +94,42 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     });
 };
 
-export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
+export const generateToursForCity = async (city: string, country: string, user: UserProfile, coords?: { lat: number, lng: number }): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        // Using gemini-2.5-flash for Google Maps Grounding support
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `As DAI, a highly intelligent and passionate AI travel guide, generate 3 to 4 distinct thematic tours for ${city}, ${country} in ${user.language}.
-            
-            STRICT RULES:
-            1. Use the Google Maps tool to find the EXACT coordinates (latitude/longitude) for every stop.
-            2. Major Cities: 3-4 tours. Medium: 2 tours. Small: 1-2 tours.
-            3. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
-            4. Each stop description: 310-400 words. Focus on history, curiosities, culture, and gastronomy.
-            5. Assign a 'type': 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
-            6. ALL CONTENT IN ${user.language}.`,
-            config: {
-                tools: [{ googleMaps: {} }],
-                // Note: responseMimeType and responseSchema are NOT allowed with googleMaps tool
-            },
-        });
-
-        // Since we can't use responseSchema with googleMaps, we parse the text response
-        // We'll ask for a specific format in the prompt to make parsing easier if needed, 
-        // but usually, Gemini is good at following the requested structure.
-        // For safety, I'll add a second pass or a very strict prompt instruction.
-        
-        // Let's refine the prompt to ensure it returns valid JSON even without the schema
+        // Refined prompt to ensure it returns valid JSON and uses coordinates if available
         const refinedResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `As DAI, generate 3 to 4 distinct thematic tours for ${city}, ${country} in ${user.language}.
+            contents: `As DAI, a highly intelligent and passionate AI travel guide, generate 3 to 4 distinct thematic tours for ${city}, ${country} in ${user.language}.
             
             STRICT RULES:
             1. Use Google Maps to verify EVERY location.
             2. Format: Return ONLY a valid JSON array of tours.
             3. Each tour: { "id", "city", "title", "description", "duration", "distance", "stops": [] }
             4. Each stop: { "id", "name", "description" (310-400 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward", "secretLocation" } }
-            5. NO REPEATED STOPS. 10 stops per tour.
+            5. NO REPEATED STOPS. MINIMUM 10 stops per tour.
             6. Content in ${user.language}.`,
             config: {
-                tools: [{ googleMaps: {} }]
+                tools: [{ googleMaps: {} }],
+                toolConfig: coords ? {
+                    retrievalConfig: {
+                        latLng: {
+                            latitude: coords.lat,
+                            longitude: coords.lng
+                        }
+                    }
+                } : undefined
             }
         });
 
         const text = refinedResponse.text || "[]";
         // Extract JSON if there's markdown wrapping
         const jsonMatch = text.match(/\[[\s\S]*\]/);
-        return JSON.parse(jsonMatch ? jsonMatch[0] : text);
+        const tours = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+        
+        // Ensure tours have the correct city name for normalization
+        return tours.map((t: any) => ({ ...t, city: city }));
     });
 };
 

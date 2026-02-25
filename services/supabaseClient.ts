@@ -80,6 +80,8 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
     return safeCountry ? `${safeCity}_${safeCountry}` : safeCity;
 };
 
+export const formatCityId = (city: string, country?: string) => normalizeKey(city, country);
+
 /**
  * Checks if a city exists in cache using the new slug format.
  */
