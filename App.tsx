@@ -542,7 +542,7 @@ export default function App() {
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigateTo(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigateTo(AppView.ADMIN)} onLangChange={handleLangChange} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
                 {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
-                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => navigateTo(AppView.PROFILE)} />}
+                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => navigateTo(AppView.PROFILE)} onOpenPartnerDashboard={() => {}} />}
             </div>
 
             {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && (
