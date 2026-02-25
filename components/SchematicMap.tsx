@@ -27,7 +27,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const activeLineRef = useRef<any>(null);
   const geofenceCirclesRef = useRef<any[]>([]);
   
-  const [autoFollow, setAutoFollow] = useState(true);
+  const [isAutoFollowing, setIsAutoFollowing] = useState(true);
   const tl = TEXTS[language] || TEXTS.es;
   
   // Validar paradas antes de usarlas
@@ -43,8 +43,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         tap: false,
         dragging: true,
         touchZoom: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
         maxZoom: 19
     }).setView([0, 0], 15);
     
@@ -52,8 +50,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         maxZoom: 19
     }).addTo(map);
     
-    map.on('dragstart', () => setAutoFollow(false));
-    map.on('zoomstart', () => setAutoFollow(false));
+    map.on('dragstart', () => setIsAutoFollowing(false));
     mapInstanceRef.current = map;
     
     return () => { 
@@ -77,15 +74,13 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
             icon: L.divIcon({ 
                 className: '', 
                 html: `
-                    <div class="relative w-10 h-10 flex items-center justify-center">
-                        <div class="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-40"></div>
-                        <div class="w-6 h-6 bg-purple-600 rounded-full border-4 border-white shadow-2xl z-10 flex items-center justify-center">
-                            <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
-                        </div>
+                    <div class="relative w-8 h-8 flex items-center justify-center">
+                        <div class="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-30"></div>
+                        <div class="w-4 h-4 bg-purple-400 rounded-full border-2 border-white shadow-lg z-10"></div>
                     </div>
                 `, 
-                iconSize: [40, 40], 
-                iconAnchor: [20, 20] 
+                iconSize: [32, 32], 
+                iconAnchor: [16, 16] 
             }) 
         }).addTo(map);
 
@@ -103,13 +98,13 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
                 lineCap: 'round'
             }).addTo(map);
 
-            if (autoFollow) {
+            if (isAutoFollowing) {
                 const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]]);
                 map.fitBounds(bounds, { padding: [100, 100], maxZoom: 17, animate: true });
             }
         }
     }
-  }, [userLocation, currentStop, autoFollow]);
+  }, [userLocation, currentStop, isAutoFollowing]);
 
   // Renderizar paradas y ruta
   useEffect(() => {
@@ -164,7 +159,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
 
             marker.on('click', () => {
                 onStopSelect?.(idx);
-                setAutoFollow(true);
+                setIsAutoFollowing(true);
             });
             
             markersRef.current.push(marker);
@@ -179,36 +174,9 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-950">
         <div ref={mapContainerRef} className="w-full h-full" />
-        
-        {/* Zoom Controls */}
-        <div className="absolute left-4 bottom-28 z-[450] flex flex-col gap-2">
-            <button 
-                onClick={() => mapInstanceRef.current?.zoomIn()} 
-                className="w-12 h-12 rounded-xl bg-slate-900/80 backdrop-blur-md text-white border border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-all"
-            >
-                <i className="fas fa-plus"></i>
-            </button>
-            <button 
-                onClick={() => mapInstanceRef.current?.zoomOut()} 
-                className="w-12 h-12 rounded-xl bg-slate-900/80 backdrop-blur-md text-white border border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-all"
-            >
-                <i className="fas fa-minus"></i>
-            </button>
-        </div>
-
         <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-3">
-            <button 
-                onClick={() => setAutoFollow(true)} 
-                className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${autoFollow ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}
-            >
-                <i className={`fas ${autoFollow ? 'fa-location-crosshairs' : 'fa-location-arrow'} text-lg`}></i>
-            </button>
-            <button 
-                onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setAutoFollow(false); }} 
-                className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"
-            >
-                <i className="fas fa-bullseye text-lg"></i>
-            </button>
+            <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
+            <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"><i className="fas fa-bullseye text-lg"></i></button>
         </div>
     </div>
   );
