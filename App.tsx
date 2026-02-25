@@ -8,6 +8,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Shop } from './components/Shop'; 
 import { TravelServices, formatCityName, formatCountryName } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo'; 
+import { CityCommunity } from './components/CityCommunity';
 import { AdminPanel } from './components/AdminPanel';
 import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
@@ -71,6 +72,11 @@ export default function App() {
   const [user, setUser] = useState<UserProfile>(GUEST_PROFILE);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
+  const [cityTab, setCityTab] = useState<'TOURS' | 'COMMUNITY'>('TOURS');
+
+  useEffect(() => {
+    if (view !== AppView.CITY_DETAIL) setCityTab('TOURS');
+  }, [view]);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
@@ -246,8 +252,7 @@ export default function App() {
         }
         
         setLoadingMessage(t('generating'));
-        const coords = selection.lat && selection.lng ? { lat: selection.lat, lng: selection.lng } : undefined;
-        const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile, coords);
+        const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
         if (generated.length > 0) {
             setTours(generated); 
             await supabase.from('tours_cache').upsert({
@@ -256,10 +261,7 @@ export default function App() {
               data: generated
             }, { onConflict: 'city,language' });
             setView(AppView.CITY_DETAIL);
-        } else { 
-            console.warn("Generation returned no results for:", cleanName);
-            alert("DAI: No he podido trazar una ruta segura para este destino. Prueba con otra ciudad."); 
-        }
+        } else { alert("Location protocol failed."); }
     } catch (e) { 
         if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
         else { console.error("Selection error:", e); }
@@ -287,8 +289,6 @@ export default function App() {
                     countryCode: res.countryCode,
                     slug: slug,
                     isCached: isCached,
-                    lat: res.lat,
-                    lng: res.lng,
                     fullName: res.city // Use just city name for primary display
                 };
             }));
@@ -488,19 +488,41 @@ export default function App() {
                         </div>
                       </div>
 
-                      <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string, country?: string) => processCitySelection({ name, country }, user.language)} />
+                      <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} />
                   </div>
                 )}
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
-                      <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
+                      <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
                         <button onClick={() => setView(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
                         <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
                       </header>
-                      <div className="space-y-6 pb-12">
-                          {tours.map(tour => (
-                            <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
-                          ))}
+
+                      <div className="flex gap-2 mb-8 bg-white/5 p-1.5 rounded-2xl border border-white/5">
+                        <button 
+                            onClick={() => setCityTab('TOURS')}
+                            className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${cityTab === 'TOURS' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                        >
+                            <i className="fas fa-route mr-2"></i> Tours
+                        </button>
+                        <button 
+                            onClick={() => setCityTab('COMMUNITY')}
+                            className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${cityTab === 'COMMUNITY' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                        >
+                            <i className="fas fa-users mr-2"></i> Comunidad
+                        </button>
+                      </div>
+
+                      <div className="pb-12">
+                          {cityTab === 'TOURS' ? (
+                            <div className="space-y-6">
+                                {tours.map(tour => (
+                                    <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
+                                ))}
+                            </div>
+                          ) : (
+                            selectedCity && <CityCommunity citySlug={selectedCity} user={user} language={user.language} />
+                          )}
                       </div>
                   </div>
                 )}
@@ -527,7 +549,7 @@ export default function App() {
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
-                {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string, country?: string) => processCitySelection({ name, country }, user.language)} /></div>}
+                {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
 
