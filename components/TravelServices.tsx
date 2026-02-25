@@ -170,13 +170,13 @@ const SPAIN_DATA = {
   joyas: [{ cityKey: "ter", countryKey: "spain" }, { cityKey: "sor", countryKey: "spain" }, { cityKey: "ube", countryKey: "spain" }, { cityKey: "cac", countryKey: "spain" }, { cityKey: "len", countryKey: "spain" }, { cityKey: "gij", countryKey: "spain" }, { cityKey: "log", countryKey: "spain" }]
 };
 
-const CityMiniCard: React.FC<{ rawName: string, lang: string, countryKey: string, onSelect: (name: string) => void, colorIdx: number }> = ({ rawName, lang, countryKey, onSelect, colorIdx }) => {
+const CityMiniCard: React.FC<{ rawName: string, lang: string, countryKey: string, onSelect: (name: string, country: string) => void, colorIdx: number }> = ({ rawName, lang, countryKey, onSelect, colorIdx }) => {
   const colors = ['from-purple-600 to-indigo-900', 'from-emerald-600 to-teal-900', 'from-amber-600 to-orange-900', 'from-rose-600 to-slate-900'];
   const icon = ['fa-fingerprint', 'fa-landmark', 'fa-utensils', 'fa-camera'][colorIdx % 4];
   const color = colors[colorIdx % 4];
 
   return (
-    <div onClick={() => onSelect(rawName)} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 group cursor-pointer hover:bg-white/10 transition-all active:scale-95 shadow-lg">
+    <div onClick={() => onSelect(rawName, countryKey)} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 group cursor-pointer hover:bg-white/10 transition-all active:scale-95 shadow-lg">
       <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white shadow-lg shrink-0`}>
         <i className={`fas ${icon} text-xs`}></i>
       </div>
@@ -195,13 +195,13 @@ const CityMiniCard: React.FC<{ rawName: string, lang: string, countryKey: string
   );
 };
 
-export const TravelServices = ({ mode, lang, onCitySelect }: { mode: string, lang: string, onCitySelect: (name: string) => void }) => {
+export const TravelServices = ({ mode, lang, onCitySelect }: { mode: string, lang: string, onCitySelect: (name: string, country?: string) => void }) => {
   const t = translations[lang] || translations.en;
   const [activeTab, setActiveTab] = useState<string>('europa');
 
-  const handleCitySelection = (cityKey: string) => {
+  const handleCitySelection = (cityKey: string, countryKey: string) => {
     const rawName = CITY_NAME_MAP_RAW[cityKey] || cityKey;
-    onCitySelect(rawName);
+    onCitySelect(rawName, countryKey);
   };
 
   if (mode === 'HUB') {
@@ -221,7 +221,7 @@ export const TravelServices = ({ mode, lang, onCitySelect }: { mode: string, lan
           </div>
           <div className="grid grid-cols-1 gap-3">
             {(WORLD_DATA as any)[activeTab].map((city: any, i: number) => (
-              <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey] || city.cityKey} lang={lang} countryKey={city.countryKey} onSelect={() => handleCitySelection(city.cityKey)} colorIdx={i} />
+              <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey] || city.cityKey} lang={lang} countryKey={city.countryKey} onSelect={() => handleCitySelection(city.cityKey, city.countryKey)} colorIdx={i} />
             ))}
           </div>
         </section>
@@ -241,20 +241,20 @@ export const TravelServices = ({ mode, lang, onCitySelect }: { mode: string, lan
         <section className="space-y-4">
           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">{t.sectionPopular}</h4>
           <div className="grid grid-cols-1 gap-3">
-            {SPAIN_DATA.capitales.map((city, i) => <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={() => handleCitySelection(city.cityKey)} colorIdx={i} />)}
-            {SPAIN_DATA.visitadas.map((city, i) => <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={() => handleCitySelection(city.cityKey)} colorIdx={i+4} />)}
+            {SPAIN_DATA.capitales.map((city, i) => <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={() => handleCitySelection(city.cityKey, "spain")} colorIdx={i} />)}
+            {SPAIN_DATA.visitadas.map((city, i) => <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={() => handleCitySelection(city.cityKey, "spain")} colorIdx={i+4} />)}
           </div>
         </section>
         <section className="space-y-4">
           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">{t.sectionVillages}</h4>
           <div className="grid grid-cols-1 gap-3">
-            {SPAIN_DATA.pueblos.map((city, i) => <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={() => handleCitySelection(city.cityKey)} colorIdx={i+8} />)}
+            {SPAIN_DATA.pueblos.map((city, i) => <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={() => handleCitySelection(city.cityKey, "spain")} colorIdx={i+8} />)}
           </div>
         </section>
         <section className="space-y-4">
           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">{t.sectionHidden}</h4>
           <div className="grid grid-cols-1 gap-3">
-            {SPAIN_DATA.joyas.map((city, i) => <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={() => handleCitySelection(city.cityKey)} colorIdx={i+12} />)}
+            {SPAIN_DATA.joyas.map((city, i) => <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={() => handleCitySelection(city.cityKey, "spain")} colorIdx={i+12} />)}
           </div>
         </section>
       </div>

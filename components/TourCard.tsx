@@ -167,13 +167,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
     const stopAudio = () => {
         if (sourceNodeRef.current) {
-            try { 
-                if ((sourceNodeRef.current as any).pause) {
-                    (sourceNodeRef.current as any).pause();
-                } else {
-                    (sourceNodeRef.current as any).stop(); 
-                }
-            } catch(e) {}
+            try { sourceNodeRef.current.stop(); } catch(e) {}
             sourceNodeRef.current = null;
         }
         setAudioPlayingId(null);
@@ -225,20 +219,46 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         stopAudio();
         setIsAudioLoading(true);
         try {
-            const audioUrl = await generateSpeech(text, user.language, tour.city);
-            if (!audioUrl) {
-                setIsAudioLoading(true);
+            const base64 = await generateSpeech(text, user.language, tour.city);
+            if (!base64) {
+                setIsAudioLoading(false);
                 return;
             }
             
-            const audio = new Audio(audioUrl);
-            audio.onended = () => setAudioPlayingId(null);
-            audio.play();
+            if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const ctx = audioContextRef.current;
             
-            (sourceNodeRef as any).current = audio;
-            setAudioPlayingId(stopId);
-        } catch (e) {
-            console.error("Audio playback error:", e);
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+            
+            // Try decoding as standard audio first (MP3/WAV)
+            try {
+                const audioBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+                const source = ctx.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(ctx.destination);
+                source.onended = () => setAudioPlayingId(null);
+                sourceNodeRef.current = source;
+                source.start(0);
+                setAudioPlayingId(stopId);
+            } catch (decodeError) {
+                // Fallback to raw PCM if decodeAudioData fails (Gemini TTS returns raw PCM)
+                const dataInt16 = new Int16Array(bytes.buffer);
+                const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
+                const channelData = buffer.getChannelData(0);
+                for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
+                
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+                source.onended = () => setAudioPlayingId(null);
+                sourceNodeRef.current = source;
+                source.start(0);
+                setAudioPlayingId(stopId);
+            }
+        } catch (e) { 
+            console.error("Audio playback error:", e); 
         } finally {
             setIsAudioLoading(false);
         }

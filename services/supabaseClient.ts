@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://slldavgsoxunkphqeamx.supabase.co";
+const supabaseUrl = "https://slldavgsoxunkphqeamx.supabase.co";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
 let supabase: any;
@@ -296,24 +296,6 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
         }, { onConflict: 'text_hash,language' });
         return publicUrl;
     } catch (e) { return ""; }
-};
-
-export const getAdminStats = async () => {
-  try {
-    const { count: toursCount } = await supabase.from('tours_cache').select('*', { count: 'exact', head: true });
-    const { count: audioCount } = await supabase.from('audio_cache').select('*', { count: 'exact', head: true });
-    const { count: communityCount } = await supabase.from('city_community').select('*', { count: 'exact', head: true });
-    const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-    
-    return {
-      tours: toursCount || 0,
-      audios: audioCount || 0,
-      community: communityCount || 0,
-      users: usersCount || 0
-    };
-  } catch (e) {
-    return { tours: 0, audios: 0, community: 0, users: 0 };
-  }
 };
 
 export const validateEmailFormat = (email: string) => { 

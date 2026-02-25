@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, Tour } from '../types';
 // Fixed: Removed testSupabaseConnection as it is not exported from supabaseClient.ts and not used in this component.
-import { supabase, saveToursToCache, getAdminStats } from '../services/supabaseClient';
+import { supabase, saveToursToCache } from '../services/supabaseClient';
 import { translateToursBatch } from '../services/geminiService';
 
 interface CityProgress {
@@ -20,91 +20,13 @@ interface TranslationTask {
     baseTours: Tour[];
 }
 
-export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = ({ user, onBack }) => {
-    const [stats, setStats] = useState({ totalCities: 0, totalEntries: 0, pendingTasks: 0, audios: 0, community: 0, users: 0 });
+export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpenPartnerDashboard: () => void }> = ({ user, onBack, onOpenPartnerDashboard }) => {
+    const [stats, setStats] = useState({ totalCities: 0, totalEntries: 0, pendingTasks: 0 });
     const [cityList, setCityList] = useState<CityProgress[]>([]);
     const [isWorking, setIsWorking] = useState(false);
     const [log, setLog] = useState<string[]>(['Sistemas listos.']);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const stopRef = useRef(false);
-
-    const [selectedCityKey, setSelectedCityKey] = useState<string | null>(null);
-    const [cityTours, setCityTours] = useState<Tour[]>([]);
-    const [selectedTourIndex, setSelectedTourIndex] = useState<number>(0);
-    const [selectedStopIndex, setSelectedStopIndex] = useState<number>(0);
-    const [showGpsFixer, setShowGpsFixer] = useState(false);
-    const [tempCoords, setTempCoords] = useState<{lat: number, lng: number} | null>(null);
-
-    const mapRef = useRef<any>(null);
-    const mapContainerRef = useRef<HTMLDivElement>(null);
-
-    const L = (window as any).L;
-
-    const fetchCityTours = async (key: string) => {
-        setIsWorking(true);
-        const { data } = await supabase.from('tours_cache').select('data').eq('city', key).eq('language', 'es').single();
-        if (data) {
-            setCityTours(data.data as Tour[]);
-            setSelectedCityKey(key);
-            setShowGpsFixer(true);
-        }
-        setIsWorking(false);
-    };
-
-    const saveNewCoords = async () => {
-        if (!tempCoords || !selectedCityKey) return;
-        setIsWorking(true);
-        const tour = cityTours[selectedTourIndex];
-        const stop = tour.stops[selectedStopIndex];
-        
-        // Update in all languages
-        const { data: allLangs } = await supabase.from('tours_cache').select('language, data').eq('city', selectedCityKey);
-        if (allLangs) {
-            for (const record of allLangs) {
-                const tours = record.data as Tour[];
-                const targetTour = tours[selectedTourIndex];
-                if (targetTour) {
-                    const targetStop = targetTour.stops[selectedStopIndex];
-                    if (targetStop) {
-                        targetStop.latitude = tempCoords.lat;
-                        targetStop.longitude = tempCoords.lng;
-                        await supabase.from('tours_cache').update({ data: tours }).eq('city', selectedCityKey).eq('language', record.language);
-                    }
-                }
-            }
-            addLog(`✅ GPS Actualizado para ${stop.name} en todas las lenguas.`);
-        }
-        setIsWorking(false);
-        setTempCoords(null);
-    };
-
-    useEffect(() => {
-        if (showGpsFixer && mapContainerRef.current && L && !mapRef.current) {
-            const map = L.map(mapContainerRef.current).setView([0, 0], 2);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            
-            map.on('click', (e: any) => {
-                setTempCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
-            });
-            
-            mapRef.current = map;
-        }
-        
-        if (showGpsFixer && mapRef.current && cityTours.length > 0) {
-            const stop = cityTours[selectedTourIndex]?.stops[selectedStopIndex];
-            if (stop) {
-                mapRef.current.setView([stop.latitude, stop.longitude], 15);
-                // Clear old markers
-                mapRef.current.eachLayer((layer: any) => {
-                    if (layer instanceof L.Marker) mapRef.current.removeLayer(layer);
-                });
-                L.marker([stop.latitude, stop.longitude]).addTo(mapRef.current).bindPopup('Ubicación Actual').openPopup();
-                if (tempCoords) {
-                    L.marker([tempCoords.lat, tempCoords.lng], { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }) }).addTo(mapRef.current).bindPopup('Nueva Ubicación').openPopup();
-                }
-            }
-        }
-    }, [showGpsFixer, selectedTourIndex, selectedStopIndex, tempCoords]);
 
     const addLog = (msg: string) => setLog(prev => [msg, ...prev].slice(0, 30));
 
@@ -114,7 +36,6 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     }, []);
 
     const fetchSummary = async () => {
-        const adminStats = await getAdminStats();
         const { data: allRecords } = await supabase.from('tours_cache').select('city, language');
         if (!allRecords) return;
 
@@ -152,11 +73,8 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         setCityList(progressData);
         setStats({ 
             totalCities: progressData.length, 
-            totalEntries: adminStats.tours,
-            pendingTasks: pendingCount,
-            audios: adminStats.audios,
-            community: adminStats.community,
-            users: adminStats.users
+            totalEntries: allRecords.length,
+            pendingTasks: pendingCount
         });
     };
 
@@ -268,40 +186,25 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 <button onClick={onBack} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white"><i className="fas fa-times"></i></button>
             </header>
 
-            <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Ciudades</p>
-                    <span className="text-lg font-black text-white">{stats.totalCities}</span>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center border-purple-500/20">
-                    <p className="text-[6px] font-black text-purple-500 uppercase tracking-widest mb-1">Pendientes</p>
-                    <span className="text-lg font-black text-purple-400">{stats.pendingTasks}</span>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Tours</p>
-                    <span className="text-lg font-black text-slate-400">{stats.totalEntries}</span>
-                </div>
-            </div>
-
             <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Audios</p>
-                    <span className="text-lg font-black text-blue-400">{stats.audios}</span>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center">
+                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Ciudades</p>
+                    <span className="text-xl font-black text-white">{stats.totalCities}</span>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Posts</p>
-                    <span className="text-lg font-black text-emerald-400">{stats.community}</span>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center border-purple-500/20">
+                    <p className="text-[6px] font-black text-purple-500 uppercase tracking-widest mb-1">Pendientes</p>
+                    <span className="text-xl font-black text-purple-400">{stats.pendingTasks}</span>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-4 text-center">
-                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Usuarios</p>
-                    <span className="text-lg font-black text-yellow-500">{stats.users}</span>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center">
+                    <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Entradas</p>
+                    <span className="text-xl font-black text-slate-400">{stats.totalEntries}</span>
                 </div>
             </div>
 
             <div className="mb-8 overflow-x-auto no-scrollbar">
                 <div className="flex gap-3 pb-2">
                     {cityList.map(c => (
-                        <div key={c.key} onClick={() => fetchCityTours(c.key)} className={`px-4 py-3 rounded-2xl border flex flex-col min-w-[140px] transition-all cursor-pointer hover:scale-105 active:scale-95 ${c.isComplete ? 'bg-green-600/20 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-white/5 border-white/10'}`}>
+                        <div key={c.key} className={`px-4 py-3 rounded-2xl border flex flex-col min-w-[140px] transition-all ${c.isComplete ? 'bg-green-600/20 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'bg-white/5 border-white/10'}`}>
                             <span className="text-[9px] font-black text-white uppercase truncate mb-0.5">{c.name}</span>
                             <span className="text-[6px] font-bold text-slate-600 uppercase mb-2 truncate">ID: {c.key}</span>
                             <div className="flex items-center justify-between">
@@ -314,69 +217,6 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                     ))}
                 </div>
             </div>
-
-            {showGpsFixer && (
-                <div className="fixed inset-0 z-[300] bg-slate-950 flex flex-col p-8 animate-fade-in">
-                    <header className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter">GPS Fixer: {selectedCityKey}</h3>
-                        <button onClick={() => { setShowGpsFixer(false); mapRef.current = null; }} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white"><i className="fas fa-times"></i></button>
-                    </header>
-
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <select 
-                            value={selectedTourIndex} 
-                            onChange={(e) => { setSelectedTourIndex(Number(e.target.value)); setSelectedStopIndex(0); setTempCoords(null); }}
-                            className="bg-white/5 border border-white/10 rounded-xl p-3 text-white text-xs font-bold outline-none"
-                        >
-                            {cityTours.map((t, i) => <option key={i} value={i} className="bg-slate-900">{t.title}</option>)}
-                        </select>
-                        <select 
-                            value={selectedStopIndex} 
-                            onChange={(e) => { setSelectedStopIndex(Number(e.target.value)); setTempCoords(null); }}
-                            className="bg-white/5 border border-white/10 rounded-xl p-3 text-white text-xs font-bold outline-none"
-                        >
-                            {cityTours[selectedTourIndex]?.stops.map((s, i) => <option key={i} value={i} className="bg-slate-900">{s.name}</option>)}
-                        </select>
-                    </div>
-
-                    <div className="flex gap-2 mb-4">
-                        <input 
-                            type="text" 
-                            placeholder="Lat, Lng (ej: 40.4167, -3.7037)" 
-                            className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-white text-[10px] font-mono outline-none"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    const val = (e.target as HTMLInputElement).value;
-                                    const [lat, lng] = val.split(',').map(v => parseFloat(v.trim()));
-                                    if (!isNaN(lat) && !isNaN(lng)) {
-                                        setTempCoords({ lat, lng });
-                                        mapRef.current.setView([lat, lng], 18);
-                                    }
-                                }
-                            }}
-                        />
-                        <div className="px-4 bg-white/5 border border-white/10 rounded-xl flex items-center text-slate-500 text-[8px] uppercase font-black">Enter para ir</div>
-                    </div>
-
-                    <div className="flex-1 bg-slate-900 rounded-3xl overflow-hidden mb-6 relative">
-                        <div ref={mapContainerRef} className="w-full h-full" />
-                        <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md p-4 rounded-2xl border border-white/10 z-[400] text-[10px] text-white">
-                            <p className="font-black uppercase tracking-widest mb-2">Instrucciones</p>
-                            <p className="opacity-60">Haz click en el mapa para marcar la nueva ubicación.</p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <button 
-                            disabled={!tempCoords || isWorking}
-                            onClick={saveNewCoords}
-                            className="flex-1 py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
-                        >
-                            {isWorking ? 'Guardando...' : 'Confirmar Nueva Ubicación'}
-                        </button>
-                    </div>
-                </div>
-            )}
 
             <div className="space-y-4 mb-8">
                 <div className="grid grid-cols-2 gap-3">
