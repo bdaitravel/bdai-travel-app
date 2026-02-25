@@ -385,6 +385,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                         <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
                             <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg mb-1`}></i>
                             <span className="text-[9px]">{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
+                            {distToTarget !== null && !rewardClaimed && (
+                                <span className="text-[7px] mt-1 opacity-60">{distToTarget}{tl.meters}</span>
+                            )}
                         </button>
                         <button onClick={() => setShowPhotoTip(true)} className="flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border bg-slate-900 text-white border-slate-800">
                             <i className="fas fa-camera text-lg mb-1"></i>

@@ -293,7 +293,7 @@ export default function App() {
         } finally {
             setIsSearching(false);
         }
-    }, 1200);
+    }, 1500);
   };
 
   const handleLangChange = (code: string) => {

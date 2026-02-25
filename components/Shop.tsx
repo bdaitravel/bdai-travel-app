@@ -68,22 +68,20 @@ export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) =>
             </header>
 
             <div className="p-8 space-y-6">
-                <h3 className={`text-[10px] font-black text-white/40 uppercase tracking-[0.3em] px-2 ${user.language === 'ar' ? 'text-right' : ''}`}>{t.official}</h3>
-                <div className="grid grid-cols-1 gap-4">
-                    {EXTERNAL_STORES.map(store => (
-                        <div key={store.id} onClick={() => openStore(store.url)} className={`bg-white/5 border border-white/10 rounded-[2.5rem] p-6 flex items-center justify-between group active:scale-95 transition-all cursor-pointer ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                            <div className={`flex items-center gap-5 ${user.language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                                <div className={`w-14 h-14 rounded-2xl ${store.color} flex items-center justify-center text-white text-xl shadow-lg`}>
-                                    <i className={`fab ${store.icon} ${store.id === 'bdai' ? 'fas fa-globe' : ''} ${store.id === 'miravia' ? 'fas fa-shopping-bag' : ''}`}></i>
-                                </div>
-                                <div className={user.language === 'ar' ? 'text-right' : ''}>
-                                    <h4 className="text-white font-black text-sm uppercase">{store.name}</h4>
-                                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">Official platform</p>
-                                </div>
-                            </div>
-                            <i className={`fas fa-external-link-alt text-slate-700 group-hover:text-purple-500 ${user.language === 'ar' ? 'rotate-180' : ''}`}></i>
+                <div className="bg-purple-600/10 border border-purple-500/20 p-10 rounded-[3rem] text-center space-y-6 backdrop-blur-md">
+                    <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-purple-500/40 animate-pulse">
+                        <i className="fas fa-tools text-3xl text-white"></i>
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">Marketplace en Construcción</h3>
+                    <p className="text-slate-400 text-sm font-medium leading-relaxed italic">
+                        "{t.devMsg}"
+                    </p>
+                    <div className="pt-4">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">DAI está trabajando</span>
                         </div>
-                    ))}
+                    </div>
                 </div>
             </div>
         </div>

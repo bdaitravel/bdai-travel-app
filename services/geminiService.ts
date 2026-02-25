@@ -94,71 +94,51 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        // Using gemini-2.5-flash for Google Maps Grounding support
         const response = await ai.models.generateContent({
-            model: 'gemini-flash-latest',
-            contents: `As DAI, a highly intelligent, elegant, and engaging AI travel guide (think of a top-tier free tour guide), generate 3 to 4 distinct tours for ${city}, ${country} in ${user.language}.
-            
-            DAI'S PERSONALITY:
-            - Sophisticated, sharp, witty, and passionate.
-            - NOT a Wikipedia entry. NOT overly technical or "engineering-heavy" unless it's a fascinating secret.
-            - Focus on: History, juicy curiosities, local secrets, culture, and gastronomy.
-            - Tone: Engaging, storytelling-driven, and slightly provocative.
+            model: 'gemini-2.5-flash',
+            contents: `As DAI, a highly intelligent and passionate AI travel guide, generate 3 to 4 distinct thematic tours for ${city}, ${country} in ${user.language}.
             
             STRICT RULES:
-            1. Generate 3 to 4 tours if it's a major city, 2 if medium, 1 if small.
-            2. MINIMUM 10 STOPS per tour.
-            3. Each stop description: MUST be between 310 and 400 words. Be extremely detailed, passionate, and engaging.
-            4. NO REPEATED STOPS between the different tours generated.
-            5. The tours MUST be thematic (e.g., "Secrets of the Old Town", "Gastronomic Soul", "Hidden History").
-            6. Use real, accurate data. Do not invent facts.
-            7. Assign a 'type' to each stop from: 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
-            8. ALL CONTENT IN ${user.language}.
-            
-            Return a JSON array of tours.`,
+            1. Use the Google Maps tool to find the EXACT coordinates (latitude/longitude) for every stop.
+            2. Major Cities: 3-4 tours. Medium: 2 tours. Small: 1-2 tours.
+            3. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
+            4. Each stop description: 310-400 words. Focus on history, curiosities, culture, and gastronomy.
+            5. Assign a 'type': 'historical', 'food', 'art', 'nature', 'photo', 'culture', 'architecture'.
+            6. ALL CONTENT IN ${user.language}.`,
             config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            id: { type: Type.STRING },
-                            city: { type: Type.STRING },
-                            title: { type: Type.STRING },
-                            description: { type: Type.STRING },
-                            duration: { type: Type.STRING },
-                            distance: { type: Type.STRING },
-                            stops: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        id: { type: Type.STRING },
-                                        name: { type: Type.STRING },
-                                        description: { type: Type.STRING },
-                                        latitude: { type: Type.NUMBER },
-                                        longitude: { type: Type.NUMBER },
-                                        type: { type: Type.STRING },
-                                        photoSpot: {
-                                            type: Type.OBJECT,
-                                            properties: {
-                                                angle: { type: Type.STRING },
-                                                milesReward: { type: Type.NUMBER },
-                                                secretLocation: { type: Type.STRING }
-                                            },
-                                            required: ["angle", "milesReward", "secretLocation"]
-                                        }
-                                    },
-                                    required: ["id", "name", "description", "latitude", "longitude", "photoSpot"]
-                                }
-                            }
-                        },
-                        required: ["id", "city", "title", "description", "stops"]
-                    }
-                }
+                tools: [{ googleMaps: {} }],
+                // Note: responseMimeType and responseSchema are NOT allowed with googleMaps tool
+            },
+        });
+
+        // Since we can't use responseSchema with googleMaps, we parse the text response
+        // We'll ask for a specific format in the prompt to make parsing easier if needed, 
+        // but usually, Gemini is good at following the requested structure.
+        // For safety, I'll add a second pass or a very strict prompt instruction.
+        
+        // Let's refine the prompt to ensure it returns valid JSON even without the schema
+        const refinedResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `As DAI, generate 3 to 4 distinct thematic tours for ${city}, ${country} in ${user.language}.
+            
+            STRICT RULES:
+            1. Use Google Maps to verify EVERY location.
+            2. Format: Return ONLY a valid JSON array of tours.
+            3. Each tour: { "id", "city", "title", "description", "duration", "distance", "stops": [] }
+            4. Each stop: { "id", "name", "description" (310-400 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward", "secretLocation" } }
+            5. NO REPEATED STOPS. 10 stops per tour.
+            6. Content in ${user.language}.`,
+            config: {
+                tools: [{ googleMaps: {} }]
             }
         });
-        return JSON.parse(response.text || "[]");
+
+        const text = refinedResponse.text || "[]";
+        // Extract JSON if there's markdown wrapping
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        return JSON.parse(jsonMatch ? jsonMatch[0] : text);
     });
 };
 
