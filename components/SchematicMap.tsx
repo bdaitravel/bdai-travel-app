@@ -43,8 +43,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         tap: false,
         dragging: true,
         touchZoom: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
         maxZoom: 19
     }).setView([0, 0], 15);
     
@@ -178,39 +176,9 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-950">
         <div ref={mapContainerRef} className="w-full h-full" />
-        
-        {/* Zoom Controls */}
-        <div className="absolute left-4 bottom-28 z-[450] flex flex-col gap-2">
-            <button 
-                onClick={() => mapInstanceRef.current?.zoomIn()} 
-                className="w-12 h-12 rounded-xl bg-slate-900/90 backdrop-blur-md text-white border border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-all"
-            >
-                <i className="fas fa-plus text-xs"></i>
-            </button>
-            <button 
-                onClick={() => mapInstanceRef.current?.zoomOut()} 
-                className="w-12 h-12 rounded-xl bg-slate-900/90 backdrop-blur-md text-white border border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-all"
-            >
-                <i className="fas fa-minus text-xs"></i>
-            </button>
-        </div>
-
         <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-3">
-            <button 
-                onClick={() => setIsAutoFollowing(true)} 
-                className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}
-            >
-                <i className="fas fa-location-crosshairs text-lg"></i>
-            </button>
-            <button 
-                onClick={() => { 
-                    if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); 
-                    setIsAutoFollowing(false); 
-                }} 
-                className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-all"
-            >
-                <i className="fas fa-bullseye text-lg"></i>
-            </button>
+            <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
+            <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"><i className="fas fa-bullseye text-lg"></i></button>
         </div>
     </div>
   );
