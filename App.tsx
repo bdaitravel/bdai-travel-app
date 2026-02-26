@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, translateSearchQuery, QuotaError, normalizeCityWithAI } from './services/geminiService';
@@ -76,6 +75,7 @@ export default function App() {
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(14);
   const searchTimeoutRef = useRef<any>(null);
 
   const t = useCallback((key: string) => {
@@ -130,7 +130,6 @@ export default function App() {
       if (updatedProfile.stats.sessionsStarted === 1) {
         setShowOnboarding(true);
       }
-      // Only set view to HOME if we are currently in LOGIN or if it's the initial load
       if (view === AppView.LOGIN || !user.isLoggedIn) {
         setView(AppView.HOME);
       }
@@ -225,40 +224,46 @@ export default function App() {
     setIsLoading(true); 
     setSearchOptions(null); 
     setSearchVal(''); 
-    const cleanName = selection.name.split(',')[0].trim();
-    setSelectedCity(cleanName); 
-    const slug = selection.slug || normalizeKey(cleanName, selection.country);
+    const cleanCityName = selection.name.split(',')[0].trim();
+    setSelectedCity(cleanCityName); 
+    
+    // Normalización: Slug en inglés y español para búsqueda inteligente en caché
+    const slugEN = `${cleanCityName.toLowerCase()}_${selection.country_en || 'world'}`.replace(/\s+/g, '_');
+    const slugES = `${cleanCityName.toLowerCase()}_${selection.country?.toLowerCase() || 'mundo'}`.replace(/\s+/g, '_');
 
     try {
         setTours([]);
+        // Búsqueda en caché (intenta ambos slugs)
         const { data: cached, error } = await supabase
           .from('tours_cache')
           .select('data')
-          .eq('city', slug) 
+          .or(`city.eq.${slugEN},city.eq.${slugES}`)
           .eq('language', langCode.toLowerCase())
           .maybeSingle();
 
-        if (!error && cached && cached.data && cached.data.length > 0) {
+        if (!error && cached?.data) {
             setTours(cached.data); 
             setView(AppView.CITY_DETAIL);
             setIsLoading(false);
             return;
         }
         
-        setLoadingMessage(t('generating'));
+        setLoadingMessage(`Dai está viajando ahora mismo a ${cleanCityName} para prepararte el mejor tour...`);
         const coords = selection.lat && selection.lng ? { lat: selection.lat, lng: selection.lng } : undefined;
-        const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile, coords);
+        
+        // Generar 1 solo tour con descripciones detalladas de 300 palabras
+        const generated = await generateToursForCity(cleanCityName, selection.country, { ...user, language: langCode } as UserProfile, coords, 1);
+        
         if (generated.length > 0) {
             setTours(generated); 
             await supabase.from('tours_cache').upsert({
-              city: slug,
+              city: slugEN, // Guardamos siempre en formato inglés para estandarizar
               language: langCode.toLowerCase(),
               data: generated
             }, { onConflict: 'city,language' });
             setView(AppView.CITY_DETAIL);
         } else { 
-            console.warn("Generation returned no results for:", cleanName);
-            alert("DAI: No he podido trazar una ruta segura para este destino. Prueba con otra ciudad."); 
+            alert("DAI: No he podido trazar una ruta segura. Prueba con otra ciudad."); 
         }
     } catch (e) { 
         if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
@@ -274,10 +279,7 @@ export default function App() {
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
         try {
-            // 1. Use Gemini to find all matches globally
             const aiResults = await normalizeCityWithAI(val, user.language);
-            
-            // 2. Check cache for each result
             const results = await Promise.all(aiResults.map(async (res) => {
                 const slug = res.slug.replace(/-/g, '_');
                 const isCached = await checkIfCityCached(res.city, slug);
@@ -289,10 +291,9 @@ export default function App() {
                     isCached: isCached,
                     lat: res.lat,
                     lng: res.lng,
-                    fullName: res.city // Use just city name for primary display
+                    fullName: res.city 
                 };
             }));
-
             setSearchOptions(results);
         } catch (e) { 
             console.error("Search protocol error:", e); 
@@ -330,8 +331,8 @@ export default function App() {
     <div className="flex-1 bg-transparent flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
       {(isLoading || isSyncingLang) && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 animate-fade-in">
-            <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center animate-pulse">
+            <div className="w-12 h-12 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+            <p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center animate-pulse max-w-[250px]">
               {isSyncingLang ? "translating interface..." : (loadingMessage || "syncing...")}
             </p>
         </div>
@@ -362,13 +363,11 @@ export default function App() {
                     >
                       {t('requestAccess')}
                     </button>
-
                     <div className="flex items-center gap-4 py-1">
                         <div className="h-px bg-white/5 flex-1"></div>
                         <span className="text-[7px] font-black text-slate-700 uppercase tracking-widest">{t('socialAccess')}</span>
                         <div className="h-px bg-white/5 flex-1"></div>
                     </div>
-
                     <div className="w-full">
                         <button 
                           onClick={handleGoogleLogin} 
@@ -487,16 +486,22 @@ export default function App() {
                             )}
                         </div>
                       </div>
-
                       <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string, country?: string) => processCitySelection({ name, country }, user.language)} />
                   </div>
                 )}
+
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
-                      <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
+                      <header className="flex items-center gap-4 mb-4 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
                         <button onClick={() => setView(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
                         <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
                       </header>
+
+                      <div className="flex bg-white/5 p-1 rounded-2xl mb-6 border border-white/5">
+                          <button className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest bg-purple-600 rounded-xl shadow-lg">Guía AI</button>
+                          <button onClick={() => setView(AppView.COMMUNITY)} className="flex-1 py-3 text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-all">Comunidad</button>
+                      </div>
+
                       <div className="space-y-6 pb-12">
                           {tours.map(tour => (
                             <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
@@ -504,24 +509,60 @@ export default function App() {
                       </div>
                   </div>
                 )}
-                {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
-                )}
-                {/* Dai Thinking Overlay - Only for full loading, not search */}
-                {isLoading && (
-                    <div className="fixed inset-0 z-[10000] flex items-center justify-center">
-                        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
-                        <div className="relative flex flex-col items-center">
-                            <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-pulse mb-6 overflow-hidden border-4 border-white/20">
-                                <i className="fas fa-brain text-3xl text-white"></i>
+
+                {view === AppView.COMMUNITY && (
+                    <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
+                        <header className="flex items-center gap-4 mb-6 py-4">
+                            <button onClick={() => setView(AppView.CITY_DETAIL)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center"><i className="fas fa-arrow-left text-xs"></i></button>
+                            <h2 className="text-lg font-black uppercase tracking-tighter text-white">Secretos en {selectedCity}</h2>
+                        </header>
+                        <div className="space-y-4">
+                            <div className="p-6 bg-gradient-to-br from-purple-900/40 to-slate-900/40 border border-purple-500/20 rounded-[2.5rem] relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><i className="fas fa-user-secret text-4xl"></i></div>
+                                <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">Misión activa</p>
+                                <p className="text-sm font-bold leading-relaxed mb-4">¿Conoces un rincón que Dai no haya mencionado? Compártelo y gana 500 millas extra.</p>
+                                <button className="px-6 py-3 bg-white text-black rounded-full text-[10px] font-black uppercase tracking-widest">Añadir secreto</button>
                             </div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping"></div>
-                                <span className="text-white font-black uppercase tracking-[0.3em] text-[10px]">bdai exploring</span>
+                            <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[2.5rem] opacity-20">
+                                <i className="fas fa-lock mb-3 text-2xl"></i>
+                                <p className="text-[10px] font-black uppercase tracking-widest">Explora para desbloquear</p>
                             </div>
                         </div>
                     </div>
                 )}
+
+                {view === AppView.TOUR_ACTIVE && activeTour && (
+                  <div className="relative h-full">
+                      <ActiveTourCard 
+                        tour={activeTour} 
+                        user={user} 
+                        currentStopIndex={currentStopIndex} 
+                        onNext={() => setCurrentStopIndex(i => i + 1)} 
+                        onPrev={() => setCurrentStopIndex(i => i - 1)} 
+                        onJumpTo={(i: number) => setCurrentStopIndex(i)} 
+                        onUpdateUser={(u: any) => updateUserAndSync(u)} 
+                        language={user.language} 
+                        onBack={() => setView(AppView.CITY_DETAIL)} 
+                        userLocation={userLocation} 
+                        onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} 
+                      />
+                      
+                      {/* Controles de Mapa Flotantes */}
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-[60]">
+                          <button onClick={() => setZoomLevel(z => z + 1)} className="w-12 h-12 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-center text-white active:scale-90 shadow-2xl">
+                              <i className="fas fa-plus text-xs"></i>
+                          </button>
+                          <button onClick={() => setZoomLevel(z => z - 1)} className="w-12 h-12 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-center text-white active:scale-90 shadow-2xl">
+                              <i className="fas fa-minus text-xs"></i>
+                          </button>
+                          <div className="h-px bg-white/10 mx-2"></div>
+                          <button onClick={() => alert("Reporte enviado. Dai revisará la precisión de esta parada.")} className="w-12 h-12 bg-red-500/20 backdrop-blur-xl border border-red-500/30 rounded-2xl flex items-center justify-center text-red-400 active:scale-90 shadow-2xl">
+                              <i className="fas fa-flag text-xs"></i>
+                          </button>
+                      </div>
+                  </div>
+                )}
+
                 {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
                 {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
@@ -532,7 +573,15 @@ export default function App() {
             </div>
 
             {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && (
-              <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
+              <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex flex-col items-center gap-4 pointer-events-none">
+                
+                <button 
+                  onClick={() => window.open('https://bdai.travel/legal', '_blank')}
+                  className="pointer-events-auto text-[8px] font-black uppercase tracking-[0.3em] text-slate-700 hover:text-purple-500 transition-colors"
+                >
+                  Términos y Privacidad RGPD
+                </button>
+
                 <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm rounded-[2.5rem] pointer-events-auto shadow-2xl">
                     <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
                     <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
