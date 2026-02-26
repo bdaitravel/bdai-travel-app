@@ -23,17 +23,6 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
         }
         throw error;
     }
-    export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: [{ parts: [{ text: `Generate a beautiful postcard image of ${city} highlighting ${interests.join(", ")}.` }] }],
-        });
-        const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-        return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
-    });
-
 };
 
 export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
@@ -96,7 +85,6 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     });
 };
 
-// FUNCIÓN CORREGIDA PARA ACEPTAR 5 ARGUMENTOS Y GENERAR 1 TOUR DE 300 PALABRAS
 export const generateToursForCity = async (city: string, country: string, user: UserProfile, coords?: { lat: number, lng: number }, maxTours: number = 1): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -106,10 +94,9 @@ export const generateToursForCity = async (city: string, country: string, user: 
             
             STRICT RULES:
             1. Format: Return ONLY a valid JSON array.
-            2. Each stop description MUST be exactly 300 words. No more, no less.
-            3. Focus on real historical facts and secret spots.
-            4. Each tour: { "id", "city", "title", "description", "duration", "distance", "stops": [] }
-            5. Each stop: { "id", "name", "description", "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward", "secretLocation" } }`,
+            2. Each stop description MUST be exactly 300 words.
+            3. Each tour: { "id", "city", "title", "description", "duration", "distance", "stops": [] }
+            4. Each stop: { "id", "name", "description", "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward", "secretLocation" } }`,
             config: {
                 responseMimeType: "application/json"
             }
@@ -131,7 +118,7 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-1.5-flash",
-            contents: `Welcome ${user.firstName || 'Traveler'} to bdai in ${user.language}. Be sarcastic and witty.`,
+            contents: `Welcome ${user.firstName || 'Traveler'} to bdai in ${user.language}.`,
         });
         return response.text || "Welcome to bdai.";
     });
@@ -156,7 +143,7 @@ export const generateSpeech = async (text: string, language: string, city: strin
     const voiceName = VOICE_MAP[language] || 'Kore';
     const base64 = await handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `Act as Dai, an elegant guide: ${cleanText}`;
+        const prompt = `Act as Dai: ${cleanText}`;
         const response = await ai.models.generateContent({
             model: "gemini-1.5-flash",
             contents: [{ parts: [{ text: prompt }] }],
@@ -203,5 +190,17 @@ export const moderateContent = async (text: string): Promise<boolean> => {
             }
         });
         return JSON.parse(response.text || '{"isSafe": false}').isSafe;
+    });
+};
+
+export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: [{ parts: [{ text: `Postcard of ${city}` }] }],
+        });
+        const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };
