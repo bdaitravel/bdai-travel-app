@@ -79,8 +79,8 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+        .replace(/[\s-]+/g, '_')
+        .replace(/[^a-z0-9_]/g, '');
 
     const safeCity = clean(city || "").split(',')[0];
     if (!safeCity) return "";
@@ -197,15 +197,45 @@ export const checkBadges = (profile: UserProfile): Badge[] => {
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
 
-  // Historiador
-  if (!badgeIds.has('historiador') && profile.historyPoints >= 5) {
+  // Historiador (History)
+  if (!badgeIds.has('historiador') && profile.historyPoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'historiador');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
 
-  // Foodie
-  if (!badgeIds.has('foodie') && profile.foodPoints >= 5) {
+  // Foodie (Food)
+  if (!badgeIds.has('foodie') && profile.foodPoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'foodie');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // Culture Guru
+  if (!badgeIds.has('culture_master') && profile.culturePoints >= 10) {
+     const b = APP_BADGES.find(x => x.id === 'culture_master');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // Nature Explorer
+  if (!badgeIds.has('nature_master') && profile.naturePoints >= 10) {
+     const b = APP_BADGES.find(x => x.id === 'nature_master');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // Art Connoisseur
+  if (!badgeIds.has('art_master') && profile.artPoints >= 10) {
+     const b = APP_BADGES.find(x => x.id === 'art_master');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // Architecture Critic
+  if (!badgeIds.has('arch_master') && profile.archPoints >= 10) {
+     const b = APP_BADGES.find(x => x.id === 'arch_master');
+     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+  }
+
+  // Photo Visionary
+  if (!badgeIds.has('photo_master') && profile.photoPoints >= 10) {
+     const b = APP_BADGES.find(x => x.id === 'photo_master');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
 

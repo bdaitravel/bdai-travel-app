@@ -57,6 +57,39 @@ const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: st
 
 export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
+  
+  const navigateTo = useCallback((newView: AppView, pushState = true) => {
+    if (pushState) {
+      window.history.pushState({ view: newView }, '', '');
+    }
+    setView(newView);
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.view) {
+        setView(event.state.view);
+      } else {
+        // If we go back beyond the first state, default to HOME if logged in
+        setView(prev => {
+          if (prev === AppView.LOGIN) return AppView.LOGIN;
+          return AppView.HOME;
+        });
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Initial state setup
+    if (window.history.state?.view) {
+      setView(window.history.state.view);
+    } else {
+      window.history.replaceState({ view: AppView.LOGIN }, '', '');
+    }
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [loginPhase, setLoginPhase] = useState<'EMAIL' | 'OTP'>('EMAIL');
   const [isVerifyingSession, setIsVerifyingSession] = useState(true);
   const [email, setEmail] = useState('');
@@ -72,6 +105,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
@@ -105,7 +139,7 @@ export default function App() {
         handleLoginSuccess(session.user);
       } else if (_event === 'SIGNED_OUT') {
         setUser(GUEST_PROFILE);
-        setView(AppView.LOGIN);
+        navigateTo(AppView.LOGIN);
       }
     });
 
@@ -130,9 +164,9 @@ export default function App() {
       if (updatedProfile.stats.sessionsStarted === 1) {
         setShowOnboarding(true);
       }
-      // Only set view to HOME if we are currently in LOGIN or if it's the initial load
-      if (view === AppView.LOGIN || !user.isLoggedIn) {
-        setView(AppView.HOME);
+      // Only redirect to HOME if we are currently on the LOGIN screen
+      if (view === AppView.LOGIN) {
+        navigateTo(AppView.HOME);
       }
     } else {
       const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true, stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } };
@@ -141,8 +175,9 @@ export default function App() {
       await syncUserProfile(newProfile);
       setUser(newProfile);
       setShowOnboarding(true);
-      if (view === AppView.LOGIN || !user.isLoggedIn) {
-        setView(AppView.HOME);
+      // Only redirect to HOME if we are currently on the LOGIN screen
+      if (view === AppView.LOGIN) {
+        navigateTo(AppView.HOME);
       }
     }
   };
@@ -225,36 +260,43 @@ export default function App() {
           await syncUserProfile(newProfile);
           setUser(newProfile);
         }
-        setView(AppView.HOME);
+        navigateTo(AppView.HOME);
       }
     } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
   };
 
-  const processCitySelection = async (selection: any, langCode: string) => {
+  const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
     setIsLoading(true); 
     setSearchOptions(null); 
     setSearchVal(''); 
     const cleanName = selection.name.split(',')[0].trim();
     setSelectedCity(cleanName); 
+    setSelectedCountry(selection.country);
     const slug = selection.slug || normalizeKey(cleanName, selection.country);
 
     try {
-        setTours([]);
-        const { data: cached, error } = await supabase
-          .from('tours_cache')
-          .select('data')
-          .eq('city', slug) 
-          .eq('language', langCode.toLowerCase())
-          .maybeSingle();
+        if (forceRefresh) {
+            setLoadingMessage("PURGING OLD DATA...");
+            // Force delete from Supabase to ensure no stale data remains
+            await supabase.from('tours_cache').delete().eq('city', slug).eq('language', langCode.toLowerCase());
+        } else {
+            setTours([]);
+            const { data: cached, error } = await supabase
+              .from('tours_cache')
+              .select('data')
+              .eq('city', slug) 
+              .eq('language', langCode.toLowerCase())
+              .maybeSingle();
 
-        if (!error && cached && cached.data && cached.data.length > 0) {
-            setTours(cached.data); 
-            setView(AppView.CITY_DETAIL);
-            setIsLoading(false);
-            return;
+            if (!error && cached && cached.data && cached.data.length > 0) {
+                setTours(cached.data); 
+                navigateTo(AppView.CITY_DETAIL);
+                setIsLoading(false);
+                return;
+            }
         }
         
-        setLoadingMessage(t('generating'));
+        setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
         const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
         if (generated.length > 0) {
             setTours(generated); 
@@ -263,7 +305,11 @@ export default function App() {
               language: langCode.toLowerCase(),
               data: generated
             }, { onConflict: 'city,language' });
-            setView(AppView.CITY_DETAIL);
+            
+            // Only transition view if we are not already in a more specific view
+            if (view === AppView.HOME || forceRefresh) {
+                navigateTo(AppView.CITY_DETAIL);
+            }
         } else { alert("Location protocol failed."); }
     } catch (e) { 
         if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
@@ -497,18 +543,25 @@ export default function App() {
                 {view === AppView.CITY_DETAIL && (
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
                       <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
-                        <button onClick={() => setView(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
+                        <button onClick={() => navigateTo(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
                         <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
+                        <button 
+                          onClick={() => processCitySelection({ name: selectedCity, country: selectedCountry || undefined, slug: normalizeKey(selectedCity, selectedCountry || undefined) }, user.language, true)} 
+                          className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center active:rotate-180 transition-transform"
+                          title="Regenerate Tours"
+                        >
+                          <i className="fas fa-sync-alt text-xs"></i>
+                        </button>
                       </header>
                       <div className="space-y-6 pb-12">
                           {tours.map(tour => (
-                            <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); setView(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
+                            <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); navigateTo(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
                           ))}
                       </div>
                   </div>
                 )}
                 {view === AppView.TOUR_ACTIVE && activeTour && (
-                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => setView(AppView.CITY_DETAIL)} userLocation={userLocation} onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
+                  <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => navigateTo(AppView.CITY_DETAIL)} userLocation={userLocation} onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
                 )}
                 {/* Dai Thinking Overlay - Only for full loading, not search */}
                 {isLoading && (
@@ -528,20 +581,20 @@ export default function App() {
                 {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
                 {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
-                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
+                {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigateTo(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigateTo(AppView.ADMIN)} onLangChange={handleLangChange} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
                 {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
-                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
+                {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => navigateTo(AppView.PROFILE)} />}
             </div>
 
             {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && (
               <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
                 <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm rounded-[2.5rem] pointer-events-auto shadow-2xl">
-                    <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => setView(AppView.LEADERBOARD)} />
-                    <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => setView(AppView.TOOLS)} />
-                    <button onClick={() => setView(AppView.HOME)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>
-                    <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => setView(AppView.PROFILE)} />
-                    <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => setView(AppView.SHOP)} />
+                    <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
+                    <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => navigateTo(AppView.TOOLS)} />
+                    <button onClick={() => navigateTo(AppView.HOME)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>
+                    <NavButton icon="fa-id-card" label={t('navVisa')} isActive={view === AppView.PROFILE} onClick={() => navigateTo(AppView.PROFILE)} />
+                    <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={view === AppView.SHOP} onClick={() => navigateTo(AppView.SHOP)} />
                 </nav>
               </div>
             )}

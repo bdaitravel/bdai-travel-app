@@ -3,14 +3,24 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Stop } from '../types';
 
 const L = (window as any).L;
-const STOP_ICONS: Record<string, string> = { 
-    historical: 'fa-fingerprint', 
-    food: 'fa-utensils', 
-    art: 'fa-palette', 
-    nature: 'fa-leaf', 
-    photo: 'fa-camera', 
-    culture: 'fa-landmark', 
-    architecture: 'fa-archway' 
+const STOP_CONFIG: Record<string, { icon: string, color: string }> = { 
+    historical: { icon: 'fa-landmark', color: '#FF3B30' }, 
+    history: { icon: 'fa-landmark', color: '#FF3B30' },
+    monument: { icon: 'fa-monument', color: '#FF3B30' },
+    food: { icon: 'fa-utensils', color: '#FF9500' }, 
+    gastronomy: { icon: 'fa-utensils', color: '#FF9500' },
+    restaurant: { icon: 'fa-utensils', color: '#FF9500' },
+    art: { icon: 'fa-palette', color: '#FF2D55' },
+    museum: { icon: 'fa-building-columns', color: '#FF2D55' },
+    nature: { icon: 'fa-leaf', color: '#34C759' }, 
+    parks: { icon: 'fa-leaf', color: '#34C759' },
+    garden: { icon: 'fa-leaf', color: '#34C759' },
+    photo: { icon: 'fa-camera', color: '#007AFF' }, 
+    culture: { icon: 'fa-masks-theater', color: '#AF52DE' },
+    theater: { icon: 'fa-masks-theater', color: '#AF52DE' },
+    architecture: { icon: 'fa-archway', color: '#5856D6' },
+    religious: { icon: 'fa-church', color: '#5856D6' },
+    church: { icon: 'fa-church', color: '#5856D6' }
 };
 
 const TEXTS: any = {
@@ -27,7 +37,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const activeLineRef = useRef<any>(null);
   const geofenceCirclesRef = useRef<any[]>([]);
   
-  const [autoFollow, setAutoFollow] = useState(true);
+  const [isAutoFollowing, setIsAutoFollowing] = useState(true);
   const tl = TEXTS[language] || TEXTS.es;
   
   // Validar paradas antes de usarlas
@@ -43,8 +53,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         tap: false,
         dragging: true,
         touchZoom: true,
-        scrollWheelZoom: true,
-        doubleClickZoom: true,
         maxZoom: 19
     }).setView([0, 0], 15);
     
@@ -52,8 +60,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         maxZoom: 19
     }).addTo(map);
     
-    map.on('dragstart', () => setAutoFollow(false));
-    map.on('zoomstart', () => setAutoFollow(false));
+    map.on('dragstart', () => setIsAutoFollowing(false));
     mapInstanceRef.current = map;
     
     return () => { 
@@ -103,13 +110,13 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
                 lineCap: 'round'
             }).addTo(map);
 
-            if (autoFollow) {
+            if (isAutoFollowing) {
                 const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]]);
                 map.fitBounds(bounds, { padding: [100, 100], maxZoom: 17, animate: true });
             }
         }
     }
-  }, [userLocation, currentStop, autoFollow]);
+  }, [userLocation, currentStop, isAutoFollowing]);
 
   // Renderizar paradas y ruta
   useEffect(() => {
@@ -135,11 +142,13 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
 
         validStops.forEach((stop: any, idx: number) => {
             const isActive = idx === currentStopIndex;
+            const stopType = (stop.type || 'architecture').toLowerCase();
+            const config = STOP_CONFIG[stopType] || STOP_CONFIG['architecture'] || { icon: 'fa-location-dot', color: '#9333ea' };
             
             const circle = L.circle([stop.latitude, stop.longitude], {
                 radius: 50,
-                color: isActive ? '#9333ea' : '#334155',
-                fillColor: isActive ? '#a855f7' : '#1e293b',
+                color: isActive ? config.color : '#334155',
+                fillColor: isActive ? config.color : '#1e293b',
                 fillOpacity: isActive ? 0.2 : 0.05,
                 weight: 1,
                 dashArray: '5, 5'
@@ -151,10 +160,10 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
                     className: '', 
                     html: `
                         <div class="relative transition-all duration-300 ${isActive ? 'scale-125 z-50' : 'opacity-80'}">
-                            <div class="w-10 h-10 rounded-2xl border-2 border-slate-800 shadow-2xl flex items-center justify-center text-[12px] font-black ${isActive ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-500'}">
-                                <i class="fas ${STOP_ICONS[stop.type?.toLowerCase()] || 'fa-location-dot'}"></i>
+                            <div class="w-10 h-10 rounded-2xl border-2 border-slate-800 shadow-2xl flex items-center justify-center text-[12px] font-black" style="background-color: ${isActive ? config.color : '#0f172a'}; color: ${isActive ? 'white' : config.color}">
+                                <i class="fas ${config.icon}"></i>
                             </div>
-                            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 ${isActive ? 'bg-purple-600' : 'bg-slate-900'} rotate-45 -z-10"></div>
+                            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 -z-10" style="background-color: ${isActive ? config.color : '#0f172a'}"></div>
                         </div>
                     `, 
                     iconSize: [40, 40], 
@@ -164,7 +173,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
 
             marker.on('click', () => {
                 onStopSelect?.(idx);
-                setAutoFollow(true);
+                setIsAutoFollowing(true);
             });
             
             markersRef.current.push(marker);
@@ -179,36 +188,9 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-950">
         <div ref={mapContainerRef} className="w-full h-full" />
-        
-        {/* Zoom Controls */}
-        <div className="absolute left-4 bottom-28 z-[450] flex flex-col gap-2">
-            <button 
-                onClick={() => mapInstanceRef.current?.zoomIn()} 
-                className="w-12 h-12 rounded-xl bg-slate-900/80 backdrop-blur-md text-white border border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-all"
-            >
-                <i className="fas fa-plus"></i>
-            </button>
-            <button 
-                onClick={() => mapInstanceRef.current?.zoomOut()} 
-                className="w-12 h-12 rounded-xl bg-slate-900/80 backdrop-blur-md text-white border border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-all"
-            >
-                <i className="fas fa-minus"></i>
-            </button>
-        </div>
-
         <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-3">
-            <button 
-                onClick={() => setAutoFollow(true)} 
-                className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${autoFollow ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}
-            >
-                <i className={`fas ${autoFollow ? 'fa-location-crosshairs' : 'fa-location-arrow'} text-lg`}></i>
-            </button>
-            <button 
-                onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setAutoFollow(false); }} 
-                className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"
-            >
-                <i className="fas fa-bullseye text-lg"></i>
-            </button>
+            <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
+            <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"><i className="fas fa-bullseye text-lg"></i></button>
         </div>
     </div>
   );

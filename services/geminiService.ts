@@ -68,9 +68,8 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
             2. Provide the country name in ${userLanguage}.
             3. Provide the ISO 3166-1 alpha-2 country code.
             4. Create a unique slug in English: "cityname_countryname" (lowercase, no accents, underscores for spaces).
-            5. Provide the approximate latitude and longitude of the city center.
             
-            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryCode": "XX", "slug": "city_country", "lat": 0.0, "lng": 0.0 }]`,
+            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryCode": "XX", "slug": "city_country" }]`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -81,11 +80,9 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
                             city: { type: Type.STRING },
                             country: { type: Type.STRING },
                             countryCode: { type: Type.STRING },
-                            slug: { type: Type.STRING },
-                            lat: { type: Type.NUMBER },
-                            lng: { type: Type.NUMBER }
+                            slug: { type: Type.STRING }
                         },
-                        required: ["city", "country", "countryCode", "slug", "lat", "lng"]
+                        required: ["city", "country", "countryCode", "slug"]
                     }
                 }
             }
@@ -94,42 +91,62 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     });
 };
 
-export const generateToursForCity = async (city: string, country: string, user: UserProfile, coords?: { lat: number, lng: number }): Promise<Tour[]> => {
+export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        // Refined prompt to ensure it returns valid JSON and uses coordinates if available
-        const refinedResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `As DAI, a highly intelligent and passionate AI travel guide, generate 3 to 4 distinct thematic tours for ${city}, ${country} in ${user.language}.
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
+            
+            DAI'S ABSOLUTE COMMANDS:
+            - You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
+            - Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
+            - Tell the secrets, the mysteries, and the dark curiosities.
+            - Mock the "typical" tourist while revealing the true soul of the city.
+            - NEVER use citations like [1] or (2). NEVER.
+            - All facts MUST be 100% real. DO NOT INVENT.
             
             STRICT RULES:
-            1. Use Google Maps to verify EVERY location.
-            2. Format: Return ONLY a valid JSON array of tours.
-            3. Each tour: { "id", "city", "title", "description", "duration", "distance", "stops": [] }
-            4. Each stop: { "id", "name", "description" (310-400 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward", "secretLocation" } }
-            5. NO REPEATED STOPS. MINIMUM 10 stops per tour.
+            1. Format: Return ONLY a valid JSON array.
+            2. Each tour: { "id", "city": "${city}", "title", "description", "duration", "distance", "stops": [] }
+            3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
+            4. ALLOWED TYPES (STRICT - Choose the most specific):
+               - 'historical': Monuments, palaces, ruins, castles.
+               - 'food': Restaurants, markets, bars, cafes.
+               - 'art': Museums, galleries, street art, exhibitions.
+               - 'nature': Parks, gardens, viewpoints, rivers.
+               - 'photo': Specific spots for the perfect shot.
+               - 'culture': Theaters, music venues, local traditions, festivals.
+               - 'architecture': Iconic buildings, churches, cathedrals, bridges, squares.
+            5. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
             6. Content in ${user.language}.`,
             config: {
-                tools: [{ googleMaps: {} }],
-                toolConfig: coords ? {
-                    retrievalConfig: {
-                        latLng: {
-                            latitude: coords.lat,
-                            longitude: coords.lng
-                        }
-                    }
-                } : undefined
-            }
+                systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
+                You HATE boring Wikipedia-style descriptions. 
+                Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
+                You love sharing the dark secrets, mysteries, and curiosities of cities. 
+                You NEVER use citations, footnotes, or references like (1) or [2]. 
+                You are real, accurate, but never boring.
+                ALWAYS assign the most accurate ALLOWED TYPE to each stop. For example, a Cathedral is 'architecture', not 'culture'.`,
+            },
         });
 
-        const text = refinedResponse.text || "[]";
-        // Extract JSON if there's markdown wrapping
+        let text = response.text || "[]";
+        
+        // Aggressive post-processing to remove any citations, footnotes or source markers
+        // This handles [1], (1), [source], 【1†source】, etc.
+        text = text.replace(/\[\d+\]/g, '')
+                   .replace(/\(\d+\)/g, '')
+                   .replace(/【\d+†source】/g, '')
+                   .replace(/\[source\]/g, '')
+                   .replace(/\s+/g, ' ')
+                   .trim();
+
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         const tours = JSON.parse(jsonMatch ? jsonMatch[0] : text);
         
-        // Ensure tours have the correct city name for normalization
-        return tours.map((t: any) => ({ ...t, city: city }));
+        return tours;
     });
 };
 
@@ -150,7 +167,7 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
     });
 };
 
-export const generateSpeech = async (text: string, language: string, city: string): Promise<string> => {
+export const generateAudio = async (text: string, language: string, city: string): Promise<string> => {
     const cleanText = (text || "").trim();
     if (!cleanText) return "";
 

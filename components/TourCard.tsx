@@ -2,8 +2,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
-import { generateSpeech } from '../services/geminiService';
-import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey } from '../services/supabaseClient';
+import { generateAudio } from '../services/geminiService';
+import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges } from '../services/supabaseClient';
 import { VisaShare } from './VisaShare';
 
 const TEXTS: any = {
@@ -118,9 +118,26 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [claimedStops, setClaimedStops] = useState<Set<string>>(new Set());
     const rewardClaimed = claimedStops.has(currentStop.id);
 
-    const handleCheckIn = () => {
+    const handleCheckIn = async () => {
         if (IS_IN_RANGE) {
             setClaimedStops(prev => new Set(prev).add(currentStop.id));
+            
+            // Update user points based on stop type
+            const updatedUser = { ...user };
+            const type = currentStop.type?.toLowerCase();
+            
+            if (type === 'historical') updatedUser.historyPoints = (updatedUser.historyPoints || 0) + 1;
+            else if (type === 'food') updatedUser.foodPoints = (updatedUser.foodPoints || 0) + 1;
+            else if (type === 'art') updatedUser.artPoints = (updatedUser.artPoints || 0) + 1;
+            else if (type === 'nature') updatedUser.naturePoints = (updatedUser.naturePoints || 0) + 1;
+            else if (type === 'photo') updatedUser.photoPoints = (updatedUser.photoPoints || 0) + 1;
+            else if (type === 'culture') updatedUser.culturePoints = (updatedUser.culturePoints || 0) + 1;
+            else if (type === 'architecture') updatedUser.archPoints = (updatedUser.archPoints || 0) + 1;
+            
+            // Re-check badges
+            updatedUser.badges = checkBadges(updatedUser);
+            
+            onUpdateUser(updatedUser);
         } else {
             alert(`${tl.tooFar}: ${distToTarget}m`);
         }
@@ -174,6 +191,10 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         setIsAudioLoading(false);
     };
 
+    useEffect(() => {
+        return () => stopAudio();
+    }, []);
+
     const handleFinishTour = async () => {
         const newStamp: VisaStamp = {
             city: tour.city,
@@ -219,7 +240,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         stopAudio();
         setIsAudioLoading(true);
         try {
-            const base64 = await generateSpeech(text, user.language, tour.city);
+            const base64 = await generateAudio(text, user.language, tour.city);
             if (!base64) {
                 setIsAudioLoading(false);
                 return;

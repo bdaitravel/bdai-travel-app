@@ -87,8 +87,13 @@ export interface HubIntel {
 export const APP_BADGES: Badge[] = [
   { id: 'debutante', name: 'PIONEER', icon: 'fa-flag-checkered', description: 'badge_pioneer_desc', category: 'milestone', requiredPoints: 0 },
   { id: 'onfire', name: 'STREAK', icon: 'fa-fire', description: 'badge_streak_desc', category: 'streak', requiredPoints: 0 },
-  { id: 'historiador', name: 'CHRONOS', icon: 'fa-landmark', description: 'badge_chronos_desc', category: 'culture', requiredPoints: 0 },
-  { id: 'foodie', name: 'SAVOR', icon: 'fa-utensils', description: 'badge_savor_desc', category: 'food', requiredPoints: 0 },
+  { id: 'historiador', name: 'CHRONOS', icon: 'fa-landmark', description: 'badge_chronos_desc', category: 'history', requiredPoints: 10 },
+  { id: 'foodie', name: 'SAVOR', icon: 'fa-utensils', description: 'badge_savor_desc', category: 'food', requiredPoints: 10 },
+  { id: 'culture_master', name: 'CULTURE GURU', icon: 'fa-masks-theater', description: 'badge_culture_desc', category: 'culture', requiredPoints: 10 },
+  { id: 'nature_master', name: 'EXPLORER', icon: 'fa-leaf', description: 'badge_nature_desc', category: 'nature', requiredPoints: 10 },
+  { id: 'art_master', name: 'CONNOISSEUR', icon: 'fa-palette', description: 'badge_art_desc', category: 'art', requiredPoints: 10 },
+  { id: 'arch_master', name: 'CRITIC', icon: 'fa-archway', description: 'badge_arch_desc', category: 'architecture', requiredPoints: 10 },
+  { id: 'photo_master', name: 'VISIONARY', icon: 'fa-camera', description: 'badge_photo_desc', category: 'photo', requiredPoints: 10 },
   { id: 'rank_zero', name: 'ZERO', icon: 'fa-circle-dot', description: 'badge_zero_desc', category: 'rank', requiredPoints: 0 },
   { id: 'rank_scout', name: 'SCOUT', icon: 'fa-compass', description: 'badge_scout_desc', category: 'rank', requiredPoints: 0 },
   { id: 'rank_rover', name: 'ROVER', icon: 'fa-person-walking', description: 'badge_rover_desc', category: 'rank', requiredPoints: 0 },
@@ -148,8 +153,7 @@ export enum AppView {
   SHOP = 'SHOP',
   LEADERBOARD = 'LEADERBOARD',
   TOOLS = 'TOOLS',
-  ADMIN = 'ADMIN',
-  PARTNER_DASHBOARD = 'PARTNER_DASHBOARD'
+  ADMIN = 'ADMIN'
 }
 
 export const LANGUAGES = [

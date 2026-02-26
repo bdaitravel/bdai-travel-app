@@ -34,7 +34,10 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Fill your digital passport with unique visas for each completed tour and share your adventures.",
     onboardingGotIt: "GOT IT! LET'S START EXPLORING",
     badge_pioneer_desc: "Complete your first stop", badge_streak_desc: "3-day activity streak",
-    badge_chronos_desc: "Visit 5 cultural landmarks", badge_savor_desc: "Visit 5 food spots",
+    badge_chronos_desc: "Visit 10 historical landmarks", badge_savor_desc: "Visit 10 food spots",
+    badge_culture_desc: "Visit 10 cultural experiences", badge_nature_desc: "Visit 10 nature spots",
+    badge_art_desc: "Visit 10 art galleries", badge_arch_desc: "Visit 10 architectural gems",
+    badge_photo_desc: "Visit 10 photo spots",
     badge_zero_desc: "Initial level reached", badge_scout_desc: "Junior explorer status",
     badge_rover_desc: "Frequent traveler status", badge_titan_desc: "Master of the terrain",
     badge_zenith_desc: "Legend of bdai"
@@ -59,7 +62,10 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Rellena tu pasaporte digital con visas únicas por cada tour completado y comparte tus aventuras.",
     onboardingGotIt: "¡ENTENDIDO! VAMOS A EXPLORAR",
     badge_pioneer_desc: "Completa tu primera parada", badge_streak_desc: "Racha de 3 días activo",
-    badge_chronos_desc: "Visita 5 puntos culturales", badge_savor_desc: "Visita 5 puntos gastronómicos",
+    badge_chronos_desc: "Visita 10 puntos históricos", badge_savor_desc: "Visita 10 puntos gastronómicos",
+    badge_culture_desc: "Visita 10 experiencias culturales", badge_nature_desc: "Visita 10 puntos de naturaleza",
+    badge_art_desc: "Visita 10 galerías de arte", badge_arch_desc: "Visita 10 joyas arquitectónicas",
+    badge_photo_desc: "Visita 10 puntos fotográficos",
     badge_zero_desc: "Nivel inicial alcanzado", badge_scout_desc: "Estatus de explorador junior",
     badge_rover_desc: "Estatus de viajero frecuente", badge_titan_desc: "Maestro del terreno",
     badge_zenith_desc: "Leyenda de bdai"
