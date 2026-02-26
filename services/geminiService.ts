@@ -66,10 +66,11 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
             For each match:
             1. Provide the official city name.
             2. Provide the country name in ${userLanguage}.
-            3. Provide the ISO 3166-1 alpha-2 country code.
-            4. Create a unique slug in English: "cityname_countryname" (lowercase, no accents, underscores for spaces).
+            3. Provide the country name in English.
+            4. Provide the ISO 3166-1 alpha-2 country code.
+            5. Create a unique slug in English: "cityname_countryname" (lowercase, no accents, underscores for spaces).
             
-            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryCode": "XX", "slug": "city_country" }]`,
+            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryEn": "Country in English", "countryCode": "XX", "slug": "city_country" }]`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -79,10 +80,11 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
                         properties: {
                             city: { type: Type.STRING },
                             country: { type: Type.STRING },
+                            countryEn: { type: Type.STRING },
                             countryCode: { type: Type.STRING },
                             slug: { type: Type.STRING }
                         },
-                        required: ["city", "country", "countryCode", "slug"]
+                        required: ["city", "country", "countryEn", "countryCode", "slug"]
                     }
                 }
             }

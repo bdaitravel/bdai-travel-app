@@ -67,10 +67,13 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
+      // Clear overlays when navigating back
+      setVisaToShare(null);
+      setIsLoading(false);
+      
       if (event.state && event.state.view) {
         setView(event.state.view);
       } else {
-        // If we go back beyond the first state, default to HOME if logged in
         setView(prev => {
           if (prev === AppView.LOGIN) return AppView.LOGIN;
           return AppView.HOME;
@@ -106,6 +109,8 @@ export default function App() {
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [selectedCountryEn, setSelectedCountryEn] = useState<string | null>(null);
+  const [selectedCitySlug, setSelectedCitySlug] = useState<string | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [activeTour, setActiveTour] = useState<Tour | null>(null);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
@@ -269,15 +274,21 @@ export default function App() {
     setIsLoading(true); 
     setSearchOptions(null); 
     setSearchVal(''); 
-    const cleanName = selection.name.split(',')[0].trim();
+    const cleanName = selection.name?.split(',')[0].trim() || selection.city;
     setSelectedCity(cleanName); 
     setSelectedCountry(selection.country);
-    const slug = selection.slug || normalizeKey(cleanName, selection.country);
+    setSelectedCountryEn(selection.countryEn || selection.country);
+    
+    // Standardize slug: use provided slug or generate from city and English country
+    const slug = (selection.slug || normalizeKey(cleanName, selection.countryEn || selection.country))
+      .replace(/-/g, '_')
+      .toLowerCase();
+    
+    setSelectedCitySlug(slug);
 
     try {
         if (forceRefresh) {
             setLoadingMessage("PURGING OLD DATA...");
-            // Force delete from Supabase to ensure no stale data remains
             await supabase.from('tours_cache').delete().eq('city', slug).eq('language', langCode.toLowerCase());
         } else {
             setTours([]);
@@ -297,7 +308,7 @@ export default function App() {
         }
         
         setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
-        const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
+        const generated = await generateToursForCity(cleanName, selection.countryEn || selection.country, { ...user, language: langCode } as UserProfile);
         if (generated.length > 0) {
             setTours(generated); 
             await supabase.from('tours_cache').upsert({
@@ -306,14 +317,12 @@ export default function App() {
               data: generated
             }, { onConflict: 'city,language' });
             
-            // Only transition view if we are not already in a more specific view
             if (view === AppView.HOME || forceRefresh) {
                 navigateTo(AppView.CITY_DETAIL);
             }
         } else { alert("Location protocol failed."); }
     } catch (e) { 
-        if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
-        else { console.error("Selection error:", e); }
+        console.error("Selection error:", e);
     } finally { setIsLoading(false); }
   };
 
@@ -330,15 +339,17 @@ export default function App() {
             
             // 2. Check cache for each result
             const results = await Promise.all(aiResults.map(async (res) => {
-                const slug = res.slug.replace(/-/g, '_');
+                const slug = res.slug.replace(/-/g, '_').toLowerCase();
                 const isCached = await checkIfCityCached(res.city, slug);
                 return {
                     name: res.city,
+                    city: res.city,
                     country: res.country,
+                    countryEn: res.countryEn,
                     countryCode: res.countryCode,
                     slug: slug,
                     isCached: isCached,
-                    fullName: res.city // Use just city name for primary display
+                    fullName: res.city
                 };
             }));
 
@@ -546,7 +557,12 @@ export default function App() {
                         <button onClick={() => navigateTo(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
                         <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
                         <button 
-                          onClick={() => processCitySelection({ name: selectedCity, country: selectedCountry || undefined, slug: normalizeKey(selectedCity, selectedCountry || undefined) }, user.language, true)} 
+                          onClick={() => processCitySelection({ 
+                            city: selectedCity, 
+                            country: selectedCountry, 
+                            countryEn: selectedCountryEn,
+                            slug: selectedCitySlug 
+                          }, user.language, true)} 
                           className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center active:rotate-180 transition-transform"
                           title="Regenerate Tours"
                         >
