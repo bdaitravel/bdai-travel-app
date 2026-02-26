@@ -23,6 +23,17 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
         }
         throw error;
     }
+    export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
+    return handleAiCall(async () => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: [{ parts: [{ text: `Generate a beautiful postcard image of ${city} highlighting ${interests.join(", ")}.` }] }],
+        });
+        const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
+    });
+
 };
 
 export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
