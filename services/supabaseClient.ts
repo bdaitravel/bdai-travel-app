@@ -1,27 +1,48 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
-const supabaseUrl = "https://slldavgsoxunkphqeamx.supabase.co";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
+const rawUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+
+const supabaseUrl = (rawUrl && typeof rawUrl === 'string' && rawUrl.startsWith('http')) 
+  ? rawUrl.trim() 
+  : "https://slldavgsoxunkphqeamx.supabase.co";
+
+const supabaseAnonKey = (rawKey && typeof rawKey === 'string' && rawKey.length > 20)
+  ? rawKey.trim()
+  : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
 let supabase: any;
 try {
-  if (!supabaseUrl || !supabaseUrl.startsWith('http')) {
-    throw new Error("Invalid supabaseUrl: Must start with http/https");
-  }
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 } catch (e) {
   console.error("Critical Supabase Init Error:", e);
+  const createMockQuery = () => {
+    const query: any = {
+      select: () => query,
+      eq: () => query,
+      ilike: () => query,
+      order: () => query,
+      limit: () => query,
+      maybeSingle: async () => ({ data: null, error: null }),
+      single: async () => ({ data: null, error: null }),
+      // Support for async/await directly on the query
+      then: (onfulfilled: any) => Promise.resolve({ data: [], error: null }).then(onfulfilled)
+    };
+    return query;
+  };
+
   supabase = {
     auth: { 
       getSession: async () => ({ data: { session: null } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signInWithOtp: async () => ({ error: new Error("Supabase not initialized") }),
+      verifyOtp: async () => ({ error: new Error("Supabase not initialized") }),
+      signInWithOAuth: async () => ({ error: new Error("Supabase not initialized") }),
+      signOut: async () => ({ error: null })
     },
     from: () => ({ 
-        select: () => ({ 
-          eq: () => ({ maybeSingle: async () => ({ data: null }), limit: async () => ({ data: [] }) }), 
-          ilike: () => ({ eq: () => ({ limit: async () => ({ data: [] }) }), limit: async () => ({ data: [] }) }) 
-        }), 
+        select: createMockQuery,
         upsert: async () => ({ error: "Supabase not initialized" }),
         delete: () => ({ eq: () => ({ eq: async () => ({}) }) })
     }),

@@ -151,8 +151,17 @@ export default function App() {
     if (!navigator.geolocation) return;
     const watchId = navigator.geolocation.watchPosition(
         (pos) => { setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
-        (err) => console.error("GPS Error:", err),
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        (err) => {
+          // Log more descriptive errors but avoid spamming console with empty objects
+          const errorTypes = { 1: 'PERMISSION_DENIED', 2: 'POSITION_UNAVAILABLE', 3: 'TIMEOUT' };
+          const type = errorTypes[err.code as keyof typeof errorTypes] || 'UNKNOWN_ERROR';
+          if (err.code === 3) {
+            console.warn(`GPS Warning: ${type} - The request to get user location timed out.`);
+          } else {
+            console.debug(`GPS Info: ${type} - ${err.message}`);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
@@ -246,8 +255,7 @@ export default function App() {
         }
         
         setLoadingMessage(t('generating'));
-        const coords = selection.lat && selection.lng ? { lat: selection.lat, lng: selection.lng } : undefined;
-        const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile, coords);
+        const generated = await generateToursForCity(cleanName, selection.country, { ...user, language: langCode } as UserProfile);
         if (generated.length > 0) {
             setTours(generated); 
             await supabase.from('tours_cache').upsert({
@@ -256,10 +264,7 @@ export default function App() {
               data: generated
             }, { onConflict: 'city,language' });
             setView(AppView.CITY_DETAIL);
-        } else { 
-            console.warn("Generation returned no results for:", cleanName);
-            alert("DAI: No he podido trazar una ruta segura para este destino. Prueba con otra ciudad."); 
-        }
+        } else { alert("Location protocol failed."); }
     } catch (e) { 
         if (e instanceof QuotaError) { alert("API PROTOCOL ERROR: LIMIT_REACHED"); } 
         else { console.error("Selection error:", e); }
@@ -287,8 +292,6 @@ export default function App() {
                     countryCode: res.countryCode,
                     slug: slug,
                     isCached: isCached,
-                    lat: res.lat,
-                    lng: res.lng,
                     fullName: res.city // Use just city name for primary display
                 };
             }));
@@ -488,7 +491,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string, country?: string) => processCitySelection({ name, country }, user.language)} />
+                      <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} />
                   </div>
                 )}
                 {view === AppView.CITY_DETAIL && (
@@ -527,7 +530,7 @@ export default function App() {
                 {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
                 {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => setView(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); setView(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => setView(AppView.ADMIN)} onLangChange={handleLangChange} />}
                 {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
-                {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string, country?: string) => processCitySelection({ name, country }, user.language)} /></div>}
+                {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
                 {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => setView(AppView.PROFILE)} />}
             </div>
 

@@ -20,7 +20,7 @@ interface TranslationTask {
     baseTours: Tour[];
 }
 
-export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void, onOpenPartnerDashboard: () => void }> = ({ user, onBack, onOpenPartnerDashboard }) => {
+export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = ({ user, onBack }) => {
     const [stats, setStats] = useState({ totalCities: 0, totalEntries: 0, pendingTasks: 0 });
     const [cityList, setCityList] = useState<CityProgress[]>([]);
     const [isWorking, setIsWorking] = useState(false);
