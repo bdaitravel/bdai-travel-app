@@ -13,7 +13,10 @@ try {
 } catch (e) {
   console.error("Critical Supabase Init Error:", e);
   supabase = {
-    auth: { getSession: async () => ({ data: { session: null } }) },
+    auth: { 
+      getSession: async () => ({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
+    },
     from: () => ({ 
         select: () => ({ 
           eq: () => ({ maybeSingle: async () => ({ data: null }), limit: async () => ({ data: [] }) }), 
