@@ -245,8 +245,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         stopAudio();
         setIsAudioLoading(true);
         try {
-            const base64 = await generateAudio(text, user.language, tour.city);
-            if (!base64) {
+            const audioData = await generateAudio(text, user.language, tour.city);
+            if (!audioData) {
                 setIsAudioLoading(false);
                 return;
             }
@@ -254,13 +254,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
             const ctx = audioContextRef.current;
             
-            const binaryString = atob(base64);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-            
             // Try decoding as standard audio first (MP3/WAV)
             try {
-                const audioBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+                const audioBuffer = await ctx.decodeAudioData(audioData.buffer.slice(0) as ArrayBuffer);
                 const source = ctx.createBufferSource();
                 source.buffer = audioBuffer;
                 source.connect(ctx.destination);
@@ -270,7 +266,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 setAudioPlayingId(stopId);
             } catch (decodeError) {
                 // Fallback to raw PCM if decodeAudioData fails (Gemini TTS returns raw PCM)
-                const dataInt16 = new Int16Array(bytes.buffer);
+                const dataInt16 = new Int16Array(audioData.buffer);
                 const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
                 const channelData = buffer.getChannelData(0);
                 for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;

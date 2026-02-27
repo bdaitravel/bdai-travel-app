@@ -53,20 +53,48 @@ try {
 export { supabase };
 
 const generateHash = async (text: string): Promise<string> => {
-    const msgUint8 = new TextEncoder().encode(text);
+    // Normalize text to be more resilient to minor AI variations
+    const normalized = text.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/[.,!?;:]/g, '')
+        .trim();
+    const msgUint8 = new TextEncoder().encode(normalized);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
-const base64ToBlob = (base64: string, mimeType: string): Blob => {
+const addWavHeader = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
+    const header = new ArrayBuffer(44);
+    const view = new DataView(header);
+    view.setUint32(0, 0x52494646, false); // RIFF
+    view.setUint32(4, 36 + pcmData.length, true); // File size
+    view.setUint32(8, 0x57415645, false); // WAVE
+    view.setUint32(12, 0x666d7420, false); // fmt 
+    view.setUint16(16, 16, true); // Subchunk1Size
+    view.setUint16(20, 1, true); // AudioFormat (PCM)
+    view.setUint16(22, 1, true); // NumChannels (Mono)
+    view.setUint32(24, sampleRate, true); // SampleRate
+    view.setUint32(28, sampleRate * 2, true); // ByteRate
+    view.setUint16(32, 2, true); // BlockAlign
+    view.setUint16(34, 16, true); // BitsPerSample
+    view.setUint32(36, 0x64617461, false); // data
+    view.setUint32(40, pcmData.length, true); // Subchunk2Size
+    
+    const wav = new Uint8Array(44 + pcmData.length);
+    wav.set(new Uint8Array(header), 0);
+    wav.set(pcmData, 44);
+    return wav;
+};
+
+const base64ToUint8Array = (base64: string): Uint8Array => {
     const binaryString = atob(base64);
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
     for (let i = 0; i < len; i++) {
         bytes[i] = binaryString.charCodeAt(i);
     }
-    return new Blob([bytes], { type: mimeType });
+    return bytes;
 };
 
 /**
@@ -339,13 +367,17 @@ export const getCachedAudio = async (text: string, lang: string): Promise<string
     } catch (e) { return null; }
 };
 
-export const saveAudioToCache = async (text: string, lang: string, base64: string, city: string): Promise<string> => {
+export const saveAudioToCache = async (text: string, lang: string, audioData: Uint8Array, city: string): Promise<string> => {
     try {
         const hash = await generateHash(text);
         const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.mp3`;
-        const audioBlob = base64ToBlob(base64, 'audio/mp3');
-        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/mp3', cacheControl: '3600' });
+        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.wav`;
+        
+        // Add WAV header to raw PCM data from Gemini
+        const wavData = addWavHeader(audioData);
+        const audioBlob = new Blob([wavData.buffer as ArrayBuffer], { type: 'audio/wav' });
+        
+        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/wav', cacheControl: '3600' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
         await supabase.from('audio_cache').upsert({ 
@@ -355,7 +387,10 @@ export const saveAudioToCache = async (text: string, lang: string, base64: strin
           audio_url: publicUrl 
         }, { onConflict: 'text_hash,language' });
         return publicUrl;
-    } catch (e) { return ""; }
+    } catch (e) { 
+        console.error("Audio cache error:", e);
+        return ""; 
+    }
 };
 
 export const validateEmailFormat = (email: string) => { 

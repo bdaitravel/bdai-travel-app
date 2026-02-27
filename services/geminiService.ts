@@ -170,25 +170,16 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
     });
 };
 
-export const generateAudio = async (text: string, language: string, city: string): Promise<string> => {
+export const generateAudio = async (text: string, language: string, city: string): Promise<Uint8Array | null> => {
     const cleanText = (text || "").trim();
-    if (!cleanText) return "";
+    if (!cleanText) return null;
 
     const cachedUrl = await getCachedAudio(cleanText, language);
     if (cachedUrl) {
         try {
             const response = await fetch(cachedUrl);
             const buffer = await response.arrayBuffer();
-            
-            // Fast browser-native base64 conversion
-            return await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64data = reader.result as string;
-                    resolve(base64data.split(',')[1]);
-                };
-                reader.readAsDataURL(new Blob([buffer]));
-            });
+            return new Uint8Array(buffer);
         } catch (e) {
             console.error("Error loading cached audio:", e);
         }
@@ -198,7 +189,6 @@ export const generateAudio = async (text: string, language: string, city: string
     const base64 = await handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        // Move personality instructions into the prompt for better stability with the TTS model
         const prompt = language === 'es' 
             ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
             : `Act as Dai, an elegant and sarcastic guide. Say this in a natural and engaging tone: ${cleanText}`;
@@ -217,10 +207,15 @@ export const generateAudio = async (text: string, language: string, city: string
     });
 
     if (base64) {
-        saveAudioToCache(cleanText, language, base64, city).catch(err => console.error("Cache save failed", err));
+        const binaryString = atob(base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+        
+        saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
+        return bytes;
     }
 
-    return base64;
+    return null;
 };
 
 export const translateToursBatch = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
