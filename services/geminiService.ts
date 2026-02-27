@@ -109,28 +109,29 @@ export const generateToursForCity = async (city: string, country: string, user: 
             - NEVER use citations like [1] or (2). NEVER.
             - All facts MUST be 100% real. DO NOT INVENT.
             
+            STRICT CATEGORIZATION RULES (CRITICAL):
+            - 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
+            - 'historical': MUST be used for palaces, castles, ruins, and monuments.
+            - 'culture': ONLY for theaters, music venues, festivals, or intangible traditions.
+            - 'food': ONLY for places where you eat or buy food.
+            - 'art': ONLY for museums, galleries, or street art.
+            - 'nature': ONLY for parks, gardens, or viewpoints.
+            - 'photo': ONLY for spots whose primary value is the view/photo.
+            
             STRICT RULES:
             1. Format: Return ONLY a valid JSON array.
             2. Each tour: { "id", "city": "${city}", "title", "description", "duration", "distance", "stops": [] }
             3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-            4. ALLOWED TYPES (STRICT - Choose the most specific):
-               - 'historical': Monuments, palaces, ruins, castles.
-               - 'food': Restaurants, markets, bars, cafes.
-               - 'art': Museums, galleries, street art, exhibitions.
-               - 'nature': Parks, gardens, viewpoints, rivers.
-               - 'photo': Specific spots for the perfect shot.
-               - 'culture': Theaters, music venues, local traditions, festivals.
-               - 'architecture': Iconic buildings, churches, cathedrals, bridges, squares.
-            5. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
-            6. Content in ${user.language}.`,
+            4. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
+            5. Content in ${user.language}.`,
             config: {
                 systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
                 You HATE boring Wikipedia-style descriptions. 
                 Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
                 You love sharing the dark secrets, mysteries, and curiosities of cities. 
-                You NEVER use citations, footnotes, or references like (1) or [2]. 
+                You NEVER use citations, footnotes, or references. 
                 You are real, accurate, but never boring.
-                ALWAYS assign the most accurate ALLOWED TYPE to each stop. For example, a Cathedral is 'architecture', not 'culture'.`,
+                CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`,
             },
         });
 
@@ -179,13 +180,15 @@ export const generateAudio = async (text: string, language: string, city: string
             const response = await fetch(cachedUrl);
             const buffer = await response.arrayBuffer();
             
-            // Use a safer way to convert ArrayBuffer to base64 to avoid stack overflow
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.length; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return btoa(binary);
+            // Fast browser-native base64 conversion
+            return await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64data = reader.result as string;
+                    resolve(base64data.split(',')[1]);
+                };
+                reader.readAsDataURL(new Blob([buffer]));
+            });
         } catch (e) {
             console.error("Error loading cached audio:", e);
         }

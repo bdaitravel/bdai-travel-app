@@ -67,9 +67,10 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      // Clear overlays when navigating back
+      // Clear overlays and stop audio when navigating back
       setVisaToShare(null);
       setIsLoading(false);
+      window.dispatchEvent(new CustomEvent('bdai-stop-audio'));
       
       if (event.state && event.state.view) {
         setView(event.state.view);

@@ -82,20 +82,26 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[\s-]+/g, '_')
         .replace(/[^a-z0-9_]/g, '');
 
-    const safeCity = clean(city || "").split(',')[0];
+    const safeCity = clean(city || "").split('_')[0]; // Handle cases where city might already be a slug
     if (!safeCity) return "";
     
+    // If country is provided, use it. If not, and city looks like a slug, it might already contain the country.
     const safeCountry = country && country !== "Cache" ? clean(country) : "";
-    return safeCountry ? `${safeCity}_${safeCountry}` : safeCity;
+    
+    if (safeCountry) {
+        // Avoid double country if city already has it
+        if (safeCity.endsWith(`_${safeCountry}`)) return safeCity;
+        return `${safeCity}_${safeCountry}`;
+    }
+    return safeCity;
 };
 
 /**
  * Checks if a city exists in cache using the new slug format.
  */
 export const checkIfCityCached = async (city: string, countryOrSlug: string): Promise<boolean> => {
-  // If countryOrSlug already looks like a slug (contains a hyphen and is lowercase), use it.
-  // Otherwise, normalize it.
-  const slug = countryOrSlug.includes('-') && countryOrSlug === countryOrSlug.toLowerCase() 
+  // If countryOrSlug already looks like a slug (contains underscore and is lowercase), use it.
+  const slug = (countryOrSlug.includes('_') && countryOrSlug === countryOrSlug.toLowerCase())
     ? countryOrSlug 
     : normalizeKey(city, countryOrSlug);
     

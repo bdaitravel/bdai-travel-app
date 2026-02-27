@@ -192,7 +192,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     useEffect(() => {
-        return () => stopAudio();
+        const handleGlobalStop = () => stopAudio();
+        window.addEventListener('bdai-stop-audio', handleGlobalStop);
+        return () => {
+            stopAudio();
+            window.removeEventListener('bdai-stop-audio', handleGlobalStop);
+        };
     }, []);
 
     const handleFinishTour = async () => {
