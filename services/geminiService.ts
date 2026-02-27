@@ -1,8 +1,7 @@
 
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
-import { getCachedAudio, saveAudioToCache, generateHash } from './supabaseClient';
-import { getLocalAudio, saveLocalAudio } from './localCache';
+import { getCachedAudio, saveAudioToCache } from './supabaseClient';
 
 export class QuotaError extends Error {
     constructor(message: string) {
@@ -175,45 +174,29 @@ export const generateAudio = async (text: string, language: string, city: string
     const cleanText = (text || "").trim();
     if (!cleanText) return null;
 
-    const hash = await generateHash(cleanText);
-    
-    // 1. Check Local Cache (IndexedDB) - Instant
-    const localData = await getLocalAudio(hash);
-    if (localData) {
-        console.log("🔊 Local Cache Hit");
-        return localData;
-    }
-
-    // 2. Check Supabase Cache - Fast
     const cachedUrl = await getCachedAudio(cleanText, language);
     if (cachedUrl) {
         try {
-            console.log("🔊 Supabase Cache Hit");
             const response = await fetch(cachedUrl);
             const buffer = await response.arrayBuffer();
-            const data = new Uint8Array(buffer);
-            saveLocalAudio(hash, data); // Save to local for next time
-            return data;
+            return new Uint8Array(buffer);
         } catch (e) {
             console.error("Error loading cached audio:", e);
         }
     }
 
-    // 3. Generate with AI - Slowest
-    console.log("🔊 Generating New Audio with AI...");
     const voiceName = VOICE_MAP[language] || 'Kore';
     const base64 = await handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        // Personality instructions in systemInstruction, not in the prompt
-        // to avoid the TTS reading the instructions.
+        const prompt = language === 'es' 
+            ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
+            : `Act as Dai, an elegant and sarcastic guide. Say this in a natural and engaging tone: ${cleanText}`;
+
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: cleanText }] }],
+            contents: [{ parts: [{ text: prompt }] }],
             config: {
-                systemInstruction: language === 'es' 
-                    ? "Eres Dai, una guía elegante y sarcástica. Lee el texto con un tono natural, sofisticado y divertido."
-                    : "You are Dai, an elegant and sarcastic guide. Read the text with a natural, sophisticated, and witty tone.",
                 responseModalities: [Modality.AUDIO],
                 speechConfig: {
                     voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
@@ -228,10 +211,7 @@ export const generateAudio = async (text: string, language: string, city: string
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
         
-        // Save to both caches
-        saveAudioToCache(cleanText, language, bytes, city).catch(() => {});
-        saveLocalAudio(hash, bytes).catch(() => {});
-        
+        saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
         return bytes;
     }
 

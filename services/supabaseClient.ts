@@ -52,13 +52,11 @@ try {
 
 export { supabase };
 
-export const generateHash = async (text: string): Promise<string> => {
-    // Extremely aggressive normalization to catch minor AI variations
+const generateHash = async (text: string): Promise<string> => {
+    // Normalize text to be more resilient to minor AI variations
     const normalized = text.toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") // Remove accents
-        .replace(/\s+/g, ' ')            // Collapse whitespace
-        .replace(/[^a-z0-9 ]/g, '')      // Remove ALL punctuation and special chars
+        .replace(/\s+/g, ' ')
+        .replace(/[.,!?;:]/g, '')
         .trim();
     const msgUint8 = new TextEncoder().encode(normalized);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
@@ -352,14 +350,11 @@ export const saveToursToCache = async (city: string, country: string, language: 
   const slug = normalizeKey(city, country);
   if (!slug) return;
   try {
-    // Explicitly delete then insert to avoid upsert issues with unique constraints
-    await supabase.from('tours_cache').delete().eq('city', slug).eq('language', language.toLowerCase());
-    const { error } = await supabase.from('tours_cache').insert({ 
+    await supabase.from('tours_cache').upsert({ 
       city: slug, 
       language: language.toLowerCase(), 
       data: tours 
-    });
-    if (error) throw error;
+    }, { onConflict: 'city,language' });
   } catch (e) { console.error("❌ Error saving cache:", e); }
 };
 
