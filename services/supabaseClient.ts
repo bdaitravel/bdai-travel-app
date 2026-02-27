@@ -52,7 +52,7 @@ try {
 
 export { supabase };
 
-const generateHash = async (text: string): Promise<string> => {
+export const generateHash = async (text: string): Promise<string> => {
     // Extremely aggressive normalization to catch minor AI variations
     const normalized = text.toLowerCase()
         .normalize("NFD")
