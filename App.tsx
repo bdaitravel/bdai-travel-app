@@ -553,7 +553,7 @@ export default function App() {
                                               </div>
                                               <div className="truncate">
                                                   <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
-                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : opt.country}</span>
+                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.country}</span>
                                               </div>
                                           </div>
                                           <i className="fas fa-chevron-right text-[9px] text-purple-500/40"></i>
