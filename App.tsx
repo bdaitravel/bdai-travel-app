@@ -127,7 +127,18 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (error) {
+                // Handle the "Refresh Token Not Found" error specifically to prevent app stuck state
+                if (error.message?.includes('Refresh Token Not Found') || error.message?.includes('refresh_token_not_found')) {
+                    console.warn("Stale session detected, clearing auth state...");
+                    await supabase.auth.signOut().catch(() => {});
+                    localStorage.removeItem('bdai_profile');
+                }
+                console.error("Session verification error:", error.message);
+            }
+
             if (session?.user) {
                 handleLoginSuccess(session.user);
             } else {
@@ -137,7 +148,11 @@ export default function App() {
                  setUser(prev => ({ ...prev, language: parsed.language || 'es' }));
                }
             }
-        } catch (e) { console.error("Auth init error", e); } finally { setIsVerifyingSession(false); }
+        } catch (e) { 
+            console.error("Auth init error", e); 
+        } finally { 
+            setIsVerifyingSession(false); 
+        }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {

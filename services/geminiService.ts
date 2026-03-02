@@ -20,7 +20,7 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
                 await new Promise(resolve => setTimeout(resolve, delay));
                 return handleAiCall(fn, retries - 1, delay * 2);
             }
-            throw new QuotaError("Límite excedido. Por favor, usa tu clave API.");
+            throw new QuotaError("Has alcanzado el límite de la versión gratuita. Para continuar, vincula tu propia clave API de Google Cloud (es gratis) en tu perfil.");
         }
         throw error;
     }
@@ -61,7 +61,7 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-flash-latest",
+            model: "gemini-3-flash-preview",
             contents: `Identify all major cities or towns globally that match the name: "${input}". 
             For each match:
             1. Provide the official city name.
