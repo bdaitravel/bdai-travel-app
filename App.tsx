@@ -13,15 +13,6 @@ import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
 import { translations } from './data/translations';
 
-declare global {
-  interface Window {
-    aistudio: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
-  }
-}
-
 import { 
   supabase, 
   getUserProfileByEmail, 
