@@ -177,12 +177,3 @@ export const AVATARS = [
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Sophia",
   "https://api.dicebear.com/7.x/avataaars/svg?seed=Liam"
 ];
-
-declare global {
-  interface Window {
-    aistudio: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
-  }
-}

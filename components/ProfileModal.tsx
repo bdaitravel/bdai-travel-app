@@ -287,16 +287,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                     </div>
                 </div>
 
-                <div className="pt-4 space-y-3">
-                    <button 
-                        onClick={async () => {
-                            await window.aistudio.openSelectKey();
-                        }}
-                        className="w-full py-5 bg-cyan-600 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"
-                    >
-                        <i className="fas fa-key text-white"></i>
-                        Configurar API Key (Gratis)
-                    </button>
+                <div className="pt-4">
                     <button 
                         onClick={() => setShowBragModal(true)}
                         className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"

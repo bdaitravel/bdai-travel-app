@@ -13,6 +13,15 @@ import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
 import { translations } from './data/translations';
 
+declare global {
+  interface Window {
+    aistudio: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}
+
 import { 
   supabase, 
   getUserProfileByEmail, 
@@ -313,20 +322,8 @@ export default function App() {
                 navigateTo(AppView.CITY_DETAIL);
             }
         } else { alert("Location protocol failed."); }
-    } catch (e: any) { 
+    } catch (e) { 
         console.error("Selection error:", e);
-        if (e.name === "QuotaError" || e.message?.includes("versión gratuita")) {
-            const hasKey = await window.aistudio.hasSelectedApiKey();
-            if (!hasKey) {
-                if (confirm("Has alcanzado el límite de la versión gratuita. ¿Quieres añadir tu propia clave API de Google Cloud (gratis) para seguir explorando el mundo?")) {
-                    await window.aistudio.openSelectKey();
-                }
-            } else {
-                alert(e.message);
-            }
-        } else {
-            alert("Error al conectar con DAI. Inténtalo de nuevo.");
-        }
     } finally { setIsLoading(false); }
   };
 
@@ -358,15 +355,8 @@ export default function App() {
             }));
 
             setSearchOptions(results);
-        } catch (e: any) { 
+        } catch (e) { 
             console.error("Search protocol error:", e); 
-            if (e.name === "QuotaError" || e.message?.includes("versión gratuita")) {
-                const hasKey = await window.aistudio.hasSelectedApiKey();
-                if (!hasKey) {
-                    // Don't show confirm on every keystroke, maybe just log or show a small hint
-                    console.warn("Quota limit reached during search.");
-                }
-            }
         } finally {
             setIsSearching(false);
         }
@@ -548,7 +538,7 @@ export default function App() {
                                               </div>
                                               <div className="truncate">
                                                   <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
-                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.country}</span>
+                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : opt.country}</span>
                                               </div>
                                           </div>
                                           <i className="fas fa-chevron-right text-[9px] text-purple-500/40"></i>

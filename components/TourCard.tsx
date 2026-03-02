@@ -279,20 +279,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 source.start(0);
                 setAudioPlayingId(stopId);
             }
-        } catch (e: any) { 
-            console.error("Audio playback error:", e);
-            if (e.name === "QuotaError" || e.message?.includes("Límite excedido") || e.message?.includes("versión gratuita")) {
-                const hasKey = await window.aistudio.hasSelectedApiKey();
-                if (!hasKey) {
-                    if (confirm("Has alcanzado el límite de la versión gratuita. ¿Quieres añadir tu propia clave API de Google Cloud (gratis) para continuar sin interrupciones?")) {
-                        await window.aistudio.openSelectKey();
-                    }
-                } else {
-                    alert(e.message || "Has alcanzado el límite de cuota. Por favor, revisa tu configuración de API.");
-                }
-            } else {
-                alert("Error al reproducir audio. Inténtalo de nuevo.");
-            }
+        } catch (e) { 
+            console.error("Audio playback error:", e); 
         } finally {
             setIsAudioLoading(false);
         }
