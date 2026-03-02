@@ -172,6 +172,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
     const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
     const [isAudioLoading, setIsAudioLoading] = useState(false);
+    const [prefetchedAudios, setPrefetchedAudios] = useState<Record<string, Uint8Array>>({});
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
 
@@ -240,9 +241,43 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         }
     };
 
+    // Prefetch audio for current and next stop
+    useEffect(() => {
+        const timeouts: NodeJS.Timeout[] = [];
+        const prefetch = async () => {
+            const stopsToPrefetch = [currentStop];
+            if (currentStopIndex < tour.stops.length - 1) {
+                stopsToPrefetch.push(tour.stops[currentStopIndex + 1]);
+            }
+
+            stopsToPrefetch.forEach((stop, index) => {
+                if (!prefetchedAudios[stop.id]) {
+                    // Stagger prefetch requests to avoid hitting rate limits (429)
+                    const timer = setTimeout(() => {
+                        generateAudio(stop.description, user.language, tour.city).then(data => {
+                            if (data) {
+                                setPrefetchedAudios(prev => ({ ...prev, [stop.id]: data }));
+                            }
+                        }).catch(() => {});
+                    }, index * 6000 + 1000); // Increased stagger and added initial offset
+                    timeouts.push(timer);
+                }
+            });
+        };
+        prefetch();
+        return () => timeouts.forEach(t => clearTimeout(t));
+    }, [currentStopIndex, tour.stops, tour.city, user.language]);
+
     const handlePlayAudio = async (stopId: string, text: string) => {
         if (audioPlayingId === stopId) { stopAudio(); return; }
         stopAudio();
+        
+        // Use prefetched audio if available
+        if (prefetchedAudios[stopId]) {
+            playBinaryAudio(stopId, prefetchedAudios[stopId]);
+            return;
+        }
+
         setIsAudioLoading(true);
         try {
             const audioData = await generateAudio(text, user.language, tour.city);
@@ -250,22 +285,37 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 setIsAudioLoading(false);
                 return;
             }
-            
-            if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const ctx = audioContextRef.current;
-            
-            // Try decoding as standard audio first (MP3/WAV)
+            playBinaryAudio(stopId, audioData);
+        } catch (e) { 
+            console.error("Audio playback error:", e); 
+        } finally {
+            setIsAudioLoading(false);
+        }
+    };
+
+    const playBinaryAudio = async (stopId: string, audioData: Uint8Array) => {
+        if (!audioData || audioData.length === 0) {
+            console.error("No audio data to play");
+            return;
+        }
+
+        if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const ctx = audioContextRef.current;
+        
+        try {
+            // Since generateAudio now always returns a WAV (with header), decodeAudioData should work
+            const audioBuffer = await ctx.decodeAudioData(audioData.buffer.slice(0) as ArrayBuffer);
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(ctx.destination);
+            source.onended = () => setAudioPlayingId(null);
+            sourceNodeRef.current = source;
+            source.start(0);
+            setAudioPlayingId(stopId);
+        } catch (decodeError) {
+            console.error("Error decoding audio data:", decodeError);
+            // Fallback: if it's still raw PCM (unlikely now), try the Int16 fallback
             try {
-                const audioBuffer = await ctx.decodeAudioData(audioData.buffer.slice(0) as ArrayBuffer);
-                const source = ctx.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(ctx.destination);
-                source.onended = () => setAudioPlayingId(null);
-                sourceNodeRef.current = source;
-                source.start(0);
-                setAudioPlayingId(stopId);
-            } catch (decodeError) {
-                // Fallback to raw PCM if decodeAudioData fails (Gemini TTS returns raw PCM)
                 const dataInt16 = new Int16Array(audioData.buffer);
                 const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
                 const channelData = buffer.getChannelData(0);
@@ -278,11 +328,10 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 sourceNodeRef.current = source;
                 source.start(0);
                 setAudioPlayingId(stopId);
+            } catch (fallbackError) {
+                console.error("Audio fallback failed:", fallbackError);
+                setAudioPlayingId(null);
             }
-        } catch (e) { 
-            console.error("Audio playback error:", e); 
-        } finally {
-            setIsAudioLoading(false);
         }
     };
 

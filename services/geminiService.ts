@@ -1,7 +1,8 @@
 
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
-import { getCachedAudio, saveAudioToCache } from './supabaseClient';
+import { getCachedAudio, saveAudioToCache, generateHash, addWavHeader, standardizeText } from './supabaseClient';
+import { getLocalAudio, saveLocalAudio } from './localCache';
 
 export class QuotaError extends Error {
     constructor(message: string) {
@@ -10,17 +11,34 @@ export class QuotaError extends Error {
     }
 }
 
-const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
+const handleAiCall = async <T>(fn: () => Promise<T>, retries = 5, delay = 1000): Promise<T> => {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey || apiKey === "") {
+        console.error("❌ Gemini API Key is missing. Please set API_KEY in your environment.");
+        throw new Error("Gemini API Key is missing. Please configure it in the settings.");
+    }
     try {
         return await fn();
     } catch (error: any) {
-        const errorMsg = typeof error === 'string' ? error : JSON.stringify(error);
-        if (errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED") || errorMsg.includes("quota")) {
-            if (retries > 0) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return handleAiCall(fn, retries - 1, delay * 2);
-            }
-            throw new QuotaError("Límite excedido. Por favor, usa tu clave API.");
+        const errorMsg = typeof error === 'string' ? error : (error.message || JSON.stringify(error));
+        
+        // Retry on 429 (Quota), 500 (Internal), 503 (Service Unavailable), 504 (Gateway Timeout)
+        const isRetryable = errorMsg.includes("429") || 
+                           errorMsg.includes("RESOURCE_EXHAUSTED") || 
+                           errorMsg.includes("500") || 
+                           errorMsg.includes("503") || 
+                           errorMsg.includes("504") ||
+                           errorMsg.includes("INTERNAL") ||
+                           errorMsg.includes("UNAVAILABLE");
+
+        if (isRetryable && retries > 0) {
+            console.warn(`⚠️ DAI is busy (Retrying in ${delay}ms...):`, errorMsg);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return handleAiCall(fn, retries - 1, delay * 1.5);
+        }
+        
+        if (errorMsg.includes("429")) {
+            throw new QuotaError("DAI está procesando muchas peticiones. Por favor, espera un momento.");
         }
         throw error;
     }
@@ -143,7 +161,6 @@ export const generateToursForCity = async (city: string, country: string, user: 
                    .replace(/\(\d+\)/g, '')
                    .replace(/【\d+†source】/g, '')
                    .replace(/\[source\]/g, '')
-                   .replace(/\s+/g, ' ')
                    .trim();
 
         const jsonMatch = text.match(/\[[\s\S]*\]/);
@@ -170,52 +187,93 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
     });
 };
 
+const pendingAudioRequests: Record<string, Promise<Uint8Array | null>> = {};
+let audioQueuePromise: Promise<any> = Promise.resolve();
+
 export const generateAudio = async (text: string, language: string, city: string): Promise<Uint8Array | null> => {
-    const cleanText = (text || "").trim();
+    if (!text) return null;
+    const cleanText = standardizeText(text);
     if (!cleanText) return null;
 
-    const cachedUrl = await getCachedAudio(cleanText, language);
-    if (cachedUrl) {
+    const hash = await generateHash(cleanText);
+    
+    // 0. Check if there's already a pending request for this hash
+    if (pendingAudioRequests[hash] !== undefined) {
+        return pendingAudioRequests[hash];
+    }
+
+    const requestPromise = (async () => {
         try {
-            const response = await fetch(cachedUrl);
-            const buffer = await response.arrayBuffer();
-            return new Uint8Array(buffer);
-        } catch (e) {
-            console.error("Error loading cached audio:", e);
+            // 1. Check Local Cache (IndexedDB)
+            const localData = await getLocalAudio(hash);
+            if (localData) return localData;
+
+            // 2. Check Supabase Cache
+            const cachedUrl = await getCachedAudio(cleanText, language);
+            if (cachedUrl) {
+                try {
+                    const response = await fetch(cachedUrl);
+                    if (response.ok) {
+                        const buffer = await response.arrayBuffer();
+                        const data = new Uint8Array(buffer);
+                        saveLocalAudio(hash, data);
+                        return data;
+                    }
+                } catch (e) {
+                    console.error("Error loading cached audio:", e);
+                }
+            }
+
+            // 3. Generate with AI - ENQUEUE THIS
+            const voiceName = VOICE_MAP[language] || 'Kore';
+            
+            // Wait for previous audio generations to finish to avoid 429
+            const result = await (audioQueuePromise = audioQueuePromise.then(async () => {
+                // Add a small delay between queue items
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                return handleAiCall(async () => {
+                    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                    
+                    const response = await ai.models.generateContent({
+                        model: "gemini-2.5-flash-preview-tts",
+                        contents: [{ parts: [{ text: cleanText }] }],
+                        config: {
+                            responseModalities: [Modality.AUDIO],
+                            speechConfig: {
+                                voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
+                            },
+                        },
+                    });
+                    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
+                }, 5, 4000); // More retries and longer initial delay
+            }));
+
+            const base64 = result as string;
+            if (base64) {
+                const binaryString = atob(base64);
+                const pcmBytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) pcmBytes[i] = binaryString.charCodeAt(i);
+                
+                // Wrap in WAV header for consistency
+                const wavBytes = addWavHeader(pcmBytes);
+                
+                // Save to both caches
+                saveAudioToCache(cleanText, language, pcmBytes, city).catch(() => {});
+                saveLocalAudio(hash, wavBytes).catch(() => {});
+                
+                return wavBytes;
+            }
+
+            return null;
+        } finally {
+            // Clean up pending request
+            delete pendingAudioRequests[hash];
         }
-    }
+    })();
 
-    const voiceName = VOICE_MAP[language] || 'Kore';
-    const base64 = await handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        const prompt = language === 'es' 
-            ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
-            : `Act as Dai, an elegant and sarcastic guide. Say this in a natural and engaging tone: ${cleanText}`;
-
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: prompt }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: {
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
-                },
-            },
-        });
-        return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    });
-
-    if (base64) {
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-        
-        saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
-        return bytes;
-    }
-
-    return null;
+    pendingAudioRequests[hash] = requestPromise;
+    return requestPromise;
 };
 
 export const translateToursBatch = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
