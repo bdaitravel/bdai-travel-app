@@ -13,15 +13,6 @@ import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
 import { translations } from './data/translations';
 
-declare global {
-  interface Window {
-    aistudio: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
-  }
-}
-
 import { 
   supabase, 
   getUserProfileByEmail, 
@@ -127,18 +118,7 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
         try {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (error) {
-                // Handle the "Refresh Token Not Found" error specifically to prevent app stuck state
-                if (error.message?.includes('Refresh Token Not Found') || error.message?.includes('refresh_token_not_found')) {
-                    console.warn("Stale session detected, clearing auth state...");
-                    await supabase.auth.signOut().catch(() => {});
-                    localStorage.removeItem('bdai_profile');
-                }
-                console.error("Session verification error:", error.message);
-            }
-
+            const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
                 handleLoginSuccess(session.user);
             } else {
@@ -148,11 +128,7 @@ export default function App() {
                  setUser(prev => ({ ...prev, language: parsed.language || 'es' }));
                }
             }
-        } catch (e) { 
-            console.error("Auth init error", e); 
-        } finally { 
-            setIsVerifyingSession(false); 
-        }
+        } catch (e) { console.error("Auth init error", e); } finally { setIsVerifyingSession(false); }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
@@ -337,8 +313,20 @@ export default function App() {
                 navigateTo(AppView.CITY_DETAIL);
             }
         } else { alert("Location protocol failed."); }
-    } catch (e) { 
+    } catch (e: any) { 
         console.error("Selection error:", e);
+        if (e.name === "QuotaError" || e.message?.includes("versión gratuita")) {
+            const hasKey = await window.aistudio.hasSelectedApiKey();
+            if (!hasKey) {
+                if (confirm("Has alcanzado el límite de la versión gratuita. ¿Quieres añadir tu propia clave API de Google Cloud (gratis) para seguir explorando el mundo?")) {
+                    await window.aistudio.openSelectKey();
+                }
+            } else {
+                alert(e.message);
+            }
+        } else {
+            alert("Error al conectar con DAI. Inténtalo de nuevo.");
+        }
     } finally { setIsLoading(false); }
   };
 
@@ -370,8 +358,15 @@ export default function App() {
             }));
 
             setSearchOptions(results);
-        } catch (e) { 
+        } catch (e: any) { 
             console.error("Search protocol error:", e); 
+            if (e.name === "QuotaError" || e.message?.includes("versión gratuita")) {
+                const hasKey = await window.aistudio.hasSelectedApiKey();
+                if (!hasKey) {
+                    // Don't show confirm on every keystroke, maybe just log or show a small hint
+                    console.warn("Quota limit reached during search.");
+                }
+            }
         } finally {
             setIsSearching(false);
         }
