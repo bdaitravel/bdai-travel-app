@@ -12,8 +12,6 @@ const supabaseAnonKey = (rawKey && typeof rawKey === 'string' && rawKey.length >
   ? rawKey.trim()
   : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
-console.log("Initializing Supabase with URL:", supabaseUrl);
-
 let supabase: any;
 try {
   supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -54,28 +52,19 @@ try {
 
 export { supabase };
 
-export const standardizeText = (text: string): string => {
-    // Definitive Standardization Protocol:
-    // 1. Remove AI citations/footnotes
-    // 2. Normalize Unicode (NFC)
-    // 3. Trim and collapse multiple spaces
-    return text
-        .replace(/\[\d+\]/g, '')
-        .replace(/【\d+†source】/g, '')
-        .normalize('NFC')
-        .trim()
-        .replace(/\s+/g, ' ');
-};
-
-export const generateHash = async (text: string): Promise<string> => {
-    const standardized = standardizeText(text);
-    const msgUint8 = new TextEncoder().encode(standardized);
+const generateHash = async (text: string): Promise<string> => {
+    // Normalize text to be more resilient to minor AI variations
+    const normalized = text.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/[.,!?;:]/g, '')
+        .trim();
+    const msgUint8 = new TextEncoder().encode(normalized);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
-export const addWavHeader = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
+const addWavHeader = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
     const header = new ArrayBuffer(44);
     const view = new DataView(header);
     view.setUint32(0, 0x52494646, false); // RIFF
@@ -121,13 +110,15 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[\s-]+/g, '_')
         .replace(/[^a-z0-9_]/g, '');
 
-    const safeCity = clean(city || ""); 
+    const safeCity = clean(city || "").split('_')[0]; // Handle cases where city might already be a slug
     if (!safeCity) return "";
     
+    // If country is provided, use it. If not, and city looks like a slug, it might already contain the country.
     const safeCountry = country && country !== "Cache" ? clean(country) : "";
     
     if (safeCountry) {
-        if (safeCity.includes(safeCountry)) return safeCity;
+        // Avoid double country if city already has it
+        if (safeCity.endsWith(`_${safeCountry}`)) return safeCity;
         return `${safeCity}_${safeCountry}`;
     }
     return safeCity;
@@ -137,6 +128,7 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
  * Checks if a city exists in cache using the new slug format.
  */
 export const checkIfCityCached = async (city: string, countryOrSlug: string): Promise<boolean> => {
+  // If countryOrSlug already looks like a slug (contains underscore and is lowercase), use it.
   const slug = (countryOrSlug.includes('_') && countryOrSlug === countryOrSlug.toLowerCase())
     ? countryOrSlug 
     : normalizeKey(city, countryOrSlug);
@@ -172,9 +164,9 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
                 // Extract city and country from slug for display
-                const parts = curr.city.split('_');
+                const parts = curr.city.split('-');
                 const cityName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-                const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "bdai";
+                const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
                 
                 acc.push({
                     name: cityName,
@@ -194,11 +186,7 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   try {
     const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
-    if (error) {
-      console.error("Supabase Error (getUserProfileByEmail):", error);
-      return null;
-    }
-    if (!data) return null;
+    if (error || !data) return null;
     return {
       id: data.id, email: data.email, username: data.username || email.split('@')[0],
       firstName: data.first_name || '', lastName: data.last_name || '',
@@ -362,69 +350,45 @@ export const saveToursToCache = async (city: string, country: string, language: 
   const slug = normalizeKey(city, country);
   if (!slug) return;
   try {
-    // Explicitly delete then insert to avoid upsert issues with unique constraints
-    await supabase.from('tours_cache').delete().eq('city', slug).eq('language', language.toLowerCase());
-    const { error } = await supabase.from('tours_cache').insert({ 
+    await supabase.from('tours_cache').upsert({ 
       city: slug, 
       language: language.toLowerCase(), 
       data: tours 
-    });
-    if (error) throw error;
+    }, { onConflict: 'city,language' });
   } catch (e) { console.error("❌ Error saving cache:", e); }
 };
 
 export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
     try {
         const hash = await generateHash(text);
-        const { data, error } = await supabase
-            .from('audio_cache')
-            .select('audio_url')
-            .eq('text_hash', hash)
-            .eq('language', lang.toLowerCase())
-            .maybeSingle();
-
-        if (error) return null;
+        const { data, error } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).maybeSingle();
+        if (error) throw error;
         return data?.audio_url || null;
-    } catch (e) { 
-        return null; 
-    }
+    } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (text: string, lang: string, audioData: Uint8Array, city: string): Promise<string> => {
     try {
         const hash = await generateHash(text);
-        const langCode = lang.toLowerCase();
-        // Definitive path: lang/hash.wav
-        const fileName = `${langCode}/${hash}.wav`;
+        const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.wav`;
         
         // Add WAV header to raw PCM data from Gemini
         const wavData = addWavHeader(audioData);
         const audioBlob = new Blob([wavData.buffer as ArrayBuffer], { type: 'audio/wav' });
         
-        const { error: uploadError } = await supabase.storage
-            .from('audios')
-            .upload(fileName, audioBlob, { 
-                contentType: 'audio/wav', 
-                cacheControl: '31536000', // 1 year cache
-                upsert: true 
-            });
-
+        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/wav', cacheControl: '3600' });
         if (uploadError) throw uploadError;
-        
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
-        
-        const { error: dbError } = await supabase.from('audio_cache').upsert({ 
+        await supabase.from('audio_cache').upsert({ 
           text_hash: hash, 
-          language: langCode, 
-          city: city.toLowerCase(), 
+          language: lang.toLowerCase(), 
+          city: city, 
           audio_url: publicUrl 
         }, { onConflict: 'text_hash,language' });
-
-        if (dbError) throw dbError;
-        
         return publicUrl;
     } catch (e) { 
-        console.error("❌ Definitive Audio Cache Error:", e);
+        console.error("Audio cache error:", e);
         return ""; 
     }
 };
@@ -435,17 +399,11 @@ export const validateEmailFormat = (email: string) => {
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
   try {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('id, username, miles, avatar, country, badges, rank')
       .order('miles', { ascending: false })
       .limit(50);
-    
-    if (error) {
-      console.error("Supabase Error (getGlobalRanking):", error);
-      return [];
-    }
-    
     return (data || []).map((d: any, i: number) => ({ 
       ...d, 
       rank: i + 1, 
