@@ -26,30 +26,13 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
     }
 };
 
-declare const __GEMINI_API_KEY__: string | undefined;
-
-// Safely get the API key from Vite env or process.env (replaced by Vite define)
-const getApiKey = () => {
-    try {
-        if (typeof __GEMINI_API_KEY__ !== 'undefined' && __GEMINI_API_KEY__) {
-            return __GEMINI_API_KEY__;
-        }
-        if (typeof (import.meta as any).env !== 'undefined' && (import.meta as any).env.VITE_GEMINI_API_KEY) {
-            return (import.meta as any).env.VITE_GEMINI_API_KEY;
-        }
-    } catch (e) {
-        console.warn("Error reading env vars", e);
-    }
-    return "";
-};
-
 /**
  * Translates a user's search query from any language into English for database matching.
  * Also returns the original for profiling.
  */
 export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
@@ -76,18 +59,18 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
  */
 export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<any[]> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-flash-latest",
             contents: `Identify all major cities or towns globally that match the name: "${input}". 
             For each match:
-            1. Provide the official city name in English (e.g., "Milan" not "Milano", "Rome" not "Roma", "Munich" not "München"). This is CRITICAL for database consistency.
-            2. Provide the city name in ${userLanguage} for display.
-            3. Provide the country name in ${userLanguage}.
-            4. Provide the country name in English.
-            5. Provide the ISO 3166-1 alpha-2 country code.
+            1. Provide the official city name.
+            2. Provide the country name in ${userLanguage}.
+            3. Provide the country name in English.
+            4. Provide the ISO 3166-1 alpha-2 country code.
+            5. Create a unique slug in English: "cityname_countryname" (lowercase, no accents, underscores for spaces).
             
-            Return a JSON array of objects: [{ "cityEn": "English City Name", "cityDisplay": "City in ${userLanguage}", "country": "Country in ${userLanguage}", "countryEn": "Country in English", "countryCode": "XX" }]`,
+            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryEn": "Country in English", "countryCode": "XX", "slug": "city_country" }]`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -95,13 +78,13 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            cityEn: { type: Type.STRING },
-                            cityDisplay: { type: Type.STRING },
+                            city: { type: Type.STRING },
                             country: { type: Type.STRING },
                             countryEn: { type: Type.STRING },
-                            countryCode: { type: Type.STRING }
+                            countryCode: { type: Type.STRING },
+                            slug: { type: Type.STRING }
                         },
-                        required: ["cityEn", "cityDisplay", "country", "countryEn", "countryCode"]
+                        required: ["city", "country", "countryEn", "countryCode", "slug"]
                     }
                 }
             }
@@ -119,7 +102,7 @@ export const generateToursForCity = async (city: string, country: string, user: 
 
     const generateSingleTour = async (theme: string, index: number) => {
         return handleAiCall(async () => {
-            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
             
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
@@ -183,7 +166,15 @@ export const generateToursForCity = async (city: string, country: string, user: 
         });
     };
 
-    const tours = await Promise.all(themes.map((theme, i) => generateSingleTour(theme, i)));
+    const tours: Tour[] = [];
+    for (let i = 0; i < themes.length; i++) {
+        try {
+            const tour = await generateSingleTour(themes[i], i);
+            tours.push(tour);
+        } catch (e) {
+            console.error(`Error generating tour ${i}:`, e);
+        }
+    }
     return tours;
 };
 
@@ -193,7 +184,7 @@ const VOICE_MAP: Record<string, string> = {
 
 export const generateDaiWelcome = async (user: UserProfile): Promise<string> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `As DAI, welcome a new user named ${user.firstName || 'Traveler'} in ${user.language}.
@@ -215,7 +206,7 @@ export const generateAudio = async (text: string, language: string, city: string
 
     const voiceName = VOICE_MAP[language] || 'Kore';
     const base64 = await handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         
         const prompt = language === 'es' 
             ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
@@ -248,7 +239,7 @@ export const generateAudio = async (text: string, language: string, city: string
 
 export const translateToursBatch = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
@@ -260,7 +251,7 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
 
 export const moderateContent = async (text: string): Promise<boolean> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Is this text safe? "${text}"`,
@@ -278,7 +269,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
 
 export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }> => {
     try {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: "Say 'OK'",
@@ -294,7 +285,7 @@ export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }
 
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: `Postcard of ${city}` }] },
