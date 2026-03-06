@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, Tour } from '../types';
 // Fixed: Removed testSupabaseConnection as it is not exported from supabaseClient.ts and not used in this component.
 import { supabase, saveToursToCache } from '../services/supabaseClient';
-import { translateToursBatch } from '../services/geminiService';
+import { translateToursBatch, checkApiStatus } from '../services/geminiService';
 
 interface CityProgress {
     name: string;
@@ -24,6 +24,8 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     const [stats, setStats] = useState({ totalCities: 0, totalEntries: 0, pendingTasks: 0 });
     const [cityList, setCityList] = useState<CityProgress[]>([]);
     const [isWorking, setIsWorking] = useState(false);
+    const [apiStatus, setApiStatus] = useState<{ ok: boolean, message: string } | null>(null);
+    const [isCheckingApi, setIsCheckingApi] = useState(false);
     const [log, setLog] = useState<string[]>(['Sistemas listos.']);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const stopRef = useRef(false);
@@ -39,6 +41,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         const { data: allRecords } = await supabase.from('tours_cache').select('city, language');
         if (!allRecords) return;
 
+        handleCheckApi(); // Check API status when opening admin
         const { data: baseRecords } = await supabase.from('tours_cache').select('city').eq('language', 'es');
         if (!baseRecords) return;
 
@@ -76,6 +79,19 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
             totalEntries: allRecords.length,
             pendingTasks: pendingCount
         });
+    };
+
+    const handleCheckApi = async () => {
+        setIsCheckingApi(true);
+        try {
+            const status = await checkApiStatus();
+            setApiStatus(status);
+            addLog(`📡 API Status: ${status.message}`);
+        } catch (e) {
+            setApiStatus({ ok: false, message: "Error" });
+        } finally {
+            setIsCheckingApi(false);
+        }
     };
 
     const repairKeys = async () => {
@@ -201,6 +217,23 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 </div>
             </div>
 
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 mb-8 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className={`w-3 h-3 rounded-full ${apiStatus?.ok ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`}></div>
+                    <div>
+                        <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Gemini API Status</p>
+                        <p className={`text-[10px] font-black uppercase ${apiStatus?.ok ? 'text-green-400' : 'text-red-400'}`}>{apiStatus?.message || 'Checking...'}</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={handleCheckApi} 
+                    disabled={isCheckingApi}
+                    className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"
+                >
+                    <i className={`fas fa-sync-alt ${isCheckingApi ? 'fa-spin' : ''}`}></i>
+                </button>
+            </div>
+
             <div className="mb-8 overflow-x-auto no-scrollbar">
                 <div className="flex gap-3 pb-2">
                     {cityList.map(c => (
@@ -242,6 +275,19 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                     className="w-full py-4 border border-blue-500/30 bg-blue-500/10 text-blue-400 rounded-2xl font-black uppercase text-[8px] tracking-[0.2em] active:scale-95 transition-all"
                 >
                     <i className="fas fa-magic mr-2"></i> Reparar Llaves Huérfanas
+                </button>
+
+                <button 
+                    disabled={isWorking}
+                    onClick={async () => {
+                        if (window.aistudio) {
+                            await window.aistudio.openSelectKey();
+                            addLog("🔑 API Key reset triggered.");
+                        }
+                    }}
+                    className="w-full py-4 border border-purple-500/30 bg-purple-500/10 text-purple-400 rounded-2xl font-black uppercase text-[8px] tracking-[0.2em] active:scale-95 transition-all"
+                >
+                    <i className="fas fa-key mr-2"></i> Reset API Key
                 </button>
 
                 {isWorking && (

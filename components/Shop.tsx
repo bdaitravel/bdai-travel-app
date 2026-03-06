@@ -3,33 +3,30 @@ import { UserProfile } from '../types';
 import React from 'react';
 
 const SHOP_TEXTS: any = {
-    it: { title: "marketplace bdai", subtitle: "Hub Ufficiale TechTravel", official: "Nostri Negozi Ufficiali", mainBtn: "Prossimamente", devMsg: "DAI sta viaggiando per il mondo per portarti i migliori prodotti per viaggiatori. Presto disponibili!", construction: "Marketplace in Costruzione", working: "DAI è al lavoro" },
-    fr: { title: "marketplace bdai", subtitle: "Hub Officiel TechTravel", official: "Nos Boutiques Officielles", mainBtn: "Bientôt disponible", devMsg: "DAI voyage à travers le monde pour vous apporter les meilleurs produits pour voyageurs. Bientôt disponible !" },
-    de: { title: "bdai Marktplatz", subtitle: "Offizieller TechTravel Hub", official: "Unsere Offiziellen Shops", mainBtn: "Demnächst verfügbar", devMsg: "DAI reist um die Welt, um Ihnen die besten Produkte für Reisende zu bringen. Bald verfügbar!", construction: "Marktplatz im Aufbau", working: "DAI arbeitet daran" },
-    es: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Nuestras Tiendas Oficiales", mainBtn: "Próximamente", devMsg: "DAI está viajando por el mundo para traerte los mejores productos para viajeros. ¡Próximamente!", construction: "Marketplace en Construcción", working: "DAI está trabajando" },
-    en: { title: "bdai marketplace", subtitle: "Official TechTravel Hub", official: "Our Official Stores", mainBtn: "Coming soon", devMsg: "DAI is traveling the world to bring you the best traveler essentials. Coming soon!", construction: "Marketplace Under Construction", working: "DAI is working" },
-    pt: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Nossas Lojas Oficiais", mainBtn: "Em breve", devMsg: "DAI está viajando pelo mundo para trazer os melhores produtos para viajantes. Em breve!" },
-    ro: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Magazinele Noastre Oficiale", mainBtn: "În curând", devMsg: "DAI călătorește prin lume pentru a vă aduce cele mai bune produse pentru călători. În curând!", construction: "Marketplace în Construcție", working: "DAI lucrează" },
-    ca: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", official: "Les Nostres Botigues", mainBtn: "Properament", devMsg: "DAI està viatjant pel món per portar-te els millors productes per a viatgers. Properament!" },
-    nl: { title: "bdai marktplaats", subtitle: "Officiële TechTravel Hub", official: "Onze Officiële Winkels", mainBtn: "Binnenkort beschikbaar", devMsg: "DAI reist de wereld rond om u de beste reisbenodigdheden te brengen. Binnenkort beschikbaar!", construction: "Marktplaats in Opbouw", working: "DAI is aan het werk" },
-    zh: { title: "bdai 市场", subtitle: "TechTravel 官方枢纽", official: "我们的官方商店", mainBtn: "即将推出", devMsg: "DAI 正在环游世界，为您带来最好的旅行必备品。即将推出！", construction: "市场建设中", working: "DAI 正在努力" },
-    ja: { title: "bdai マーケットプレイス", subtitle: "公式 TechTravel ハブ", official: "公式ストア", mainBtn: "近日公開", devMsg: "DAIは旅行者に最高の製品を届けるために世界中を旅しています。近日公開！", construction: "マーケットプレイス建设中", working: "DAIが作業中" },
+    es: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", mainBtn: "Próximamente", devMsg: "DAI está viajando por el mundo para traerte los mejores productos para viajeros. ¡Próximamente!", construction: "Marketplace en Construcción", working: "DAI está trabajando" },
+    en: { title: "bdai marketplace", subtitle: "Official TechTravel Hub", mainBtn: "Coming soon", devMsg: "DAI is traveling the world to bring you the best traveler essentials. Coming soon!", construction: "Marketplace Under Construction", working: "DAI is working" },
+    it: { title: "marketplace bdai", subtitle: "Hub Ufficiale TechTravel", mainBtn: "Prossimamente", devMsg: "DAI sta viaggiando per il mondo per portarti i migliori prodotti per viaggiatori. Presto disponibili!", construction: "Marketplace in Costruzione", working: "DAI è al lavoro" },
+    fr: { title: "marketplace bdai", subtitle: "Hub Officiel TechTravel", mainBtn: "Bientôt disponible", devMsg: "DAI voyage à travers le monde pour vous apporter les meilleurs produits pour voyageurs. Bientôt disponible !", construction: "Marketplace en Construction", working: "DAI travaille" },
+    de: { title: "bdai Marktplatz", subtitle: "Offizieller TechTravel Hub", mainBtn: "Demnächst verfügbar", devMsg: "DAI reist um die Welt, um Ihnen die besten Produkte für Reisende zu bringen. Bald verfügbar!", construction: "Marktplatz im Aufbau", working: "DAI arbeitet daran" },
+    pt: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", mainBtn: "Em breve", devMsg: "DAI está viajando pelo mundo para trazer os melhores produtos para viajantes. Em breve!", construction: "Marketplace em Construção", working: "DAI está trabalhando" },
+    ro: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", mainBtn: "În curând", devMsg: "DAI călătorește prin lume pentru a vă aduce cele mai bune produse pentru călători. În curând!", construction: "Marketplace în Construcție", working: "DAI lucrează" },
+    ca: { title: "marketplace bdai", subtitle: "Hub Oficial TechTravel", mainBtn: "Properament", devMsg: "DAI està viatjant pel món per portar-te els millors productes per a viatgers. Properament!", construction: "Marketplace en Construcció", working: "DAI està treballant" },
+    nl: { title: "bdai marktplaats", subtitle: "Officiële TechTravel Hub", mainBtn: "Binnenkort beschikbaar", devMsg: "DAI reist de wereld rond om u de beste reisbenodigdheden te brengen. Binnenkort beschikbaar!", construction: "Marktplaats in Opbouw", working: "DAI is aan het werk" },
+    zh: { title: "bdai 市场", subtitle: "TechTravel 官方枢纽", mainBtn: "即将推出", devMsg: "DAI 正在环游世界，为您带来最好的旅行必备品。即将推出！", construction: "市场建设中", working: "DAI 正在努力" },
+    ja: { title: "bdai マーケットプレイス", subtitle: "公式 TechTravel ハブ", mainBtn: "近日公開", devMsg: "DAIは旅行者に最高の製品を届けるために世界中を旅しています。近日公開！", construction: "マーケットプレイス建设中", working: "DAIが作業中" },
+    ru: { title: "маркетплейс bdai", subtitle: "Официальный хаб TechTravel", mainBtn: "Скоро", devMsg: "DAI путешествует по миру, чтобы привезти вам лучшие товары для путешественников. Скоро!", construction: "Маркетплейс в разработке", working: "DAI работает" },
+    ar: { title: "سوق bdai", subtitle: "المركز الرسمي لـ TechTravel", mainBtn: "قريباً", devMsg: "تسافر DAI حول العالم لتجلب لك أفضل منتجات المسافرين. قريباً!", construction: "السوق قيد الإنشاء", working: "DAI تعمل" },
+    hi: { title: "bdai मार्केटप्लेस", subtitle: "आधिकारिक TechTravel हब", mainBtn: "जल्द आ रहा है", devMsg: "DAI आपको बेहतरीन यात्री उत्पाद लाने के लिए दुनिया भर की यात्रा कर रही है। जल्द आ रहा है!", construction: "मार्केटप्लेस निर्माणाधीन है", working: "DAI काम कर रही है" },
+    ko: { title: "bdai 마켓플레이스", subtitle: "공식 TechTravel 허브", mainBtn: "곧 출시됨", devMsg: "DAI는 여행자를 위한 최고의 제품을 제공하기 위해 전 세계를 여행하고 있습니다. 곧 출시됩니다!", construction: "마켓플레이스 공사 중", working: "DAI 작업 중" },
+    tr: { title: "bdai pazaryeri", subtitle: "Resmi TechTravel Merkezi", mainBtn: "Yakında", devMsg: "DAI, size en iyi seyahat ürünlerini getirmek için dünyayı dolaşıyor. Yakında!", construction: "Pazaryeri Yapım Aşamasında", working: "DAI çalışıyor" },
+    pl: { title: "rynek bdai", subtitle: "Oficjalne centrum TechTravel", mainBtn: "Wkrótce", devMsg: "DAI podróżuje po świecie, aby dostarczyć Ci najlepsze produkty dla podróżników. Wkrótce!", construction: "Rynek w budowie", working: "DAI pracuje" },
+    eu: { title: "bdai merkatua", subtitle: "TechTravel Gune Ofiziala", mainBtn: "Laster", devMsg: "DAI munduan zehar bidaiatzen ari da bidaiarientzako produktu onenak ekartzeko. Laster!", construction: "Merkatua Eraikitzen", working: "DAI lanean ari da" },
+    vi: { title: "chợ bdai", subtitle: "Trung tâm TechTravel chính thức", mainBtn: "Sắp ra mắt", devMsg: "DAI đang đi khắp thế giới để mang đến cho bạn những sản phẩm du lịch tốt nhất. Sắp ra mắt!", construction: "Chợ đang xây dựng", working: "DAI đang làm việc" },
+    th: { title: "ตลาด bdai", subtitle: "ศูนย์กลาง TechTravel อย่างเป็นทางการ", mainBtn: "เร็วๆ นี้", devMsg: "DAI กำลังเดินทางรอบโลกเพื่อนำเสนอผลิตภัณฑ์ที่ดีที่สุดสำหรับนักเดินทาง เร็วๆ นี้!", construction: "ตลาดกำลังก่อสร้าง", working: "DAI กำลังทำงาน" }
 };
-
-const EXTERNAL_STORES = [
-    { id: 'bdai', name: 'bdai.tech', url: 'https://www.bdai.tech/', icon: 'fa-globe', color: 'bg-purple-600' },
-    { id: 'etsy', name: 'Etsy Shop', url: 'https://www.etsy.com/es/shop/BdaiShop', icon: 'fa-etsy', color: 'bg-[#F1641E]' },
-    { id: 'hotmart', name: 'Hotmart', url: '#', icon: 'fa-fire', color: 'bg-[#f04e23]' },
-    { id: 'amazon', name: 'Amazon', url: '#', icon: 'fa-amazon', color: 'bg-[#FF9900]' },
-    { id: 'miravia', name: 'Miravia', url: '#', icon: 'fa-shopping-bag', color: 'bg-[#fe016d]' }
-];
 
 export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) => void }> = ({ user, onPurchase }) => {
     const t = SHOP_TEXTS[user.language] || SHOP_TEXTS.en;
-
-    const openStore = (url: string) => {
-        if (url !== '#') window.open(url, '_blank');
-    };
 
     return (
         <div className="pb-44 animate-fade-in bg-[#020617] min-h-full">

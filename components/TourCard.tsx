@@ -125,6 +125,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             // Update user points based on stop type
             const updatedUser = { ...user };
             const type = currentStop.type?.toLowerCase();
+            const earnedMiles = currentStop.photoSpot?.milesReward || 10;
+            
+            updatedUser.miles = (updatedUser.miles || 0) + earnedMiles;
             
             if (type === 'historical') updatedUser.historyPoints = (updatedUser.historyPoints || 0) + 1;
             else if (type === 'food') updatedUser.foodPoints = (updatedUser.foodPoints || 0) + 1;
@@ -174,18 +177,23 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [isAudioLoading, setIsAudioLoading] = useState(false);
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+    const htmlAudioRef = useRef<HTMLAudioElement | null>(null);
 
     const distToTarget = useMemo(() => {
         if (!userLocation || !currentStop) return null;
         return Math.round(calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
     }, [userLocation, currentStop]);
 
-    const IS_IN_RANGE = distToTarget !== null && distToTarget <= 100;
+    const IS_IN_RANGE = distToTarget !== null && distToTarget <= 50;
 
     const stopAudio = () => {
         if (sourceNodeRef.current) {
             try { sourceNodeRef.current.stop(); } catch(e) {}
             sourceNodeRef.current = null;
+        }
+        if (htmlAudioRef.current) {
+            try { htmlAudioRef.current.pause(); } catch(e) {}
+            htmlAudioRef.current = null;
         }
         setAudioPlayingId(null);
         setIsAudioLoading(false);
@@ -245,7 +253,23 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         stopAudio();
         setIsAudioLoading(true);
         try {
-            const audioData = await generateAudio(text, user.language, tour.city);
+            const audioResult = await generateAudio(text, user.language, tour.city);
+            if (!audioResult) {
+                setIsAudioLoading(false);
+                return;
+            }
+            
+            if (audioResult.url) {
+                const audio = new Audio(audioResult.url);
+                htmlAudioRef.current = audio;
+                audio.onended = () => setAudioPlayingId(null);
+                await audio.play();
+                setAudioPlayingId(stopId);
+                setIsAudioLoading(false);
+                return;
+            }
+
+            const audioData = audioResult.buffer;
             if (!audioData) {
                 setIsAudioLoading(false);
                 return;

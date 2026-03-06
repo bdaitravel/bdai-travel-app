@@ -31,7 +31,6 @@ import {
   checkIfCityCached,
   calculateTravelerRank,
   checkBadges,
-  searchCitiesInCache,
   normalizeKey
 } from './services/supabaseClient';
 
@@ -57,7 +56,9 @@ const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: st
 
 export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
-  
+  const viewRef = useRef(view);
+  useEffect(() => { viewRef.current = view; }, [view]);
+
   const navigateTo = useCallback((newView: AppView, pushState = true) => {
     if (pushState) {
       window.history.pushState({ view: newView }, '', '');
@@ -127,7 +128,13 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) {
+                console.error("Session error:", error.message);
+                if (error.message.includes('Refresh Token Not Found') || error.message.includes('Invalid Refresh Token')) {
+                    await supabase.auth.signOut();
+                }
+            }
             if (session?.user) {
                 handleLoginSuccess(session.user);
             } else {
@@ -171,7 +178,7 @@ export default function App() {
         setShowOnboarding(true);
       }
       // Only redirect to HOME if we are currently on the LOGIN screen
-      if (view === AppView.LOGIN) {
+      if (viewRef.current === AppView.LOGIN) {
         navigateTo(AppView.HOME);
       }
     } else {
@@ -182,7 +189,7 @@ export default function App() {
       setUser(newProfile);
       setShowOnboarding(true);
       // Only redirect to HOME if we are currently on the LOGIN screen
-      if (view === AppView.LOGIN) {
+      if (viewRef.current === AppView.LOGIN) {
         navigateTo(AppView.HOME);
       }
     }
@@ -280,10 +287,8 @@ export default function App() {
     setSelectedCountry(selection.country);
     setSelectedCountryEn(selection.countryEn || selection.country);
     
-    // Standardize slug: use provided slug or generate from city and English country
-    const slug = (selection.slug || normalizeKey(cleanName, selection.countryEn || selection.country))
-      .replace(/-/g, '_')
-      .toLowerCase();
+    // Standardize slug: strictly use normalizeKey for 100% determinism
+    const slug = normalizeKey(cleanName, selection.countryEn || selection.country);
     
     setSelectedCitySlug(slug);
 
@@ -308,23 +313,43 @@ export default function App() {
             }
         }
         
+        setTours([]); // Ensure tours are empty before progressive generation
         setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
-        const generated = await generateToursForCity(cleanName, selection.countryEn || selection.country, { ...user, language: langCode } as UserProfile);
+        
+        let firstTourGenerated = false;
+        
+        const generated = await generateToursForCity(
+            cleanName, 
+            selection.countryEn || selection.country, 
+            { ...user, language: langCode } as UserProfile,
+            (tour) => {
+                setTours(prev => [...prev, tour]);
+                if (!firstTourGenerated) {
+                    firstTourGenerated = true;
+                    setIsLoading(false);
+                    if (view === AppView.HOME || forceRefresh) {
+                        navigateTo(AppView.CITY_DETAIL);
+                    }
+                }
+            }
+        );
+        
         if (generated.length > 0) {
-            setTours(generated); 
+            // Update cache once all tours are generated
             await supabase.from('tours_cache').upsert({
               city: slug,
               language: langCode.toLowerCase(),
               data: generated
             }, { onConflict: 'city,language' });
-            
-            if (view === AppView.HOME || forceRefresh) {
-                navigateTo(AppView.CITY_DETAIL);
-            }
-        } else { alert("Location protocol failed."); }
-    } catch (e) { 
+        } else { 
+            alert(t('errorGeneratingTours') || "No se pudieron generar los tours. Inténtalo de nuevo."); 
+        }
+    } catch (e: any) { 
         console.error("Selection error:", e);
-    } finally { setIsLoading(false); }
+        alert(e.message || "Error de conexión. Inténtalo de nuevo.");
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
    const handleCitySearch = async (val: string) => {
@@ -333,15 +358,16 @@ export default function App() {
     if (val.length < 3) { setSearchOptions(null); return; }
 
     setIsSearching(true);
+
     searchTimeoutRef.current = setTimeout(async () => {
         try {
-            // 1. Use Gemini to find all matches globally
+            // Use Gemini to find all matches globally
             const aiResults = await normalizeCityWithAI(val, user.language);
             
-            // 2. Check cache for each result
+            // Check cache for each result
             const results = await Promise.all(aiResults.map(async (res) => {
-                const slug = res.slug.replace(/-/g, '_').toLowerCase();
-                const isCached = await checkIfCityCached(res.city, slug);
+                const slug = normalizeKey(res.city, res.countryEn || res.country);
+                const isCached = await checkIfCityCached(res.city, res.countryEn || res.country);
                 return {
                     name: res.city,
                     city: res.city,
@@ -360,7 +386,7 @@ export default function App() {
         } finally {
             setIsSearching(false);
         }
-    }, 1500);
+    }, 1000);
   };
 
   const handleLangChange = (code: string) => {
@@ -538,7 +564,7 @@ export default function App() {
                                               </div>
                                               <div className="truncate">
                                                   <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
-                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.isCached ? t('ready') : opt.country}</span>
+                                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.country}</span>
                                               </div>
                                           </div>
                                           <i className="fas fa-chevron-right text-[9px] text-purple-500/40"></i>
@@ -549,7 +575,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} />
+                      <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string, country?: string) => processCitySelection({ name, city: name, country, countryEn: country }, user.language)} />
                   </div>
                 )}
                 {view === AppView.CITY_DETAIL && (

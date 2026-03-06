@@ -40,7 +40,7 @@ This app requires a Google Gemini API Key to function correctly (generate tours,
 2.  Create a file named `.env` in the root directory.
 3.  Add your key:
     ```env
-    VITE_API_KEY=AIzaSy...YourKeyHere
+    VITE_GEMINI_API_KEY=AIzaSy...YourKeyHere
     ```
 
 ### 3. Run Development Server

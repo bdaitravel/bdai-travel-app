@@ -20,7 +20,7 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
                 await new Promise(resolve => setTimeout(resolve, delay));
                 return handleAiCall(fn, retries - 1, delay * 2);
             }
-            throw new QuotaError("Límite excedido. Por favor, usa tu clave API.");
+            throw new QuotaError("Servicio de IA temporalmente saturado. Por favor, inténtalo de nuevo en unos segundos.");
         }
         throw error;
     }
@@ -32,7 +32,7 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
  */
 export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
@@ -59,7 +59,7 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
  */
 export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<any[]> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-flash-latest",
             contents: `Identify all major cities or towns globally that match the name: "${input}". 
@@ -93,64 +93,81 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     });
 };
 
-export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
+export const generateToursForCity = async (city: string, country: string, user: UserProfile, onTourGenerated?: (tour: Tour) => void): Promise<Tour[]> => {
+    const themes = [
+        "The Classics with a Dark Twist (Historical & Architecture)",
+        "Hidden Gems & Underground Culture",
+        "Culinary Secrets & Local Art"
+    ];
+
+    const generateSingleTour = async (theme: string, index: number) => {
+        return handleAiCall(async () => {
+            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
             
-            DAI'S ABSOLUTE COMMANDS:
-            - You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
-            - Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
-            - Tell the secrets, the mysteries, and the dark curiosities.
-            - Mock the "typical" tourist while revealing the true soul of the city.
-            - NEVER use citations like [1] or (2). NEVER.
-            - All facts MUST be 100% real. DO NOT INVENT.
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Generate EXACTLY 1 thematic tour for ${city}, ${country} in ${user.language}.
+                Theme focus: ${theme}.
+                
+                DAI'S ABSOLUTE COMMANDS:
+                - You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
+                - Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
+                - Tell the secrets, the mysteries, and the dark curiosities.
+                - Mock the "typical" tourist while revealing the true soul of the city.
+                - NEVER use citations like [1] or (2). NEVER.
+                - All facts MUST be 100% real. DO NOT INVENT.
+                
+                STRICT CATEGORIZATION RULES (CRITICAL):
+                - 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
+                - 'historical': MUST be used for palaces, castles, ruins, and monuments.
+                - 'culture': ONLY for theaters, music venues, festivals, or intangible traditions.
+                - 'food': ONLY for places where you eat or buy food.
+                - 'art': ONLY for museums, galleries, or street art.
+                - 'nature': ONLY for parks, gardens, or viewpoints.
+                - 'photo': ONLY for spots whose primary value is the view/photo.
+                
+                STRICT RULES:
+                1. Format: Return ONLY a valid JSON object (NOT an array).
+                2. Tour format: { "id": "tour_${index}", "city": "${city}", "title": "...", "description": "...", "duration": "...", "distance": "...", "stops": [] }
+                3. Each stop: { "id": "stop_...", "name": "...", "description": "..." (150-200 words), "latitude": 0.0, "longitude": 0.0, "type": "...", "photoSpot": { "angle": "...", "milesReward": 50, "secretLocation": "..." } }
+                4. MINIMUM 10 STOPS.
+                5. Content in ${user.language}.`,
+                config: {
+                    systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
+                    You HATE boring Wikipedia-style descriptions. 
+                    Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
+                    You love sharing the dark secrets, mysteries, and curiosities of cities. 
+                    You NEVER use citations, footnotes, or references. 
+                    You are real, accurate, but never boring.
+                    CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`,
+                },
+            });
+
+            let text = response.text || "{}";
             
-            STRICT CATEGORIZATION RULES (CRITICAL):
-            - 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
-            - 'historical': MUST be used for palaces, castles, ruins, and monuments.
-            - 'culture': ONLY for theaters, music venues, festivals, or intangible traditions.
-            - 'food': ONLY for places where you eat or buy food.
-            - 'art': ONLY for museums, galleries, or street art.
-            - 'nature': ONLY for parks, gardens, or viewpoints.
-            - 'photo': ONLY for spots whose primary value is the view/photo.
+            // Aggressive post-processing to remove any citations, footnotes or source markers
+            text = text.replace(/\[\d+\]/g, '')
+                       .replace(/\(\d+\)/g, '')
+                       .replace(/【\d+†source】/g, '')
+                       .replace(/\[source\]/g, '')
+                       .replace(/\s+/g, ' ')
+                       .trim();
+
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            const tour = JSON.parse(jsonMatch ? jsonMatch[0] : text);
             
-            STRICT RULES:
-            1. Format: Return ONLY a valid JSON array.
-            2. Each tour: { "id", "city": "${city}", "title", "description", "duration", "distance", "stops": [] }
-            3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-            4. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
-            5. Content in ${user.language}.`,
-            config: {
-                systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
-                You HATE boring Wikipedia-style descriptions. 
-                Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
-                You love sharing the dark secrets, mysteries, and curiosities of cities. 
-                You NEVER use citations, footnotes, or references. 
-                You are real, accurate, but never boring.
-                CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`,
-            },
+            if (!tour.id) tour.id = `tour_${index}_${Date.now()}`;
+            
+            if (onTourGenerated) {
+                onTourGenerated(tour);
+            }
+            
+            return tour;
         });
+    };
 
-        let text = response.text || "[]";
-        
-        // Aggressive post-processing to remove any citations, footnotes or source markers
-        // This handles [1], (1), [source], 【1†source】, etc.
-        text = text.replace(/\[\d+\]/g, '')
-                   .replace(/\(\d+\)/g, '')
-                   .replace(/【\d+†source】/g, '')
-                   .replace(/\[source\]/g, '')
-                   .replace(/\s+/g, ' ')
-                   .trim();
-
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        const tours = JSON.parse(jsonMatch ? jsonMatch[0] : text);
-        
-        return tours;
-    });
+    const tours = await Promise.all(themes.map((theme, i) => generateSingleTour(theme, i)));
+    return tours;
 };
 
 const VOICE_MAP: Record<string, string> = {
@@ -159,7 +176,7 @@ const VOICE_MAP: Record<string, string> = {
 
 export const generateDaiWelcome = async (user: UserProfile): Promise<string> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `As DAI, welcome a new user named ${user.firstName || 'Traveler'} in ${user.language}.
@@ -170,24 +187,18 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
     });
 };
 
-export const generateAudio = async (text: string, language: string, city: string): Promise<Uint8Array | null> => {
+export const generateAudio = async (text: string, language: string, city: string): Promise<{ buffer?: Uint8Array, url?: string } | null> => {
     const cleanText = (text || "").trim();
     if (!cleanText) return null;
 
     const cachedUrl = await getCachedAudio(cleanText, language);
     if (cachedUrl) {
-        try {
-            const response = await fetch(cachedUrl);
-            const buffer = await response.arrayBuffer();
-            return new Uint8Array(buffer);
-        } catch (e) {
-            console.error("Error loading cached audio:", e);
-        }
+        return { url: cachedUrl };
     }
 
     const voiceName = VOICE_MAP[language] || 'Kore';
     const base64 = await handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         
         const prompt = language === 'es' 
             ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
@@ -212,7 +223,7 @@ export const generateAudio = async (text: string, language: string, city: string
         for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
         
         saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
-        return bytes;
+        return { buffer: bytes };
     }
 
     return null;
@@ -220,7 +231,7 @@ export const generateAudio = async (text: string, language: string, city: string
 
 export const translateToursBatch = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
@@ -232,7 +243,7 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
 
 export const moderateContent = async (text: string): Promise<boolean> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Is this text safe? "${text}"`,
@@ -248,9 +259,25 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     });
 };
 
+export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: "Say 'OK'",
+        });
+        if (response.text) {
+            return { ok: true, message: "API is responding" };
+        }
+        return { ok: false, message: "Empty response" };
+    } catch (e: any) {
+        return { ok: false, message: e.message || "Error connecting to API" };
+    }
+};
+
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: `Postcard of ${city}` }] },

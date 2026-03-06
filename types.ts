@@ -119,6 +119,12 @@ export interface PhotoSpot {
   secretLocation: string;
 }
 
+export interface B2BPartner {
+  name: string;
+  discount: string;
+  milesCost: number;
+}
+
 export interface Stop {
   id: string;
   name: string;
@@ -128,6 +134,7 @@ export interface Stop {
   type: 'historical' | 'food' | 'art' | 'nature' | 'photo' | 'culture' | 'architecture';
   visited: boolean;
   photoSpot?: PhotoSpot;
+  b2bPartner?: B2BPartner;
 }
 
 export interface Tour {

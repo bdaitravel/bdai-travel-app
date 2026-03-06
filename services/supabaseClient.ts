@@ -53,15 +53,30 @@ try {
 export { supabase };
 
 const generateHash = async (text: string): Promise<string> => {
-    // Normalize text to be more resilient to minor AI variations
     const normalized = text.toLowerCase()
         .replace(/\s+/g, ' ')
         .replace(/[.,!?;:]/g, '')
         .trim();
-    const msgUint8 = new TextEncoder().encode(normalized);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+        try {
+            const msgUint8 = new TextEncoder().encode(normalized);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch (e) {
+            console.warn("crypto.subtle.digest failed, using fallback");
+        }
+    }
+    
+    // Fallback simple hash
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+        const char = normalized.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(16).padStart(8, '0');
 };
 
 const addWavHeader = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
@@ -107,18 +122,13 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .trim()
-        .replace(/[\s-]+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
+        .replace(/[^a-z0-9]/g, ''); // Remove all spaces and special chars
 
-    const safeCity = clean(city || "").split('_')[0]; // Handle cases where city might already be a slug
+    const safeCity = clean(city || "");
+    const safeCountry = clean(country || "");
+    
     if (!safeCity) return "";
-    
-    // If country is provided, use it. If not, and city looks like a slug, it might already contain the country.
-    const safeCountry = country && country !== "Cache" ? clean(country) : "";
-    
-    if (safeCountry) {
-        // Avoid double country if city already has it
-        if (safeCity.endsWith(`_${safeCountry}`)) return safeCity;
+    if (safeCountry && safeCountry !== "cache") {
         return `${safeCity}_${safeCountry}`;
     }
     return safeCity;
@@ -127,11 +137,8 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
 /**
  * Checks if a city exists in cache using the new slug format.
  */
-export const checkIfCityCached = async (city: string, countryOrSlug: string): Promise<boolean> => {
-  // If countryOrSlug already looks like a slug (contains underscore and is lowercase), use it.
-  const slug = (countryOrSlug.includes('_') && countryOrSlug === countryOrSlug.toLowerCase())
-    ? countryOrSlug 
-    : normalizeKey(city, countryOrSlug);
+export const checkIfCityCached = async (city: string, country: string): Promise<boolean> => {
+  const slug = normalizeKey(city, country);
     
   if (!slug) return false;
   try {
@@ -164,7 +171,7 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
                 // Extract city and country from slug for display
-                const parts = curr.city.split('-');
+                const parts = curr.city.split('_');
                 const cityName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
                 const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
                 
@@ -361,9 +368,9 @@ export const saveToursToCache = async (city: string, country: string, language: 
 export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
     try {
         const hash = await generateHash(text);
-        const { data, error } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).maybeSingle();
+        const { data, error } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).limit(1);
         if (error) throw error;
-        return data?.audio_url || null;
+        return data && data.length > 0 ? data[0].audio_url : null;
     } catch (e) { return null; }
 };
 
@@ -380,12 +387,13 @@ export const saveAudioToCache = async (text: string, lang: string, audioData: Ui
         const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/wav', cacheControl: '3600' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
-        await supabase.from('audio_cache').upsert({ 
+        const { error: dbError } = await supabase.from('audio_cache').insert({ 
           text_hash: hash, 
           language: lang.toLowerCase(), 
           city: city, 
           audio_url: publicUrl 
-        }, { onConflict: 'text_hash,language' });
+        });
+        if (dbError) console.error("DB Insert error:", dbError);
         return publicUrl;
     } catch (e) { 
         console.error("Audio cache error:", e);
