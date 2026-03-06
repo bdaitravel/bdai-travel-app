@@ -110,6 +110,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedCityDisplay, setSelectedCityDisplay] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedCountryEn, setSelectedCountryEn] = useState<string | null>(null);
   const [selectedCitySlug, setSelectedCitySlug] = useState<string | null>(null);
@@ -282,13 +283,19 @@ export default function App() {
     setIsLoading(true); 
     setSearchOptions(null); 
     setSearchVal(''); 
-    const cleanName = selection.name?.split(',')[0].trim() || selection.city;
-    setSelectedCity(cleanName); 
+    
+    // Use the English/canonical city name for generation and slug
+    const canonicalCity = selection.city || selection.name?.split(',')[0].trim();
+    // Use the localized name for display
+    const displayCity = selection.name?.split(',')[0].trim() || selection.city;
+    
+    setSelectedCity(canonicalCity); 
+    setSelectedCityDisplay(displayCity);
     setSelectedCountry(selection.country);
     setSelectedCountryEn(selection.countryEn || selection.country);
     
     // Standardize slug: strictly use normalizeKey for 100% determinism
-    const slug = normalizeKey(cleanName, selection.countryEn || selection.country);
+    const slug = normalizeKey(canonicalCity, selection.countryEn || selection.country);
     
     setSelectedCitySlug(slug);
 
@@ -319,7 +326,7 @@ export default function App() {
         let firstTourGenerated = false;
         
         const generated = await generateToursForCity(
-            cleanName, 
+            canonicalCity, 
             selection.countryEn || selection.country, 
             { ...user, language: langCode } as UserProfile,
             (tour) => {
@@ -366,17 +373,19 @@ export default function App() {
             
             // Check cache for each result
             const results = await Promise.all(aiResults.map(async (res) => {
-                const slug = normalizeKey(res.city, res.countryEn || res.country);
-                const isCached = await checkIfCityCached(res.city, res.countryEn || res.country);
+                const cityNameForSlug = res.cityEn || res.city;
+                const cityNameForDisplay = res.cityDisplay || res.city;
+                const slug = normalizeKey(cityNameForSlug, res.countryEn || res.country);
+                const isCached = await checkIfCityCached(cityNameForSlug, res.countryEn || res.country);
                 return {
-                    name: res.city,
-                    city: res.city,
+                    name: cityNameForDisplay,
+                    city: cityNameForSlug, // Used for generation and slug
                     country: res.country,
                     countryEn: res.countryEn,
                     countryCode: res.countryCode,
                     slug: slug,
                     isCached: isCached,
-                    fullName: res.city
+                    fullName: cityNameForDisplay
                 };
             }));
 
@@ -582,9 +591,10 @@ export default function App() {
                   <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
                       <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
                         <button onClick={() => navigateTo(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
-                        <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
+                        <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCityDisplay || selectedCity, user.language)}</h2>
                         <button 
                           onClick={() => processCitySelection({ 
+                            name: selectedCityDisplay,
                             city: selectedCity, 
                             country: selectedCountry, 
                             countryEn: selectedCountryEn,
