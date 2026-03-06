@@ -1,8 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+declare const __SUPABASE_URL__: string | undefined;
+declare const __SUPABASE_ANON_KEY__: string | undefined;
+
+const getEnvVar = (viteKey: string, globalVar: string | undefined) => {
+  try {
+    if (typeof globalVar !== 'undefined' && globalVar) {
+      return globalVar;
+    }
+    if (typeof (import.meta as any).env !== 'undefined' && (import.meta as any).env[viteKey]) {
+      return (import.meta as any).env[viteKey];
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+  return "";
+};
+
+const rawUrl = getEnvVar('VITE_SUPABASE_URL', typeof __SUPABASE_URL__ !== 'undefined' ? __SUPABASE_URL__ : undefined);
+const rawKey = getEnvVar('VITE_SUPABASE_ANON_KEY', typeof __SUPABASE_ANON_KEY__ !== 'undefined' ? __SUPABASE_ANON_KEY__ : undefined);
 
 const supabaseUrl = (rawUrl && typeof rawUrl === 'string' && rawUrl.startsWith('http')) 
   ? rawUrl.trim() 
@@ -192,23 +209,8 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   try {
-    const normalizedEmail = email.toLowerCase().trim();
-    const { data, error } = await supabase.from('profiles').select('*').eq('email', normalizedEmail).maybeSingle();
-    if (error) {
-        console.error("Error fetching profile:", error);
-        throw error;
-    }
-    if (!data) return null; // No profile found, which is fine for new users
-    
-    // Parse JSON fields if they are strings (Supabase sometimes returns JSONB as string depending on client)
-    const parseJson = (val: any, fallback: any) => {
-        if (!val) return fallback;
-        if (typeof val === 'string') {
-            try { return JSON.parse(val); } catch (e) { return fallback; }
-        }
-        return val;
-    };
-
+    const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+    if (error || !data) return null;
     return {
       id: data.id, email: data.email, username: data.username || email.split('@')[0],
       firstName: data.first_name || '', lastName: data.last_name || '',
@@ -218,18 +220,15 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       isLoggedIn: true, culturePoints: data.culture_points || 0, foodPoints: data.food_points || 0,
       photoPoints: data.photo_points || 0, historyPoints: data.history_points || 0,
       naturePoints: data.nature_points || 0, artPoints: data.art_points || 0,
-      archPoints: data.arch_points || 0, interests: parseJson(data.interests, []),
+      archPoints: data.arch_points || 0, interests: data.interests || [],
       accessibility: data.accessibility || 'standard', isPublic: data.is_public ?? false,
       bio: data.bio || '', age: data.age || 25, birthday: data.birthday,
       city: data.city || '', country: data.country || '',
-      stats: parseJson(data.stats, { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }),
-      visitedCities: parseJson(data.visited_cities, []), completedTours: parseJson(data.completed_tours, []),
-      badges: parseJson(data.badges, []), stamps: parseJson(data.stamps, []), capturedMoments: parseJson(data.captured_moments, [])
+      stats: data.stats || { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 },
+      visitedCities: data.visited_cities || [], completedTours: data.completed_tours || [],
+      badges: data.badges || [], stamps: data.stamps || [], capturedMoments: data.captured_moments || []
     };
-  } catch (e) { 
-      console.error("getUserProfileByEmail exception:", e);
-      throw e; 
-  }
+  } catch (e) { return null; }
 };
 
 export const calculateTravelerRank = (miles: number): TravelerRank => {
@@ -327,9 +326,8 @@ export const completeTourBonus = (profile: UserProfile, cityId: string): UserPro
 export const syncUserProfile = async (profile: UserProfile) => {
   if (!profile || !profile.email) return;
   try {
-    const normalizedEmail = profile.email.toLowerCase().trim();
     const payload = {
-      id: profile.id, email: normalizedEmail, username: profile.username,
+      id: profile.id, email: profile.email, username: profile.username,
       first_name: profile.firstName, last_name: profile.lastName,
       name: profile.name || `${profile.firstName} ${profile.lastName}`.trim(),
       miles: profile.miles, language: profile.language, avatar: profile.avatar, rank: profile.rank,
