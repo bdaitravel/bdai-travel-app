@@ -1,16 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
-const supabaseUrl = (rawUrl && typeof rawUrl === 'string' && rawUrl.startsWith('http')) 
-  ? rawUrl.trim() 
-  : "https://slldavgsoxunkphqeamx.supabase.co";
-
-const supabaseAnonKey = (rawKey && typeof rawKey === 'string' && rawKey.length > 20)
-  ? rawKey.trim()
-  : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("❌ CRITICAL ERROR: Supabase configuration missing!");
+  console.log("Please check your .env.local file or Vercel environment variables.");
+}
 
 let supabase: any;
 try {
@@ -26,25 +23,24 @@ try {
       limit: () => query,
       maybeSingle: async () => ({ data: null, error: null }),
       single: async () => ({ data: null, error: null }),
-      // Support for async/await directly on the query
       then: (onfulfilled: any) => Promise.resolve({ data: [], error: null }).then(onfulfilled)
     };
     return query;
   };
 
   supabase = {
-    auth: { 
+    auth: {
       getSession: async () => ({ data: { session: null } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
       signInWithOtp: async () => ({ error: new Error("Supabase not initialized") }),
       verifyOtp: async () => ({ error: new Error("Supabase not initialized") }),
       signInWithOAuth: async () => ({ error: new Error("Supabase not initialized") }),
       signOut: async () => ({ error: null })
     },
-    from: () => ({ 
-        select: createMockQuery,
-        upsert: async () => ({ error: "Supabase not initialized" }),
-        delete: () => ({ eq: () => ({ eq: async () => ({}) }) })
+    from: () => ({
+      select: createMockQuery,
+      upsert: async () => ({ error: "Supabase not initialized" }),
+      delete: () => ({ eq: () => ({ eq: async () => ({}) }) })
     }),
     storage: { from: () => ({ upload: async () => ({ error: "Storage failure" }), getPublicUrl: () => ({ data: { publicUrl: "" } }) }) }
   };
@@ -53,100 +49,91 @@ try {
 export { supabase };
 
 const generateHash = async (text: string): Promise<string> => {
-    const normalized = text.toLowerCase()
-        .replace(/\s+/g, ' ')
-        .replace(/[.,!?;:]/g, '')
-        .trim();
-        
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
-        try {
-            const msgUint8 = new TextEncoder().encode(normalized);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        } catch (e) {
-            console.warn("crypto.subtle.digest failed, using fallback");
-        }
+  const normalized = text.toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[.,!?;:]/g, '')
+    .trim();
+
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    try {
+      const msgUint8 = new TextEncoder().encode(normalized);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      console.warn("crypto.subtle.digest failed, using fallback");
     }
-    
-    // Fallback simple hash
-    let hash = 0;
-    for (let i = 0; i < normalized.length; i++) {
-        const char = normalized.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash).toString(16).padStart(8, '0');
+  }
+
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i++) {
+    const char = normalized.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16).padStart(8, '0');
 };
 
 const addWavHeader = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
-    const header = new ArrayBuffer(44);
-    const view = new DataView(header);
-    view.setUint32(0, 0x52494646, false); // RIFF
-    view.setUint32(4, 36 + pcmData.length, true); // File size
-    view.setUint32(8, 0x57415645, false); // WAVE
-    view.setUint32(12, 0x666d7420, false); // fmt 
-    view.setUint16(16, 16, true); // Subchunk1Size
-    view.setUint16(20, 1, true); // AudioFormat (PCM)
-    view.setUint16(22, 1, true); // NumChannels (Mono)
-    view.setUint32(24, sampleRate, true); // SampleRate
-    view.setUint32(28, sampleRate * 2, true); // ByteRate
-    view.setUint16(32, 2, true); // BlockAlign
-    view.setUint16(34, 16, true); // BitsPerSample
-    view.setUint32(36, 0x64617461, false); // data
-    view.setUint32(40, pcmData.length, true); // Subchunk2Size
-    
-    const wav = new Uint8Array(44 + pcmData.length);
-    wav.set(new Uint8Array(header), 0);
-    wav.set(pcmData, 44);
-    return wav;
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
+  view.setUint32(0, 0x52494646, false);
+  view.setUint32(4, 36 + pcmData.length, true);
+  view.setUint32(8, 0x57415645, false);
+  view.setUint32(12, 0x666d7420, false);
+  view.setUint16(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  view.setUint32(36, 0x64617461, false);
+  view.setUint32(40, pcmData.length, true);
+
+  const wav = new Uint8Array(44 + pcmData.length);
+  wav.set(new Uint8Array(header), 0);
+  wav.set(pcmData, 44);
+  return wav;
 };
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
-    const binaryString = atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
 };
 
-/**
- * Normalizes keys for database storage/retrieval.
- * Format: city-country (e.g., madrid-spain)
- */
 export const normalizeKey = (city: string | undefined | null, country?: string) => {
-    const clean = (text: string) => text
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]/g, ''); // Remove all spaces and special chars
+  const clean = (text: string) => text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]/g, '');
 
-    const safeCity = clean(city || "");
-    const safeCountry = clean(country || "");
-    
-    if (!safeCity) return "";
-    if (safeCountry && safeCountry !== "cache") {
-        return `${safeCity}_${safeCountry}`;
-    }
-    return safeCity;
+  const safeCity = clean(city || "");
+  const safeCountry = clean(country || "");
+
+  if (!safeCity) return "";
+  if (safeCountry && safeCountry !== "cache") {
+    return `${safeCity}_${safeCountry}`;
+  }
+  return safeCity;
 };
 
-/**
- * Checks if a city exists in cache using the new slug format.
- */
 export const checkIfCityCached = async (city: string, country: string): Promise<boolean> => {
   const slug = normalizeKey(city, country);
-    
   if (!slug) return false;
   try {
     const { data, error } = await supabase
-        .from('tours_cache')
-        .select('city')
-        .eq('city', slug)
-        .limit(1);
+      .from('tours_cache')
+      .select('city')
+      .eq('city', slug)
+      .limit(1);
     if (error) return false;
     return (data && data.length > 0);
   } catch (e) {
@@ -155,39 +142,37 @@ export const checkIfCityCached = async (city: string, country: string): Promise<
 };
 
 export const searchCitiesInCache = async (query: string): Promise<any[]> => {
-    if (!query || query.length < 2) return [];
-    try {
-        // Fuzzy search: ignore case and accents using ilike
-        const { data, error } = await supabase
-            .from('tours_cache')
-            .select('city, language')
-            .ilike('city', `%${query}%`)
-            .limit(10);
+  if (!query || query.length < 2) return [];
+  try {
+    const { data, error } = await supabase
+      .from('tours_cache')
+      .select('city, language')
+      .ilike('city', `%${query}%`)
+      .limit(10);
 
-        if (error) throw error;
+    if (error) throw error;
 
-        const seen = new Set();
-        return (data || []).reduce((acc: any[], curr: any) => {
-            if (!seen.has(curr.city)) {
-                seen.add(curr.city);
-                // Extract city and country from slug for display
-                const parts = curr.city.split('_');
-                const cityName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-                const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
-                
-                acc.push({
-                    name: cityName,
-                    country: countryName,
-                    fullName: `${cityName}, ${countryName}`,
-                    isCached: true,
-                    slug: curr.city
-                });
-            }
-            return acc;
-        }, []);
-    } catch (e) {
-        return [];
-    }
+    const seen = new Set();
+    return (data || []).reduce((acc: any[], curr: any) => {
+      if (!seen.has(curr.city)) {
+        seen.add(curr.city);
+        const parts = curr.city.split('_');
+        const cityName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
+
+        acc.push({
+          name: cityName,
+          country: countryName,
+          fullName: `${cityName}, ${countryName}`,
+          isCached: true,
+          slug: curr.city
+        });
+      }
+      return acc;
+    }, []);
+  } catch (e) {
+    return [];
+  }
 };
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -195,18 +180,17 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
     const normalizedEmail = email.toLowerCase().trim();
     const { data, error } = await supabase.from('profiles').select('*').eq('email', normalizedEmail).maybeSingle();
     if (error) {
-        console.error("Error fetching profile:", error);
-        throw error;
+      console.error("Error fetching profile:", error);
+      throw error;
     }
-    if (!data) return null; // No profile found, which is fine for new users
-    
-    // Parse JSON fields if they are strings (Supabase sometimes returns JSONB as string depending on client)
+    if (!data) return null;
+
     const parseJson = (val: any, fallback: any) => {
-        if (!val) return fallback;
-        if (typeof val === 'string') {
-            try { return JSON.parse(val); } catch (e) { return fallback; }
-        }
-        return val;
+      if (!val) return fallback;
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch (e) { return fallback; }
+      }
+      return val;
     };
 
     return {
@@ -226,9 +210,9 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       visitedCities: parseJson(data.visited_cities, []), completedTours: parseJson(data.completed_tours, []),
       badges: parseJson(data.badges, []), stamps: parseJson(data.stamps, []), capturedMoments: parseJson(data.captured_moments, [])
     };
-  } catch (e) { 
-      console.error("getUserProfileByEmail exception:", e);
-      throw e; 
+  } catch (e) {
+    console.error("getUserProfileByEmail exception:", e);
+    throw e;
   }
 };
 
@@ -244,84 +228,71 @@ export const checkBadges = (profile: UserProfile): Badge[] => {
   const earnedBadges = [...(profile.badges || [])];
   const badgeIds = new Set(earnedBadges.map(b => b.id));
 
-  // Debutante
   if (!badgeIds.has('debutante') && (profile.stats.photosTaken > 0 || profile.completedTours.length > 0)) {
-     const b = APP_BADGES.find(x => x.id === 'debutante');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'debutante');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // On Fire
   if (!badgeIds.has('onfire') && profile.stats.streakDays >= 3) {
-     const b = APP_BADGES.find(x => x.id === 'onfire');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'onfire');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // Historiador (History)
   if (!badgeIds.has('historiador') && profile.historyPoints >= 10) {
-     const b = APP_BADGES.find(x => x.id === 'historiador');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'historiador');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // Foodie (Food)
   if (!badgeIds.has('foodie') && profile.foodPoints >= 10) {
-     const b = APP_BADGES.find(x => x.id === 'foodie');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'foodie');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // Culture Guru
   if (!badgeIds.has('culture_master') && profile.culturePoints >= 10) {
-     const b = APP_BADGES.find(x => x.id === 'culture_master');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'culture_master');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // Nature Explorer
   if (!badgeIds.has('nature_master') && profile.naturePoints >= 10) {
-     const b = APP_BADGES.find(x => x.id === 'nature_master');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'nature_master');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // Art Connoisseur
   if (!badgeIds.has('art_master') && profile.artPoints >= 10) {
-     const b = APP_BADGES.find(x => x.id === 'art_master');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'art_master');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // Architecture Critic
   if (!badgeIds.has('arch_master') && profile.archPoints >= 10) {
-     const b = APP_BADGES.find(x => x.id === 'arch_master');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'arch_master');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // Photo Visionary
   if (!badgeIds.has('photo_master') && profile.photoPoints >= 10) {
-     const b = APP_BADGES.find(x => x.id === 'photo_master');
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === 'photo_master');
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
-  // Rank Badges
   const currentRank = calculateTravelerRank(profile.miles);
   const rankBadgeId = `rank_${currentRank.toLowerCase()}`;
   if (!badgeIds.has(rankBadgeId)) {
-     const b = APP_BADGES.find(x => x.id === rankBadgeId);
-     if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
+    const b = APP_BADGES.find(x => x.id === rankBadgeId);
+    if (b) earnedBadges.push({ ...b, earnedAt: new Date().toISOString() });
   }
 
   return earnedBadges;
 };
 
 export const completeTourBonus = (profile: UserProfile, cityId: string): UserProfile => {
-    const updatedCities = Array.from(new Set([...(profile.visitedCities || []), cityId]));
-    const updatedProfile = {
-        ...profile,
-        miles: profile.miles + 50,
-        visitedCities: updatedCities
-    };
-    
-    // Recalcular rango y badges
-    updatedProfile.rank = calculateTravelerRank(updatedProfile.miles);
-    updatedProfile.badges = checkBadges(updatedProfile);
-    
-    return updatedProfile;
+  const updatedCities = Array.from(new Set([...(profile.visitedCities || []), cityId]));
+  const updatedProfile = {
+    ...profile,
+    miles: profile.miles + 50,
+    visitedCities: updatedCities
+  };
+  updatedProfile.rank = calculateTravelerRank(updatedProfile.miles);
+  updatedProfile.badges = checkBadges(updatedProfile);
+  return updatedProfile;
 };
 
 export const syncUserProfile = async (profile: UserProfile) => {
@@ -348,80 +319,69 @@ export const syncUserProfile = async (profile: UserProfile) => {
   } catch (e) { console.error("❌ Sync Error:", e); }
 };
 
-/**
- * Aggressively searches for cached tours.
- * 1. Exact match for City_Country.
- * 2. Case-insensitive match for City Name only using ilike.
- */
-export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
+export const getCachedTours = async (city: string, country: string, language: string): Promise<{ data: Tour[], langFound: string, cityName: string } | null> => {
   const slug = normalizeKey(city, country);
-  
   if (!slug) return null;
-
   try {
     const { data, error } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .eq('city', slug)
-        .eq('language', language.toLowerCase())
-        .maybeSingle();
-    
+      .select('data, language, city')
+      .eq('city', slug)
+      .eq('language', language.toLowerCase())
+      .maybeSingle();
     if (!error && data && data.data) {
-        return { data: data.data, langFound: language, cityName: data.city };
+      return { data: data.data, langFound: language, cityName: data.city };
     }
   } catch (e) { console.warn("⚠️ Cache lookup failed", e); }
-  return null; 
+  return null;
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
   const slug = normalizeKey(city, country);
   if (!slug) return;
   try {
-    await supabase.from('tours_cache').upsert({ 
-      city: slug, 
-      language: language.toLowerCase(), 
-      data: tours 
+    await supabase.from('tours_cache').upsert({
+      city: slug,
+      language: language.toLowerCase(),
+      data: tours
     }, { onConflict: 'city,language' });
   } catch (e) { console.error("❌ Error saving cache:", e); }
 };
 
 export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
-    try {
-        const hash = await generateHash(text);
-        const { data, error } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).limit(1);
-        if (error) throw error;
-        return data && data.length > 0 ? data[0].audio_url : null;
-    } catch (e) { return null; }
+  try {
+    const hash = await generateHash(text);
+    const { data, error } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).limit(1);
+    if (error) throw error;
+    return data && data.length > 0 ? data[0].audio_url : null;
+  } catch (e) { return null; }
 };
 
 export const saveAudioToCache = async (text: string, lang: string, audioData: Uint8Array, city: string): Promise<string> => {
-    try {
-        const hash = await generateHash(text);
-        const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.wav`;
-        
-        // Add WAV header to raw PCM data from Gemini
-        const wavData = addWavHeader(audioData);
-        const audioBlob = new Blob([wavData.buffer as ArrayBuffer], { type: 'audio/wav' });
-        
-        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/wav', cacheControl: '3600' });
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
-        const { error: dbError } = await supabase.from('audio_cache').insert({ 
-          text_hash: hash, 
-          language: lang.toLowerCase(), 
-          city: city, 
-          audio_url: publicUrl 
-        });
-        if (dbError) console.error("DB Insert error:", dbError);
-        return publicUrl;
-    } catch (e) { 
-        console.error("Audio cache error:", e);
-        return ""; 
-    }
+  try {
+    const hash = await generateHash(text);
+    const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.wav`;
+    const wavData = addWavHeader(audioData);
+    const audioBlob = new Blob([wavData.buffer as ArrayBuffer], { type: 'audio/wav' });
+    const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/wav', cacheControl: '3600' });
+    if (uploadError) throw uploadError;
+    const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
+    const { error: dbError } = await supabase.from('audio_cache').insert({
+      text_hash: hash,
+      language: lang.toLowerCase(),
+      city: city,
+      audio_url: publicUrl
+    });
+    if (dbError) console.error("DB Insert error:", dbError);
+    return publicUrl;
+  } catch (e) {
+    console.error("Audio cache error:", e);
+    return "";
+  }
 };
 
-export const validateEmailFormat = (email: string) => { 
-  return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); 
+export const validateEmailFormat = (email: string) => {
+  return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
 };
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
@@ -431,9 +391,9 @@ export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
       .select('id, username, miles, avatar, country, badges, rank')
       .order('miles', { ascending: false })
       .limit(50);
-    return (data || []).map((d: any, i: number) => ({ 
-      ...d, 
-      rank: i + 1, 
+    return (data || []).map((d: any, i: number) => ({
+      ...d,
+      rank: i + 1,
       name: d.username || 'Traveler',
       travelerRank: d.rank as TravelerRank
     }));
@@ -452,7 +412,7 @@ export const updateTourStopLocation = async (citySlug: string, language: string,
     if (cached && cached.data) {
       const updatedData = cached.data.map((tour: Tour) => ({
         ...tour,
-        stops: tour.stops.map((stop: Stop) => 
+        stops: tour.stops.map((stop: Stop) =>
           stop.id === stopId ? { ...stop, latitude: lat, longitude: lng } : stop
         )
       }));
