@@ -2,16 +2,16 @@ import { createClient } from '@supabase/supabase-js';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabasePublishableKey) {
   console.error("❌ CRITICAL ERROR: Supabase configuration missing!");
   console.log("Please check your .env.local file or Vercel environment variables.");
 }
 
 let supabase: any;
 try {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
+  supabase = createClient(supabaseUrl, supabasePublishableKey);
 } catch (e) {
   console.error("Critical Supabase Init Error:", e);
   const createMockQuery = () => {
