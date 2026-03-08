@@ -4,13 +4,13 @@ import { syncUserProfile, supabase } from '../services/supabaseClient';
 import { translations } from '../data/translations';
 
 interface ProfileModalProps {
-  user: UserProfile;
-  onClose: () => void;
-  onUpdateUser?: (updatedUser: UserProfile) => void;
-  onLogout?: () => void;
-  onOpenAdmin?: () => void;
-  language?: string;
-  onLangChange?: (code: string) => void;
+    user: UserProfile;
+    onClose: () => void;
+    onUpdateUser?: (updatedUser: UserProfile) => void;
+    onLogout?: () => void;
+    onOpenAdmin?: () => void;
+    language?: string;
+    onLangChange?: (code: string) => void;
 }
 
 const MODAL_TEXTS: any = {
@@ -43,299 +43,299 @@ const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onC
 );
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin, language, onLangChange }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [formData, setFormData] = useState({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      username: user.username || 'traveler',
-      city: user.city || '',
-      country: user.country || '',
-      avatar: user.avatar || AVATARS[0],
-      birthday: user.birthday || '1995-01-01',
-      language: user.language || 'es'
-  });
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setFormData({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      username: user.username || 'traveler',
-      city: user.city || '',
-      country: user.country || '',
-      avatar: user.avatar || AVATARS[0],
-      birthday: user.birthday || '1995-01-01',
-      language: user.language || 'es'
+    const [formData, setFormData] = useState({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        username: user.username || 'traveler',
+        city: user.city || '',
+        country: user.country || '',
+        avatar: user.avatar || AVATARS[0],
+        birthday: user.birthday || '1995-01-01',
+        language: user.language || 'es'
     });
-  }, [user]);
 
-  const pt = (key: string) => {
-    const lang = user.language || 'es';
-    const dict = MODAL_TEXTS[lang] || MODAL_TEXTS['en'] || MODAL_TEXTS['es'];
-    const globalDict = translations[lang] || translations['en'] || translations['es'];
-    return dict[key] || globalDict[key] || key;
-  };
-
-  const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
-
-  const handleAvatarClick = () => { fileInputRef.current?.click(); };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onloadend = () => {
-          const base64String = reader.result as string;
-          setFormData(prev => ({ ...prev, avatar: base64String }));
-          if (!isEditing && onUpdateUser) {
-              const updatedUser = { ...user, avatar: base64String };
-              onUpdateUser(updatedUser);
-              syncUserProfile(updatedUser);
-          }
-      };
-      reader.readAsDataURL(file);
-  };
-
-  const handleSave = async () => {
-      setIsSyncing(true);
-      try {
-          const birthDate = new Date(formData.birthday);
-          const age = new Date().getFullYear() - birthDate.getFullYear();
-          const updatedUser = { ...user, ...formData, name: `${formData.firstName} ${formData.lastName}`.trim(), age: age };
-          await syncUserProfile(updatedUser);
-          if (onUpdateUser) onUpdateUser(updatedUser);
-          setIsEditing(false);
-      } catch (e) {} finally { setIsSyncing(false); }
-  };
-
-  const [showBragModal, setShowBragModal] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-
-  const handleShareRank = async () => {
-    const message = pt('shareRankMessage')
-      .replace('{rank}', user.rank)
-      .replace('{miles}', user.miles.toLocaleString());
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'BDAI Rank',
-          text: message,
-          url: 'https://www.bdai.travel'
+    useEffect(() => {
+        setFormData({
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            username: user.username || 'traveler',
+            city: user.city || '',
+            country: user.country || '',
+            avatar: user.avatar || AVATARS[0],
+            birthday: user.birthday || '1995-01-01',
+            language: user.language || 'es'
         });
-      } catch (e) {
-        // User cancelled or error
-      }
-    } else {
-      navigator.clipboard.writeText(message);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    }
-  };
+    }, [user]);
 
-  return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start overflow-y-auto no-scrollbar bg-slate-950/98 backdrop-blur-2xl">
-      {/* TOAST NOTIFICATION */}
-      {showToast && (
-        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[1000] bg-purple-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl animate-bounce">
-          <i className="fas fa-check-circle mr-2"></i> {pt('copiedToClipboard')}
-        </div>
-      )}
+    const pt = (key: string) => {
+        const lang = user.language || 'es';
+        const dict = MODAL_TEXTS[lang] || MODAL_TEXTS['en'] || MODAL_TEXTS['es'];
+        const globalDict = translations[lang] || translations['en'] || translations['es'];
+        return dict[key] || globalDict[key] || key;
+    };
 
-      {/* BRAG MODAL (SHARE CARD) */}
-      {showBragModal && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
-            
-            <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6">
-              <i className="fas fa-crown text-3xl text-white"></i>
-            </div>
+    const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
 
-            <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
-            <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
-            
-            <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
-               <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
-               <p className="text-2xl font-black text-cyan-400">{user.miles.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
-            </div>
+    const handleAvatarClick = () => { fileInputRef.current?.click(); };
 
-            <button 
-              onClick={() => {
-                handleShareRank();
-                setShowBragModal(false);
-              }}
-              className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4"
-            >
-              <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
-            </button>
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result as string;
+            setFormData(prev => ({ ...prev, avatar: base64String }));
+            if (!isEditing && onUpdateUser) {
+                const updatedUser = { ...user, avatar: base64String };
+                onUpdateUser(updatedUser);
+                syncUserProfile(updatedUser);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
 
-            <button 
-              onClick={() => setShowBragModal(false)}
-              className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+    const handleSave = async () => {
+        setIsSyncing(true);
+        try {
+            const birthDate = new Date(formData.birthday);
+            const age = new Date().getFullYear() - birthDate.getFullYear();
+            const updatedUser = { ...user, ...formData, name: `${formData.firstName} ${formData.lastName}`.trim(), age: age };
+            await syncUserProfile(updatedUser);
+            if (onUpdateUser) onUpdateUser(updatedUser);
+            setIsEditing(false);
+        } catch (e) { } finally { setIsSyncing(false); }
+    };
 
-      <div className="w-full max-w-sm px-4 pt-12">
-        <div className="flex justify-between items-center mb-6 w-full px-2">
-            <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-red-500/20">
-                <i className="fas fa-sign-out-alt"></i> {pt('logout')}
-            </button>
-            <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/5 active:scale-90 shadow-lg"><i className="fas fa-times"></i></button>
-        </div>
+    const [showBragModal, setShowBragModal] = useState(false);
+    const [showToast, setShowToast] = useState(false);
 
-        <div className="bg-[#f3f0e6] w-full rounded-[2.5rem] overflow-hidden shadow-2xl relative border-[3px] border-[#d7d2c3] flex flex-col text-slate-900 mb-64">
-            <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleFileChange} />
-            <div className="bg-[#8b2b2b] p-6 flex justify-between items-center shrink-0 border-b-2 border-[#d7d2c3]">
-                <div>
-                    <h2 className="text-yellow-500 font-black text-[11px] uppercase tracking-widest leading-none">{pt('title')}</h2>
-                    <p className="text-white/40 text-[7px] font-bold uppercase tracking-widest mt-1.5">{pt('subtitle')}</p>
+    const handleShareRank = async () => {
+        const message = pt('shareRankMessage')
+            .replace('{rank}', user.rank)
+            .replace('{miles}', user.miles.toLocaleString())
+            .replace('{appUrl}', import.meta.env.VITE_APP_URL || window.location.origin);
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'BDAI Rank',
+                    text: message,
+                    url: import.meta.env.VITE_APP_URL || window.location.origin
+                });
+            } catch (e) {
+                // User cancelled or error
+            }
+        } else {
+            navigator.clipboard.writeText(message);
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start overflow-y-auto no-scrollbar bg-slate-950/98 backdrop-blur-2xl">
+            {/* TOAST NOTIFICATION */}
+            {showToast && (
+                <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[1000] bg-purple-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl animate-bounce">
+                    <i className="fas fa-check-circle mr-2"></i> {pt('copiedToClipboard')}
                 </div>
-                <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className={`w-10 h-10 rounded-xl flex items-center justify-center ${isEditing ? 'bg-blue-600' : 'bg-white/10'} text-white transition-all shadow-lg`}>
-                    {isSyncing ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${isEditing ? 'fa-save' : 'fa-edit'} text-xs`}></i>}
-                </button>
-            </div>
+            )}
 
-            <div className="p-6 space-y-8">
-                <div className="flex gap-6 items-start">
-                    <div onClick={handleAvatarClick} className="shrink-0 w-28 h-36 bg-white border-2 border-[#d7d2c3] rounded-xl shadow-lg overflow-hidden p-1 relative cursor-pointer group">
-                        <img src={formData.avatar} className="w-full h-full object-cover grayscale contrast-125 saturate-0" />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-[8px] font-black text-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">{pt('changeAvatar')}</div>
+            {/* BRAG MODAL (SHARE CARD) */}
+            {showBragModal && (
+                <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+                    <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
+                        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
+
+                        <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6">
+                            <i className="fas fa-crown text-3xl text-white"></i>
+                        </div>
+
+                        <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
+                        <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
+
+                        <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
+                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
+                            <p className="text-2xl font-black text-cyan-400">{user.miles.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                handleShareRank();
+                                setShowBragModal(false);
+                            }}
+                            className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4"
+                        >
+                            <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
+                        </button>
+
+                        <button
+                            onClick={() => setShowBragModal(false)}
+                            className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+                        >
+                            Cancel
+                        </button>
                     </div>
-                    <div className="flex-1 space-y-4">
-                        <div className="pb-2 border-b border-slate-200">
-                            <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">ID_NOMAD</p>
-                            <div className="flex items-center gap-2">
-                                <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
-                                {formData.country && (
-                                    <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : (formData.country.toLowerCase() === 'españa' ? 'ES' : formData.country.substring(0,2).toUpperCase())}/flat/64.png`} className="w-3 h-3 rounded-full" alt={formData.country} />
-                                )}
+                </div>
+            )}
+
+            <div className="w-full max-w-sm px-4 pt-12">
+                <div className="flex justify-between items-center mb-6 w-full px-2">
+                    <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-red-500/20">
+                        <i className="fas fa-sign-out-alt"></i> {pt('logout')}
+                    </button>
+                    <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/5 active:scale-90 shadow-lg"><i className="fas fa-times"></i></button>
+                </div>
+
+                <div className="bg-[#f3f0e6] w-full rounded-[2.5rem] overflow-hidden shadow-2xl relative border-[3px] border-[#d7d2c3] flex flex-col text-slate-900 mb-64">
+                    <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleFileChange} />
+                    <div className="bg-[#8b2b2b] p-6 flex justify-between items-center shrink-0 border-b-2 border-[#d7d2c3]">
+                        <div>
+                            <h2 className="text-yellow-500 font-black text-[11px] uppercase tracking-widest leading-none">{pt('title')}</h2>
+                            <p className="text-white/40 text-[7px] font-bold uppercase tracking-widest mt-1.5">{pt('subtitle')}</p>
+                        </div>
+                        <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className={`w-10 h-10 rounded-xl flex items-center justify-center ${isEditing ? 'bg-blue-600' : 'bg-white/10'} text-white transition-all shadow-lg`}>
+                            {isSyncing ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${isEditing ? 'fa-save' : 'fa-edit'} text-xs`}></i>}
+                        </button>
+                    </div>
+
+                    <div className="p-6 space-y-8">
+                        <div className="flex gap-6 items-start">
+                            <div onClick={handleAvatarClick} className="shrink-0 w-28 h-36 bg-white border-2 border-[#d7d2c3] rounded-xl shadow-lg overflow-hidden p-1 relative cursor-pointer group">
+                                <img src={formData.avatar} className="w-full h-full object-cover grayscale contrast-125 saturate-0" />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-[8px] font-black text-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">{pt('changeAvatar')}</div>
                             </div>
-                        </div>
-                        <div className="pb-2 border-b border-slate-200">
-                            <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('email')}</p>
-                            <p className="font-bold text-slate-600 text-[8px] truncate leading-none">{user.email}</p>
-                        </div>
-                        <div><p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('rank')}</p><p className="font-black text-purple-600 text-[9px] uppercase">{user.rank}</p></div>
-                        <div className="flex justify-between border-t border-slate-200 pt-3">
-                            <div><p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('miles')}</p><p className="font-black text-slate-900 text-[9px] mt-1">{user.miles.toLocaleString()}</p></div>
-                            <div className="text-right"><p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('streak')}</p><p className="font-black text-orange-600 text-[9px] mt-1"><i className="fas fa-fire mr-1"></i> {user.stats.streakDays}</p></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-1">
-                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('givenNames')}</p>
-                        {isEditing ? <input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.firstName || '---'}</p>}
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('surname')}</p>
-                        {isEditing ? <input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.lastName || '---'}</p>}
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('city')}</p>
-                        {isEditing ? <input value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.city || '---'}</p>}
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('birthday')}</p>
-                        {isEditing ? <input type="date" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px]" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.birthday || '---'}</p>}
-                    </div>
-                </div>
-
-                <div className="pt-6 border-t-2 border-dashed border-slate-300">
-                    <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('stamps')}</p>
-                    <div className="grid grid-cols-4 gap-3">
-                        {user.stamps.length > 0 ? user.stamps.map((s, i) => (
-                            <div key={i} className="aspect-square bg-white border-2 border-slate-300 rounded-2xl flex flex-col items-center justify-center p-1.5 shadow-sm transform rotate-[-4deg] hover:rotate-0 transition-transform">
-                                <i className="fas fa-stamp text-lg mb-1" style={{ color: s.color }}></i>
-                                <span className="text-[6px] font-black text-slate-800 uppercase truncate w-full text-center leading-none mb-0.5">{s.city}</span>
-                                <span className="text-[5px] font-bold text-slate-400 uppercase truncate w-full text-center leading-none">{s.country}</span>
-                            </div>
-                        )) : [1,2,3,4].map(i => <div key={i} className="aspect-square bg-slate-100 border-2 border-dashed border-slate-200 rounded-2xl"></div>)}
-                    </div>
-                </div>
-
-                <div className="pt-2">
-                    <p className="text-[8px] font-black text-slate-500 mb-4 tracking-widest">{pt('myCollection')}</p>
-                    <div className="grid grid-cols-3 gap-3">
-                        {APP_BADGES.map((b) => {
-                            const isEarned = user.badges?.some(ub => ub.id === b.id);
-                            return (
-                                <div 
-                                    key={b.id} 
-                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${
-                                        isEarned 
-                                        ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105' 
-                                        : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'
-                                    }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
-                                        <i className={`fas ${b.icon} text-sm`}></i>
+                            <div className="flex-1 space-y-4">
+                                <div className="pb-2 border-b border-slate-200">
+                                    <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">ID_NOMAD</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
+                                        {formData.country && (
+                                            <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : (formData.country.toLowerCase() === 'españa' ? 'ES' : formData.country.substring(0, 2).toUpperCase())}/flat/64.png`} className="w-3 h-3 rounded-full" alt={formData.country} />
+                                        )}
                                     </div>
-                                    <span className={`text-[7px] font-black uppercase text-center leading-tight mb-1 ${isEarned ? 'text-slate-900' : 'text-slate-500'}`}>{b.name}</span>
-                                    <span className={`text-[5px] font-medium text-center leading-none opacity-60 ${isEarned ? 'text-slate-700' : 'text-slate-400'}`}>{pt(b.description)}</span>
                                 </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                                <div className="pb-2 border-b border-slate-200">
+                                    <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('email')}</p>
+                                    <p className="font-bold text-slate-600 text-[8px] truncate leading-none">{user.email}</p>
+                                </div>
+                                <div><p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('rank')}</p><p className="font-black text-purple-600 text-[9px] uppercase">{user.rank}</p></div>
+                                <div className="flex justify-between border-t border-slate-200 pt-3">
+                                    <div><p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('miles')}</p><p className="font-black text-slate-900 text-[9px] mt-1">{user.miles.toLocaleString()}</p></div>
+                                    <div className="text-right"><p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('streak')}</p><p className="font-black text-orange-600 text-[9px] mt-1"><i className="fas fa-fire mr-1"></i> {user.stats.streakDays}</p></div>
+                                </div>
+                            </div>
+                        </div>
 
-                <div className="pt-4">
-                    <button 
-                        onClick={() => setShowBragModal(true)}
-                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"
-                    >
-                        <i className="fas fa-bullhorn text-purple-400"></i>
-                        {pt('shareRank')}
-                    </button>
-                </div>
+                        <div className="grid grid-cols-2 gap-4 pt-2">
+                            <div className="space-y-1">
+                                <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('givenNames')}</p>
+                                {isEditing ? <input value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.firstName || '---'}</p>}
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('surname')}</p>
+                                {isEditing ? <input value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.lastName || '---'}</p>}
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('city')}</p>
+                                {isEditing ? <input value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.city || '---'}</p>}
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('birthday')}</p>
+                                {isEditing ? <input type="date" value={formData.birthday} onChange={e => setFormData({ ...formData, birthday: e.target.value })} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px]" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.birthday || '---'}</p>}
+                            </div>
+                        </div>
 
-                <div className="pt-6">
-                    <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('langLabel')}</p>
-                    <div className="flex flex-wrap gap-2 mb-20">
-                        {LANGUAGES.map(lang => (
-                            <LangCircle key={lang.code} label={lang.name} code={lang.code} isActive={user.language === lang.code} onClick={() => onLangChange?.(lang.code)} />
-                        ))}
-                    </div>
-                    {isAdmin && (
-                        <div className="flex gap-2 mb-3">
-                            <button onClick={onOpenAdmin} className="flex-1 py-4 bg-slate-900 text-yellow-500 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
-                                <i className="fas fa-tools text-xs"></i> {pt('admin')}
-                            </button>
-                            <button 
-                                onClick={() => {
-                                    onClose();
-                                    // We need a way to trigger the PARTNER_DASHBOARD view from here.
-                                    // Since onOpenAdmin is already passed, I'll add a new prop or reuse it.
-                                    (window as any).dispatchEvent(new CustomEvent('open-partner-dashboard'));
-                                }} 
-                                className="flex-1 py-4 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg"
+                        <div className="pt-6 border-t-2 border-dashed border-slate-300">
+                            <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('stamps')}</p>
+                            <div className="grid grid-cols-4 gap-3">
+                                {user.stamps.length > 0 ? user.stamps.map((s, i) => (
+                                    <div key={i} className="aspect-square bg-white border-2 border-slate-300 rounded-2xl flex flex-col items-center justify-center p-1.5 shadow-sm transform rotate-[-4deg] hover:rotate-0 transition-transform">
+                                        <i className="fas fa-stamp text-lg mb-1" style={{ color: s.color }}></i>
+                                        <span className="text-[6px] font-black text-slate-800 uppercase truncate w-full text-center leading-none mb-0.5">{s.city}</span>
+                                        <span className="text-[5px] font-bold text-slate-400 uppercase truncate w-full text-center leading-none">{s.country}</span>
+                                    </div>
+                                )) : [1, 2, 3, 4].map(i => <div key={i} className="aspect-square bg-slate-100 border-2 border-dashed border-slate-200 rounded-2xl"></div>)}
+                            </div>
+                        </div>
+
+                        <div className="pt-2">
+                            <p className="text-[8px] font-black text-slate-500 mb-4 tracking-widest">{pt('myCollection')}</p>
+                            <div className="grid grid-cols-3 gap-3">
+                                {APP_BADGES.map((b) => {
+                                    const isEarned = user.badges?.some(ub => ub.id === b.id);
+                                    return (
+                                        <div
+                                            key={b.id}
+                                            className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned
+                                                ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105'
+                                                : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'
+                                                }`}
+                                        >
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
+                                                <i className={`fas ${b.icon} text-sm`}></i>
+                                            </div>
+                                            <span className={`text-[7px] font-black uppercase text-center leading-tight mb-1 ${isEarned ? 'text-slate-900' : 'text-slate-500'}`}>{b.name}</span>
+                                            <span className={`text-[5px] font-medium text-center leading-none opacity-60 ${isEarned ? 'text-slate-700' : 'text-slate-400'}`}>{pt(b.description)}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="pt-4">
+                            <button
+                                onClick={() => setShowBragModal(true)}
+                                className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"
                             >
-                                <i className="fas fa-chart-line text-xs"></i> PARTNER
+                                <i className="fas fa-bullhorn text-purple-400"></i>
+                                {pt('shareRank')}
                             </button>
                         </div>
-                    )}
-                    <button 
-                        onClick={() => {
-                            supabase.auth.signOut();
-                            onClose();
-                        }}
-                        className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
-                    >
-                        <i className="fas fa-sign-out-alt"></i>
-                        Cerrar Sesión
-                    </button>
+
+                        <div className="pt-6">
+                            <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('langLabel')}</p>
+                            <div className="flex flex-wrap gap-2 mb-20">
+                                {LANGUAGES.map(lang => (
+                                    <LangCircle key={lang.code} label={lang.name} code={lang.code} isActive={user.language === lang.code} onClick={() => onLangChange?.(lang.code)} />
+                                ))}
+                            </div>
+                            {isAdmin && (
+                                <div className="flex gap-2 mb-3">
+                                    <button onClick={onOpenAdmin} className="flex-1 py-4 bg-slate-900 text-yellow-500 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
+                                        <i className="fas fa-tools text-xs"></i> {pt('admin')}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            onClose();
+                                            // We need a way to trigger the PARTNER_DASHBOARD view from here.
+                                            // Since onOpenAdmin is already passed, I'll add a new prop or reuse it.
+                                            (window as any).dispatchEvent(new CustomEvent('open-partner-dashboard'));
+                                        }}
+                                        className="flex-1 py-4 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg"
+                                    >
+                                        <i className="fas fa-chart-line text-xs"></i> PARTNER
+                                    </button>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => {
+                                    supabase.auth.signOut();
+                                    onClose();
+                                }}
+                                className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                            >
+                                <i className="fas fa-sign-out-alt"></i>
+                                Cerrar Sesión
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
