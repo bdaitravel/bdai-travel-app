@@ -10,7 +10,6 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { AdminPanel } from './components/AdminPanel';
 import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
-import { Community } from './components/Community';
 import { LegalModal } from './components/LegalModal';
 import { ToastContainer } from './components/ToastSystem';
 import { translations } from './data/translations';
@@ -54,8 +53,19 @@ initGlobalErrorHandler();
 
 export default function App() {
   const [view, setView] = useState<AppView>(AppView.LOGIN);
+  const [showCommunity, setShowCommunity] = useState(false);
   const viewRef = useRef(view);
   useEffect(() => { viewRef.current = view; }, [view]);
+
+  // Restore last city on mount so it never disappears
+  useEffect(() => {
+    try {
+      const savedCity  = localStorage.getItem('bdai_last_city');
+      const savedTours = localStorage.getItem('bdai_last_tours');
+      if (savedCity)  { const c = JSON.parse(savedCity);  setSelectedCity(c.name); setSelectedCountry(c.country); setSelectedCountryEn(c.countryEn); setSelectedCitySlug(c.slug); }
+      if (savedTours) { setTours(JSON.parse(savedTours)); }
+    } catch (_) {}
+  }, []);
 
   const [online, setOnline] = useState(isOnline());
   useEffect(() => onConnectivityChange(setOnline), []);
@@ -230,6 +240,14 @@ export default function App() {
     setSelectedCountryEn(selection.countryEn || selection.country);
     const slug = normalizeKey(cleanName, selection.countryEn || selection.country);
     setSelectedCitySlug(slug);
+    // Persist city so it survives tab changes and back navigation
+    try {
+      localStorage.setItem('bdai_last_city', JSON.stringify({
+        name: cleanName, country: selection.country,
+        countryEn: selection.countryEn || selection.country,
+        countryCode: selection.countryCode, slug
+      }));
+    } catch (_) {}
 
     try {
       if (forceRefresh) {
@@ -270,7 +288,7 @@ export default function App() {
       }
 
       setTours([]);
-      setLoadingMessage(t('generating'));
+      setLoadingMessage("DAI PREPARANDO TU AVENTURA...");
       let firstArrived = false;
 
       const generated = await generateToursForCity(
@@ -282,12 +300,15 @@ export default function App() {
           if (!firstArrived) {
             firstArrived = true;
             setIsLoading(false);
+            // Navigate silently — no message, no "listo"
             if (viewRef.current === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
           }
         }
       );
 
       if (generated.length > 0) {
+        // Save to localStorage for instant restore
+        try { localStorage.setItem('bdai_last_tours', JSON.stringify(generated)); } catch (_) {}
         // Save to Supabase cache
         supabase.from('tours_cache').upsert(
           { city: slug, language: langCode.toLowerCase(), data: generated },
@@ -520,18 +541,32 @@ export default function App() {
             {/* ── CITY DETAIL ──────────────────────────────────────────────── */}
             {view === AppView.CITY_DETAIL && (
               <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
-                <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
+                <header className="flex items-center gap-4 mb-6 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
                   <button onClick={() => navigateTo(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90">
                     <i className="fas fa-arrow-left text-xs"></i>
                   </button>
                   <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
                   <button onClick={() => processCitySelection({ city: selectedCity, country: selectedCountry, countryEn: selectedCountryEn, slug: selectedCitySlug }, user.language, true)}
-                    className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center active:rotate-180 transition-transform"
-                    title="Regenerar tours">
+                    className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center active:rotate-180 transition-transform">
                     <i className="fas fa-sync-alt text-xs"></i>
                   </button>
                 </header>
 
+                {/* Tours / Community tab switcher */}
+                <div className="flex gap-2 mb-6">
+                  <button onClick={() => setShowCommunity(false)}
+                    className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!showCommunity ? 'bg-purple-600 text-white' : 'bg-white/5 text-slate-500'}`}>
+                    <i className="fas fa-map-marked-alt mr-2"></i>Tours
+                  </button>
+                  <button onClick={() => setShowCommunity(true)}
+                    className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showCommunity ? 'bg-purple-600 text-white' : 'bg-white/5 text-slate-500'}`}>
+                    <i className="fas fa-users mr-2"></i>Community
+                  </button>
+                </div>
+
+                {showCommunity ? (
+                  <Community user={user} language={user.language} city={selectedCity || ''} />
+                ) : (
                 <div className="space-y-6 pb-12">
                   {tours.map(tour => (
                     <div key={tour.id} className="animate-fade-in">
@@ -540,7 +575,6 @@ export default function App() {
                         language={user.language} />
                     </div>
                   ))}
-                  {/* Skeletons for tours still generating */}
                   {tours.length < 3 && Array.from({ length: 3 - tours.length }).map((_, i) => (
                     <div key={`sk-${i}`} className="rounded-3xl border border-white/5 bg-white/[0.02] p-6 animate-pulse">
                       <div className="flex items-center gap-4 mb-4">
@@ -562,6 +596,7 @@ export default function App() {
                     </div>
                   ))}
                 </div>
+                )}
               </div>
             )}
 
@@ -585,7 +620,6 @@ export default function App() {
             {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
             {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
             {view === AppView.LEADERBOARD  && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
-            {view === AppView.COMMUNITY    && <Community user={user} language={user.language} />}
             {view === AppView.PROFILE      && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} onUpdateUser={updateUserAndSync} language={user.language} onLogout={() => { supabase.auth.signOut(); navigateTo(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigateTo(AppView.ADMIN)} onLangChange={handleLangChange} onOpenLegal={() => setShowLegal(true)} />}
             {view === AppView.SHOP         && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
             {view === AppView.TOOLS        && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
@@ -597,7 +631,7 @@ export default function App() {
             <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
               <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm rounded-[2.5rem] pointer-events-auto shadow-2xl">
                 <NavButton icon="fa-trophy"     label={t('navElite')}  isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
-                <NavButton icon="fa-users"      label="community"      isActive={view === AppView.COMMUNITY}   onClick={() => navigateTo(AppView.COMMUNITY)} />
+                <NavButton icon="fa-store"      label={t('navShop') || 'shop'} isActive={view === AppView.SHOP} onClick={() => navigateTo(AppView.SHOP)} />
                 <button onClick={() => navigateTo(AppView.HOME)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}>
                   <BdaiLogo className="w-7 h-7" />
                 </button>
