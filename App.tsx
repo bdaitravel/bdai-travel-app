@@ -568,7 +568,7 @@ export default function App() {
                 </div>
 
                 {showCommunity ? (
-                  <Community user={user} language={user.language} city={selectedCity || ''} />
+                  <Community user={user} language={user.language} />
                 ) : (
                 <div className="space-y-6 pb-12">
                   {tours.map(tour => (
@@ -648,3 +648,4 @@ export default function App() {
     </div>
   );
 }
+
