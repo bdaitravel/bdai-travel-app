@@ -1,149 +1,203 @@
-
-import React, { useEffect, useState } from 'react';
-import { BdaiLogo } from './BdaiLogo';
-import { generateDaiWelcome } from '../services/geminiService';
+import React, { useState } from 'react';
 import { UserProfile } from '../types';
+import { BdaiLogo } from './BdaiLogo';
+import { RANKS } from '../services/gamificationService';
 
 interface OnboardingProps {
-    onComplete: () => void;
-    language: string;
-    user: UserProfile;
+  user: UserProfile;
+  language?: string;
+  onComplete: () => void;
 }
 
-const ONBOARDING_TEXTS: Record<string, any> = {
-    es: {
-        step1: { title: "¿Qué es bdai?", subtitle: "Tu Ecosistema de Viajes", content: "bdai no es una simple audioguía. Es tu compañero de viajes inteligente. Aquí descubrirás los secretos mejor guardados de cualquier ciudad del mundo, guiado por inteligencia artificial.", tag: "BETA_ACCESS" },
-        step2: { title: "Conoce a DAI", subtitle: "Tu Guía Personal", content: "Soy DAI, la inteligencia artificial detrás de bdai. Soy elegante, directa y odio las descripciones aburridas. Te contaré la verdadera historia y los secretos de cada lugar.", tag: "DAI_VOICE" },
-        step3: { title: "Tours Únicos", subtitle: "Explora a tu ritmo", content: "Busca cualquier ciudad y crearé rutas temáticas al instante. Sigue el mapa, llega a cada parada y descubre historias fascinantes. ¡Cero rutas aburridas, 100% lugares increíbles!", tag: "SMART_ROUTES" },
-        step4: { title: "Millas y Ranking", subtitle: "Gamificación Real", content: "Acércate a menos de 50 metros de una parada para hacer 'Check-in'. Ganarás millas reales que te harán subir en el Ranking Global. ¡Compite para ser el mejor viajero!", tag: "MILES_SYSTEM" },
-        step5: { title: "Tu Pasaporte", subtitle: "Colecciona Insignias", content: "Al completar tours, ganarás sellos en tu pasaporte virtual y desbloquearás insignias exclusivas según tu estilo de viaje. ¡Genera tu Visado y presúmelo en tus redes sociales!", tag: "PASSPORT_ID" },
-        step6: { title: "Marketplace", subtitle: "Próximamente", content: "Muy pronto abriremos nuestra tienda oficial, donde podrás encontrar los mejores productos y accesorios para tus viajes, seleccionados especialmente por DAI.", tag: "SHOP_HUB" },
-        btnNext: "SIGUIENTE",
-        btnDone: "ENTENDIDO, DAI"
-    },
-    en: {
-        step1: { title: "What is bdai?", subtitle: "Your Travel Ecosystem", content: "bdai is not just an audio guide. It's your smart travel companion. Here you will discover the best-kept secrets of any city in the world, guided by artificial intelligence.", tag: "BETA_ACCESS" },
-        step2: { title: "Meet DAI", subtitle: "Your Personal Guide", content: "I am DAI, the AI behind bdai. I am elegant, direct, and I hate boring descriptions. I will tell you the true history and secrets of every place.", tag: "DAI_VOICE" },
-        step3: { title: "Unique Tours", subtitle: "Explore at your pace", content: "Search for any city and I will create thematic routes instantly. Follow the map, reach each stop, and discover fascinating stories. Zero boring routes, 100% amazing places!", tag: "SMART_ROUTES" },
-        step4: { title: "Miles & Ranking", subtitle: "Real Gamification", content: "Get within 50 meters of a stop to 'Check-in'. You will earn real miles that will make you climb the Global Ranking. Compete to be the best traveler!", tag: "MILES_SYSTEM" },
-        step5: { title: "Your Passport", subtitle: "Collect Badges", content: "By completing tours, you will earn stamps in your virtual passport and unlock exclusive badges based on your travel style. Generate your Visa and show it off on social media!", tag: "PASSPORT_ID" },
-        step6: { title: "Marketplace", subtitle: "Coming Soon", content: "Very soon we will open our official store, where you can find the best products and accessories for your travels, specially selected by DAI.", tag: "SHOP_HUB" },
-        btnNext: "NEXT",
-        btnDone: "GOT IT, DAI"
-    }
-};
+const STEPS = ['welcome','what_is_bdai','meet_dai','how_it_works','ranks','miles','ready'] as const;
+type Step = typeof STEPS[number];
 
-export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, user }) => {
-    const [welcomeMessage, setWelcomeMessage] = useState<string>('');
-    const [isLoading, setIsLoading] = useState(true);
-    const [step, setStep] = useState(0);
+export const Onboarding: React.FC<OnboardingProps> = ({ user, language = 'es', onComplete }) => {
+  const [step, setStep] = useState<Step>('welcome');
+  const [isExiting, setIsExiting] = useState(false);
+  const currentIndex = STEPS.indexOf(step);
+  const isLast = currentIndex === STEPS.length - 1;
 
-    const t = ONBOARDING_TEXTS[language] || ONBOARDING_TEXTS.en;
+  const next = () => { if (isLast) { handleComplete(); return; } setStep(STEPS[currentIndex + 1]); };
+  const prev = () => { if (currentIndex > 0) setStep(STEPS[currentIndex - 1]); };
+  const handleComplete = () => { setIsExiting(true); setTimeout(onComplete, 300); };
 
-    const steps = [
-        {
-            title: t.step1.title,
-            subtitle: t.step1.subtitle,
-            content: t.step1.content,
-            icon: <BdaiLogo className="w-16 h-16 mb-6 animate-pulse-logo" />,
-            tag: t.step1.tag
-        },
-        {
-            title: t.step2.title,
-            subtitle: t.step2.subtitle,
-            content: welcomeMessage || t.step2.content,
-            icon: <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-purple-500/20"><i className="fas fa-brain text-3xl text-white"></i></div>,
-            tag: t.step2.tag
-        },
-        {
-            title: t.step3.title,
-            subtitle: t.step3.subtitle,
-            content: t.step3.content,
-            icon: <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/20"><i className="fas fa-map-location-dot text-3xl text-white"></i></div>,
-            tag: t.step3.tag
-        },
-        {
-            title: t.step4.title,
-            subtitle: t.step4.subtitle,
-            content: t.step4.content,
-            icon: <div className="w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-yellow-500/20"><i className="fas fa-trophy text-3xl text-slate-900"></i></div>,
-            tag: t.step4.tag
-        },
-        {
-            title: t.step5.title,
-            subtitle: t.step5.subtitle,
-            content: t.step5.content,
-            icon: <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/20"><i className="fas fa-passport text-3xl text-white"></i></div>,
-            tag: t.step5.tag
-        },
-        {
-            title: t.step6.title,
-            subtitle: t.step6.subtitle,
-            content: t.step6.content,
-            icon: <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-pink-500/20"><i className="fas fa-shopping-bag text-3xl text-white"></i></div>,
-            tag: t.step6.tag
-        }
-    ];
+  const firstName = user.firstName || user.username || 'Viajero';
 
-    useEffect(() => {
-        const fetchWelcome = async () => {
-            try {
-                const msg = await generateDaiWelcome(user);
-                setWelcomeMessage(msg);
-            } catch (e) {
-                setWelcomeMessage(t.step2.content);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchWelcome();
-    }, [user, language]);
-
-    const currentStep = steps[step];
-
-    return (
-        <div className="fixed inset-0 z-[10000] bg-[#020617] flex flex-col items-center p-6 overflow-y-auto no-scrollbar animate-fade-in">
-            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-purple-600/30 to-transparent"></div>
-            
-            <div className="w-full max-w-sm mt-12 flex flex-col items-center relative z-10">
-                <div className="bg-white/5 border border-white/10 p-8 rounded-[3.5rem] shadow-2xl backdrop-blur-xl w-full flex flex-col items-center min-h-[500px]">
-                    {currentStep.icon}
-                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter text-center leading-tight">{currentStep.title}</h2>
-                    <p className="text-[9px] font-black text-purple-400 uppercase tracking-[0.4em] mt-3 text-center">{currentStep.subtitle}</p>
-                    
-                    <div className="w-full mt-10 p-6 bg-white/[0.03] border border-white/10 rounded-3xl relative flex-1">
-                        <div className="absolute -top-3 left-6 bg-purple-600 px-3 py-1 rounded-full text-[7px] font-black uppercase tracking-widest text-white">{currentStep.tag}</div>
-                        {isLoading && step === 0 ? (
-                            <div className="space-y-2">
-                                <div className="h-2 bg-white/10 rounded animate-pulse w-full"></div>
-                                <div className="h-2 bg-white/10 rounded animate-pulse w-3/4"></div>
-                                <div className="h-2 bg-white/10 rounded animate-pulse w-1/2"></div>
-                            </div>
-                        ) : (
-                            <p className="text-slate-300 text-sm font-medium italic leading-relaxed">
-                                "{currentStep.content}"
-                            </p>
-                        )}
-                    </div>
-
-                    <div className="flex gap-2 mt-8">
-                        {steps.map((_, i) => (
-                            <div key={i} className={`w-2 h-2 rounded-full transition-all ${i === step ? 'w-6 bg-purple-500' : 'bg-white/10'}`}></div>
-                        ))}
-                    </div>
-
-                    <button 
-                        onClick={() => {
-                            if (step < steps.length - 1) setStep(step + 1);
-                            else onComplete();
-                        }} 
-                        className="w-full mt-8 py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase tracking-widest text-[10px] shadow-2xl active:scale-95 transition-all"
-                    >
-                        {step < steps.length - 1 ? t.btnNext : t.btnDone}
-                    </button>
-                </div>
-            </div>
+  const content: Record<Step, React.ReactNode> = {
+    welcome: (
+      <div className="flex flex-col items-center text-center">
+        <BdaiLogo className="w-28 h-28 mb-6 animate-pulse-logo" />
+        <h1 className="text-7xl font-black text-white lowercase tracking-tighter leading-none mb-3">bdai</h1>
+        <p className="text-purple-400 text-[11px] uppercase tracking-widest mb-8">better destinations by ai</p>
+        <div className="bg-white/5 border border-white/10 rounded-3xl px-8 py-6 max-w-xs">
+          <p className="text-white font-black text-lg mb-2">Hola, {firstName} 👋</p>
+          <p className="text-slate-400 text-[13px] leading-relaxed">Bienvenido a la guía de viajes más sarcástica, inteligente y no-turística del planeta.</p>
         </div>
-    );
+      </div>
+    ),
+    what_is_bdai: (
+      <div className="flex flex-col items-center text-center space-y-5">
+        <div className="text-6xl">🌍</div>
+        <div>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">¿Qué es bdai?</h2>
+          <p className="text-purple-400 text-[10px] uppercase tracking-widest">Better Destinations AI</p>
+        </div>
+        <div className="space-y-3 w-full max-w-sm text-left">
+          {[
+            { icon: '🧠', title: 'IA con personalidad', desc: 'No somos Wikipedia. DAI conoce los secretos que los guías no cuentan.' },
+            { icon: '🗺️', title: 'Tours únicos', desc: '3 rutas temáticas por ciudad, con 10+ paradas. Regenerables ilimitado.' },
+            { icon: '🎯', title: 'Solo lo real', desc: 'Sin inventos. Sin patrocinados. Solo lugares reales y datos verificados.' },
+            { icon: '🏆', title: 'Gamificado', desc: 'Gana millas, sube de rango y colecciona insignias explorando.' },
+          ].map(item => (
+            <div key={item.title} className="flex gap-4 bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+              <span className="text-2xl shrink-0">{item.icon}</span>
+              <div><p className="text-white font-black text-[12px] uppercase mb-1">{item.title}</p><p className="text-slate-400 text-[11px] leading-relaxed">{item.desc}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    meet_dai: (
+      <div className="flex flex-col items-center text-center space-y-5">
+        <div className="w-28 h-28 bg-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/40 border-4 border-white/20">
+          <i className="fas fa-brain text-5xl text-white"></i>
+        </div>
+        <div>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Conoce a DAI</h2>
+          <p className="text-purple-400 text-[10px] uppercase tracking-widest">Tu guía de IA con actitud</p>
+        </div>
+        <div className="bg-purple-600/10 border border-purple-500/30 rounded-3xl p-5 max-w-sm text-left">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 bg-purple-600 rounded-full flex items-center justify-center"><i className="fas fa-brain text-white text-[10px]"></i></div>
+            <span className="text-purple-300 font-black text-[10px] uppercase tracking-widest">DAI dice:</span>
+          </div>
+          <p className="text-slate-300 text-[13px] leading-relaxed italic">"Bienvenido, {firstName}. Conozco cada callejón, cada secreto y cada vergüenza histórica de cada ciudad. Los guías te llevan donde quieren. Yo te llevo donde deberías ir."</p>
+        </div>
+        <div className="space-y-2 w-full max-w-sm text-left">
+          {[['🎭','Sarcástico pero preciso — nunca inventa'],['📚','Historia, arquitectura, arte y gastronomía'],['🗣️','16 idiomas — habla el tuyo'],['🔊','Audioguía con voz propia']].map(([icon,text]) => (
+            <div key={text} className="flex items-center gap-3 text-slate-400 text-[12px]"><span>{icon}</span><span>{text}</span></div>
+          ))}
+        </div>
+      </div>
+    ),
+    how_it_works: (
+      <div className="flex flex-col items-center text-center space-y-5">
+        <div className="text-5xl">⚡</div>
+        <div>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Cómo funciona</h2>
+          <p className="text-slate-400 text-[11px]">3 pasos para descubrir cualquier ciudad</p>
+        </div>
+        <div className="space-y-3 w-full max-w-sm">
+          {[
+            { num:'01', title:'Busca una ciudad', desc:'Cualquier ciudad del mundo. DAI la conoce casi todas.', icon:'fa-search' },
+            { num:'02', title:'DAI genera 3 tours', desc:'3 rutas temáticas con 10+ paradas. Aparecen conforme se generan.', icon:'fa-brain' },
+            { num:'03', title:'Explora y gana', desc:'Sigue la ruta en el mapa, escucha el audio y gana millas en cada parada.', icon:'fa-map-location-dot' },
+          ].map(s => (
+            <div key={s.num} className="flex gap-4 bg-white/[0.03] border border-white/5 rounded-2xl p-4 text-left">
+              <div className="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center shrink-0"><span className="text-purple-400 font-black text-[10px]">{s.num}</span></div>
+              <div><p className="text-white font-black text-[12px] uppercase mb-1">{s.title}</p><p className="text-slate-400 text-[11px] leading-relaxed">{s.desc}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    ranks: (
+      <div className="flex flex-col items-center text-center space-y-4">
+        <div className="text-5xl">👑</div>
+        <div>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Tu rango</h2>
+          <p className="text-slate-400 text-[11px]">De ZERO a ZENITH — ¿dónde llegarás?</p>
+        </div>
+        <div className="w-full max-w-sm space-y-2">
+          {RANKS.map(rank => (
+            <div key={rank.id} className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5">
+              <span className="text-xl w-8 text-center">{rank.icon}</span>
+              <div className="flex-1 text-left">
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-[11px] uppercase" style={{ color: rank.color }}>{rank.label}</span>
+                  {rank.id === 'ZERO' && <span className="text-[8px] bg-purple-600/30 text-purple-300 rounded-full px-2 py-0.5 font-black">TÚ AHORA</span>}
+                </div>
+                <p className="text-slate-500 text-[10px]">{rank.description}</p>
+              </div>
+              <span className="text-[9px] text-slate-600 font-black">{rank.minMiles.toLocaleString()}mi</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    miles: (
+      <div className="flex flex-col items-center text-center space-y-5">
+        <div className="text-5xl">🪙</div>
+        <div>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Millas bdai</h2>
+          <p className="text-slate-400 text-[11px]">Gana explorando. Sube de rango.</p>
+        </div>
+        <div className="space-y-2 w-full max-w-sm">
+          {[
+            { action:'Visitar una parada',    miles:'+10',   icon:'fa-map-pin',        color:'#6366f1' },
+            { action:'Foto en una parada',    miles:'+50',   icon:'fa-camera',         color:'#007AFF' },
+            { action:'Completar un tour',     miles:'+200',  icon:'fa-flag-checkered', color:'#34C759' },
+            { action:'Primera vez en ciudad', miles:'+500',  icon:'fa-city',           color:'#f59e0b' },
+            { action:'Racha diaria',          miles:'+100',  icon:'fa-fire',           color:'#FF6B35' },
+            { action:'Invitar un amigo',      miles:'+1000', icon:'fa-user-plus',      color:'#AF52DE' },
+          ].map(item => (
+            <div key={item.action} className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-2xl p-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: item.color+'20' }}>
+                <i className={`fas ${item.icon} text-sm`} style={{ color: item.color }}></i>
+              </div>
+              <span className="text-slate-300 text-[12px] flex-1 text-left">{item.action}</span>
+              <span className="font-black text-[13px]" style={{ color: item.color }}>{item.miles}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    ready: (
+      <div className="flex flex-col items-center text-center space-y-7">
+        <div className="w-32 h-32 bg-gradient-to-br from-purple-600 to-purple-900 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/50 border-4 border-white/20">
+          <i className="fas fa-rocket text-5xl text-white"></i>
+        </div>
+        <div>
+          <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-2">¡Listo, {firstName}!</h2>
+          <p className="text-slate-400 text-[13px] leading-relaxed max-w-xs">Empiezas en rango <strong className="text-purple-400">ZERO</strong>. El mundo está esperando. DAI también.</p>
+        </div>
+        <div className="bg-purple-600/10 border border-purple-500/30 rounded-3xl px-6 py-5 max-w-xs">
+          <p className="text-slate-300 text-[13px] italic leading-relaxed">"Cero millas. Cero tours. Cero excusas. Busca tu primera ciudad."</p>
+          <p className="text-purple-400 font-black text-[10px] mt-2 uppercase tracking-widest">— DAI</p>
+        </div>
+        <p className="text-slate-600 text-[10px]">Al continuar aceptas nuestros Términos y Política de Privacidad</p>
+      </div>
+    ),
+  };
+
+  return (
+    <div className={`fixed inset-0 z-[9997] bg-[#020617] flex flex-col transition-opacity duration-300 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
+      <div className="h-0.5 bg-white/5 w-full">
+        <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all duration-500" style={{ width: `${((currentIndex + 1) / STEPS.length) * 100}%` }} />
+      </div>
+      <div className="flex justify-center gap-1.5 pt-4 pb-2">
+        {STEPS.map((s, i) => (
+          <div key={s} className={`rounded-full transition-all duration-300 ${i === currentIndex ? 'w-6 h-1.5 bg-purple-500' : i < currentIndex ? 'w-1.5 h-1.5 bg-purple-500/40' : 'w-1.5 h-1.5 bg-white/10'}`} />
+        ))}
+      </div>
+      <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4 flex flex-col items-center justify-center">
+        <div className="w-full max-w-sm animate-fade-in" key={step}>{content[step]}</div>
+      </div>
+      <div className="px-6 pb-8 flex gap-3">
+        {currentIndex > 0 && (
+          <button onClick={prev} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 text-slate-400 flex items-center justify-center active:scale-90 transition-all">
+            <i className="fas fa-arrow-left text-sm"></i>
+          </button>
+        )}
+        <button onClick={next} className="flex-1 h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[12px] tracking-widest shadow-xl shadow-purple-500/30 active:scale-95 transition-all flex items-center justify-center gap-2">
+          {isLast ? <><i className="fas fa-rocket text-sm"></i> ¡Empezar!</> : <>Siguiente <i className="fas fa-arrow-right text-sm"></i></>}
+        </button>
+        {!isLast && (
+          <button onClick={handleComplete} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 text-slate-600 flex items-center justify-center text-[9px] font-black uppercase active:scale-90 transition-all">Skip</button>
+        )}
+      </div>
+    </div>
+  );
 };
 
