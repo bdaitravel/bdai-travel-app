@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
+import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES, APP_BADGES } from './types';
 import { generateToursForCity, normalizeCityWithAI } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { Leaderboard } from './components/Leaderboard';
@@ -140,7 +140,7 @@ export default function App() {
       } catch (e) { console.error("Auth init:", e); } finally { setIsVerifyingSession(false); }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       if (session?.user) { handleLoginSuccess(session.user); }
       else if (_event === 'SIGNED_OUT') { setUser(GUEST_PROFILE); navigateTo(AppView.LOGIN); }
     });
@@ -154,10 +154,12 @@ export default function App() {
     try {
       const profile = await getUserProfileByEmail(supabaseUser.email || '');
       if (profile) {
+        const badgeIds = checkBadges(profile);
+        const resolvedBadges = APP_BADGES.filter(b => badgeIds.includes(b.id));
         const updated = {
           ...profile,
           rank: calculateTravelerRank(profile.miles),
-          badges: checkBadges(profile),
+          badges: resolvedBadges,
           stats: { ...profile.stats, sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1 }
         };
         setUser({ ...updated, isLoggedIn: true });
