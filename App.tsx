@@ -11,6 +11,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
 import { LegalModal } from './components/LegalModal';
+import { Community } from './components/Community';
 import { ToastContainer } from './components/ToastSystem';
 import { translations } from './data/translations';
 import { showToast, handleGeminiError, handleSupabaseError, initGlobalErrorHandler } from './services/errorService';
@@ -315,7 +316,7 @@ export default function App() {
         supabase.from('tours_cache').upsert(
           { city: slug, language: langCode.toLowerCase(), data: generated },
           { onConflict: 'city,language' }
-        ).catch(e => handleSupabaseError(e, 'tours-cache-save'));
+        ).catch((e: any) => handleSupabaseError(e, 'tours-cache-save'));
         // Save offline
         saveTourOffline(slug, langCode, cleanName, selection.country, generated).catch(() => {});
       } else {
@@ -622,7 +623,7 @@ export default function App() {
             {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
             {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
             {view === AppView.LEADERBOARD  && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
-            {view === AppView.PROFILE      && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} onUpdateUser={updateUserAndSync} language={user.language} onLogout={() => { supabase.auth.signOut(); navigateTo(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigateTo(AppView.ADMIN)} onLangChange={handleLangChange} onOpenLegal={() => setShowLegal(true)} />}
+            {view === AppView.PROFILE      && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} onUpdateUser={updateUserAndSync} language={user.language} onLogout={() => { supabase.auth.signOut(); navigateTo(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigateTo(AppView.ADMIN)} onLangChange={handleLangChange} />}
             {view === AppView.SHOP         && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
             {view === AppView.TOOLS        && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
             {view === AppView.ADMIN        && <AdminPanel user={user} onBack={() => navigateTo(AppView.PROFILE)} />}
