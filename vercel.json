@@ -1,11 +1,14 @@
-
 {
-  "version": 2,
-  "rewrites": [
+  "buildCommand": "npm ci && npm run build",
+  "headers": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
     }
-  ],
-  "cleanUrls": true
+  ]
 }
