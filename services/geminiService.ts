@@ -27,7 +27,7 @@ export class QuotaError extends Error {
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
 
 // Verified model IDs (as of 2025)
-const MODEL_FAST = "gemini-2.0-flash";
+const MODEL_FAST = "gemini-2.0-flash"; // v2;
 const MODEL_TTS  = "gemini-2.5-flash-preview-tts";
 const MODEL_IMG  = "gemini-2.0-flash-exp";
 
