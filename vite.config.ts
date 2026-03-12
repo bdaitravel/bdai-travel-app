@@ -21,3 +21,4 @@ export default defineConfig(({ mode }) => {
     }
   }
 })
+// build v2
