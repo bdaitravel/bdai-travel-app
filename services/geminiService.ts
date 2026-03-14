@@ -81,23 +81,49 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     });
 };
 
-export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
-    return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+export const generateToursForCity = async (
+    city: string,
+    country: string,
+    user: UserProfile,
+    onTourGenerated?: (tour: Tour) => void
+): Promise<Tour[]> => {
+    const themes = [
+        "The Classics with a Dark Twist (Historical and Architecture)",
+        "Hidden Gems and Underground Culture",
+        "Culinary Secrets and Local Art"
+    ];
 
-        const response = await ai.models.generateContent({
-            model: MODEL_FAST,
-            contents: "Generate EXACTLY 3 distinct thematic tours for " + city + ", " + country + " in " + user.language + ". You are DAI: sarcastic, witty, sophisticated. Wikipedia is your enemy. Tell secrets and dark curiosities. NEVER use citations. All facts must be real. CATEGORIES: architecture=churches/cathedrals/bridges/buildings, historical=palaces/castles/ruins/monuments, culture=theaters/music/festivals, food=restaurants/markets, art=museums/galleries, nature=parks/gardens, photo=scenic spots. Return ONLY a valid JSON array. Each tour: { \"id\", \"city\": \"" + city + "\", \"title\", \"description\", \"duration\", \"distance\", \"stops\": [] }. Each stop: { \"id\", \"name\", \"description\" (150-200 words in " + user.language + "), \"latitude\", \"longitude\", \"type\", \"photoSpot\": { \"angle\", \"milesReward\": 50, \"secretLocation\" } }. MINIMUM 10 STOPS per tour.",
-            config: {
-                systemInstruction: "You are DAI, elegant and SARCASTIC AI travel guide. You HATE Wikipedia-style descriptions. You love dark secrets and city mysteries. NEVER use citations. Cathedral is ALWAYS architecture. Palace is ALWAYS historical.",
-            },
+    const generateSingleTour = async (theme: string, index: number): Promise<Tour> => {
+        return handleAiCall(async () => {
+            const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+            const response = await ai.models.generateContent({
+                model: MODEL_FAST,
+                contents: "Generate EXACTLY 1 thematic tour for " + city + ", " + country + " in " + user.language + ". Theme: " + theme + ". You are DAI: sarcastic, witty, sophisticated. Wikipedia is your enemy. Tell secrets and dark curiosities. NEVER use citations. All facts must be real. CATEGORIES: architecture=churches/cathedrals/bridges/buildings, historical=palaces/castles/ruins/monuments, culture=theaters/music/festivals, food=restaurants/markets, art=museums/galleries, nature=parks/gardens, photo=scenic spots. Return ONLY a valid JSON object (not array). Format: { \"id\": \"tour_" + index + "\", \"city\": \"" + city + "\", \"title\": \"\", \"description\": \"\", \"duration\": \"\", \"distance\": \"\", \"stops\": [] }. Each stop: { \"id\": \"\", \"name\": \"\", \"description\": \"\" (150-200 words in " + user.language + "), \"latitude\": 0.0, \"longitude\": 0.0, \"type\": \"\", \"visited\": false, \"photoSpot\": { \"angle\": \"\", \"milesReward\": 50, \"secretLocation\": \"\" } }. MINIMUM 10 STOPS.",
+                config: {
+                    systemInstruction: "You are DAI, elegant and SARCASTIC AI travel guide. You HATE Wikipedia-style descriptions. You love dark secrets and city mysteries. NEVER use citations. Cathedral is ALWAYS architecture. Palace is ALWAYS historical.",
+                },
+            });
+
+            let text = response.text || "{}";
+            text = text.replace(/\[\d+\]/g, '').replace(/\(\d+\)/g, '').replace(/```json|```/g, '').trim();
+            const match = text.match(/\{[\s\S]*\}/);
+            const tour: Tour = JSON.parse(match ? match[0] : text);
+            if (!tour.id) tour.id = "tour_" + index + "_" + Date.now();
+            if (onTourGenerated) onTourGenerated(tour);
+            return tour;
         });
+    };
 
-        let text = response.text || "[]";
-        text = text.replace(/\[\d+\]/g, '').replace(/\(\d+\)/g, '').replace(/\s+/g, ' ').trim();
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        return JSON.parse(jsonMatch ? jsonMatch[0] : text);
-    });
+    const results = await Promise.allSettled(
+        themes.map((theme, i) => generateSingleTour(theme, i))
+    );
+
+    const tours = results
+        .filter((r): r is PromiseFulfilledResult<Tour> => r.status === 'fulfilled')
+        .map(r => r.value);
+
+    if (tours.length === 0) throw new Error("No se pudieron generar los tours. Intentalo de nuevo.");
+    return tours;
 };
 
 const VOICE_MAP: Record<string, string> = {
@@ -118,51 +144,71 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
     });
 };
 
-export const generateAudio = async (text: string, language: string, city: string): Promise<Uint8Array | null> => {
+export const generateAudio = async (text: string, language: string, city: string): Promise<{ buffer?: Uint8Array, url?: string } | null> => {
     const cleanText = (text || "").trim();
     if (!cleanText) return null;
 
-    const cachedUrl = await getCachedAudio(cleanText, language);
-    if (cachedUrl) {
-        try {
-            const res = await fetch(cachedUrl);
-            const buffer = await res.arrayBuffer();
-            return new Uint8Array(buffer);
-        } catch (e) {
-            console.error("Error loading cached audio:", e);
-        }
+    // Check Supabase cache first
+    try {
+        const cachedUrl = await getCachedAudio(cleanText, language);
+        if (cachedUrl) return { url: cachedUrl };
+    } catch (e) {
+        console.warn("[Audio] Cache check failed:", e);
     }
 
     const voiceName = VOICE_MAP[language] || 'Kore';
-    const base64 = await handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-        const prompt = (language === 'es' || language === 'ca' || language === 'eu')
-            ? "Actua como Dai, guia elegante y sarcastica. Di esto de forma divertida: " + cleanText
-            : "Act as Dai, elegant sarcastic guide. Say this naturally: " + cleanText;
-
-        const response = await ai.models.generateContent({
-            model: MODEL_TTS,
-            contents: [{ parts: [{ text: prompt }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: {
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
+    let base64 = "";
+    try {
+        base64 = await handleAiCall(async () => {
+            const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+            const prompt = (language === 'es' || language === 'ca' || language === 'eu')
+                ? "Actua como Dai, guia elegante y sarcastica. Di esto de forma divertida: " + cleanText
+                : "Act as Dai, elegant sarcastic guide. Say this naturally: " + cleanText;
+            const response = await ai.models.generateContent({
+                model: MODEL_TTS,
+                contents: [{ parts: [{ text: prompt }] }],
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    speechConfig: {
+                        voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
+                    },
                 },
-            },
+            });
+            return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
         });
-        return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    });
-
-    if (base64) {
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-        saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
-        return bytes;
+    } catch (e) {
+        console.error("[Audio] Generation failed:", e);
+        return null;
     }
 
-    return null;
+    if (!base64) return null;
+
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+
+    try {
+        await saveAudioToCache(cleanText, language, bytes, city);
+    } catch (e) {
+        console.error("[Audio] Cache save failed:", e);
+    }
+
+    return { buffer: bytes };
+};
+
+export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        const response = await ai.models.generateContent({
+            model: MODEL_FAST,
+            contents: "Reply with just the word OK",
+        });
+        return response.text
+            ? { ok: true, message: "API responding" }
+            : { ok: false, message: "Empty response" };
+    } catch (e: any) {
+        return { ok: false, message: e.message || "API error" };
+    }
 };
 
 export const translateToursBatch = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
