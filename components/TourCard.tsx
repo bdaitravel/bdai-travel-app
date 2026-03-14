@@ -84,6 +84,11 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
           </div>
       )}
       <div className="flex flex-col">
+          {tour.theme && (
+              <div className="inline-block bg-purple-600/20 border border-purple-500/30 text-purple-400 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 self-start">
+                  {tour.theme}
+              </div>
+          )}
           <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
           <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-6 font-medium">{tour.description}</p>
           <div className="flex items-center justify-between pt-6 border-t border-white/5">
@@ -252,6 +257,18 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         if (audioPlayingId === stopId) { stopAudio(); return; }
         stopAudio();
         setIsAudioLoading(true);
+        
+        // Unlock Web Audio API synchronously
+        if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (audioContextRef.current.state === 'suspended') {
+            audioContextRef.current.resume();
+        }
+
+        // Unlock HTML Audio synchronously for fallback
+        const unlockAudio = new Audio();
+        unlockAudio.play().catch(() => {});
+        htmlAudioRef.current = unlockAudio;
+
         try {
             const audioResult = await generateAudio(text, user.language, tour.city);
             if (!audioResult) {
@@ -259,24 +276,13 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 return;
             }
             
-            if (audioResult.url) {
-                const audio = new Audio(audioResult.url);
-                htmlAudioRef.current = audio;
-                audio.onended = () => setAudioPlayingId(null);
-                await audio.play();
-                setAudioPlayingId(stopId);
-                setIsAudioLoading(false);
-                return;
-            }
+            const ctx = audioContextRef.current;
+            let audioData: Uint8Array | null = audioResult;
 
-            const audioData = audioResult.buffer;
             if (!audioData) {
                 setIsAudioLoading(false);
                 return;
             }
-            
-            if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const ctx = audioContextRef.current;
             
             // Try decoding as standard audio first (MP3/WAV)
             try {

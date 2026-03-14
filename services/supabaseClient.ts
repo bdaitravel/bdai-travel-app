@@ -53,30 +53,15 @@ try {
 export { supabase };
 
 const generateHash = async (text: string): Promise<string> => {
+    // Normalize text to be more resilient to minor AI variations
     const normalized = text.toLowerCase()
         .replace(/\s+/g, ' ')
         .replace(/[.,!?;:]/g, '')
         .trim();
-        
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
-        try {
-            const msgUint8 = new TextEncoder().encode(normalized);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        } catch (e) {
-            console.warn("crypto.subtle.digest failed, using fallback");
-        }
-    }
-    
-    // Fallback simple hash
-    let hash = 0;
-    for (let i = 0; i < normalized.length; i++) {
-        const char = normalized.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash).toString(16).padStart(8, '0');
+    const msgUint8 = new TextEncoder().encode(normalized);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
 const addWavHeader = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
@@ -122,13 +107,18 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .trim()
-        .replace(/[^a-z0-9]/g, ''); // Remove all spaces and special chars
+        .replace(/[\s-]+/g, '_')
+        .replace(/[^a-z0-9_]/g, '');
 
-    const safeCity = clean(city || "");
-    const safeCountry = clean(country || "");
-    
+    const safeCity = clean(city || "").split('_')[0]; // Handle cases where city might already be a slug
     if (!safeCity) return "";
-    if (safeCountry && safeCountry !== "cache") {
+    
+    // If country is provided, use it. If not, and city looks like a slug, it might already contain the country.
+    const safeCountry = country && country !== "Cache" ? clean(country) : "";
+    
+    if (safeCountry) {
+        // Avoid double country if city already has it
+        if (safeCity.endsWith(`_${safeCountry}`)) return safeCity;
         return `${safeCity}_${safeCountry}`;
     }
     return safeCity;
@@ -137,8 +127,11 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
 /**
  * Checks if a city exists in cache using the new slug format.
  */
-export const checkIfCityCached = async (city: string, country: string): Promise<boolean> => {
-  const slug = normalizeKey(city, country);
+export const checkIfCityCached = async (city: string, countryOrSlug: string): Promise<boolean> => {
+  // If countryOrSlug already looks like a slug (contains underscore and is lowercase), use it.
+  const slug = (countryOrSlug.includes('_') && countryOrSlug === countryOrSlug.toLowerCase())
+    ? countryOrSlug 
+    : normalizeKey(city, countryOrSlug);
     
   if (!slug) return false;
   try {
@@ -171,7 +164,7 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
                 // Extract city and country from slug for display
-                const parts = curr.city.split('_');
+                const parts = curr.city.split('-');
                 const cityName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
                 const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
                 
@@ -192,23 +185,8 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   try {
-    const normalizedEmail = email.toLowerCase().trim();
-    const { data, error } = await supabase.from('profiles').select('*').eq('email', normalizedEmail).maybeSingle();
-    if (error) {
-        console.error("Error fetching profile:", error);
-        throw error;
-    }
-    if (!data) return null; // No profile found, which is fine for new users
-    
-    // Parse JSON fields if they are strings (Supabase sometimes returns JSONB as string depending on client)
-    const parseJson = (val: any, fallback: any) => {
-        if (!val) return fallback;
-        if (typeof val === 'string') {
-            try { return JSON.parse(val); } catch (e) { return fallback; }
-        }
-        return val;
-    };
-
+    const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+    if (error || !data) return null;
     return {
       id: data.id, email: data.email, username: data.username || email.split('@')[0],
       firstName: data.first_name || '', lastName: data.last_name || '',
@@ -218,18 +196,15 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       isLoggedIn: true, culturePoints: data.culture_points || 0, foodPoints: data.food_points || 0,
       photoPoints: data.photo_points || 0, historyPoints: data.history_points || 0,
       naturePoints: data.nature_points || 0, artPoints: data.art_points || 0,
-      archPoints: data.arch_points || 0, interests: parseJson(data.interests, []),
+      archPoints: data.arch_points || 0, interests: data.interests || [],
       accessibility: data.accessibility || 'standard', isPublic: data.is_public ?? false,
       bio: data.bio || '', age: data.age || 25, birthday: data.birthday,
       city: data.city || '', country: data.country || '',
-      stats: parseJson(data.stats, { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }),
-      visitedCities: parseJson(data.visited_cities, []), completedTours: parseJson(data.completed_tours, []),
-      badges: parseJson(data.badges, []), stamps: parseJson(data.stamps, []), capturedMoments: parseJson(data.captured_moments, [])
+      stats: data.stats || { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 },
+      visitedCities: data.visited_cities || [], completedTours: data.completed_tours || [],
+      badges: data.badges || [], stamps: data.stamps || [], capturedMoments: data.captured_moments || []
     };
-  } catch (e) { 
-      console.error("getUserProfileByEmail exception:", e);
-      throw e; 
-  }
+  } catch (e) { return null; }
 };
 
 export const calculateTravelerRank = (miles: number): TravelerRank => {
@@ -327,9 +302,8 @@ export const completeTourBonus = (profile: UserProfile, cityId: string): UserPro
 export const syncUserProfile = async (profile: UserProfile) => {
   if (!profile || !profile.email) return;
   try {
-    const normalizedEmail = profile.email.toLowerCase().trim();
     const payload = {
-      id: profile.id, email: normalizedEmail, username: profile.username,
+      id: profile.id, email: profile.email, username: profile.username,
       first_name: profile.firstName, last_name: profile.lastName,
       name: profile.name || `${profile.firstName} ${profile.lastName}`.trim(),
       miles: profile.miles, language: profile.language, avatar: profile.avatar, rank: profile.rank,
@@ -387,9 +361,9 @@ export const saveToursToCache = async (city: string, country: string, language: 
 export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {
     try {
         const hash = await generateHash(text);
-        const { data, error } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).limit(1);
+        const { data, error } = await supabase.from('audio_cache').select('audio_url').eq('text_hash', hash).eq('language', lang.toLowerCase()).maybeSingle();
         if (error) throw error;
-        return data && data.length > 0 ? data[0].audio_url : null;
+        return data?.audio_url || null;
     } catch (e) { return null; }
 };
 
@@ -406,13 +380,12 @@ export const saveAudioToCache = async (text: string, lang: string, audioData: Ui
         const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/wav', cacheControl: '3600' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
-        const { error: dbError } = await supabase.from('audio_cache').insert({ 
+        await supabase.from('audio_cache').upsert({ 
           text_hash: hash, 
           language: lang.toLowerCase(), 
           city: city, 
           audio_url: publicUrl 
-        });
-        if (dbError) console.error("DB Insert error:", dbError);
+        }, { onConflict: 'text_hash,language' });
         return publicUrl;
     } catch (e) { 
         console.error("Audio cache error:", e);

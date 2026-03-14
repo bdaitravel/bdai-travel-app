@@ -1,203 +1,198 @@
+
 import React, { useState } from 'react';
-import { UserProfile } from '../types';
 import { BdaiLogo } from './BdaiLogo';
-import { RANKS } from '../services/gamificationService';
+import { UserProfile } from '../types';
 
 interface OnboardingProps {
-  user: UserProfile;
-  language?: string;
-  onComplete: () => void;
+    onComplete: () => void;
+    language: string;
+    user: UserProfile;
 }
 
-const STEPS = ['welcome','what_is_bdai','meet_dai','how_it_works','ranks','miles','ready'] as const;
-type Step = typeof STEPS[number];
+const ONBOARDING_TEXTS: Record<string, any> = {
+    es: {
+        step1: { title: "Bienvenido a bdai", subtitle: "Tu Ecosistema de Viajes", content: "bdai es tu compañero de viajes inteligente. Aquí descubrirás los secretos mejor guardados de cualquier ciudad del mundo, guiado por inteligencia artificial." },
+        step2: { title: "Tours Únicos", subtitle: "Generación Inteligente", content: "Busca cualquier ciudad y crearé 3 rutas temáticas al instante. Calculo el tiempo real de caminata y visita. ¡Cero paradas repetidas, 100% lugares increíbles y gemas ocultas!" },
+        step3: { title: "Geolocalización", subtitle: "Check-in Real", content: "Para avanzar en el tour, debes estar físicamente a menos de 50 metros de la parada. El GPS validará tu posición para hacer 'Check-in' y desbloquear la historia." },
+        step4: { title: "Millas y Ranking", subtitle: "Gamificación Real", content: "Cada 'Check-in' te otorga Millas. Acumula millas para subir de nivel en el Ranking Global (desde ZERO hasta ZENITH). ¡Compite contra otros viajeros para ser el mejor!" },
+        step5: { title: "Insignias", subtitle: "Colecciona tus descubrimientos", content: "Gana puntos e insignias según el tipo de lugares que visites. Cada parada tiene una categoría especial. ¡Explora todas las facetas de la ciudad para completar tu colección!" },
+        step6: { title: "Comparte tus Logros", subtitle: "Visados y Rango", content: "Al terminar un tour, recibirás un Visado digital de la ciudad. ¡Compártelo en tus redes sociales junto con tu nivel del Ranking Global para demostrar quién es el mejor viajero!" },
+        step7: { title: "A Tener en Cuenta", subtitle: "Pequeños detalles", content: "1. El GPS puede ser menos preciso en calles muy estrechas.\n2. Necesito unos segundos para pensar y generar los mejores tours para ti.\n3. ¡Mantén los ojos abiertos y disfruta del viaje!" },
+        btnNext: "SIGUIENTE",
+        btnDone: "ENTENDIDO"
+    },
+    en: {
+        step1: { title: "Welcome to bdai", subtitle: "Your Travel Ecosystem", content: "bdai is your smart travel companion. Here you will discover the best-kept secrets of any city in the world, guided by artificial intelligence." },
+        step2: { title: "Unique Tours", subtitle: "Smart Generation", content: "Search for any city and I will create 3 thematic routes instantly. I calculate real walking and visiting times. Zero repeated stops, 100% amazing places and hidden gems!" },
+        step3: { title: "Geolocation", subtitle: "Real Check-in", content: "To advance in the tour, you must be physically within 50 meters of the stop. The GPS will validate your position to 'Check-in' and unlock the story." },
+        step4: { title: "Miles & Ranking", subtitle: "Real Gamification", content: "Every 'Check-in' grants you Miles. Accumulate miles to level up in the Global Ranking (from ZERO to ZENITH). Compete against other travelers to be the best!" },
+        step5: { title: "Badges", subtitle: "Collect your discoveries", content: "Earn points and badges based on the type of places you visit. Each stop has a special category. Explore all facets of the city to complete your collection!" },
+        step6: { title: "Share your Achievements", subtitle: "Visas and Rank", content: "Upon finishing a tour, you will receive a digital Visa of the city. Share it on your social networks along with your Global Ranking level to show who is the best traveler!" },
+        step7: { title: "Keep in Mind", subtitle: "Small details", content: "1. GPS might be less accurate in very narrow streets.\n2. I need a few seconds to think and generate the best tours for you.\n3. Keep your eyes open and enjoy the trip!" },
+        btnNext: "NEXT",
+        btnDone: "GOT IT"
+    }
+};
 
-export const Onboarding: React.FC<OnboardingProps> = ({ user, language = 'es', onComplete }) => {
-  const [step, setStep] = useState<Step>('welcome');
-  const [isExiting, setIsExiting] = useState(false);
-  const currentIndex = STEPS.indexOf(step);
-  const isLast = currentIndex === STEPS.length - 1;
+export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, user }) => {
+    const [step, setStep] = useState(0);
 
-  const next = () => { if (isLast) { handleComplete(); return; } setStep(STEPS[currentIndex + 1]); };
-  const prev = () => { if (currentIndex > 0) setStep(STEPS[currentIndex - 1]); };
-  const handleComplete = () => { setIsExiting(true); setTimeout(onComplete, 300); };
+    const t = ONBOARDING_TEXTS[language] || ONBOARDING_TEXTS.en;
 
-  const firstName = user.firstName || user.username || 'Viajero';
-
-  const content: Record<Step, React.ReactNode> = {
-    welcome: (
-      <div className="flex flex-col items-center text-center">
-        <BdaiLogo className="w-28 h-28 mb-6 animate-pulse-logo" />
-        <h1 className="text-7xl font-black text-white lowercase tracking-tighter leading-none mb-3">bdai</h1>
-        <p className="text-purple-400 text-[11px] uppercase tracking-widest mb-8">better destinations by ai</p>
-        <div className="bg-white/5 border border-white/10 rounded-3xl px-8 py-6 max-w-xs">
-          <p className="text-white font-black text-lg mb-2">Hola, {firstName} 👋</p>
-          <p className="text-slate-400 text-[13px] leading-relaxed">Bienvenido a la guía de viajes más sarcástica, inteligente y no-turística del planeta.</p>
-        </div>
-      </div>
-    ),
-    what_is_bdai: (
-      <div className="flex flex-col items-center text-center space-y-5">
-        <div className="text-6xl">🌍</div>
-        <div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">¿Qué es bdai?</h2>
-          <p className="text-purple-400 text-[10px] uppercase tracking-widest">Better Destinations AI</p>
-        </div>
-        <div className="space-y-3 w-full max-w-sm text-left">
-          {[
-            { icon: '🧠', title: 'IA con personalidad', desc: 'No somos Wikipedia. DAI conoce los secretos que los guías no cuentan.' },
-            { icon: '🗺️', title: 'Tours únicos', desc: '3 rutas temáticas por ciudad, con 10+ paradas. Regenerables ilimitado.' },
-            { icon: '🎯', title: 'Solo lo real', desc: 'Sin inventos. Sin patrocinados. Solo lugares reales y datos verificados.' },
-            { icon: '🏆', title: 'Gamificado', desc: 'Gana millas, sube de rango y colecciona insignias explorando.' },
-          ].map(item => (
-            <div key={item.title} className="flex gap-4 bg-white/[0.03] border border-white/5 rounded-2xl p-4">
-              <span className="text-2xl shrink-0">{item.icon}</span>
-              <div><p className="text-white font-black text-[12px] uppercase mb-1">{item.title}</p><p className="text-slate-400 text-[11px] leading-relaxed">{item.desc}</p></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-    meet_dai: (
-      <div className="flex flex-col items-center text-center space-y-5">
-        <div className="w-28 h-28 bg-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/40 border-4 border-white/20">
-          <i className="fas fa-brain text-5xl text-white"></i>
-        </div>
-        <div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Conoce a DAI</h2>
-          <p className="text-purple-400 text-[10px] uppercase tracking-widest">Tu guía de IA con actitud</p>
-        </div>
-        <div className="bg-purple-600/10 border border-purple-500/30 rounded-3xl p-5 max-w-sm text-left">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 bg-purple-600 rounded-full flex items-center justify-center"><i className="fas fa-brain text-white text-[10px]"></i></div>
-            <span className="text-purple-300 font-black text-[10px] uppercase tracking-widest">DAI dice:</span>
-          </div>
-          <p className="text-slate-300 text-[13px] leading-relaxed italic">"Bienvenido, {firstName}. Conozco cada callejón, cada secreto y cada vergüenza histórica de cada ciudad. Los guías te llevan donde quieren. Yo te llevo donde deberías ir."</p>
-        </div>
-        <div className="space-y-2 w-full max-w-sm text-left">
-          {[['🎭','Sarcástico pero preciso — nunca inventa'],['📚','Historia, arquitectura, arte y gastronomía'],['🗣️','16 idiomas — habla el tuyo'],['🔊','Audioguía con voz propia']].map(([icon,text]) => (
-            <div key={text} className="flex items-center gap-3 text-slate-400 text-[12px]"><span>{icon}</span><span>{text}</span></div>
-          ))}
-        </div>
-      </div>
-    ),
-    how_it_works: (
-      <div className="flex flex-col items-center text-center space-y-5">
-        <div className="text-5xl">⚡</div>
-        <div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Cómo funciona</h2>
-          <p className="text-slate-400 text-[11px]">3 pasos para descubrir cualquier ciudad</p>
-        </div>
-        <div className="space-y-3 w-full max-w-sm">
-          {[
-            { num:'01', title:'Busca una ciudad', desc:'Cualquier ciudad del mundo. DAI la conoce casi todas.', icon:'fa-search' },
-            { num:'02', title:'DAI genera 3 tours', desc:'3 rutas temáticas con 10+ paradas. Aparecen conforme se generan.', icon:'fa-brain' },
-            { num:'03', title:'Explora y gana', desc:'Sigue la ruta en el mapa, escucha el audio y gana millas en cada parada.', icon:'fa-map-location-dot' },
-          ].map(s => (
-            <div key={s.num} className="flex gap-4 bg-white/[0.03] border border-white/5 rounded-2xl p-4 text-left">
-              <div className="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center shrink-0"><span className="text-purple-400 font-black text-[10px]">{s.num}</span></div>
-              <div><p className="text-white font-black text-[12px] uppercase mb-1">{s.title}</p><p className="text-slate-400 text-[11px] leading-relaxed">{s.desc}</p></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-    ranks: (
-      <div className="flex flex-col items-center text-center space-y-4">
-        <div className="text-5xl">👑</div>
-        <div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Tu rango</h2>
-          <p className="text-slate-400 text-[11px]">De ZERO a ZENITH — ¿dónde llegarás?</p>
-        </div>
-        <div className="w-full max-w-sm space-y-2">
-          {RANKS.map(rank => (
-            <div key={rank.id} className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5">
-              <span className="text-xl w-8 text-center">{rank.icon}</span>
-              <div className="flex-1 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-[11px] uppercase" style={{ color: rank.color }}>{rank.label}</span>
-                  {rank.id === 'ZERO' && <span className="text-[8px] bg-purple-600/30 text-purple-300 rounded-full px-2 py-0.5 font-black">TÚ AHORA</span>}
+    const steps = [
+        {
+            title: t.step1.title,
+            subtitle: t.step1.subtitle,
+            content: t.step1.content,
+            icon: <BdaiLogo className="w-20 h-20 mb-6 animate-pulse-logo" />
+        },
+        {
+            title: t.step2.title,
+            subtitle: t.step2.subtitle,
+            content: t.step2.content,
+            icon: <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-6 shadow-2xl shadow-blue-500/40 border border-blue-400/30"><i className="fas fa-route text-4xl text-white"></i></div>
+        },
+        {
+            title: t.step3.title,
+            subtitle: t.step3.subtitle,
+            content: t.step3.content,
+            icon: <div className="w-20 h-20 bg-emerald-600 rounded-[2rem] flex items-center justify-center mb-6 shadow-2xl shadow-emerald-500/40 border border-emerald-400/30"><i className="fas fa-location-crosshairs text-4xl text-white"></i></div>
+        },
+        {
+            title: t.step4.title,
+            subtitle: t.step4.subtitle,
+            content: t.step4.content,
+            icon: <div className="w-20 h-20 bg-yellow-500 rounded-[2rem] flex items-center justify-center mb-6 shadow-2xl shadow-yellow-500/40 border border-yellow-400/30"><i className="fas fa-ranking-star text-4xl text-slate-900"></i></div>
+        },
+        {
+            title: t.step5.title,
+            subtitle: t.step5.subtitle,
+            content: t.step5.content,
+            icon: <div className="w-20 h-20 bg-rose-500 rounded-[2rem] flex items-center justify-center mb-6 shadow-2xl shadow-rose-500/40 border border-rose-400/30"><i className="fas fa-medal text-4xl text-white"></i></div>,
+            customContent: (
+                <div className="grid grid-cols-4 gap-3 mt-6">
+                    <div className="flex flex-col items-center"><div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-amber-500 mb-1.5 shadow-lg"><i className="fas fa-landmark"></i></div><span className="text-[7px] font-black uppercase text-slate-400">{language === 'es' ? 'Historia' : 'History'}</span></div>
+                    <div className="flex flex-col items-center"><div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-pink-500 mb-1.5 shadow-lg"><i className="fas fa-palette"></i></div><span className="text-[7px] font-black uppercase text-slate-400">{language === 'es' ? 'Arte' : 'Art'}</span></div>
+                    <div className="flex flex-col items-center"><div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-orange-500 mb-1.5 shadow-lg"><i className="fas fa-utensils"></i></div><span className="text-[7px] font-black uppercase text-slate-400">{language === 'es' ? 'Comida' : 'Food'}</span></div>
+                    <div className="flex flex-col items-center"><div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-green-500 mb-1.5 shadow-lg"><i className="fas fa-leaf"></i></div><span className="text-[7px] font-black uppercase text-slate-400">{language === 'es' ? 'Naturaleza' : 'Nature'}</span></div>
+                    <div className="flex flex-col items-center"><div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-blue-500 mb-1.5 shadow-lg"><i className="fas fa-camera"></i></div><span className="text-[7px] font-black uppercase text-slate-400">{language === 'es' ? 'Foto' : 'Photo'}</span></div>
+                    <div className="flex flex-col items-center"><div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-purple-500 mb-1.5 shadow-lg"><i className="fas fa-masks-theater"></i></div><span className="text-[7px] font-black uppercase text-slate-400">{language === 'es' ? 'Cultura' : 'Culture'}</span></div>
+                    <div className="flex flex-col items-center"><div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-cyan-500 mb-1.5 shadow-lg"><i className="fas fa-building"></i></div><span className="text-[7px] font-black uppercase text-slate-400">{language === 'es' ? 'Arqui' : 'Archi'}</span></div>
+                    <div className="flex flex-col items-center"><div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-yellow-500 mb-1.5 shadow-lg"><i className="fas fa-star"></i></div><span className="text-[7px] font-black uppercase text-slate-400">{language === 'es' ? 'Especial' : 'Special'}</span></div>
                 </div>
-                <p className="text-slate-500 text-[10px]">{rank.description}</p>
-              </div>
-              <span className="text-[9px] text-slate-600 font-black">{rank.minMiles.toLocaleString()}mi</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-    miles: (
-      <div className="flex flex-col items-center text-center space-y-5">
-        <div className="text-5xl">🪙</div>
-        <div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Millas bdai</h2>
-          <p className="text-slate-400 text-[11px]">Gana explorando. Sube de rango.</p>
-        </div>
-        <div className="space-y-2 w-full max-w-sm">
-          {[
-            { action:'Visitar una parada',    miles:'+10',   icon:'fa-map-pin',        color:'#6366f1' },
-            { action:'Foto en una parada',    miles:'+50',   icon:'fa-camera',         color:'#007AFF' },
-            { action:'Completar un tour',     miles:'+200',  icon:'fa-flag-checkered', color:'#34C759' },
-            { action:'Primera vez en ciudad', miles:'+500',  icon:'fa-city',           color:'#f59e0b' },
-            { action:'Racha diaria',          miles:'+100',  icon:'fa-fire',           color:'#FF6B35' },
-            { action:'Invitar un amigo',      miles:'+1000', icon:'fa-user-plus',      color:'#AF52DE' },
-          ].map(item => (
-            <div key={item.action} className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-2xl p-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: item.color+'20' }}>
-                <i className={`fas ${item.icon} text-sm`} style={{ color: item.color }}></i>
-              </div>
-              <span className="text-slate-300 text-[12px] flex-1 text-left">{item.action}</span>
-              <span className="font-black text-[13px]" style={{ color: item.color }}>{item.miles}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-    ready: (
-      <div className="flex flex-col items-center text-center space-y-7">
-        <div className="w-32 h-32 bg-gradient-to-br from-purple-600 to-purple-900 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/50 border-4 border-white/20">
-          <i className="fas fa-rocket text-5xl text-white"></i>
-        </div>
-        <div>
-          <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-2">¡Listo, {firstName}!</h2>
-          <p className="text-slate-400 text-[13px] leading-relaxed max-w-xs">Empiezas en rango <strong className="text-purple-400">ZERO</strong>. El mundo está esperando. DAI también.</p>
-        </div>
-        <div className="bg-purple-600/10 border border-purple-500/30 rounded-3xl px-6 py-5 max-w-xs">
-          <p className="text-slate-300 text-[13px] italic leading-relaxed">"Cero millas. Cero tours. Cero excusas. Busca tu primera ciudad."</p>
-          <p className="text-purple-400 font-black text-[10px] mt-2 uppercase tracking-widest">— DAI</p>
-        </div>
-        <p className="text-slate-600 text-[10px]">Al continuar aceptas nuestros Términos y Política de Privacidad</p>
-      </div>
-    ),
-  };
+            )
+        },
+        {
+            title: t.step6.title,
+            subtitle: t.step6.subtitle,
+            content: t.step6.content,
+            icon: <div className="w-20 h-20 bg-indigo-500 rounded-[2rem] flex items-center justify-center mb-6 shadow-2xl shadow-indigo-500/40 border border-indigo-400/30"><i className="fas fa-share-nodes text-4xl text-white"></i></div>,
+            customContent: (
+                <div className="flex justify-center gap-4 mt-6">
+                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl flex items-center gap-3 shadow-lg">
+                        <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center"><i className="fas fa-crown text-purple-400"></i></div>
+                        <span className="text-[10px] font-black uppercase text-white">{language === 'es' ? 'Rango' : 'Rank'}</span>
+                    </div>
+                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl flex items-center gap-3 shadow-lg">
+                        <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center"><i className="fas fa-passport text-emerald-400"></i></div>
+                        <span className="text-[10px] font-black uppercase text-white">{language === 'es' ? 'Visado' : 'Visa'}</span>
+                    </div>
+                </div>
+            )
+        },
+        {
+            title: t.step7.title,
+            subtitle: t.step7.subtitle,
+            content: t.step7.content,
+            icon: <div className="w-20 h-20 bg-orange-500 rounded-[2rem] flex items-center justify-center mb-6 shadow-2xl shadow-orange-500/40 border border-orange-400/30"><i className="fas fa-triangle-exclamation text-4xl text-white"></i></div>
+        }
+    ];
 
-  return (
-    <div className={`fixed inset-0 z-[9997] bg-[#020617] flex flex-col transition-opacity duration-300 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
-      <div className="h-0.5 bg-white/5 w-full">
-        <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all duration-500" style={{ width: `${((currentIndex + 1) / STEPS.length) * 100}%` }} />
-      </div>
-      <div className="flex justify-center gap-1.5 pt-4 pb-2">
-        {STEPS.map((s, i) => (
-          <div key={s} className={`rounded-full transition-all duration-300 ${i === currentIndex ? 'w-6 h-1.5 bg-purple-500' : i < currentIndex ? 'w-1.5 h-1.5 bg-purple-500/40' : 'w-1.5 h-1.5 bg-white/10'}`} />
-        ))}
-      </div>
-      <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4 flex flex-col items-center justify-center">
-        <div className="w-full max-w-sm animate-fade-in" key={step}>{content[step]}</div>
-      </div>
-      <div className="px-6 pb-8 flex gap-3">
-        {currentIndex > 0 && (
-          <button onClick={prev} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 text-slate-400 flex items-center justify-center active:scale-90 transition-all">
-            <i className="fas fa-arrow-left text-sm"></i>
-          </button>
-        )}
-        <button onClick={next} className="flex-1 h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[12px] tracking-widest shadow-xl shadow-purple-500/30 active:scale-95 transition-all flex items-center justify-center gap-2">
-          {isLast ? <><i className="fas fa-rocket text-sm"></i> ¡Empezar!</> : <>Siguiente <i className="fas fa-arrow-right text-sm"></i></>}
-        </button>
-        {!isLast && (
-          <button onClick={handleComplete} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 text-slate-600 flex items-center justify-center text-[9px] font-black uppercase active:scale-90 transition-all">Skip</button>
-        )}
-      </div>
-    </div>
-  );
+    const currentStep = steps[step];
+
+    return (
+        <div className="fixed inset-0 z-[10000] bg-[#020617]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 overflow-hidden animate-fade-in">
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-[#020617] to-[#020617]"></div>
+            
+            <div className="w-full max-w-md flex flex-col items-center relative z-10 h-full max-h-[850px] justify-center">
+                <div className="bg-slate-900/80 border border-white/10 p-8 rounded-[3rem] shadow-2xl backdrop-blur-2xl w-full flex flex-col items-center relative overflow-hidden">
+                    
+                    {/* Progress Bar */}
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5">
+                        <div 
+                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 ease-out"
+                            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                        ></div>
+                    </div>
+
+                    <div className="mt-4 mb-2 animate-slide-up" key={`icon-${step}`}>
+                        {currentStep.icon}
+                    </div>
+                    
+                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter text-center leading-tight animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                        {currentStep.title}
+                    </h2>
+                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em] mt-3 text-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                        {currentStep.subtitle}
+                    </p>
+                    
+                    <div className="w-full mt-8 p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] relative flex-1 min-h-[180px] flex flex-col justify-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                        <div className="text-slate-300 text-sm font-medium leading-relaxed text-center space-y-3">
+                            {currentStep.content.split('\n').map((paragraph: string, idx: number) => (
+                                <p key={idx}>
+                                    {paragraph}
+                                </p>
+                            ))}
+                        </div>
+
+                        {currentStep.customContent && (
+                            <div className="w-full animate-slide-up" style={{ animationDelay: '0.4s' }}>
+                                {currentStep.customContent}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-2 mt-8 mb-8">
+                        {steps.map((_, i) => (
+                            <button 
+                                key={i} 
+                                onClick={() => setStep(i)}
+                                className={`h-2 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-purple-500' : 'w-2 bg-white/10 hover:bg-white/20'}`}
+                                aria-label={`Go to step ${i + 1}`}
+                            ></button>
+                        ))}
+                    </div>
+
+                    <div className="w-full flex gap-3">
+                        {step > 0 && (
+                            <button 
+                                onClick={() => setStep(step - 1)} 
+                                className="w-14 h-14 bg-white/5 text-slate-300 rounded-2xl flex items-center justify-center active:scale-95 transition-all border border-white/10 hover:bg-white/10 shrink-0"
+                            >
+                                <i className="fas fa-chevron-left"></i>
+                            </button>
+                        )}
+                        <button 
+                            onClick={() => {
+                                if (step < steps.length - 1) setStep(step + 1);
+                                else onComplete();
+                            }} 
+                            className="flex-1 h-14 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-white/10 active:scale-95 transition-all hover:bg-slate-100 flex items-center justify-center gap-2"
+                        >
+                            {step < steps.length - 1 ? (
+                                <>
+                                    {t.btnNext} <i className="fas fa-arrow-right ml-1"></i>
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fas fa-check text-green-600 mr-1 text-sm"></i> {t.btnDone}
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 

@@ -1,7 +1,7 @@
 {
   "name": "bdai-app",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,6 @@
     "open-ios": "npx cap open ios"
   },
   "dependencies": {
-    "@google/genai": "^1.30.0",
     "@capacitor/android": "^6.0.0",
     "@capacitor/app": "^6.0.0",
     "@capacitor/core": "^6.0.0",
@@ -24,6 +23,7 @@
     "@capacitor/keyboard": "^6.0.0",
     "@capacitor/splash-screen": "^6.0.0",
     "@capacitor/status-bar": "^6.0.0",
+    "@google/genai": "^1.30.0",
     "@supabase/supabase-js": "^2.39.7",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
