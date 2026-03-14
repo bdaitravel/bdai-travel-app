@@ -1,11 +1,3 @@
-**
- * BDAI Gemini Service
- * - API key via import.meta.env.VITE_GEMINI_API_KEY
- * - Modelos correctos: gemini-2.0-flash
- * - Tours en PARALELO
- * - VOICE_MAP 20 idiomas
- */
-
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, UserProfile } from '../types';
 import { getCachedAudio, saveAudioToCache } from './supabaseClient';
@@ -33,7 +25,7 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
                 await new Promise(resolve => setTimeout(resolve, delay));
                 return handleAiCall(fn, retries - 1, delay * 2);
             }
-            throw new QuotaError("Servicio de IA temporalmente saturado. Por favor, inténtalo de nuevo en unos segundos.");
+            throw new QuotaError("Servicio de IA temporalmente saturado. Por favor, intentalo de nuevo.");
         }
         throw error;
     }
@@ -44,8 +36,7 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: MODEL_FAST,
-            contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
-            Return JSON object: { "english": "English Name", "detected": "Detected Language Code" }`,
+            contents: "Identify the city/location in: \"" + input + "\". Return JSON: { \"english\": \"English city name\", \"detected\": \"language code\" }",
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -58,7 +49,7 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
                 }
             }
         });
-        return JSON.parse(response.text || '{"english": "' + input + '", "detected": "unknown"}');
+        return JSON.parse(response.text || "{\"english\": \"" + input + "\", \"detected\": \"unknown\"}");
     });
 };
 
@@ -67,15 +58,7 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: MODEL_FAST,
-            contents: `Identify all major cities or towns globally that match the name: "${input}". 
-            For each match:
-            1. Provide the official city name.
-            2. Provide the country name in ${userLanguage}.
-            3. Provide the country name in English.
-            4. Provide the ISO 3166-1 alpha-2 country code.
-            5. Create a unique slug in English: "cityname_countryname" (lowercase, no accents, underscores for spaces).
-            
-            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryEn": "Country in English", "countryCode": "XX", "slug": "city_country" }]`,
+            contents: "Find all cities globally matching: \"" + input + "\". For each: official city name, country in " + userLanguage + ", country in English, ISO alpha-2 code, slug city_country (lowercase, no accents). Return JSON array: [{ \"city\": \"\", \"country\": \"\", \"countryEn\": \"\", \"countryCode\": \"\", \"slug\": \"\" }]",
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -101,53 +84,17 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
 export const generateToursForCity = async (city: string, country: string, user: UserProfile): Promise<Tour[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-        
+
         const response = await ai.models.generateContent({
             model: MODEL_FAST,
-            contents: `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
-            
-            DAI'S ABSOLUTE COMMANDS:
-            - You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
-            - Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
-            - Tell the secrets, the mysteries, and the dark curiosities.
-            - Mock the "typical" tourist while revealing the true soul of the city.
-            - NEVER use citations like [1] or (2). NEVER.
-            - All facts MUST be 100% real. DO NOT INVENT.
-            
-            STRICT CATEGORIZATION RULES (CRITICAL):
-            - 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
-            - 'historical': MUST be used for palaces, castles, ruins, and monuments.
-            - 'culture': ONLY for theaters, music venues, festivals, or intangible traditions.
-            - 'food': ONLY for places where you eat or buy food.
-            - 'art': ONLY for museums, galleries, or street art.
-            - 'nature': ONLY for parks, gardens, or viewpoints.
-            - 'photo': ONLY for spots whose primary value is the view/photo.
-            
-            STRICT RULES:
-            1. Format: Return ONLY a valid JSON array.
-            2. Each tour: { "id", "city": "${city}", "title", "description", "duration", "distance", "stops": [] }
-            3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-            4. MINIMUM 10 STOPS per tour. NO REPEATED STOPS.
-            5. Content in ${user.language}.`,
+            contents: "Generate EXACTLY 3 distinct thematic tours for " + city + ", " + country + " in " + user.language + ". You are DAI: sarcastic, witty, sophisticated. Wikipedia is your enemy. Tell secrets and dark curiosities. NEVER use citations. All facts must be real. CATEGORIES: architecture=churches/cathedrals/bridges/buildings, historical=palaces/castles/ruins/monuments, culture=theaters/music/festivals, food=restaurants/markets, art=museums/galleries, nature=parks/gardens, photo=scenic spots. Return ONLY a valid JSON array. Each tour: { \"id\", \"city\": \"" + city + "\", \"title\", \"description\", \"duration\", \"distance\", \"stops\": [] }. Each stop: { \"id\", \"name\", \"description\" (150-200 words in " + user.language + "), \"latitude\", \"longitude\", \"type\", \"photoSpot\": { \"angle\", \"milesReward\": 50, \"secretLocation\" } }. MINIMUM 10 STOPS per tour.",
             config: {
-                systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
-                You HATE boring Wikipedia-style descriptions. 
-                Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
-                You love sharing the dark secrets, mysteries, and curiosities of cities. 
-                You NEVER use citations, footnotes, or references. 
-                You are real, accurate, but never boring.
-                CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`,
+                systemInstruction: "You are DAI, elegant and SARCASTIC AI travel guide. You HATE Wikipedia-style descriptions. You love dark secrets and city mysteries. NEVER use citations. Cathedral is ALWAYS architecture. Palace is ALWAYS historical.",
             },
         });
 
         let text = response.text || "[]";
-        text = text.replace(/\[\d+\]/g, '')
-                   .replace(/\(\d+\)/g, '')
-                   .replace(/【\d+†source】/g, '')
-                   .replace(/\[source\]/g, '')
-                   .replace(/\s+/g, ' ')
-                   .trim();
-
+        text = text.replace(/\[\d+\]/g, '').replace(/\(\d+\)/g, '').replace(/\s+/g, ' ').trim();
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         return JSON.parse(jsonMatch ? jsonMatch[0] : text);
     });
@@ -165,9 +112,7 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: MODEL_FAST,
-            contents: `As DAI, welcome a new user named ${user.firstName || 'Traveler'} in ${user.language}.
-            Explain that they are currently rank "ZERO" (the bottom of the food chain) and they need to conquer the world by completing tours to reach "ZENITH".
-            Be sarcastic, witty, and elegant. Keep it under 100 words.`,
+            contents: "As DAI, welcome " + (user.firstName || 'Traveler') + " in " + user.language + ". They start at rank ZERO, must reach ZENITH. Be sarcastic and witty. Under 100 words.",
         });
         return response.text || "Welcome to bdai.";
     });
@@ -180,8 +125,8 @@ export const generateAudio = async (text: string, language: string, city: string
     const cachedUrl = await getCachedAudio(cleanText, language);
     if (cachedUrl) {
         try {
-            const response = await fetch(cachedUrl);
-            const buffer = await response.arrayBuffer();
+            const res = await fetch(cachedUrl);
+            const buffer = await res.arrayBuffer();
             return new Uint8Array(buffer);
         } catch (e) {
             console.error("Error loading cached audio:", e);
@@ -191,10 +136,10 @@ export const generateAudio = async (text: string, language: string, city: string
     const voiceName = VOICE_MAP[language] || 'Kore';
     const base64 = await handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-        
-        const prompt = language === 'es' || language === 'ca' || language === 'eu'
-            ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
-            : `Act as Dai, an elegant and sarcastic guide. Say this in a natural and engaging tone: ${cleanText}`;
+
+        const prompt = (language === 'es' || language === 'ca' || language === 'eu')
+            ? "Actua como Dai, guia elegante y sarcastica. Di esto de forma divertida: " + cleanText
+            : "Act as Dai, elegant sarcastic guide. Say this naturally: " + cleanText;
 
         const response = await ai.models.generateContent({
             model: MODEL_TTS,
@@ -225,7 +170,7 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: MODEL_FAST,
-            contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
+            contents: "Translate to " + targetLanguage + ": " + JSON.stringify(tours) + ". Keep technical photo advice.",
             config: { responseMimeType: "application/json" }
         });
         return JSON.parse(response.text || "[]");
@@ -237,7 +182,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: MODEL_FAST,
-            contents: `Is this text safe? "${text}"`,
+            contents: "Is this text safe for a travel app? \"" + text + "\"",
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -255,11 +200,11 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
         const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
         const response = await ai.models.generateContent({
             model: MODEL_IMG,
-            contents: { parts: [{ text: `Postcard of ${city}` }] },
+            contents: { parts: [{ text: "Travel postcard of " + city + ", cinematic, dark moody aesthetic" }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
         const parts = response.candidates?.[0]?.content?.parts;
         const part = parts?.find((p: any) => p.inlineData);
-        return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
+        return part?.inlineData ? "data:image/png;base64," + part.inlineData.data : null;
     });
 };
