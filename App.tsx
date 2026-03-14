@@ -247,7 +247,7 @@ export default function App() {
 
   const handleVerifyOtp = async () => {
     if (isLoading) return; 
-    if (otpToken.length < 6) return;
+    if (otpToken.length < 8) return;
     setIsLoading(true);
     setLoadingMessage("DECRYPTING ACCESS...");
     try {
@@ -449,12 +449,12 @@ export default function App() {
                     </div>
                     <input 
                       type="text" 
-                      maxLength={6}
+                      maxLength={8}
                       value={otpToken} 
                       onChange={e => setOtpToken(e.target.value)} 
                       disabled={isLoading}
                       className="w-full h-16 bg-white/[0.03] border border-white/10 rounded-2xl px-6 text-center text-white outline-none text-2xl font-black tracking-[0.5em] shadow-inner focus:border-purple-500/50 transition-all" 
-                      placeholder="000000" 
+                      placeholder="00000000" 
                     />
                     <div className="flex gap-2">
                         <button 
@@ -466,7 +466,7 @@ export default function App() {
                         </button>
                         <button 
                           onClick={handleVerifyOtp} 
-                          disabled={otpToken.length < 6 || isLoading}
+                          disabled={otpToken.length < 8 || isLoading}
                           className="flex-[2] h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-30"
                         >
                           {t('verifyCode')}
