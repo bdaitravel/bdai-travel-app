@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, translateSearchQuery, QuotaError, normalizeCityWithAI } from './services/geminiService';
@@ -92,11 +91,9 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      // Clear overlays and stop audio when navigating back
       setVisaToShare(null);
       setIsLoading(false);
       window.dispatchEvent(new CustomEvent('bdai-stop-audio'));
-      
       if (event.state && event.state.view) {
         setView(event.state.view);
       } else {
@@ -106,16 +103,12 @@ export default function App() {
         });
       }
     };
-
     window.addEventListener('popstate', handlePopState);
-    
-    // Initial state setup
     if (window.history.state?.view) {
       setView(window.history.state.view);
     } else {
       window.history.replaceState({ view: AppView.LOGIN }, '', '');
     }
-
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
@@ -153,16 +146,13 @@ export default function App() {
     const checkAuth = async () => {
         try {
             const { data: { session }, error } = await supabase.auth.getSession();
-
             if (error) {
                 if (error.message.includes('Refresh Token Not Found') || error.message.includes('Invalid Refresh Token')) {
                     await supabase.auth.signOut().catch(() => {});
                     const keysToRemove = [];
                     for (let i = 0; i < localStorage.length; i++) {
                         const key = localStorage.key(i);
-                        if (key && key.startsWith('sb-')) {
-                            keysToRemove.push(key);
-                        }
+                        if (key && key.startsWith('sb-')) keysToRemove.push(key);
                     }
                     keysToRemove.forEach(k => localStorage.removeItem(k));
                 } else {
@@ -183,9 +173,7 @@ export default function App() {
                 const keysToRemove = [];
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key && key.startsWith('sb-')) {
-                        keysToRemove.push(key);
-                    }
+                    if (key && key.startsWith('sb-')) keysToRemove.push(key);
                 }
                 keysToRemove.forEach(k => localStorage.removeItem(k));
             } else {
@@ -205,9 +193,7 @@ export default function App() {
 
     checkAuth();
     getGlobalRanking().then(setLeaderboard);
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => { subscription.unsubscribe(); };
   }, []);
 
   const handleLoginSuccess = async (supabaseUser: any) => {
@@ -221,13 +207,8 @@ export default function App() {
       };
       setUser({ ...updatedProfile, isLoggedIn: true });
       localStorage.setItem('bdai_profile', JSON.stringify({ ...updatedProfile, isLoggedIn: true }));
-      if (updatedProfile.stats.sessionsStarted === 1) {
-        setShowOnboarding(true);
-      }
-      // Only redirect to HOME if we are currently on the LOGIN screen
-      if (view === AppView.LOGIN) {
-        navigateTo(AppView.HOME);
-      }
+      if (updatedProfile.stats.sessionsStarted === 1) setShowOnboarding(true);
+      if (view === AppView.LOGIN) navigateTo(AppView.HOME);
     } else {
       const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true, stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } };
       newProfile.rank = calculateTravelerRank(newProfile.miles);
@@ -235,10 +216,7 @@ export default function App() {
       await syncUserProfile(newProfile);
       setUser(newProfile);
       setShowOnboarding(true);
-      // Only redirect to HOME if we are currently on the LOGIN screen
-      if (view === AppView.LOGIN) {
-        navigateTo(AppView.HOME);
-      }
+      if (view === AppView.LOGIN) navigateTo(AppView.HOME);
     }
   };
 
@@ -247,14 +225,10 @@ export default function App() {
     const watchId = navigator.geolocation.watchPosition(
         (pos) => { setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
         (err) => {
-          // Log more descriptive errors but avoid spamming console with empty objects
           const errorTypes = { 1: 'PERMISSION_DENIED', 2: 'POSITION_UNAVAILABLE', 3: 'TIMEOUT' };
           const type = errorTypes[err.code as keyof typeof errorTypes] || 'UNKNOWN_ERROR';
-          if (err.code === 3) {
-            console.warn(`GPS Warning: ${type} - The request to get user location timed out.`);
-          } else {
-            console.debug(`GPS Info: ${type} - ${err.message}`);
-          }
+          if (err.code === 3) console.warn(`GPS Warning: ${type}`);
+          else console.debug(`GPS Info: ${type} - ${err.message}`);
         },
         { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
     );
@@ -283,20 +257,13 @@ export default function App() {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: "https://www.bdai.travel",
-          skipBrowserRedirect: true
-        }
+        options: { redirectTo: "https://www.bdai.travel", skipBrowserRedirect: true }
       });
       if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank', 'width=500,height=600');
-      }
+      if (data?.url) window.open(data.url, '_blank', 'width=500,height=600');
     } catch (e: any) {
       alert(e.message || "Google Login failed.");
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   const handleVerifyOtp = async () => {
@@ -325,16 +292,56 @@ export default function App() {
     } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
   };
 
+  // ─── BUSCAR EN CACHÉ ────────────────────────────────────────────────────────
+  // Busca el slug exacto primero, luego prueba variantes del mismo nombre de ciudad
+  const findInCache = async (slug: string, langCode: string): Promise<Tour[] | null> => {
+    try {
+      // 1. Búsqueda exacta — el slug es idéntico al guardado
+      const { data: exact } = await supabase
+        .from('tours_cache')
+        .select('data, city')
+        .eq('city', slug)
+        .eq('language', langCode.toLowerCase())
+        .maybeSingle();
+
+      if (exact?.data && Array.isArray(exact.data) && exact.data.length > 0) {
+        console.log(`✅ Cache exacto: "${slug}"`);
+        return exact.data;
+      }
+
+      // 2. Búsqueda flexible — busca por nombre de ciudad ignorando el país
+      // Esto encuentra "londres_unitedkingdom" cuando buscamos "london_united_kingdom"
+      const cityOnly = slug.split('_')[0];
+      if (!cityOnly) return null;
+
+      const { data: fuzzy } = await supabase
+        .from('tours_cache')
+        .select('data, city')
+        .ilike('city', `${cityOnly}%`)
+        .eq('language', langCode.toLowerCase())
+        .maybeSingle();
+
+      if (fuzzy?.data && Array.isArray(fuzzy.data) && fuzzy.data.length > 0) {
+        console.log(`✅ Cache flexible: buscado="${slug}", encontrado="${fuzzy.city}"`);
+        return fuzzy.data;
+      }
+    } catch (e) {
+      console.warn('Cache lookup error', e);
+    }
+    return null;
+  };
+
   const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
     setIsLoading(true); 
     setSearchOptions(null); 
     setSearchVal(''); 
+
     const cleanName = selection.name?.split(',')[0].trim() || selection.city;
     setSelectedCity(cleanName); 
     setSelectedCountry(selection.country);
     setSelectedCountryEn(selection.countryEn || selection.country);
     
-    // Standardize slug: use provided slug or generate from city and English country
+    // Slug siempre en inglés, generado desde cityEn + countryEn
     const slug = (selection.slug || normalizeKey(cleanName, selection.countryEn || selection.country))
       .replace(/-/g, '_')
       .toLowerCase();
@@ -342,98 +349,104 @@ export default function App() {
     setSelectedCitySlug(slug);
 
     try {
-        setTours([]);
-        if (forceRefresh) {
-            setLoadingMessage("PURGING OLD DATA...");
-            await supabase.from('tours_cache').delete().eq('city', slug).eq('language', langCode.toLowerCase());
-        } else {
-            // 1. Try exact English slug: florence_italy
-let cachedData = null;
-const { data: c1 } = await supabase
-  .from('tours_cache').select('data')
-  .eq('city', slug).eq('language', langCode.toLowerCase()).maybeSingle();
-if (c1?.data?.length > 0) cachedData = c1.data;
+      setTours([]);
 
-// 2. Fallback: find old Spanish slugs like alcaladehenares_spain
-if (!cachedData) {
-  const cityOnly = slug.split('_')[0];
-  const { data: c2 } = await supabase
-    .from('tours_cache').select('data')
-    .ilike('city', `${cityOnly}%`).eq('language', langCode.toLowerCase()).maybeSingle();
-  if (c2?.data?.length > 0) cachedData = c2.data;
-}
-
-if (cachedData) {
-  setTours(cachedData);
-  navigateTo(AppView.CITY_DETAIL);
-  setIsLoading(false);
-  return;
-}
+      if (forceRefresh) {
+        setLoadingMessage("PURGING OLD DATA...");
+        // Borrar todas las variantes del slug de esta ciudad en este idioma
+        const cityOnly = slug.split('_')[0];
+        const { data: existing } = await supabase
+          .from('tours_cache')
+          .select('city')
+          .ilike('city', `${cityOnly}%`)
+          .eq('language', langCode.toLowerCase());
+        
+        if (existing && existing.length > 0) {
+          for (const row of existing) {
+            await supabase.from('tours_cache').delete()
+              .eq('city', row.city).eq('language', langCode.toLowerCase());
+          }
         }
-        
-        setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
-        let firstTourReceived = false;
-        const generated = await generateToursForCity(cleanName, selection.countryEn || selection.country, { ...user, language: langCode } as UserProfile, (tour) => {
-            if (tour && tour.stops && tour.stops.length > 0) {
-                setTours(prev => {
-                    if (prev.some(t => t.title === tour.title)) return prev;
-                    return [...prev, tour];
-                });
-                if (!firstTourReceived) {
-                    firstTourReceived = true;
-                    if (view === AppView.HOME || forceRefresh) {
-                        navigateTo(AppView.CITY_DETAIL);
-                    }
-                    setIsLoading(false);
-                }
-            }
-        });
-        
-        if (generated.length > 0) {
-            // Update cache once all tours are generated
-            await supabase.from('tours_cache').upsert({
-              city: slug,
-              language: langCode.toLowerCase(),
-              data: generated
-            }, { onConflict: 'city,language' });
-            
-            // Fallback in case onProgress wasn't called or failed to trigger navigation
+      } else {
+        // Buscar en caché
+        const cachedData = await findInCache(slug, langCode);
+        if (cachedData) {
+          setTours(cachedData);
+          navigateTo(AppView.CITY_DETAIL);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // No está en caché — generar con Gemini
+      setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
+      let firstTourReceived = false;
+
+      const generated = await generateToursForCity(
+        cleanName, 
+        selection.countryEn || selection.country, 
+        { ...user, language: langCode } as UserProfile, 
+        (tour) => {
+          if (tour && tour.stops && tour.stops.length > 0) {
+            setTours(prev => {
+              if (prev.some(t => t.title === tour.title)) return prev;
+              return [...prev, tour];
+            });
             if (!firstTourReceived) {
-                setTours(generated);
-                if (view === AppView.HOME || forceRefresh) {
-                    navigateTo(AppView.CITY_DETAIL);
-                }
+              firstTourReceived = true;
+              if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
+              setIsLoading(false);
             }
-        } else { alert("Location protocol failed."); }
+          }
+        }
+      );
+      
+      if (generated.length > 0) {
+        // Guardar con el slug canónico en inglés
+        await supabase.from('tours_cache').upsert({
+          city: slug,
+          language: langCode.toLowerCase(),
+          data: generated
+        }, { onConflict: 'city,language' });
+        
+        if (!firstTourReceived) {
+          setTours(generated);
+          if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
+        }
+      } else { 
+        alert("Location protocol failed."); 
+      }
     } catch (e) { 
-        console.error("Selection error:", e);
-    } finally { setIsLoading(false); }
+      console.error("Selection error:", e);
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
-   const handleCitySearch = async (val: string) => {
+  const handleCitySearch = async (val: string) => {
     setSearchVal(val);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    if (val.length < 3) { setSearchOptions(null); return; }
+    if (val.length < 2) { setSearchOptions(null); return; }
 
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
         try {
-            // 1. Use Gemini to find all matches globally
+            // Gemini devuelve hasta 5 ciudades con nombre en inglés + slug canónico
             const aiResults = await normalizeCityWithAI(val, user.language);
             
-            // 2. Check cache for each result
             const results = await Promise.all(aiResults.map(async (res) => {
                 const slug = res.slug.replace(/-/g, '_').toLowerCase();
                 const isCached = await checkIfCityCached(res.city, slug);
                 return {
                     name: res.city,
                     city: res.city,
+                    cityLocal: res.cityLocal,
                     country: res.country,
                     countryEn: res.countryEn,
                     countryCode: res.countryCode,
                     slug: slug,
                     isCached: isCached,
-                    fullName: res.city
+                    fullName: res.cityLocal || res.city
                 };
             }));
 
@@ -443,7 +456,7 @@ if (cachedData) {
         } finally {
             setIsSearching(false);
         }
-    }, 1500);
+    }, 1000);
   };
 
   const handleLangChange = (code: string) => {
@@ -667,7 +680,6 @@ if (cachedData) {
                 {view === AppView.TOUR_ACTIVE && activeTour && (
                   <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} language={user.language} onBack={() => navigateTo(AppView.CITY_DETAIL)} userLocation={userLocation} onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
                 )}
-                {/* Dai Thinking Overlay - Only for full loading, not search */}
                 {isLoading && (
                     <div className="fixed inset-0 z-[10000] flex items-center justify-center">
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
@@ -707,3 +719,4 @@ if (cachedData) {
     </div>
   );
 }
+
