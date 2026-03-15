@@ -354,7 +354,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all mb-4"
                     >
                         <i className="fas fa-sign-out-alt"></i>
-                        >{pt('logout')}
+                        {pt('logout')}
                     </button>
 
                     <div className="flex justify-center gap-4 mb-6">
