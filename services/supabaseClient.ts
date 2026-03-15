@@ -346,21 +346,22 @@ export const syncUserProfile = async (profile: UserProfile) => {
  */
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const slug = normalizeKey(city, country);
-  
   if (!slug) return null;
-
   try {
+    // 1. Try exact English slug
     const { data, error } = await supabase.from('tours_cache')
-        .select('data, language, city')
-        .eq('city', slug)
-        .eq('language', language.toLowerCase())
-        .maybeSingle();
-    
-    if (!error && data && data.data) {
-        return { data: data.data, langFound: language, cityName: data.city };
-    }
-  } catch (e) { console.warn("⚠️ Cache lookup failed", e); }
-  return null; 
+      .select('data, language, city')
+      .eq('city', slug).eq('language', language.toLowerCase()).maybeSingle();
+    if (!error && data?.data) return { data: data.data, langFound: language, cityName: data.city };
+
+    // 2. Fallback: city name only (finds old Spanish slugs like alcaladehenares_spain)
+    const cityOnly = slug.split('_')[0];
+    const { data: d2 } = await supabase.from('tours_cache')
+      .select('data, language, city')
+      .ilike('city', `${cityOnly}%`).eq('language', language.toLowerCase()).maybeSingle();
+    if (d2?.data) return { data: d2.data, langFound: language, cityName: d2.city };
+  } catch (e) { console.warn("Cache lookup failed", e); }
+  return null;
 };
 
 export const saveToursToCache = async (city: string, country: string, language: string, tours: Tour[]) => {
