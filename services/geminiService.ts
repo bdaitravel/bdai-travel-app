@@ -1,6 +1,7 @@
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
 import { getCachedAudio, saveAudioToCache } from './supabaseClient';
+import { normalizeKey } from './supabaseClient';
 
 export class QuotaError extends Error {
     constructor(message: string) {
