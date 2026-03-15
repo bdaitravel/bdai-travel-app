@@ -623,7 +623,7 @@ if (cachedData) {
                                                   )}
                                               </div>
                                               <div className="truncate">
-                                                  <span className="text-white font-black uppercase text-[11px] block">{opt.fullName}</span>
+                                                  <span className="text-white font-black uppercase text-[11px] block">{opt.cityLocal || opt.fullName}</span>
                                                   <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.country}</span>
                                               </div>
                                           </div>
