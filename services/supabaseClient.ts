@@ -146,24 +146,22 @@ export const normalizeKey = (city: string | undefined | null, country?: string) 
 /**
  * Checks if a city exists in cache using the new slug format.
  */
-export const checkIfCityCached = async (city: string, countryOrSlug: string): Promise<boolean> => {
-  // If countryOrSlug already looks like a slug (contains underscore and is lowercase), use it.
-  const slug = (countryOrSlug.includes('_') && countryOrSlug === countryOrSlug.toLowerCase())
-    ? countryOrSlug 
-    : normalizeKey(city, countryOrSlug);
-    
+export const checkIfCityCached = async (city: string, slug: string): Promise<boolean> => {
   if (!slug) return false;
   try {
-    const { data, error } = await supabase
-        .from('tours_cache')
-        .select('city')
-        .eq('city', slug)
-        .limit(1);
-    if (error) return false;
-    return (data && data.length > 0);
-  } catch (e) {
-    return false;
-  }
+    // 1. Try exact English slug: florence_italy
+    const { data: d1 } = await supabase
+      .from('tours_cache').select('city').eq('city', slug).limit(1);
+    if (d1 && d1.length > 0) return true;
+
+    // 2. Fallback: search by city name only to find old Spanish slugs
+    const cityOnly = slug.split('_')[0];
+    if (!cityOnly) return false;
+    const { data: d2 } = await supabase
+      .from('tours_cache').select('city')
+      .ilike('city', `${cityOnly}%`).limit(1);
+    return !!(d2 && d2.length > 0);
+  } catch (e) { return false; }
 };
 
 export const searchCitiesInCache = async (query: string): Promise<any[]> => {
