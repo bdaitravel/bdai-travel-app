@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
 import { getCachedAudio, saveAudioToCache } from './supabaseClient';
@@ -26,15 +25,11 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
     }
 };
 
-/**
- * Translates a user's search query from any language into English for database matching.
- * Also returns the original for profiling.
- */
 export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-2.0-flash",
             contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
             Return JSON object: { "english": "English Name", "detected": "Detected Language Code" }`,
             config: {
@@ -53,15 +48,11 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
     });
 };
 
-/**
- * Normalizes a city search query using Gemini.
- * Handles typos, nicknames (Donosti -> San Sebastián), and extracts country.
- */
 export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<any[]> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-flash-latest",
+            model: "gemini-2.0-flash",
             contents: `Identify all major cities or towns globally that match the name: "${input}". 
             For each match:
             1. Provide the official city name.
@@ -98,7 +89,7 @@ export const generateToursForCity = async (city: string, country: string, user: 
     
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-pro-preview',
+            model: 'gemini-2.0-flash',
             contents: `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
             
             THEMES:
@@ -125,10 +116,10 @@ export const generateToursForCity = async (city: string, country: string, user: 
             
             STRICT RULES:
             1. Format: Return ONLY a valid JSON array containing exactly 3 tour objects.
-            2. Tour object: { "id", "city": "${city}", "title", "description" (Explain clearly what the tour is about and its theme), "duration" (Calculate realistic total time including walking and spending 20-30 mins at each stop, e.g., "3.5 hours"), "distance" (Calculate realistic walking distance, e.g., "4 km"), "theme", "stops": [] }
+            2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
             3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
             4. MINIMUM 10 STOPS PER TOUR.
-            5. CRITICAL: DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS. Every single stop across all 30+ stops must be unique.
+            5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
             6. Content in ${user.language}.`,
             config: {
                 systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
@@ -143,8 +134,6 @@ export const generateToursForCity = async (city: string, country: string, user: 
         });
 
         let text = response.text || "[]";
-        
-        // Aggressive post-processing to remove any citations, footnotes or source markers
         text = text.replace(/\[\d+\]/g, '')
                    .replace(/\(\d+\)/g, '')
                    .replace(/【\d+†source】/g, '')
@@ -158,17 +147,11 @@ export const generateToursForCity = async (city: string, country: string, user: 
         } catch (e) {
             console.error("Failed to parse tours JSON", e);
             const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (jsonMatch) {
-                tours = JSON.parse(jsonMatch[0]);
-            }
+            if (jsonMatch) tours = JSON.parse(jsonMatch[0]);
         }
         
         if (Array.isArray(tours)) {
-            tours.forEach(tour => {
-                if (onProgress) {
-                    onProgress(tour);
-                }
-            });
+            tours.forEach(tour => { if (onProgress) onProgress(tour); });
             return tours.filter(t => t && t.stops && t.stops.length > 0);
         }
         
@@ -184,7 +167,7 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-2.0-flash",
             contents: `As DAI, welcome a new user named ${user.firstName || 'Traveler'} in ${user.language}.
             Explain that they are currently rank "ZERO" (the bottom of the food chain) and they need to conquer the world by completing tours to reach "ZENITH".
             Be sarcastic, witty, and elegant. Keep it under 100 words.`,
@@ -233,7 +216,6 @@ export const generateAudio = async (text: string, language: string, city: string
         const binaryString = atob(base64);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-        
         saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
         return bytes;
     }
@@ -245,7 +227,7 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.0-flash',
             contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
             config: { responseMimeType: "application/json" }
         });
@@ -257,7 +239,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-2.0-flash",
             contents: `Is this text safe? "${text}"`,
             config: {
                 responseMimeType: "application/json",
@@ -275,12 +257,10 @@ export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-2.0-flash",
             contents: "Say 'OK'",
         });
-        if (response.text) {
-            return { ok: true, message: "API is responding" };
-        }
+        if (response.text) return { ok: true, message: "API is responding" };
         return { ok: false, message: "Empty response" };
     } catch (e: any) {
         return { ok: false, message: e.message || "Error connecting to API" };
@@ -291,12 +271,12 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-2.0-flash-exp',
             contents: { parts: [{ text: `Postcard of ${city}` }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
         const parts = response.candidates?.[0]?.content?.parts;
-        const part = parts?.find(p => p.inlineData);
+        const part = parts?.find((p: any) => p.inlineData);
         return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };
