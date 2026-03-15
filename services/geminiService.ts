@@ -57,20 +57,16 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
             contents: `The user typed: "${input}" and is looking for a city to visit.
             
             RULES:
-            - Correct any typos or misspellings (e.g. "florensia" → Florence, "barcelon" → Barcelona).
-            - Recognize city names in ANY language (e.g. "Florencia"=Florence, "Londra"=London, "Praga"=Prague, "Nueva York"=New York).
-            - If the input is ambiguous (e.g. just "Florence"), return the most famous one FIRST (Florence Italy), then others.
-            - Return maximum 4 results, most relevant first.
+            - Correct typos (e.g. "florensia" → Florence, "barcelon" → Barcelona).
+            - Recognize city names in ANY language (e.g. "Florencia"=Florence, "Londra"=London).
+            - If ambiguous, return most famous first. Max 4 results.
             
             For each city return:
-            - "cityEn": Official name IN ENGLISH ONLY (e.g. "Florence", never "Florencia").
-            - "cityLocal": Name in ${userLanguage} (e.g. Spanish: "Florencia", French: "Florence", Japanese: "フィレンツェ"). If no translation exists use English.
+            - "cityEn": Official English name ONLY (e.g. "Florence", never "Florencia").
+            - "cityLocal": Name in ${userLanguage}. If no translation, use English.
             - "country": Country name in ${userLanguage}.
-            - "countryEn": Country name in English.
-            - "countryCode": 2-letter ISO code uppercase (e.g. "IT", "ES", "US").
-            - "slug": ALWAYS English lowercase underscores (e.g. "florence_italy", "new_york_usa", "alcala_de_henares_spain"). NEVER use accents or Spanish names in slug.
-            
-            CRITICAL: cityEn and slug MUST be in English always. The slug must match the English city name exactly.`,
+            - "countryEn": Country name in English ONLY (e.g. "Italy", "United Kingdom").
+            - "countryCode": 2-letter ISO uppercase (e.g. "IT", "ES").`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -78,18 +74,30 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            cityEn: { type: Type.STRING },
-                            cityLocal: { type: Type.STRING },
-                            country: { type: Type.STRING },
-                            countryEn: { type: Type.STRING },
+                            cityEn:      { type: Type.STRING },
+                            cityLocal:   { type: Type.STRING },
+                            country:     { type: Type.STRING },
+                            countryEn:   { type: Type.STRING },
                             countryCode: { type: Type.STRING },
-                            slug: { type: Type.STRING }
                         },
-                        required: ["cityEn", "cityLocal", "country", "countryEn", "countryCode", "slug"]
+                        required: ["cityEn", "cityLocal", "country", "countryEn", "countryCode"]
                     }
                 }
             }
         });
+
+        const raw = JSON.parse(response.text || '[]');
+        return raw.map((r: any) => ({
+            city: r.cityEn,
+            cityLocal: r.cityLocal || r.cityEn,
+            country: r.country,
+            countryEn: r.countryEn,
+            countryCode: r.countryCode,
+            slug: normalizeKey(r.cityEn, r.countryEn),
+            fullName: r.cityLocal || r.cityEn
+        }));
+    });
+};
 
         const raw = JSON.parse(response.text || '[]');
         return raw.map((r: any) => ({
