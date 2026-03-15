@@ -347,19 +347,28 @@ export default function App() {
             setLoadingMessage("PURGING OLD DATA...");
             await supabase.from('tours_cache').delete().eq('city', slug).eq('language', langCode.toLowerCase());
         } else {
-            const { data: cached, error } = await supabase
-              .from('tours_cache')
-              .select('data')
-              .eq('city', slug) 
-              .eq('language', langCode.toLowerCase())
-              .maybeSingle();
+            // 1. Try exact English slug: florence_italy
+let cachedData = null;
+const { data: c1 } = await supabase
+  .from('tours_cache').select('data')
+  .eq('city', slug).eq('language', langCode.toLowerCase()).maybeSingle();
+if (c1?.data?.length > 0) cachedData = c1.data;
 
-            if (!error && cached && cached.data && cached.data.length > 0) {
-                setTours(cached.data); 
-                navigateTo(AppView.CITY_DETAIL);
-                setIsLoading(false);
-                return;
-            }
+// 2. Fallback: find old Spanish slugs like alcaladehenares_spain
+if (!cachedData) {
+  const cityOnly = slug.split('_')[0];
+  const { data: c2 } = await supabase
+    .from('tours_cache').select('data')
+    .ilike('city', `${cityOnly}%`).eq('language', langCode.toLowerCase()).maybeSingle();
+  if (c2?.data?.length > 0) cachedData = c2.data;
+}
+
+if (cachedData) {
+  setTours(cachedData);
+  navigateTo(AppView.CITY_DETAIL);
+  setIsLoading(false);
+  return;
+}
         }
         
         setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
