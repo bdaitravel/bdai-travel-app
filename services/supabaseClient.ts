@@ -12,6 +12,14 @@ const supabaseAnonKey = (rawKey && typeof rawKey === 'string' && rawKey.length >
   ? rawKey.trim()
   : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
 
+const originalConsoleError = console.error;
+console.error = (...args) => {
+    const msg = args[0];
+    if (typeof msg === 'string' && (msg.includes('Refresh Token Not Found') || msg.includes('Invalid Refresh Token'))) return;
+    if (msg && msg.message && (msg.message.includes('Refresh Token Not Found') || msg.message.includes('Invalid Refresh Token'))) return;
+    originalConsoleError(...args);
+};
+
 let supabase: any;
 try {
   supabase = createClient(supabaseUrl, supabaseAnonKey);

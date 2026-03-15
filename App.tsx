@@ -130,8 +130,8 @@ export default function App() {
     const checkAuth = async () => {
         try {
             const { data: { session }, error } = await supabase.auth.getSession();
+
             if (error) {
-                console.error("Session error:", error.message);
                 if (error.message.includes('Refresh Token Not Found') || error.message.includes('Invalid Refresh Token')) {
                     await supabase.auth.signOut().catch(() => {});
                     const keysToRemove = [];
@@ -142,6 +142,8 @@ export default function App() {
                         }
                     }
                     keysToRemove.forEach(k => localStorage.removeItem(k));
+                } else {
+                    console.error("Session error:", error.message);
                 }
             }
             if (session?.user) {
@@ -154,7 +156,6 @@ export default function App() {
                }
             }
         } catch (e: any) { 
-            console.error("Auth init error", e); 
             if (e?.message?.includes('Refresh Token Not Found') || e?.message?.includes('Invalid Refresh Token')) {
                 const keysToRemove = [];
                 for (let i = 0; i < localStorage.length; i++) {
@@ -164,6 +165,8 @@ export default function App() {
                     }
                 }
                 keysToRemove.forEach(k => localStorage.removeItem(k));
+            } else {
+                console.error("Auth init error", e); 
             }
         } finally { setIsVerifyingSession(false); }
     };
