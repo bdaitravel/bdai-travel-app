@@ -53,15 +53,23 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Identify all major cities or towns globally that match the name: "${input}". 
-            For each match:
-            1. Provide the official city name.
-            2. Provide the country name in ${userLanguage}.
-            3. Provide the country name in English.
-            4. Provide the ISO 3166-1 alpha-2 country code.
-            5. Create a unique slug in English: "cityname_countryname" (lowercase, no accents, underscores for spaces).
+            contents: `The user typed: "${input}" and is looking for a city to visit.
             
-            Return a JSON array of objects: [{ "city": "Name", "country": "Country in ${userLanguage}", "countryEn": "Country in English", "countryCode": "XX", "slug": "city_country" }]`,
+            RULES:
+            - Correct any typos or misspellings (e.g. "florensia" → Florence, "barcelon" → Barcelona).
+            - Recognize city names in ANY language (e.g. "Florencia"=Florence, "Londra"=London, "Praga"=Prague, "Nueva York"=New York).
+            - If the input is ambiguous (e.g. just "Florence"), return the most famous one FIRST (Florence Italy), then others.
+            - Return maximum 4 results, most relevant first.
+            
+            For each city return:
+            - "cityEn": Official name IN ENGLISH ONLY (e.g. "Florence", never "Florencia").
+            - "cityLocal": Name in ${userLanguage} (e.g. Spanish: "Florencia", French: "Florence", Japanese: "フィレンツェ"). If no translation exists use English.
+            - "country": Country name in ${userLanguage}.
+            - "countryEn": Country name in English.
+            - "countryCode": 2-letter ISO code uppercase (e.g. "IT", "ES", "US").
+            - "slug": ALWAYS English lowercase underscores (e.g. "florence_italy", "new_york_usa", "alcala_de_henares_spain"). NEVER use accents or Spanish names in slug.
+            
+            CRITICAL: cityEn and slug MUST be in English always. The slug must match the English city name exactly.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -69,18 +77,29 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            city: { type: Type.STRING },
+                            cityEn: { type: Type.STRING },
+                            cityLocal: { type: Type.STRING },
                             country: { type: Type.STRING },
                             countryEn: { type: Type.STRING },
                             countryCode: { type: Type.STRING },
                             slug: { type: Type.STRING }
                         },
-                        required: ["city", "country", "countryEn", "countryCode", "slug"]
+                        required: ["cityEn", "cityLocal", "country", "countryEn", "countryCode", "slug"]
                     }
                 }
             }
         });
-        return JSON.parse(response.text || '[]');
+
+        const raw = JSON.parse(response.text || '[]');
+        return raw.map((r: any) => ({
+            city: r.cityEn,
+            cityLocal: r.cityLocal || r.cityEn,
+            country: r.country,
+            countryEn: r.countryEn,
+            countryCode: r.countryCode,
+            slug: r.slug.replace(/-/g, '_').toLowerCase(),
+            fullName: r.cityLocal || r.cityEn
+        }));
     });
 };
 
