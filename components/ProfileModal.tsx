@@ -16,26 +16,26 @@ interface ProfileModalProps {
 }
 
 const MODAL_TEXTS: any = {
-    es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "Nacimiento", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Mis Visados", badges: "Insignias", langLabel: "Idioma", rank: "RANGO", miles: "MILLAS", admin: "ADMIN", streak: "Racha", changeAvatar: "Cambiar Foto", email: "Correo Electrónico", reportBug: "Reportar Error" },
-    en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", save: "Save", edit: "Edit", logout: "Logout", stamps: "My Visas", badges: "Badges", langLabel: "Language", rank: "RANK", miles: "MILES", admin: "ADMIN", streak: "Streak", changeAvatar: "Change Photo", email: "Email Address", reportBug: "Report Bug" },
-    fr: { title: "Passeport Global bdai", subtitle: "ID Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Naissance", save: "Enregistrer", edit: "Modifier", logout: "Déconnexion", stamps: "Mes Visas", badges: "Badges", langLabel: "Langue", rank: "RANG", miles: "MILES", admin: "ADMIN", streak: "Série", changeAvatar: "Changer Photo", reportBug: "Signaler un bug" },
-    it: { title: "Passaporto Globale bdai", subtitle: "ID Nomade Digitale", surname: "Cognome", givenNames: "Nomi", city: "Città", country: "Paese", age: "Età", birthday: "F. Nascita", save: "Salva", edit: "Modifica", logout: "Esci", stamps: "I Miei Visti", badges: "Distintivi", langLabel: "Lingua", rank: "RANGO", miles: "MIGLIA", admin: "ADMIN", streak: "Serie", changeAvatar: "Cambia Foto", reportBug: "Segnala un bug" },
-    de: { title: "bdai Globaler Pass", subtitle: "Digital Nomad ID", surname: "Nachname", givenNames: "Vornamen", city: "Stadt", country: "Land", age: "Alter", birthday: "Geburtstag", save: "Speichern", edit: "Bearbeiten", logout: "Abmelden", stamps: "Meine Visa", badges: "Abzeichen", langLabel: "Sprache", rank: "RANG", miles: "MEILEN", admin: "ADMIN", streak: "Serie", changeAvatar: "Foto ändern", reportBug: "Fehler melden" },
-    pt: { title: "Passaporte Global bdai", subtitle: "ID Nómada Digital", surname: "Apelido", givenNames: "Nomes", city: "Cidade", country: "País", age: "Idade", birthday: "Nascimento", save: "Guardar", edit: "Editar", logout: "Sair", stamps: "Meus Vistos", badges: "Distintivos", langLabel: "Idioma", rank: "RANKING", miles: "MILHAS", admin: "ADMIN", streak: "Sequência", changeAvatar: "Mudar Foto", reportBug: "Reportar Erro" },
-    ro: { title: "Pașaport Global bdai", subtitle: "ID Nomad Digital", surname: "Nume", givenNames: "Prenume", city: "Oraș", country: "Țară", age: "Vârstă", birthday: "Naștere", save: "Salvare", edit: "Editare", logout: "Deconectare", stamps: "Vizele Mele", badges: "Insigne", langLabel: "Limbă", rank: "RANG", miles: "MILE", admin: "ADMIN", streak: "Serie", changeAvatar: "Schimbă Foto", reportBug: "Raportează o eroare" },
-    ru: { title: "Глобальный паспорт bdai", subtitle: "ID кочевника", surname: "Фамилия", givenNames: "Имя", city: "Город", country: "Страна", age: "Возраст", birthday: "Рождение", save: "Сохранить", edit: "Править", logout: "Выйти", stamps: "Визы", badges: "Значки", langLabel: "Язык", rank: "РАНГ", miles: "МИЛИ", admin: "АДМИН", streak: "Серия", changeAvatar: "Сменить фото", reportBug: "Сообщить об ошибке" },
-    ar: { title: "جواز سفر bdai العالمي", subtitle: "هوية البدوي الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", age: "العمر", birthday: "الميلاد", save: "حفظ", edit: "تعديل", logout: "خروج", stamps: "تأشيراتي", badges: "الأوسمة", langLabel: "اللغة", rank: "الرتبة", miles: "الأميال", admin: "مسؤول", streak: "سلسلة", changeAvatar: "تغيير الصورة", reportBug: "الإبلاغ عن خطأ" },
-    zh: { title: "bdai 全球护照", subtitle: "数字游民 ID", surname: "姓", givenNames: "名", city: "城市", country: "国家", age: "年龄", birthday: "生日", save: "保存", edit: "编辑", logout: "登出", stamps: "我的签证", badges: "奖章", langLabel: "语言", rank: "等级", miles: "里程", admin: "管理", streak: "连续", changeAvatar: "更换照片", reportBug: "报告错误" },
-    ja: { title: "bdai パスポート", subtitle: "デジタルノマド ID", surname: "姓", givenNames: "名", city: "都市", country: "国", age: "年齢", birthday: "誕生日", save: "保存", edit: "編集", logout: "ログアウト", stamps: "ビザ", badges: "バッジ", langLabel: "言語", rank: "ランク", miles: "マイル", admin: "管理", streak: "記録", changeAvatar: "写真変更", reportBug: "バグを報告" },
-    ko: { title: "bdai 글로벌 여권", subtitle: "디지털 노마드 ID", surname: "성", givenNames: "이름", city: "도시", country: "국가", age: "나이", birthday: "생일", save: "저장", edit: "편집", logout: "로그아웃", stamps: "내 비자", badges: "배지", langLabel: "언어", rank: "등급", miles: "마일", admin: "관리자", streak: "연속", changeAvatar: "사진 변경", reportBug: "버그 신고" },
-    hi: { title: "bdai वैश्विक पासपोर्ट", subtitle: "डिजिटल घुमंतू आईडी", surname: "उपनाम", givenNames: "नाम", city: "शहर", country: "देश", age: "आयु", birthday: "जन्मदिन", save: "सहेजें", edit: "संपादิต करें", logout: "लॉगआउट", stamps: "मेरे वीजा", badges: "बैज", langLabel: "भाषा", rank: "रैंक", miles: "मील", admin: "व्यवस्थापक", streak: "लगातार", changeAvatar: "फोटो बदलें", reportBug: "बग की रिपोर्ट करें" },
-    tr: { title: "bdai Küresel Pasaport", subtitle: "Dijital Nomad Kimliği", surname: "Soyadı", givenNames: "İsimler", city: "Şehir", country: "Ülke", age: "Yaş", birthday: "Doğum", save: "Kaydet", edit: "Düzenle", logout: "Çıkış", stamps: "Vizelerim", badges: "Rozetler", langLabel: "Dil", rank: "RÜTBE", miles: "MİLLER", admin: "YÖNETİCİ", streak: "Seri", changeAvatar: "Fotoğraf Değiştir", reportBug: "Hata Bildir" },
-    nl: { title: "bdai Globaal Paspoort", subtitle: "Digital Nomad ID", surname: "Achternaam", givenNames: "Voornamen", city: "Stad", country: "Land", age: "Leeftijd", birthday: "Geboortedatum", save: "Opslaan", edit: "Bewerken", logout: "Uitloggen", stamps: "Mijn Visa", badges: "Badges", langLabel: "Taal", rank: "RANG", miles: "MIJL", admin: "ADMIN", streak: "Reeks", changeAvatar: "Foto wijzigen", reportBug: "Fout melden" },
-    pl: { title: "Globalny Paszport bdai", subtitle: "ID Nomady", surname: "Nazwisko", givenNames: "Imiona", city: "Miasto", country: "Kraj", age: "Wiek", birthday: "Data urodzenia", save: "Zapisz", edit: "Edytuj", logout: "Wyloguj", stamps: "Wizy", badges: "Odznaki", langLabel: "Język", rank: "RANGA", miles: "MILE", admin: "ADMIN", streak: "Seria", changeAvatar: "Zmień zdjęcie", reportBug: "Zgłoś błąd" },
-    ca: { title: "Passaport Global bdai", subtitle: "ID Nòmada Digital", surname: "Cognoms", givenNames: "Noms", city: "Ciutat", country: "País", age: "Edat", birthday: "Naixement", save: "Desar", edit: "Editar", logout: "Sortir", stamps: "Els Meus Visats", badges: "Insígnies", langLabel: "Idioma", rank: "RANG", miles: "MILLES", admin: "ADMIN", streak: "Ratxa", changeAvatar: "Canviar Foto", reportBug: "Informar d'un error" },
-    eu: { title: "bdai Pasaporte Globala", subtitle: "ID Nomada Digitala", surname: "Abizenak", givenNames: "Izenak", city: "Hiria", country: "Herrialdea", age: "Adina", birthday: "Jaioteguna", save: "Gorde", edit: "Editatu", logout: "Saioa Itxi", stamps: "Nire Visatuak", badges: "Intsigniak", langLabel: "Hizkuntza", rank: "MAILA", miles: "MILIAK", admin: "ADMIN", streak: "Segida", changeAvatar: "Argazkia Aldatu", reportBug: "Akatsa jakinarazi" },
-    vi: { title: "Hộ chiếu Toàn cầu bdai", subtitle: "ID Du mục", surname: "Họ", givenNames: "Tên", city: "Thành phố", country: "Quốc gia", age: "Tuổi", birthday: "Ngày sinh", save: "Lưu", edit: "Chỉnh sửa", logout: "Đăng xuất", stamps: "Thị thực", badges: "Huy hiệu", langLabel: "Ngôn ngữ", rank: "CẤP BẬC", miles: "DẶM", admin: "QUẢN TRỊ", streak: "Chuỗi", changeAvatar: "Đổi ảnh", reportBug: "Báo cáo lỗi" },
-    th: { title: "พาสปอร์ตทั่วโลก bdai", subtitle: "รหัสนักเดินทาง", surname: "นามสกุล", givenNames: "ชื่อ", city: "เมือง", country: "ประเทศ", age: "อายุ", birthday: "วันเกิด", save: "บันทึก", edit: "แก้ไข", logout: "ออก", stamps: "วีซ่า", badges: "เหรียญตรา", langLabel: "ภาษา", rank: "อันดับ", miles: "ไมล์", admin: "ผู้ดูแล", streak: "สถิติ", changeAvatar: "เปลี่ยนรูป", reportBug: "รายงานปัญหา" }
+    es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "Nacimiento", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Mis Visados", badges: "Insignias", langLabel: "Idioma", rank: "RANGO", miles: "MILLAS", admin: "ADMIN", streak: "Racha", changeAvatar: "Cambiar Foto", email: "Correo Electrónico", reportBug: "Reportar Error", privacy: "Privacidad", terms: "Términos", deleteAccount: "Eliminar Cuenta (GDPR)", deleteConfirmTitle: "¿Eliminar Cuenta?", deleteConfirmText: "Esta acción es irreversible. Se eliminarán todos tus datos, millas e historial de bdai permanentemente.", deleteConfirmCancel: "Cancelar", deleteConfirmYes: "Sí, Eliminar", deleting: "Borrando..." },
+    en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", save: "Save", edit: "Edit", logout: "Logout", stamps: "My Visas", badges: "Badges", langLabel: "Language", rank: "RANK", miles: "MILES", admin: "ADMIN", streak: "Streak", changeAvatar: "Change Photo", email: "Email Address", reportBug: "Report Bug", privacy: "Privacy", terms: "Terms", deleteAccount: "Delete Account (GDPR)", deleteConfirmTitle: "Delete Account?", deleteConfirmText: "This action is irreversible. All your data, miles and bdai history will be permanently deleted.", deleteConfirmCancel: "Cancel", deleteConfirmYes: "Yes, Delete", deleting: "Deleting..." },
+    fr: { title: "Passeport Global bdai", subtitle: "ID Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Naissance", save: "Enregistrer", edit: "Modifier", logout: "Déconnexion", stamps: "Mes Visas", badges: "Badges", langLabel: "Langue", rank: "RANG", miles: "MILES", admin: "ADMIN", streak: "Série", changeAvatar: "Changer Photo", email: "Adresse e-mail", reportBug: "Signaler un bug", privacy: "Confidentialité", terms: "Conditions", deleteAccount: "Supprimer le Compte (RGPD)", deleteConfirmTitle: "Supprimer le Compte?", deleteConfirmText: "Cette action est irréversible. Toutes vos données seront supprimées définitivement.", deleteConfirmCancel: "Annuler", deleteConfirmYes: "Oui, Supprimer", deleting: "Suppression..." },
+    de: { title: "bdai Globaler Pass", subtitle: "Digital Nomad ID", surname: "Nachname", givenNames: "Vornamen", city: "Stadt", country: "Land", age: "Alter", birthday: "Geburtstag", save: "Speichern", edit: "Bearbeiten", logout: "Abmelden", stamps: "Meine Visa", badges: "Abzeichen", langLabel: "Sprache", rank: "RANG", miles: "MEILEN", admin: "ADMIN", streak: "Serie", changeAvatar: "Foto ändern", email: "E-Mail-Adresse", reportBug: "Fehler melden", privacy: "Datenschutz", terms: "Nutzungsbedingungen", deleteAccount: "Konto löschen (DSGVO)", deleteConfirmTitle: "Konto löschen?", deleteConfirmText: "Diese Aktion ist unwiderruflich. Alle Ihre Daten werden dauerhaft gelöscht.", deleteConfirmCancel: "Abbrechen", deleteConfirmYes: "Ja, Löschen", deleting: "Löschen..." },
+    it: { title: "Passaporto Globale bdai", subtitle: "ID Nomade Digitale", surname: "Cognome", givenNames: "Nomi", city: "Città", country: "Paese", age: "Età", birthday: "F. Nascita", save: "Salva", edit: "Modifica", logout: "Esci", stamps: "I Miei Visti", badges: "Distintivi", langLabel: "Lingua", rank: "RANGO", miles: "MIGLIA", admin: "ADMIN", streak: "Serie", changeAvatar: "Cambia Foto", email: "Indirizzo email", reportBug: "Segnala un bug", privacy: "Privacy", terms: "Termini", deleteAccount: "Elimina Account (GDPR)", deleteConfirmTitle: "Eliminare l'Account?", deleteConfirmText: "Questa azione è irreversibile. Tutti i tuoi dati verranno eliminati definitivamente.", deleteConfirmCancel: "Annulla", deleteConfirmYes: "Sì, Elimina", deleting: "Eliminazione..." },
+    pt: { title: "Passaporte Global bdai", subtitle: "ID Nómada Digital", surname: "Apelido", givenNames: "Nomes", city: "Cidade", country: "País", age: "Idade", birthday: "Nascimento", save: "Guardar", edit: "Editar", logout: "Sair", stamps: "Meus Vistos", badges: "Distintivos", langLabel: "Idioma", rank: "RANKING", miles: "MILHAS", admin: "ADMIN", streak: "Sequência", changeAvatar: "Mudar Foto", email: "Endereço de email", reportBug: "Reportar Erro", privacy: "Privacidade", terms: "Termos", deleteAccount: "Eliminar Conta (RGPD)", deleteConfirmTitle: "Eliminar Conta?", deleteConfirmText: "Esta ação é irreversível. Todos os seus dados serão eliminados permanentemente.", deleteConfirmCancel: "Cancelar", deleteConfirmYes: "Sim, Eliminar", deleting: "Eliminando..." },
+    ro: { title: "Pașaport Global bdai", subtitle: "ID Nomad Digital", surname: "Nume", givenNames: "Prenume", city: "Oraș", country: "Țară", age: "Vârstă", birthday: "Naștere", save: "Salvare", edit: "Editare", logout: "Deconectare", stamps: "Vizele Mele", badges: "Insigne", langLabel: "Limbă", rank: "RANG", miles: "MILE", admin: "ADMIN", streak: "Serie", changeAvatar: "Schimbă Foto", email: "Adresă email", reportBug: "Raportează o eroare", privacy: "Confidențialitate", terms: "Termeni", deleteAccount: "Șterge Contul (GDPR)", deleteConfirmTitle: "Șterge Contul?", deleteConfirmText: "Această acțiune este ireversibilă. Toate datele dvs. vor fi șterse definitiv.", deleteConfirmCancel: "Anulare", deleteConfirmYes: "Da, Șterge", deleting: "Ștergere..." },
+    ru: { title: "Глобальный паспорт bdai", subtitle: "ID кочевника", surname: "Фамилия", givenNames: "Имя", city: "Город", country: "Страна", age: "Возраст", birthday: "Рождение", save: "Сохранить", edit: "Править", logout: "Выйти", stamps: "Визы", badges: "Значки", langLabel: "Язык", rank: "РАНГ", miles: "МИЛИ", admin: "АДМИН", streak: "Серия", changeAvatar: "Сменить фото", email: "Электронная почта", reportBug: "Сообщить об ошибке", privacy: "Конфиденциальность", terms: "Условия", deleteAccount: "Удалить Аккаунт (GDPR)", deleteConfirmTitle: "Удалить аккаунт?", deleteConfirmText: "Это действие необратимо. Все ваши данные будут удалены навсегда.", deleteConfirmCancel: "Отмена", deleteConfirmYes: "Да, Удалить", deleting: "Удаление..." },
+    ar: { title: "جواز سفر bdai العالمي", subtitle: "هوية البدوي الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", age: "العمر", birthday: "الميلاد", save: "حفظ", edit: "تعديل", logout: "خروج", stamps: "تأشيراتي", badges: "الأوسمة", langLabel: "اللغة", rank: "الرتبة", miles: "الأميال", admin: "مسؤول", streak: "سلسلة", changeAvatar: "تغيير الصورة", email: "البريد الإلكتروني", reportBug: "الإبلاغ عن خطأ", privacy: "الخصوصية", terms: "الشروط", deleteAccount: "حذف الحساب (GDPR)", deleteConfirmTitle: "حذف الحساب؟", deleteConfirmText: "هذا الإجراء لا رجعة فيه. سيتم حذف جميع بياناتك نهائياً.", deleteConfirmCancel: "إلغاء", deleteConfirmYes: "نعم، احذف", deleting: "جارٍ الحذف..." },
+    zh: { title: "bdai 全球护照", subtitle: "数字游民 ID", surname: "姓", givenNames: "名", city: "城市", country: "国家", age: "年龄", birthday: "生日", save: "保存", edit: "编辑", logout: "登出", stamps: "我的签证", badges: "奖章", langLabel: "语言", rank: "等级", miles: "里程", admin: "管理", streak: "连续", changeAvatar: "更换照片", email: "电子邮件", reportBug: "报告错误", privacy: "隐私", terms: "条款", deleteAccount: "删除账户 (GDPR)", deleteConfirmTitle: "删除账户？", deleteConfirmText: "此操作不可逆。您的所有数据将被永久删除。", deleteConfirmCancel: "取消", deleteConfirmYes: "是的，删除", deleting: "删除中..." },
+    ja: { title: "bdai パスポート", subtitle: "デジタルノマド ID", surname: "姓", givenNames: "名", city: "都市", country: "国", age: "年齢", birthday: "誕生日", save: "保存", edit: "編集", logout: "ログアウト", stamps: "ビザ", badges: "バッジ", langLabel: "言語", rank: "ランク", miles: "マイル", admin: "管理", streak: "記録", changeAvatar: "写真変更", email: "メールアドレス", reportBug: "バグを報告", privacy: "プライバシー", terms: "利用規約", deleteAccount: "アカウント削除 (GDPR)", deleteConfirmTitle: "アカウントを削除しますか？", deleteConfirmText: "この操作は元に戻せません。すべてのデータが完全に削除されます。", deleteConfirmCancel: "キャンセル", deleteConfirmYes: "はい、削除します", deleting: "削除中..." },
+    ko: { title: "bdai 글로벌 여권", subtitle: "디지털 노마드 ID", surname: "성", givenNames: "이름", city: "도시", country: "국가", age: "나이", birthday: "생일", save: "저장", edit: "편집", logout: "로그아웃", stamps: "내 비자", badges: "배지", langLabel: "언어", rank: "등급", miles: "마일", admin: "관리자", streak: "연속", changeAvatar: "사진 변경", email: "이메일 주소", reportBug: "버그 신고", privacy: "개인정보", terms: "이용약관", deleteAccount: "계정 삭제 (GDPR)", deleteConfirmTitle: "계정을 삭제하시겠습니까?", deleteConfirmText: "이 작업은 되돌릴 수 없습니다. 모든 데이터가 영구적으로 삭제됩니다.", deleteConfirmCancel: "취소", deleteConfirmYes: "예, 삭제", deleting: "삭제 중..." },
+    hi: { title: "bdai वैश्विक पासपोर्ट", subtitle: "डिजिटल घुमंतू आईडी", surname: "उपनाम", givenNames: "नाम", city: "शहर", country: "देश", age: "आयु", birthday: "जन्मदिन", save: "सहेजें", edit: "संपादिত करें", logout: "लॉगआउट", stamps: "मेरे वीजा", badges: "बैज", langLabel: "भाषा", rank: "रैंक", miles: "मील", admin: "व्यवस्थापक", streak: "लगातार", changeAvatar: "फोटो बदलें", email: "ईमेल पता", reportBug: "बग की रिपोर्ट करें", privacy: "गोपनीयता", terms: "नियम", deleteAccount: "खाता हटाएं (GDPR)", deleteConfirmTitle: "खाता हटाएं?", deleteConfirmText: "यह क्रिया अपरिवर्तनीय है। आपका सारा डेटा स्थायी रूप से हटा दिया जाएगा।", deleteConfirmCancel: "रद्द करें", deleteConfirmYes: "हाँ, हटाएं", deleting: "हटाया जा रहा है..." },
+    tr: { title: "bdai Küresel Pasaport", subtitle: "Dijital Nomad Kimliği", surname: "Soyadı", givenNames: "İsimler", city: "Şehir", country: "Ülke", age: "Yaş", birthday: "Doğum", save: "Kaydet", edit: "Düzenle", logout: "Çıkış", stamps: "Vizelerim", badges: "Rozetler", langLabel: "Dil", rank: "RÜTBE", miles: "MİLLER", admin: "YÖNETİCİ", streak: "Seri", changeAvatar: "Fotoğraf Değiştir", email: "E-posta adresi", reportBug: "Hata Bildir", privacy: "Gizlilik", terms: "Koşullar", deleteAccount: "Hesabı Sil (GDPR)", deleteConfirmTitle: "Hesabı Sil?", deleteConfirmText: "Bu işlem geri alınamaz. Tüm verileriniz kalıcı olarak silinecektir.", deleteConfirmCancel: "İptal", deleteConfirmYes: "Evet, Sil", deleting: "Siliniyor..." },
+    nl: { title: "bdai Globaal Paspoort", subtitle: "Digital Nomad ID", surname: "Achternaam", givenNames: "Voornamen", city: "Stad", country: "Land", age: "Leeftijd", birthday: "Geboortedatum", save: "Opslaan", edit: "Bewerken", logout: "Uitloggen", stamps: "Mijn Visa", badges: "Badges", langLabel: "Taal", rank: "RANG", miles: "MIJL", admin: "ADMIN", streak: "Reeks", changeAvatar: "Foto wijzigen", email: "E-mailadres", reportBug: "Fout melden", privacy: "Privacy", terms: "Voorwaarden", deleteAccount: "Account verwijderen (GDPR)", deleteConfirmTitle: "Account verwijderen?", deleteConfirmText: "Deze actie is onomkeerbaar. Al uw gegevens worden permanent verwijderd.", deleteConfirmCancel: "Annuleren", deleteConfirmYes: "Ja, Verwijder", deleting: "Verwijderen..." },
+    pl: { title: "Globalny Paszport bdai", subtitle: "ID Nomady", surname: "Nazwisko", givenNames: "Imiona", city: "Miasto", country: "Kraj", age: "Wiek", birthday: "Data urodzenia", save: "Zapisz", edit: "Edytuj", logout: "Wyloguj", stamps: "Wizy", badges: "Odznaki", langLabel: "Język", rank: "RANGA", miles: "MILE", admin: "ADMIN", streak: "Seria", changeAvatar: "Zmień zdjęcie", email: "Adres e-mail", reportBug: "Zgłoś błąd", privacy: "Prywatność", terms: "Warunki", deleteAccount: "Usuń Konto (RODO)", deleteConfirmTitle: "Usunąć konto?", deleteConfirmText: "Ta akcja jest nieodwracalna. Wszystkie Twoje dane zostaną trwale usunięte.", deleteConfirmCancel: "Anuluj", deleteConfirmYes: "Tak, Usuń", deleting: "Usuwanie..." },
+    ca: { title: "Passaport Global bdai", subtitle: "ID Nòmada Digital", surname: "Cognoms", givenNames: "Noms", city: "Ciutat", country: "País", age: "Edat", birthday: "Naixement", save: "Desar", edit: "Editar", logout: "Sortir", stamps: "Els Meus Visats", badges: "Insígnies", langLabel: "Idioma", rank: "RANG", miles: "MILLES", admin: "ADMIN", streak: "Ratxa", changeAvatar: "Canviar Foto", email: "Adreça de correu", reportBug: "Informar d'un error", privacy: "Privacitat", terms: "Termes", deleteAccount: "Eliminar Compte (RGPD)", deleteConfirmTitle: "Eliminar el Compte?", deleteConfirmText: "Aquesta acció és irreversible. Totes les teves dades s'eliminaran permanentment.", deleteConfirmCancel: "Cancel·lar", deleteConfirmYes: "Sí, Elimina", deleting: "Eliminant..." },
+    eu: { title: "bdai Pasaporte Globala", subtitle: "ID Nomada Digitala", surname: "Abizenak", givenNames: "Izenak", city: "Hiria", country: "Herrialdea", age: "Adina", birthday: "Jaioteguna", save: "Gorde", edit: "Editatu", logout: "Saioa Itxi", stamps: "Nire Visatuak", badges: "Intsigniak", langLabel: "Hizkuntza", rank: "MAILA", miles: "MILIAK", admin: "ADMIN", streak: "Segida", changeAvatar: "Argazkia Aldatu", email: "Helbide elektronikoa", reportBug: "Akatsa jakinarazi", privacy: "Pribatutasuna", terms: "Baldintzak", deleteAccount: "Kontua Ezabatu (DBEO)", deleteConfirmTitle: "Kontua Ezabatu?", deleteConfirmText: "Ekintza hau itzulezina da. Zure datu guztiak betirako ezabatuko dira.", deleteConfirmCancel: "Utzi", deleteConfirmYes: "Bai, Ezabatu", deleting: "Ezabatzen..." },
+    vi: { title: "Hộ chiếu Toàn cầu bdai", subtitle: "ID Du mục", surname: "Họ", givenNames: "Tên", city: "Thành phố", country: "Quốc gia", age: "Tuổi", birthday: "Ngày sinh", save: "Lưu", edit: "Chỉnh sửa", logout: "Đăng xuất", stamps: "Thị thực", badges: "Huy hiệu", langLabel: "Ngôn ngữ", rank: "CẤP BẬC", miles: "DẶM", admin: "QUẢN TRỊ", streak: "Chuỗi", changeAvatar: "Đổi ảnh", email: "Địa chỉ email", reportBug: "Báo cáo lỗi", privacy: "Quyền riêng tư", terms: "Điều khoản", deleteAccount: "Xóa Tài Khoản (GDPR)", deleteConfirmTitle: "Xóa Tài Khoản?", deleteConfirmText: "Hành động này không thể hoàn tác. Tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.", deleteConfirmCancel: "Hủy", deleteConfirmYes: "Có, Xóa", deleting: "Đang xóa..." },
+    th: { title: "พาสปอร์ตทั่วโลก bdai", subtitle: "รหัสนักเดินทาง", surname: "นามสกุล", givenNames: "ชื่อ", city: "เมือง", country: "ประเทศ", age: "อายุ", birthday: "วันเกิด", save: "บันทึก", edit: "แก้ไข", logout: "ออก", stamps: "วีซ่า", badges: "เหรียญตรา", langLabel: "ภาษา", rank: "อันดับ", miles: "ไมล์", admin: "ผู้ดูแล", streak: "สถิติ", changeAvatar: "เปลี่ยนรูป", email: "ที่อยู่อีเมล", reportBug: "รายงานปัญหา", privacy: "ความเป็นส่วนตัว", terms: "ข้อกำหนด", deleteAccount: "ลบบัญชี (GDPR)", deleteConfirmTitle: "ลบบัญชีหรือไม่?", deleteConfirmText: "การกระทำนี้ไม่สามารถยกเลิกได้ ข้อมูลทั้งหมดของคุณจะถูกลบอย่างถาวร", deleteConfirmCancel: "ยกเลิก", deleteConfirmYes: "ใช่ ลบ", deleting: "กำลังลบ..." }
 };
 
 const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onClick: () => void }> = ({ code, label, isActive, onClick }) => (
@@ -122,9 +122,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
-      // Delete user data from profiles table
       await supabase.from('profiles').delete().eq('email', user.email);
-      // Sign out
       await supabase.auth.signOut();
       if (onLogout) onLogout();
     } catch (e) {
@@ -141,14 +139,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: 'BDAI Rank',
-          text: message,
-          url: 'https://www.bdai.travel'
-        });
-      } catch (e) {
-        // User cancelled or error
-      }
+        await navigator.share({ title: 'BDAI Rank', text: message, url: 'https://www.bdai.travel' });
+      } catch (e) {}
     } else {
       navigator.clipboard.writeText(message);
       setShowToast(true);
@@ -158,47 +150,29 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start overflow-y-auto no-scrollbar bg-slate-950/98 backdrop-blur-2xl">
-      {/* TOAST NOTIFICATION */}
       {showToast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[1000] bg-purple-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl animate-bounce">
           <i className="fas fa-check-circle mr-2"></i> {pt('copiedToClipboard')}
         </div>
       )}
 
-      {/* BRAG MODAL (SHARE CARD) */}
       {showBragModal && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
           <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
-            
             <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6">
               <i className="fas fa-crown text-3xl text-white"></i>
             </div>
-
             <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
             <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
-            
             <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
                <p className="text-2xl font-black text-cyan-400">{user.miles.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
             </div>
-
-            <button 
-              onClick={() => {
-                handleShareRank();
-                setShowBragModal(false);
-              }}
-              className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4"
-            >
+            <button onClick={() => { handleShareRank(); setShowBragModal(false); }} className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4">
               <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
             </button>
-
-            <button 
-              onClick={() => setShowBragModal(false)}
-              className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
+            <button onClick={() => setShowBragModal(false)} className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Cancel</button>
           </div>
         </div>
       )}
@@ -233,9 +207,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         <div className="pb-2 border-b border-slate-200">
                             <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">ID_NOMAD</p>
                             <div className="flex items-center gap-2">
-                                <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
-                                {formData.country && (
-                                    <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : (formData.country.toLowerCase() === 'españa' ? 'ES' : formData.country.substring(0,2).toUpperCase())}/flat/64.png`} className="w-3 h-3 rounded-full" alt={formData.country} />
+                                {isEditing ? (
+                                    <input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px]" placeholder="username" maxLength={20} />
+                                ) : (
+                                    <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
+                                )}
+                                {!isEditing && formData.country && (
+                                    <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : formData.country.substring(0,2).toUpperCase()}/flat/64.png`} className="w-3 h-3 rounded-full" alt={formData.country} />
                                 )}
                             </div>
                         </div>
@@ -289,14 +267,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         {APP_BADGES.map((b) => {
                             const isEarned = user.badges?.some(ub => ub.id === b.id);
                             return (
-                                <div 
-                                    key={b.id} 
-                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${
-                                        isEarned 
-                                        ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105' 
-                                        : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'
-                                    }`}
-                                >
+                                <div key={b.id} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'}`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
                                         <i className={`fas ${b.icon} text-sm`}></i>
                                     </div>
@@ -309,10 +280,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 </div>
 
                 <div className="pt-4">
-                    <button 
-                        onClick={() => setShowBragModal(true)}
-                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5"
-                    >
+                    <button onClick={() => setShowBragModal(true)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5">
                         <i className="fas fa-bullhorn text-purple-400"></i>
                         {pt('shareRank')}
                     </button>
@@ -330,93 +298,72 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             <button onClick={onOpenAdmin} className="flex-1 py-4 bg-slate-900 text-yellow-500 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
                                 <i className="fas fa-tools text-xs"></i> {pt('admin')}
                             </button>
-                            <button 
-                                onClick={() => {
-                                    onClose();
-                                    // We need a way to trigger the PARTNER_DASHBOARD view from here.
-                                    // Since onOpenAdmin is already passed, I'll add a new prop or reuse it.
-                                    (window as any).dispatchEvent(new CustomEvent('open-partner-dashboard'));
-                                }} 
-                                className="flex-1 py-4 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg"
-                            >
+                            <button onClick={() => { onClose(); (window as any).dispatchEvent(new CustomEvent('open-partner-dashboard')); }} className="flex-1 py-4 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
                                 <i className="fas fa-chart-line text-xs"></i> PARTNER
                             </button>
                         </div>
                     )}
-                    <button 
-                        onClick={() => {
-                            if (onLogout) onLogout();
-                            else {
-                                supabase.auth.signOut().catch(() => {});
-                                onClose();
-                            }
-                        }}
+
+                    {/* ✅ LOGOUT BUTTON - translated */}
+                    <button
+                        onClick={() => { if (onLogout) onLogout(); else { supabase.auth.signOut().catch(() => {}); onClose(); } }}
                         className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all mb-4"
                     >
                         <i className="fas fa-sign-out-alt"></i>
                         {pt('logout')}
                     </button>
 
+                    {/* ✅ PRIVACY & TERMS - translated */}
                     <div className="flex justify-center gap-4 mb-6">
-                        <button onClick={() => setShowLegal('privacy')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors">
-                            Privacidad
+                        <button onClick={() => setShowLegal('privacy')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">
+                            {pt('privacy')}
                         </button>
                         <span className="text-slate-700">•</span>
-                        <button onClick={() => setShowLegal('terms')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors">
-                            Términos
+                        <button onClick={() => setShowLegal('terms')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">
+                            {pt('terms')}
                         </button>
                     </div>
 
-                    <button 
-                        onClick={() => setShowReportBug(true)}
-                        className="w-full py-3 mb-2 bg-transparent text-slate-400 hover:text-orange-500 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all"
-                    >
+                    {/* ✅ REPORT BUG - already translated via pt() */}
+                    <button onClick={() => setShowReportBug(true)} className="w-full py-3 mb-2 bg-transparent text-slate-400 hover:text-orange-500 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
                         <i className="fas fa-bug"></i>
                         {pt('reportBug')}
                     </button>
 
-                    <button 
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="w-full py-3 bg-transparent text-slate-400 hover:text-red-500 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all"
-                    >
+                    {/* ✅ DELETE ACCOUNT - translated */}
+                    <button onClick={() => setShowDeleteConfirm(true)} className="w-full py-3 bg-transparent text-slate-400 hover:text-red-500 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
                         <i className="fas fa-trash-alt"></i>
-                        Eliminar Cuenta (GDPR)
+                        {pt('deleteAccount')}
                     </button>
                 </div>
             </div>
         </div>
       </div>
 
+      {/* ✅ LEGAL MODAL - passes language prop */}
       {showLegal && (
-          <LegalModal type={showLegal} onClose={() => setShowLegal(null)} />
+          <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />
       )}
 
       {showReportBug && (
-          <ReportBugModal onClose={() => setShowReportBug(false)} language={language || 'es'} />
+          <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />
       )}
 
+      {/* ✅ DELETE CONFIRM - translated */}
       {showDeleteConfirm && (
           <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
               <div className="w-full max-w-[320px] bg-slate-900 border border-red-500/30 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center text-center">
                   <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
                       <i className="fas fa-exclamation-triangle text-2xl text-red-500"></i>
                   </div>
-                  <h3 className="text-white font-black text-lg uppercase tracking-widest mb-2">¿Eliminar Cuenta?</h3>
-                  <p className="text-slate-400 text-xs mb-6">Esta acción es irreversible. Se eliminarán todos tus datos, millas e historial de bdai permanentemente.</p>
-                  
+                  <h3 className="text-white font-black text-lg uppercase tracking-widest mb-2">{pt('deleteConfirmTitle')}</h3>
+                  <p className="text-slate-400 text-xs mb-6">{pt('deleteConfirmText')}</p>
                   <div className="w-full flex gap-3">
-                      <button 
-                          onClick={() => setShowDeleteConfirm(false)}
-                          className="flex-1 py-3 bg-white/5 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors"
-                      >
-                          Cancelar
+                      <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3 bg-white/5 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors">
+                          {pt('deleteConfirmCancel')}
                       </button>
-                      <button 
-                          onClick={handleDeleteAccount}
-                          disabled={isDeleting}
-                          className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-700 transition-colors disabled:opacity-50"
-                      >
-                          {isDeleting ? 'Borrando...' : 'Sí, Eliminar'}
+                      <button onClick={handleDeleteAccount} disabled={isDeleting} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-700 transition-colors disabled:opacity-50">
+                          {isDeleting ? pt('deleting') : pt('deleteConfirmYes')}
                       </button>
                   </div>
               </div>
