@@ -1,7 +1,6 @@
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
-import { getCachedAudio, saveAudioToCache } from './supabaseClient';
-import { normalizeKey } from './supabaseClient';
+import { getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
 
 export class QuotaError extends Error {
     constructor(message: string) {
@@ -94,19 +93,6 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
             countryEn: r.countryEn,
             countryCode: r.countryCode,
             slug: normalizeKey(r.cityEn, r.countryEn),
-            fullName: r.cityLocal || r.cityEn
-        }));
-    });
-};
-
-        const raw = JSON.parse(response.text || '[]');
-        return raw.map((r: any) => ({
-            city: r.cityEn,
-            cityLocal: r.cityLocal || r.cityEn,
-            country: r.country,
-            countryEn: r.countryEn,
-            countryCode: r.countryCode,
-            slug: r.slug.replace(/-/g, '_').toLowerCase(),
             fullName: r.cityLocal || r.cityEn
         }));
     });
@@ -308,3 +294,4 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
         return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };
+
