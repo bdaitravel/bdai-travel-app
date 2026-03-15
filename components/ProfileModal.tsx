@@ -16,26 +16,26 @@ interface ProfileModalProps {
 }
 
 const MODAL_TEXTS: any = {
-    es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "Nacimiento", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Mis Visados", badges: "Insignias", langLabel: "Idioma", rank: "RANGO", miles: "MILLAS", admin: "ADMIN", streak: "Racha", changeAvatar: "Cambiar Foto", email: "Correo Electrónico", reportBug: "Reportar Error", privacy: "Privacidad", terms: "Términos", deleteAccount: "Eliminar Cuenta (GDPR)", deleteConfirmTitle: "¿Eliminar Cuenta?", deleteConfirmText: "Esta acción es irreversible. Se eliminarán todos tus datos, millas e historial de bdai permanentemente.", deleteConfirmCancel: "Cancelar", deleteConfirmYes: "Sí, Eliminar", deleting: "Borrando..." },
-    en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", save: "Save", edit: "Edit", logout: "Logout", stamps: "My Visas", badges: "Badges", langLabel: "Language", rank: "RANK", miles: "MILES", admin: "ADMIN", streak: "Streak", changeAvatar: "Change Photo", email: "Email Address", reportBug: "Report Bug", privacy: "Privacy", terms: "Terms", deleteAccount: "Delete Account (GDPR)", deleteConfirmTitle: "Delete Account?", deleteConfirmText: "This action is irreversible. All your data, miles and bdai history will be permanently deleted.", deleteConfirmCancel: "Cancel", deleteConfirmYes: "Yes, Delete", deleting: "Deleting..." },
-    fr: { title: "Passeport Global bdai", subtitle: "ID Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Naissance", save: "Enregistrer", edit: "Modifier", logout: "Déconnexion", stamps: "Mes Visas", badges: "Badges", langLabel: "Langue", rank: "RANG", miles: "MILES", admin: "ADMIN", streak: "Série", changeAvatar: "Changer Photo", email: "Adresse e-mail", reportBug: "Signaler un bug", privacy: "Confidentialité", terms: "Conditions", deleteAccount: "Supprimer le Compte (RGPD)", deleteConfirmTitle: "Supprimer le Compte?", deleteConfirmText: "Cette action est irréversible. Toutes vos données seront supprimées définitivement.", deleteConfirmCancel: "Annuler", deleteConfirmYes: "Oui, Supprimer", deleting: "Suppression..." },
-    de: { title: "bdai Globaler Pass", subtitle: "Digital Nomad ID", surname: "Nachname", givenNames: "Vornamen", city: "Stadt", country: "Land", age: "Alter", birthday: "Geburtstag", save: "Speichern", edit: "Bearbeiten", logout: "Abmelden", stamps: "Meine Visa", badges: "Abzeichen", langLabel: "Sprache", rank: "RANG", miles: "MEILEN", admin: "ADMIN", streak: "Serie", changeAvatar: "Foto ändern", email: "E-Mail-Adresse", reportBug: "Fehler melden", privacy: "Datenschutz", terms: "Nutzungsbedingungen", deleteAccount: "Konto löschen (DSGVO)", deleteConfirmTitle: "Konto löschen?", deleteConfirmText: "Diese Aktion ist unwiderruflich. Alle Ihre Daten werden dauerhaft gelöscht.", deleteConfirmCancel: "Abbrechen", deleteConfirmYes: "Ja, Löschen", deleting: "Löschen..." },
-    it: { title: "Passaporto Globale bdai", subtitle: "ID Nomade Digitale", surname: "Cognome", givenNames: "Nomi", city: "Città", country: "Paese", age: "Età", birthday: "F. Nascita", save: "Salva", edit: "Modifica", logout: "Esci", stamps: "I Miei Visti", badges: "Distintivi", langLabel: "Lingua", rank: "RANGO", miles: "MIGLIA", admin: "ADMIN", streak: "Serie", changeAvatar: "Cambia Foto", email: "Indirizzo email", reportBug: "Segnala un bug", privacy: "Privacy", terms: "Termini", deleteAccount: "Elimina Account (GDPR)", deleteConfirmTitle: "Eliminare l'Account?", deleteConfirmText: "Questa azione è irreversibile. Tutti i tuoi dati verranno eliminati definitivamente.", deleteConfirmCancel: "Annulla", deleteConfirmYes: "Sì, Elimina", deleting: "Eliminazione..." },
-    pt: { title: "Passaporte Global bdai", subtitle: "ID Nómada Digital", surname: "Apelido", givenNames: "Nomes", city: "Cidade", country: "País", age: "Idade", birthday: "Nascimento", save: "Guardar", edit: "Editar", logout: "Sair", stamps: "Meus Vistos", badges: "Distintivos", langLabel: "Idioma", rank: "RANKING", miles: "MILHAS", admin: "ADMIN", streak: "Sequência", changeAvatar: "Mudar Foto", email: "Endereço de email", reportBug: "Reportar Erro", privacy: "Privacidade", terms: "Termos", deleteAccount: "Eliminar Conta (RGPD)", deleteConfirmTitle: "Eliminar Conta?", deleteConfirmText: "Esta ação é irreversível. Todos os seus dados serão eliminados permanentemente.", deleteConfirmCancel: "Cancelar", deleteConfirmYes: "Sim, Eliminar", deleting: "Eliminando..." },
-    ro: { title: "Pașaport Global bdai", subtitle: "ID Nomad Digital", surname: "Nume", givenNames: "Prenume", city: "Oraș", country: "Țară", age: "Vârstă", birthday: "Naștere", save: "Salvare", edit: "Editare", logout: "Deconectare", stamps: "Vizele Mele", badges: "Insigne", langLabel: "Limbă", rank: "RANG", miles: "MILE", admin: "ADMIN", streak: "Serie", changeAvatar: "Schimbă Foto", email: "Adresă email", reportBug: "Raportează o eroare", privacy: "Confidențialitate", terms: "Termeni", deleteAccount: "Șterge Contul (GDPR)", deleteConfirmTitle: "Șterge Contul?", deleteConfirmText: "Această acțiune este ireversibilă. Toate datele dvs. vor fi șterse definitiv.", deleteConfirmCancel: "Anulare", deleteConfirmYes: "Da, Șterge", deleting: "Ștergere..." },
-    ru: { title: "Глобальный паспорт bdai", subtitle: "ID кочевника", surname: "Фамилия", givenNames: "Имя", city: "Город", country: "Страна", age: "Возраст", birthday: "Рождение", save: "Сохранить", edit: "Править", logout: "Выйти", stamps: "Визы", badges: "Значки", langLabel: "Язык", rank: "РАНГ", miles: "МИЛИ", admin: "АДМИН", streak: "Серия", changeAvatar: "Сменить фото", email: "Электронная почта", reportBug: "Сообщить об ошибке", privacy: "Конфиденциальность", terms: "Условия", deleteAccount: "Удалить Аккаунт (GDPR)", deleteConfirmTitle: "Удалить аккаунт?", deleteConfirmText: "Это действие необратимо. Все ваши данные будут удалены навсегда.", deleteConfirmCancel: "Отмена", deleteConfirmYes: "Да, Удалить", deleting: "Удаление..." },
-    ar: { title: "جواز سفر bdai العالمي", subtitle: "هوية البدوي الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", age: "العمر", birthday: "الميلاد", save: "حفظ", edit: "تعديل", logout: "خروج", stamps: "تأشيراتي", badges: "الأوسمة", langLabel: "اللغة", rank: "الرتبة", miles: "الأميال", admin: "مسؤول", streak: "سلسلة", changeAvatar: "تغيير الصورة", email: "البريد الإلكتروني", reportBug: "الإبلاغ عن خطأ", privacy: "الخصوصية", terms: "الشروط", deleteAccount: "حذف الحساب (GDPR)", deleteConfirmTitle: "حذف الحساب؟", deleteConfirmText: "هذا الإجراء لا رجعة فيه. سيتم حذف جميع بياناتك نهائياً.", deleteConfirmCancel: "إلغاء", deleteConfirmYes: "نعم، احذف", deleting: "جارٍ الحذف..." },
-    zh: { title: "bdai 全球护照", subtitle: "数字游民 ID", surname: "姓", givenNames: "名", city: "城市", country: "国家", age: "年龄", birthday: "生日", save: "保存", edit: "编辑", logout: "登出", stamps: "我的签证", badges: "奖章", langLabel: "语言", rank: "等级", miles: "里程", admin: "管理", streak: "连续", changeAvatar: "更换照片", email: "电子邮件", reportBug: "报告错误", privacy: "隐私", terms: "条款", deleteAccount: "删除账户 (GDPR)", deleteConfirmTitle: "删除账户？", deleteConfirmText: "此操作不可逆。您的所有数据将被永久删除。", deleteConfirmCancel: "取消", deleteConfirmYes: "是的，删除", deleting: "删除中..." },
-    ja: { title: "bdai パスポート", subtitle: "デジタルノマド ID", surname: "姓", givenNames: "名", city: "都市", country: "国", age: "年齢", birthday: "誕生日", save: "保存", edit: "編集", logout: "ログアウト", stamps: "ビザ", badges: "バッジ", langLabel: "言語", rank: "ランク", miles: "マイル", admin: "管理", streak: "記録", changeAvatar: "写真変更", email: "メールアドレス", reportBug: "バグを報告", privacy: "プライバシー", terms: "利用規約", deleteAccount: "アカウント削除 (GDPR)", deleteConfirmTitle: "アカウントを削除しますか？", deleteConfirmText: "この操作は元に戻せません。すべてのデータが完全に削除されます。", deleteConfirmCancel: "キャンセル", deleteConfirmYes: "はい、削除します", deleting: "削除中..." },
-    ko: { title: "bdai 글로벌 여권", subtitle: "디지털 노마드 ID", surname: "성", givenNames: "이름", city: "도시", country: "국가", age: "나이", birthday: "생일", save: "저장", edit: "편집", logout: "로그아웃", stamps: "내 비자", badges: "배지", langLabel: "언어", rank: "등급", miles: "마일", admin: "관리자", streak: "연속", changeAvatar: "사진 변경", email: "이메일 주소", reportBug: "버그 신고", privacy: "개인정보", terms: "이용약관", deleteAccount: "계정 삭제 (GDPR)", deleteConfirmTitle: "계정을 삭제하시겠습니까?", deleteConfirmText: "이 작업은 되돌릴 수 없습니다. 모든 데이터가 영구적으로 삭제됩니다.", deleteConfirmCancel: "취소", deleteConfirmYes: "예, 삭제", deleting: "삭제 중..." },
-    hi: { title: "bdai वैश्विक पासपोर्ट", subtitle: "डिजिटल घुमंतू आईडी", surname: "उपनाम", givenNames: "नाम", city: "शहर", country: "देश", age: "आयु", birthday: "जन्मदिन", save: "सहेजें", edit: "संपादिত करें", logout: "लॉगआउट", stamps: "मेरे वीजा", badges: "बैज", langLabel: "भाषा", rank: "रैंक", miles: "मील", admin: "व्यवस्थापक", streak: "लगातार", changeAvatar: "फोटो बदलें", email: "ईमेल पता", reportBug: "बग की रिपोर्ट करें", privacy: "गोपनीयता", terms: "नियम", deleteAccount: "खाता हटाएं (GDPR)", deleteConfirmTitle: "खाता हटाएं?", deleteConfirmText: "यह क्रिया अपरिवर्तनीय है। आपका सारा डेटा स्थायी रूप से हटा दिया जाएगा।", deleteConfirmCancel: "रद्द करें", deleteConfirmYes: "हाँ, हटाएं", deleting: "हटाया जा रहा है..." },
-    tr: { title: "bdai Küresel Pasaport", subtitle: "Dijital Nomad Kimliği", surname: "Soyadı", givenNames: "İsimler", city: "Şehir", country: "Ülke", age: "Yaş", birthday: "Doğum", save: "Kaydet", edit: "Düzenle", logout: "Çıkış", stamps: "Vizelerim", badges: "Rozetler", langLabel: "Dil", rank: "RÜTBE", miles: "MİLLER", admin: "YÖNETİCİ", streak: "Seri", changeAvatar: "Fotoğraf Değiştir", email: "E-posta adresi", reportBug: "Hata Bildir", privacy: "Gizlilik", terms: "Koşullar", deleteAccount: "Hesabı Sil (GDPR)", deleteConfirmTitle: "Hesabı Sil?", deleteConfirmText: "Bu işlem geri alınamaz. Tüm verileriniz kalıcı olarak silinecektir.", deleteConfirmCancel: "İptal", deleteConfirmYes: "Evet, Sil", deleting: "Siliniyor..." },
-    nl: { title: "bdai Globaal Paspoort", subtitle: "Digital Nomad ID", surname: "Achternaam", givenNames: "Voornamen", city: "Stad", country: "Land", age: "Leeftijd", birthday: "Geboortedatum", save: "Opslaan", edit: "Bewerken", logout: "Uitloggen", stamps: "Mijn Visa", badges: "Badges", langLabel: "Taal", rank: "RANG", miles: "MIJL", admin: "ADMIN", streak: "Reeks", changeAvatar: "Foto wijzigen", email: "E-mailadres", reportBug: "Fout melden", privacy: "Privacy", terms: "Voorwaarden", deleteAccount: "Account verwijderen (GDPR)", deleteConfirmTitle: "Account verwijderen?", deleteConfirmText: "Deze actie is onomkeerbaar. Al uw gegevens worden permanent verwijderd.", deleteConfirmCancel: "Annuleren", deleteConfirmYes: "Ja, Verwijder", deleting: "Verwijderen..." },
-    pl: { title: "Globalny Paszport bdai", subtitle: "ID Nomady", surname: "Nazwisko", givenNames: "Imiona", city: "Miasto", country: "Kraj", age: "Wiek", birthday: "Data urodzenia", save: "Zapisz", edit: "Edytuj", logout: "Wyloguj", stamps: "Wizy", badges: "Odznaki", langLabel: "Język", rank: "RANGA", miles: "MILE", admin: "ADMIN", streak: "Seria", changeAvatar: "Zmień zdjęcie", email: "Adres e-mail", reportBug: "Zgłoś błąd", privacy: "Prywatność", terms: "Warunki", deleteAccount: "Usuń Konto (RODO)", deleteConfirmTitle: "Usunąć konto?", deleteConfirmText: "Ta akcja jest nieodwracalna. Wszystkie Twoje dane zostaną trwale usunięte.", deleteConfirmCancel: "Anuluj", deleteConfirmYes: "Tak, Usuń", deleting: "Usuwanie..." },
-    ca: { title: "Passaport Global bdai", subtitle: "ID Nòmada Digital", surname: "Cognoms", givenNames: "Noms", city: "Ciutat", country: "País", age: "Edat", birthday: "Naixement", save: "Desar", edit: "Editar", logout: "Sortir", stamps: "Els Meus Visats", badges: "Insígnies", langLabel: "Idioma", rank: "RANG", miles: "MILLES", admin: "ADMIN", streak: "Ratxa", changeAvatar: "Canviar Foto", email: "Adreça de correu", reportBug: "Informar d'un error", privacy: "Privacitat", terms: "Termes", deleteAccount: "Eliminar Compte (RGPD)", deleteConfirmTitle: "Eliminar el Compte?", deleteConfirmText: "Aquesta acció és irreversible. Totes les teves dades s'eliminaran permanentment.", deleteConfirmCancel: "Cancel·lar", deleteConfirmYes: "Sí, Elimina", deleting: "Eliminant..." },
-    eu: { title: "bdai Pasaporte Globala", subtitle: "ID Nomada Digitala", surname: "Abizenak", givenNames: "Izenak", city: "Hiria", country: "Herrialdea", age: "Adina", birthday: "Jaioteguna", save: "Gorde", edit: "Editatu", logout: "Saioa Itxi", stamps: "Nire Visatuak", badges: "Intsigniak", langLabel: "Hizkuntza", rank: "MAILA", miles: "MILIAK", admin: "ADMIN", streak: "Segida", changeAvatar: "Argazkia Aldatu", email: "Helbide elektronikoa", reportBug: "Akatsa jakinarazi", privacy: "Pribatutasuna", terms: "Baldintzak", deleteAccount: "Kontua Ezabatu (DBEO)", deleteConfirmTitle: "Kontua Ezabatu?", deleteConfirmText: "Ekintza hau itzulezina da. Zure datu guztiak betirako ezabatuko dira.", deleteConfirmCancel: "Utzi", deleteConfirmYes: "Bai, Ezabatu", deleting: "Ezabatzen..." },
-    vi: { title: "Hộ chiếu Toàn cầu bdai", subtitle: "ID Du mục", surname: "Họ", givenNames: "Tên", city: "Thành phố", country: "Quốc gia", age: "Tuổi", birthday: "Ngày sinh", save: "Lưu", edit: "Chỉnh sửa", logout: "Đăng xuất", stamps: "Thị thực", badges: "Huy hiệu", langLabel: "Ngôn ngữ", rank: "CẤP BẬC", miles: "DẶM", admin: "QUẢN TRỊ", streak: "Chuỗi", changeAvatar: "Đổi ảnh", email: "Địa chỉ email", reportBug: "Báo cáo lỗi", privacy: "Quyền riêng tư", terms: "Điều khoản", deleteAccount: "Xóa Tài Khoản (GDPR)", deleteConfirmTitle: "Xóa Tài Khoản?", deleteConfirmText: "Hành động này không thể hoàn tác. Tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.", deleteConfirmCancel: "Hủy", deleteConfirmYes: "Có, Xóa", deleting: "Đang xóa..." },
-    th: { title: "พาสปอร์ตทั่วโลก bdai", subtitle: "รหัสนักเดินทาง", surname: "นามสกุล", givenNames: "ชื่อ", city: "เมือง", country: "ประเทศ", age: "อายุ", birthday: "วันเกิด", save: "บันทึก", edit: "แก้ไข", logout: "ออก", stamps: "วีซ่า", badges: "เหรียญตรา", langLabel: "ภาษา", rank: "อันดับ", miles: "ไมล์", admin: "ผู้ดูแล", streak: "สถิติ", changeAvatar: "เปลี่ยนรูป", email: "ที่อยู่อีเมล", reportBug: "รายงานปัญหา", privacy: "ความเป็นส่วนตัว", terms: "ข้อกำหนด", deleteAccount: "ลบบัญชี (GDPR)", deleteConfirmTitle: "ลบบัญชีหรือไม่?", deleteConfirmText: "การกระทำนี้ไม่สามารถยกเลิกได้ ข้อมูลทั้งหมดของคุณจะถูกลบอย่างถาวร", deleteConfirmCancel: "ยกเลิก", deleteConfirmYes: "ใช่ ลบ", deleting: "กำลังลบ..." }
+    es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "Nacimiento", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Mis Visados", badges: "Insignias", langLabel: "Idioma", rank: "RANGO", miles: "MILLAS", admin: "ADMIN", streak: "Racha", changeAvatar: "Cambiar Foto", email: "Correo Electrónico", reportBug: "Reportar Error", privacy: "Privacidad", terms: "Términos", deleteAccount: "Eliminar Cuenta (GDPR)", deleteConfirmTitle: "⚠️ ZONA DE PELIGRO", deleteConfirmText: "Esta acción es IRREVERSIBLE. Perderás todas tus millas, visados, insignias e historial para siempre.", deleteConfirmInstruction: "Escribe tu email para confirmar:", deleteConfirmPlaceholder: "tu@email.com", deleteConfirmCancel: "Cancelar", deleteConfirmYes: "Eliminar permanentemente", deleting: "Borrando...", deleteCountdown: "Espera {n}s...", deleteEmailMismatch: "El email no coincide" },
+    en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", save: "Save", edit: "Edit", logout: "Logout", stamps: "My Visas", badges: "Badges", langLabel: "Language", rank: "RANK", miles: "MILES", admin: "ADMIN", streak: "Streak", changeAvatar: "Change Photo", email: "Email Address", reportBug: "Report Bug", privacy: "Privacy", terms: "Terms", deleteAccount: "Delete Account (GDPR)", deleteConfirmTitle: "⚠️ DANGER ZONE", deleteConfirmText: "This action is IRREVERSIBLE. You will permanently lose all your miles, visas, badges and history.", deleteConfirmInstruction: "Type your email to confirm:", deleteConfirmPlaceholder: "your@email.com", deleteConfirmCancel: "Cancel", deleteConfirmYes: "Permanently delete", deleting: "Deleting...", deleteCountdown: "Wait {n}s...", deleteEmailMismatch: "Email doesn't match" },
+    fr: { title: "Passeport Global bdai", subtitle: "ID Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Naissance", save: "Enregistrer", edit: "Modifier", logout: "Déconnexion", stamps: "Mes Visas", badges: "Badges", langLabel: "Langue", rank: "RANG", miles: "MILES", admin: "ADMIN", streak: "Série", changeAvatar: "Changer Photo", email: "Adresse e-mail", reportBug: "Signaler un bug", privacy: "Confidentialité", terms: "Conditions", deleteAccount: "Supprimer le Compte (RGPD)", deleteConfirmTitle: "⚠️ ZONE DANGEREUSE", deleteConfirmText: "Cette action est IRRÉVERSIBLE. Vous perdrez définitivement tous vos miles, visas, badges et historique.", deleteConfirmInstruction: "Tapez votre email pour confirmer:", deleteConfirmPlaceholder: "votre@email.com", deleteConfirmCancel: "Annuler", deleteConfirmYes: "Supprimer définitivement", deleting: "Suppression...", deleteCountdown: "Attendez {n}s...", deleteEmailMismatch: "L'email ne correspond pas" },
+    de: { title: "bdai Globaler Pass", subtitle: "Digital Nomad ID", surname: "Nachname", givenNames: "Vornamen", city: "Stadt", country: "Land", age: "Alter", birthday: "Geburtstag", save: "Speichern", edit: "Bearbeiten", logout: "Abmelden", stamps: "Meine Visa", badges: "Abzeichen", langLabel: "Sprache", rank: "RANG", miles: "MEILEN", admin: "ADMIN", streak: "Serie", changeAvatar: "Foto ändern", email: "E-Mail-Adresse", reportBug: "Fehler melden", privacy: "Datenschutz", terms: "Nutzungsbedingungen", deleteAccount: "Konto löschen (DSGVO)", deleteConfirmTitle: "⚠️ GEFAHRENZONE", deleteConfirmText: "Diese Aktion ist UNWIDERRUFLICH. Sie verlieren alle Meilen, Visa, Abzeichen und den Verlauf dauerhaft.", deleteConfirmInstruction: "E-Mail zur Bestätigung eingeben:", deleteConfirmPlaceholder: "ihre@email.com", deleteConfirmCancel: "Abbrechen", deleteConfirmYes: "Dauerhaft löschen", deleting: "Löschen...", deleteCountdown: "Warten {n}s...", deleteEmailMismatch: "E-Mail stimmt nicht überein" },
+    it: { title: "Passaporto Globale bdai", subtitle: "ID Nomade Digitale", surname: "Cognome", givenNames: "Nomi", city: "Città", country: "Paese", age: "Età", birthday: "F. Nascita", save: "Salva", edit: "Modifica", logout: "Esci", stamps: "I Miei Visti", badges: "Distintivi", langLabel: "Lingua", rank: "RANGO", miles: "MIGLIA", admin: "ADMIN", streak: "Serie", changeAvatar: "Cambia Foto", email: "Indirizzo email", reportBug: "Segnala un bug", privacy: "Privacy", terms: "Termini", deleteAccount: "Elimina Account (GDPR)", deleteConfirmTitle: "⚠️ ZONA PERICOLOSA", deleteConfirmText: "Questa azione è IRREVERSIBILE. Perderai definitivamente tutte le miglia, visti, distintivi e cronologia.", deleteConfirmInstruction: "Digita la tua email per confermare:", deleteConfirmPlaceholder: "tua@email.com", deleteConfirmCancel: "Annulla", deleteConfirmYes: "Elimina definitivamente", deleting: "Eliminazione...", deleteCountdown: "Aspetta {n}s...", deleteEmailMismatch: "L'email non corrisponde" },
+    pt: { title: "Passaporte Global bdai", subtitle: "ID Nómada Digital", surname: "Apelido", givenNames: "Nomes", city: "Cidade", country: "País", age: "Idade", birthday: "Nascimento", save: "Guardar", edit: "Editar", logout: "Sair", stamps: "Meus Vistos", badges: "Distintivos", langLabel: "Idioma", rank: "RANKING", miles: "MILHAS", admin: "ADMIN", streak: "Sequência", changeAvatar: "Mudar Foto", email: "Endereço de email", reportBug: "Reportar Erro", privacy: "Privacidade", terms: "Termos", deleteAccount: "Eliminar Conta (RGPD)", deleteConfirmTitle: "⚠️ ZONA DE PERIGO", deleteConfirmText: "Esta ação é IRREVERSÍVEL. Perderá permanentemente todas as suas milhas, vistos, emblemas e histórico.", deleteConfirmInstruction: "Escreva o seu email para confirmar:", deleteConfirmPlaceholder: "seu@email.com", deleteConfirmCancel: "Cancelar", deleteConfirmYes: "Eliminar permanentemente", deleting: "Eliminando...", deleteCountdown: "Aguarde {n}s...", deleteEmailMismatch: "O email não corresponde" },
+    ro: { title: "Pașaport Global bdai", subtitle: "ID Nomad Digital", surname: "Nume", givenNames: "Prenume", city: "Oraș", country: "Țară", age: "Vârstă", birthday: "Naștere", save: "Salvare", edit: "Editare", logout: "Deconectare", stamps: "Vizele Mele", badges: "Insigne", langLabel: "Limbă", rank: "RANG", miles: "MILE", admin: "ADMIN", streak: "Serie", changeAvatar: "Schimbă Foto", email: "Adresă email", reportBug: "Raportează o eroare", privacy: "Confidențialitate", terms: "Termeni", deleteAccount: "Șterge Contul (GDPR)", deleteConfirmTitle: "⚠️ ZONĂ PERICULOASĂ", deleteConfirmText: "Această acțiune este IREVERSIBILĂ. Veți pierde definitiv toate milele, vizele, insignele și istoricul.", deleteConfirmInstruction: "Introduceți emailul pentru confirmare:", deleteConfirmPlaceholder: "email@tau.com", deleteConfirmCancel: "Anulare", deleteConfirmYes: "Șterge definitiv", deleting: "Ștergere...", deleteCountdown: "Așteptați {n}s...", deleteEmailMismatch: "Emailul nu se potrivește" },
+    ru: { title: "Глобальный паспорт bdai", subtitle: "ID кочевника", surname: "Фамилия", givenNames: "Имя", city: "Город", country: "Страна", age: "Возраст", birthday: "Рождение", save: "Сохранить", edit: "Править", logout: "Выйти", stamps: "Визы", badges: "Значки", langLabel: "Язык", rank: "РАНГ", miles: "МИЛИ", admin: "АДМИН", streak: "Серия", changeAvatar: "Сменить фото", email: "Электронная почта", reportBug: "Сообщить об ошибке", privacy: "Конфиденциальность", terms: "Условия", deleteAccount: "Удалить Аккаунт (GDPR)", deleteConfirmTitle: "⚠️ ОПАСНАЯ ЗОНА", deleteConfirmText: "Это действие НЕОБРАТИМО. Вы навсегда потеряете все мили, визы, значки и историю.", deleteConfirmInstruction: "Введите email для подтверждения:", deleteConfirmPlaceholder: "ваш@email.com", deleteConfirmCancel: "Отмена", deleteConfirmYes: "Удалить навсегда", deleting: "Удаление...", deleteCountdown: "Подождите {n}с...", deleteEmailMismatch: "Email не совпадает" },
+    ar: { title: "جواز سفر bdai العالمي", subtitle: "هوية البدوي الرقمي", surname: "اللقب", givenNames: "الأسماء", city: "المدينة", country: "البلد", age: "العمر", birthday: "الميلاد", save: "حفظ", edit: "تعديل", logout: "خروج", stamps: "تأشيراتي", badges: "الأوسمة", langLabel: "اللغة", rank: "الرتبة", miles: "الأميال", admin: "مسؤول", streak: "سلسلة", changeAvatar: "تغيير الصورة", email: "البريد الإلكتروني", reportBug: "الإبلاغ عن خطأ", privacy: "الخصوصية", terms: "الشروط", deleteAccount: "حذف الحساب (GDPR)", deleteConfirmTitle: "⚠️ منطقة الخطر", deleteConfirmText: "هذا الإجراء لا رجعة فيه. ستفقد جميع أميالك وتأشيراتك وأوسمتك وسجلك إلى الأبد.", deleteConfirmInstruction: "اكتب بريدك الإلكتروني للتأكيد:", deleteConfirmPlaceholder: "بريدك@email.com", deleteConfirmCancel: "إلغاء", deleteConfirmYes: "حذف نهائياً", deleting: "جارٍ الحذف...", deleteCountdown: "انتظر {n}ث...", deleteEmailMismatch: "البريد الإلكتروني لا يتطابق" },
+    zh: { title: "bdai 全球护照", subtitle: "数字游民 ID", surname: "姓", givenNames: "名", city: "城市", country: "国家", age: "年龄", birthday: "生日", save: "保存", edit: "编辑", logout: "登出", stamps: "我的签证", badges: "奖章", langLabel: "语言", rank: "等级", miles: "里程", admin: "管理", streak: "连续", changeAvatar: "更换照片", email: "电子邮件", reportBug: "报告错误", privacy: "隐私", terms: "条款", deleteAccount: "删除账户 (GDPR)", deleteConfirmTitle: "⚠️ 危险区域", deleteConfirmText: "此操作不可逆。您将永久失去所有里程、签证、徽章和历史记录。", deleteConfirmInstruction: "输入您的邮箱以确认:", deleteConfirmPlaceholder: "您的@邮箱.com", deleteConfirmCancel: "取消", deleteConfirmYes: "永久删除", deleting: "删除中...", deleteCountdown: "等待 {n}秒...", deleteEmailMismatch: "邮箱不匹配" },
+    ja: { title: "bdai パスポート", subtitle: "デジタルノマド ID", surname: "姓", givenNames: "名", city: "都市", country: "国", age: "年齢", birthday: "誕生日", save: "保存", edit: "編集", logout: "ログアウト", stamps: "ビザ", badges: "バッジ", langLabel: "言語", rank: "ランク", miles: "マイル", admin: "管理", streak: "記録", changeAvatar: "写真変更", email: "メールアドレス", reportBug: "バグを報告", privacy: "プライバシー", terms: "利用規約", deleteAccount: "アカウント削除 (GDPR)", deleteConfirmTitle: "⚠️ 危険ゾーン", deleteConfirmText: "この操作は元に戻せません。すべてのマイル、ビザ、バッジ、履歴が永久に失われます。", deleteConfirmInstruction: "確認のためメールアドレスを入力:", deleteConfirmPlaceholder: "your@email.com", deleteConfirmCancel: "キャンセル", deleteConfirmYes: "完全に削除する", deleting: "削除中...", deleteCountdown: "{n}秒待機中...", deleteEmailMismatch: "メールアドレスが一致しません" },
+    ko: { title: "bdai 글로벌 여권", subtitle: "디지털 노마드 ID", surname: "성", givenNames: "이름", city: "도시", country: "국가", age: "나이", birthday: "생일", save: "저장", edit: "편집", logout: "로그아웃", stamps: "내 비자", badges: "배지", langLabel: "언어", rank: "등급", miles: "마일", admin: "관리자", streak: "연속", changeAvatar: "사진 변경", email: "이메일 주소", reportBug: "버그 신고", privacy: "개인정보", terms: "이용약관", deleteAccount: "계정 삭제 (GDPR)", deleteConfirmTitle: "⚠️ 위험 구역", deleteConfirmText: "이 작업은 되돌릴 수 없습니다. 모든 마일, 비자, 배지, 기록이 영구적으로 삭제됩니다.", deleteConfirmInstruction: "확인을 위해 이메일을 입력하세요:", deleteConfirmPlaceholder: "your@email.com", deleteConfirmCancel: "취소", deleteConfirmYes: "영구 삭제", deleting: "삭제 중...", deleteCountdown: "{n}초 대기...", deleteEmailMismatch: "이메일이 일치하지 않습니다" },
+    hi: { title: "bdai वैश्विक पासपोर्ट", subtitle: "डिजिटल घुमंतू आईडी", surname: "उपनाम", givenNames: "नाम", city: "शहर", country: "देश", age: "आयु", birthday: "जन्मदिन", save: "सहेजें", edit: "संपादित करें", logout: "लॉगआउट", stamps: "मेरे वीजा", badges: "बैज", langLabel: "भाषा", rank: "रैंक", miles: "मील", admin: "व्यवस्थापक", streak: "लगातार", changeAvatar: "फोटो बदलें", email: "ईमेल पता", reportBug: "बग की रिपोर्ट करें", privacy: "गोपनीयता", terms: "नियम", deleteAccount: "खाता हटाएं (GDPR)", deleteConfirmTitle: "⚠️ खतरा क्षेत्र", deleteConfirmText: "यह क्रिया अपरिवर्तनीय है। आपकी सभी मील, वीजा, बैज और इतिहास हमेशा के लिए नष्ट हो जाएगा।", deleteConfirmInstruction: "पुष्टि के लिए अपना ईमेल लिखें:", deleteConfirmPlaceholder: "आपका@ईमेल.com", deleteConfirmCancel: "रद्द करें", deleteConfirmYes: "स्थायी रूप से हटाएं", deleting: "हटाया जा रहा है...", deleteCountdown: "{n}s प्रतीक्षा करें...", deleteEmailMismatch: "ईमेल मेल नहीं खाता" },
+    tr: { title: "bdai Küresel Pasaport", subtitle: "Dijital Nomad Kimliği", surname: "Soyadı", givenNames: "İsimler", city: "Şehir", country: "Ülke", age: "Yaş", birthday: "Doğum", save: "Kaydet", edit: "Düzenle", logout: "Çıkış", stamps: "Vizelerim", badges: "Rozetler", langLabel: "Dil", rank: "RÜTBE", miles: "MİLLER", admin: "YÖNETİCİ", streak: "Seri", changeAvatar: "Fotoğraf Değiştir", email: "E-posta adresi", reportBug: "Hata Bildir", privacy: "Gizlilik", terms: "Koşullar", deleteAccount: "Hesabı Sil (GDPR)", deleteConfirmTitle: "⚠️ TEHLİKE BÖLGESİ", deleteConfirmText: "Bu işlem GERİ ALINAMAZ. Tüm millerinizi, vizelerinizi, rozetlerinizi ve geçmişinizi sonsuza kadar kaybedeceksiniz.", deleteConfirmInstruction: "Onaylamak için e-postanızı yazın:", deleteConfirmPlaceholder: "sizin@email.com", deleteConfirmCancel: "İptal", deleteConfirmYes: "Kalıcı olarak sil", deleting: "Siliniyor...", deleteCountdown: "{n}s bekleyin...", deleteEmailMismatch: "E-posta eşleşmiyor" },
+    nl: { title: "bdai Globaal Paspoort", subtitle: "Digital Nomad ID", surname: "Achternaam", givenNames: "Voornamen", city: "Stad", country: "Land", age: "Leeftijd", birthday: "Geboortedatum", save: "Opslaan", edit: "Bewerken", logout: "Uitloggen", stamps: "Mijn Visa", badges: "Badges", langLabel: "Taal", rank: "RANG", miles: "MIJL", admin: "ADMIN", streak: "Reeks", changeAvatar: "Foto wijzigen", email: "E-mailadres", reportBug: "Fout melden", privacy: "Privacy", terms: "Voorwaarden", deleteAccount: "Account verwijderen (GDPR)", deleteConfirmTitle: "⚠️ GEVARENZONE", deleteConfirmText: "Deze actie is ONOMKEERBAAR. U verliest permanent alle mijlen, visa, badges en geschiedenis.", deleteConfirmInstruction: "Typ uw e-mail ter bevestiging:", deleteConfirmPlaceholder: "uw@email.com", deleteConfirmCancel: "Annuleren", deleteConfirmYes: "Permanent verwijderen", deleting: "Verwijderen...", deleteCountdown: "Wacht {n}s...", deleteEmailMismatch: "E-mail komt niet overeen" },
+    pl: { title: "Globalny Paszport bdai", subtitle: "ID Nomady", surname: "Nazwisko", givenNames: "Imiona", city: "Miasto", country: "Kraj", age: "Wiek", birthday: "Data urodzenia", save: "Zapisz", edit: "Edytuj", logout: "Wyloguj", stamps: "Wizy", badges: "Odznaki", langLabel: "Język", rank: "RANGA", miles: "MILE", admin: "ADMIN", streak: "Seria", changeAvatar: "Zmień zdjęcie", email: "Adres e-mail", reportBug: "Zgłoś błąd", privacy: "Prywatność", terms: "Warunki", deleteAccount: "Usuń Konto (RODO)", deleteConfirmTitle: "⚠️ STREFA ZAGROŻENIA", deleteConfirmText: "Ta akcja jest NIEODWRACALNA. Stracisz na zawsze wszystkie mile, wizy, odznaki i historię.", deleteConfirmInstruction: "Wpisz swój email, aby potwierdzić:", deleteConfirmPlaceholder: "twoj@email.com", deleteConfirmCancel: "Anuluj", deleteConfirmYes: "Usuń trwale", deleting: "Usuwanie...", deleteCountdown: "Poczekaj {n}s...", deleteEmailMismatch: "Email nie pasuje" },
+    ca: { title: "Passaport Global bdai", subtitle: "ID Nòmada Digital", surname: "Cognoms", givenNames: "Noms", city: "Ciutat", country: "País", age: "Edat", birthday: "Naixement", save: "Desar", edit: "Editar", logout: "Sortir", stamps: "Els Meus Visats", badges: "Insígnies", langLabel: "Idioma", rank: "RANG", miles: "MILLES", admin: "ADMIN", streak: "Ratxa", changeAvatar: "Canviar Foto", email: "Adreça de correu", reportBug: "Informar d'un error", privacy: "Privacitat", terms: "Termes", deleteAccount: "Eliminar Compte (RGPD)", deleteConfirmTitle: "⚠️ ZONA DE PERILL", deleteConfirmText: "Aquesta acció és IRREVERSIBLE. Perdràs permanentment totes les milles, visats, insígnies i historial.", deleteConfirmInstruction: "Escriu el teu email per confirmar:", deleteConfirmPlaceholder: "el@teu.email", deleteConfirmCancel: "Cancel·lar", deleteConfirmYes: "Eliminar permanentment", deleting: "Eliminant...", deleteCountdown: "Espera {n}s...", deleteEmailMismatch: "L'email no coincideix" },
+    eu: { title: "bdai Pasaporte Globala", subtitle: "ID Nomada Digitala", surname: "Abizenak", givenNames: "Izenak", city: "Hiria", country: "Herrialdea", age: "Adina", birthday: "Jaioteguna", save: "Gorde", edit: "Editatu", logout: "Saioa Itxi", stamps: "Nire Visatuak", badges: "Intsigniak", langLabel: "Hizkuntza", rank: "MAILA", miles: "MILIAK", admin: "ADMIN", streak: "Segida", changeAvatar: "Argazkia Aldatu", email: "Helbide elektronikoa", reportBug: "Akatsa jakinarazi", privacy: "Pribatutasuna", terms: "Baldintzak", deleteAccount: "Kontua Ezabatu (DBEO)", deleteConfirmTitle: "⚠️ ARRISKU EREMUA", deleteConfirmText: "Ekintza hau ITZULEZINA da. Zure milia, bisa, txapa eta historia guztiak betirako galduko dituzu.", deleteConfirmInstruction: "Idatzi zure emaila baieztatzeko:", deleteConfirmPlaceholder: "zure@emaila.com", deleteConfirmCancel: "Utzi", deleteConfirmYes: "Behin betiko ezabatu", deleting: "Ezabatzen...", deleteCountdown: "Itxaron {n}s...", deleteEmailMismatch: "Emaila ez dator bat" },
+    vi: { title: "Hộ chiếu Toàn cầu bdai", subtitle: "ID Du mục", surname: "Họ", givenNames: "Tên", city: "Thành phố", country: "Quốc gia", age: "Tuổi", birthday: "Ngày sinh", save: "Lưu", edit: "Chỉnh sửa", logout: "Đăng xuất", stamps: "Thị thực", badges: "Huy hiệu", langLabel: "Ngôn ngữ", rank: "CẤP BẬC", miles: "DẶM", admin: "QUẢN TRỊ", streak: "Chuỗi", changeAvatar: "Đổi ảnh", email: "Địa chỉ email", reportBug: "Báo cáo lỗi", privacy: "Quyền riêng tư", terms: "Điều khoản", deleteAccount: "Xóa Tài Khoản (GDPR)", deleteConfirmTitle: "⚠️ VÙNG NGUY HIỂM", deleteConfirmText: "Hành động này KHÔNG THỂ HOÀN TÁC. Bạn sẽ mất vĩnh viễn tất cả dặm, thị thực, huy hiệu và lịch sử.", deleteConfirmInstruction: "Nhập email của bạn để xác nhận:", deleteConfirmPlaceholder: "email@cua.ban", deleteConfirmCancel: "Hủy", deleteConfirmYes: "Xóa vĩnh viễn", deleting: "Đang xóa...", deleteCountdown: "Chờ {n}s...", deleteEmailMismatch: "Email không khớp" },
+    th: { title: "พาสปอร์ตทั่วโลก bdai", subtitle: "รหัสนักเดินทาง", surname: "นามสกุล", givenNames: "ชื่อ", city: "เมือง", country: "ประเทศ", age: "อายุ", birthday: "วันเกิด", save: "บันทึก", edit: "แก้ไข", logout: "ออก", stamps: "วีซ่า", badges: "เหรียญตรา", langLabel: "ภาษา", rank: "อันดับ", miles: "ไมล์", admin: "ผู้ดูแล", streak: "สถิติ", changeAvatar: "เปลี่ยนรูป", email: "ที่อยู่อีเมล", reportBug: "รายงานปัญหา", privacy: "ความเป็นส่วนตัว", terms: "ข้อกำหนด", deleteAccount: "ลบบัญชี (GDPR)", deleteConfirmTitle: "⚠️ เขตอันตราย", deleteConfirmText: "การกระทำนี้ไม่สามารถยกเลิกได้ คุณจะสูญเสียไมล์ วีซ่า เหรียญตรา และประวัติทั้งหมดอย่างถาวร", deleteConfirmInstruction: "พิมพ์อีเมลของคุณเพื่อยืนยัน:", deleteConfirmPlaceholder: "your@email.com", deleteConfirmCancel: "ยกเลิก", deleteConfirmYes: "ลบถาวร", deleting: "กำลังลบ...", deleteCountdown: "รอ {n}s...", deleteEmailMismatch: "อีเมลไม่ตรงกัน" }
 };
 
 const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onClick: () => void }> = ({ code, label, isActive, onClick }) => (
@@ -44,58 +44,97 @@ const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onC
     </button>
 );
 
+// ✅ SAFE DELETE CONFIRMATION — requires typing email + 5s countdown
+const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => string; onCancel: () => void; onConfirm: () => void; isDeleting: boolean }> = ({ user, pt, onCancel, onConfirm, isDeleting }) => {
+    const [emailInput, setEmailInput] = useState('');
+    const [countdown, setCountdown] = useState(5);
+    const [countdownDone, setCountdownDone] = useState(false);
+
+    useEffect(() => {
+        if (countdown <= 0) { setCountdownDone(true); return; }
+        const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+        return () => clearTimeout(t);
+    }, [countdown]);
+
+    const emailMatches = emailInput.trim().toLowerCase() === user.email.trim().toLowerCase();
+    const canDelete = emailMatches && countdownDone && !isDeleting;
+
+    return (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+            <div className="w-full max-w-[340px] bg-slate-900 border-2 border-red-500/50 rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl shadow-red-500/20">
+                <div className="w-16 h-16 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center mb-4">
+                    <i className="fas fa-skull text-2xl text-red-500"></i>
+                </div>
+                <h3 className="text-white font-black text-base uppercase tracking-widest mb-3">{pt('deleteConfirmTitle')}</h3>
+                <p className="text-slate-400 text-xs mb-5 leading-relaxed">{pt('deleteConfirmText')}</p>
+
+                <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest mb-2 w-full text-left">{pt('deleteConfirmInstruction')}</p>
+                <input
+                    type="email"
+                    value={emailInput}
+                    onChange={e => setEmailInput(e.target.value)}
+                    placeholder={user.email}
+                    className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white text-xs mb-1 focus:outline-none focus:border-red-500 transition-colors"
+                    disabled={isDeleting}
+                    autoComplete="off"
+                />
+                {emailInput.length > 0 && !emailMatches && (
+                    <p className="text-red-400 text-[9px] font-bold mb-3 w-full text-left">{pt('deleteEmailMismatch')}</p>
+                )}
+                {emailInput.length === 0 && <div className="mb-3"></div>}
+
+                <div className="w-full flex gap-3 mt-2">
+                    <button onClick={onCancel} disabled={isDeleting} className="flex-1 py-3 bg-white/5 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors">
+                        {pt('deleteConfirmCancel')}
+                    </button>
+                    <button
+                        onClick={canDelete ? onConfirm : undefined}
+                        disabled={!canDelete}
+                        className={`flex-[2] py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${canDelete ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                    >
+                        {isDeleting ? pt('deleting') : !countdownDone ? pt('deleteCountdown').replace('{n}', String(countdown)) : pt('deleteConfirmYes')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin, language, onLangChange }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formData, setFormData] = useState({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      username: user.username || 'traveler',
-      city: user.city || '',
-      country: user.country || '',
-      avatar: user.avatar || AVATARS[0],
-      birthday: user.birthday || '1995-01-01',
-      language: user.language || 'es'
+      firstName: user.firstName || '', lastName: user.lastName || '', username: user.username || 'traveler',
+      city: user.city || '', country: user.country || '', avatar: user.avatar || AVATARS[0],
+      birthday: user.birthday || '1995-01-01', language: user.language || 'es'
   });
 
   useEffect(() => {
     setFormData({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      username: user.username || 'traveler',
-      city: user.city || '',
-      country: user.country || '',
-      avatar: user.avatar || AVATARS[0],
-      birthday: user.birthday || '1995-01-01',
-      language: user.language || 'es'
+      firstName: user.firstName || '', lastName: user.lastName || '', username: user.username || 'traveler',
+      city: user.city || '', country: user.country || '', avatar: user.avatar || AVATARS[0],
+      birthday: user.birthday || '1995-01-01', language: user.language || 'es'
     });
   }, [user]);
 
   const pt = (key: string) => {
     const lang = user.language || 'es';
-    const dict = MODAL_TEXTS[lang] || MODAL_TEXTS['en'] || MODAL_TEXTS['es'];
-    const globalDict = translations[lang] || translations['en'] || translations['es'];
+    const dict = MODAL_TEXTS[lang] || MODAL_TEXTS['en'];
+    const globalDict = translations[lang] || translations['en'];
     return dict[key] || globalDict[key] || key;
   };
 
   const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
 
-  const handleAvatarClick = () => { fileInputRef.current?.click(); };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const file = e.target.files?.[0]; if (!file) return;
       const reader = new FileReader();
       reader.onloadend = () => {
-          const base64String = reader.result as string;
-          setFormData(prev => ({ ...prev, avatar: base64String }));
-          if (!isEditing && onUpdateUser) {
-              const updatedUser = { ...user, avatar: base64String };
-              onUpdateUser(updatedUser);
-              syncUserProfile(updatedUser);
-          }
+          const b64 = reader.result as string;
+          setFormData(prev => ({ ...prev, avatar: b64 }));
+          if (!isEditing && onUpdateUser) { const u = { ...user, avatar: b64 }; onUpdateUser(u); syncUserProfile(u); }
       };
       reader.readAsDataURL(file);
   };
@@ -103,9 +142,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   const handleSave = async () => {
       setIsSyncing(true);
       try {
-          const birthDate = new Date(formData.birthday);
-          const age = new Date().getFullYear() - birthDate.getFullYear();
-          const updatedUser = { ...user, ...formData, name: `${formData.firstName} ${formData.lastName}`.trim(), age: age };
+          const age = new Date().getFullYear() - new Date(formData.birthday).getFullYear();
+          const updatedUser = { ...user, ...formData, name: `${formData.firstName} ${formData.lastName}`.trim(), age };
           await syncUserProfile(updatedUser);
           if (onUpdateUser) onUpdateUser(updatedUser);
           setIsEditing(false);
@@ -125,27 +163,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       await supabase.from('profiles').delete().eq('email', user.email);
       await supabase.auth.signOut();
       if (onLogout) onLogout();
-    } catch (e) {
-      console.error("Error deleting account", e);
-    } finally {
-      setIsDeleting(false);
-    }
+    } catch (e) { console.error("Error deleting account", e); }
+    finally { setIsDeleting(false); }
   };
 
   const handleShareRank = async () => {
-    const message = pt('shareRankMessage')
-      .replace('{rank}', user.rank)
-      .replace('{miles}', user.miles.toLocaleString());
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'BDAI Rank', text: message, url: 'https://www.bdai.travel' });
-      } catch (e) {}
-    } else {
-      navigator.clipboard.writeText(message);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    }
+    const message = pt('shareRankMessage').replace('{rank}', user.rank).replace('{miles}', user.miles.toLocaleString());
+    if (navigator.share) { try { await navigator.share({ title: 'BDAI Rank', text: message, url: 'https://www.bdai.travel' }); } catch (e) {} }
+    else { navigator.clipboard.writeText(message); setShowToast(true); setTimeout(() => setShowToast(false), 3000); }
   };
 
   return (
@@ -160,9 +185,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
           <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
-            <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6">
-              <i className="fas fa-crown text-3xl text-white"></i>
-            </div>
+            <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6"><i className="fas fa-crown text-3xl text-white"></i></div>
             <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
             <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
             <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
@@ -199,7 +222,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
             <div className="p-6 space-y-8">
                 <div className="flex gap-6 items-start">
-                    <div onClick={handleAvatarClick} className="shrink-0 w-28 h-36 bg-white border-2 border-[#d7d2c3] rounded-xl shadow-lg overflow-hidden p-1 relative cursor-pointer group">
+                    <div onClick={() => fileInputRef.current?.click()} className="shrink-0 w-28 h-36 bg-white border-2 border-[#d7d2c3] rounded-xl shadow-lg overflow-hidden p-1 relative cursor-pointer group">
                         <img src={formData.avatar} className="w-full h-full object-cover grayscale contrast-125 saturate-0" />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-[8px] font-black text-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">{pt('changeAvatar')}</div>
                     </div>
@@ -213,7 +236,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                                     <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
                                 )}
                                 {!isEditing && formData.country && (
-                                    <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : formData.country.substring(0,2).toUpperCase()}/flat/64.png`} className="w-3 h-3 rounded-full" alt={formData.country} />
+                                    <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : formData.country.substring(0,2).toUpperCase()}/flat/64.png`} className="w-3 h-3 rounded-full" alt="" />
                                 )}
                             </div>
                         </div>
@@ -230,22 +253,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-1">
-                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('givenNames')}</p>
-                        {isEditing ? <input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.firstName || '---'}</p>}
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('surname')}</p>
-                        {isEditing ? <input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.lastName || '---'}</p>}
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('city')}</p>
-                        {isEditing ? <input value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.city || '---'}</p>}
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('birthday')}</p>
-                        {isEditing ? <input type="date" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px]" /> : <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.birthday || '---'}</p>}
-                    </div>
+                    {[['givenNames','firstName'],['surname','lastName'],['city','city'],['birthday','birthday']].map(([label, field]) => (
+                        <div key={field} className="space-y-1">
+                            <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt(label)}</p>
+                            {isEditing ? (
+                                <input type={field === 'birthday' ? 'date' : 'text'} value={(formData as any)[field]} onChange={e => setFormData({...formData, [field]: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" />
+                            ) : (
+                                <p className="font-bold text-slate-800 text-[10px] uppercase">{(formData as any)[field] || '---'}</p>
+                            )}
+                        </div>
+                    ))}
                 </div>
 
                 <div className="pt-6 border-t-2 border-dashed border-slate-300">
@@ -254,8 +271,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         {user.stamps.length > 0 ? user.stamps.map((s, i) => (
                             <div key={i} className="aspect-square bg-white border-2 border-slate-300 rounded-2xl flex flex-col items-center justify-center p-1.5 shadow-sm transform rotate-[-4deg] hover:rotate-0 transition-transform">
                                 <i className="fas fa-stamp text-lg mb-1" style={{ color: s.color }}></i>
-                                <span className="text-[6px] font-black text-slate-800 uppercase truncate w-full text-center leading-none mb-0.5">{s.city}</span>
-                                <span className="text-[5px] font-bold text-slate-400 uppercase truncate w-full text-center leading-none">{s.country}</span>
+                                <span className="text-[6px] font-black text-slate-800 uppercase truncate w-full text-center">{s.city}</span>
+                                <span className="text-[5px] font-bold text-slate-400 uppercase truncate w-full text-center">{s.country}</span>
                             </div>
                         )) : [1,2,3,4].map(i => <div key={i} className="aspect-square bg-slate-100 border-2 border-dashed border-slate-200 rounded-2xl"></div>)}
                     </div>
@@ -281,8 +298,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
                 <div className="pt-4">
                     <button onClick={() => setShowBragModal(true)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5">
-                        <i className="fas fa-bullhorn text-purple-400"></i>
-                        {pt('shareRank')}
+                        <i className="fas fa-bullhorn text-purple-400"></i>{pt('shareRank')}
                     </button>
                 </div>
 
@@ -303,72 +319,31 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             </button>
                         </div>
                     )}
-
-                    {/* ✅ LOGOUT BUTTON - translated */}
-                    <button
-                        onClick={() => { if (onLogout) onLogout(); else { supabase.auth.signOut().catch(() => {}); onClose(); } }}
-                        className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all mb-4"
-                    >
-                        <i className="fas fa-sign-out-alt"></i>
-                        {pt('logout')}
+                    <button onClick={() => { if (onLogout) onLogout(); else { supabase.auth.signOut().catch(() => {}); onClose(); } }} className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all mb-4">
+                        <i className="fas fa-sign-out-alt"></i>{pt('logout')}
                     </button>
-
-                    {/* ✅ PRIVACY & TERMS - translated */}
                     <div className="flex justify-center gap-4 mb-6">
-                        <button onClick={() => setShowLegal('privacy')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">
-                            {pt('privacy')}
-                        </button>
+                        <button onClick={() => setShowLegal('privacy')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">{pt('privacy')}</button>
                         <span className="text-slate-700">•</span>
-                        <button onClick={() => setShowLegal('terms')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">
-                            {pt('terms')}
-                        </button>
+                        <button onClick={() => setShowLegal('terms')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">{pt('terms')}</button>
                     </div>
-
-                    {/* ✅ REPORT BUG - already translated via pt() */}
                     <button onClick={() => setShowReportBug(true)} className="w-full py-3 mb-2 bg-transparent text-slate-400 hover:text-orange-500 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
-                        <i className="fas fa-bug"></i>
-                        {pt('reportBug')}
+                        <i className="fas fa-bug"></i>{pt('reportBug')}
                     </button>
-
-                    {/* ✅ DELETE ACCOUNT - translated */}
-                    <button onClick={() => setShowDeleteConfirm(true)} className="w-full py-3 bg-transparent text-slate-400 hover:text-red-500 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
-                        <i className="fas fa-trash-alt"></i>
-                        {pt('deleteAccount')}
+                    <button onClick={() => setShowDeleteConfirm(true)} className="w-full py-3 bg-transparent text-slate-600 hover:text-red-400 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
+                        <i className="fas fa-trash-alt"></i>{pt('deleteAccount')}
                     </button>
                 </div>
             </div>
         </div>
       </div>
 
-      {/* ✅ LEGAL MODAL - passes language prop */}
-      {showLegal && (
-          <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />
-      )}
-
-      {showReportBug && (
-          <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />
-      )}
-
-      {/* ✅ DELETE CONFIRM - translated */}
+      {showLegal && <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />}
+      {showReportBug && <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />}
       {showDeleteConfirm && (
-          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-              <div className="w-full max-w-[320px] bg-slate-900 border border-red-500/30 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-                      <i className="fas fa-exclamation-triangle text-2xl text-red-500"></i>
-                  </div>
-                  <h3 className="text-white font-black text-lg uppercase tracking-widest mb-2">{pt('deleteConfirmTitle')}</h3>
-                  <p className="text-slate-400 text-xs mb-6">{pt('deleteConfirmText')}</p>
-                  <div className="w-full flex gap-3">
-                      <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3 bg-white/5 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors">
-                          {pt('deleteConfirmCancel')}
-                      </button>
-                      <button onClick={handleDeleteAccount} disabled={isDeleting} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-700 transition-colors disabled:opacity-50">
-                          {isDeleting ? pt('deleting') : pt('deleteConfirmYes')}
-                      </button>
-                  </div>
-              </div>
-          </div>
+          <DeleteConfirmModal user={user} pt={pt} onCancel={() => setShowDeleteConfirm(false)} onConfirm={handleDeleteAccount} isDeleting={isDeleting} />
       )}
     </div>
   );
 };
+
