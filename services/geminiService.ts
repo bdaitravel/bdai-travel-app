@@ -29,7 +29,7 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
             Return JSON object: { "english": "English Name", "detected": "Detected Language Code" }`,
             config: {
@@ -52,7 +52,7 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: `Identify all major cities or towns globally that match the name: "${input}". 
             For each match:
             1. Provide the official city name.
@@ -89,7 +89,7 @@ export const generateToursForCity = async (city: string, country: string, user: 
     
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             contents: `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
             
             THEMES:
@@ -167,7 +167,7 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: `As DAI, welcome a new user named ${user.firstName || 'Traveler'} in ${user.language}.
             Explain that they are currently rank "ZERO" (the bottom of the food chain) and they need to conquer the world by completing tours to reach "ZENITH".
             Be sarcastic, witty, and elegant. Keep it under 100 words.`,
@@ -227,7 +227,7 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-2.5-flash',
             contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
             config: { responseMimeType: "application/json" }
         });
@@ -239,7 +239,7 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: `Is this text safe? "${text}"`,
             config: {
                 responseMimeType: "application/json",
@@ -257,7 +257,7 @@ export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: "Say 'OK'",
         });
         if (response.text) return { ok: true, message: "API is responding" };
