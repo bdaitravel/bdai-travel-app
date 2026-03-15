@@ -120,29 +120,24 @@ const base64ToUint8Array = (base64: string): Uint8Array => {
  * Normalizes keys for database storage/retrieval.
  * Format: city-country (e.g., madrid-spain)
  */
-export const normalizeKey = (city: string | undefined | null, country?: string) => {
-    const clean = (text: string) => text
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .trim()
-        .replace(/[\s-]+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
+export const normalizeKey = (city: string | undefined | null, country?: string): string => {
+  const clean = (text: string) => text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[\s\-\/\\]+/g, '_')
+    .replace(/[^a-z0-9_]/g, '');
 
-    const safeCity = clean(city || "").split('_')[0]; // Handle cases where city might already be a slug
-    if (!safeCity) return "";
-    
-    // If country is provided, use it. If not, and city looks like a slug, it might already contain the country.
-    const safeCountry = country && country !== "Cache" ? clean(country) : "";
-    
-    if (safeCountry) {
-        // Avoid double country if city already has it
-        if (safeCity.endsWith(`_${safeCountry}`)) return safeCity;
-        return `${safeCity}_${safeCountry}`;
-    }
-    return safeCity;
+  const safeCity = clean(city || '');
+  if (!safeCity) return '';
+  
+  const safeCountry = clean(country || '');
+  if (!safeCountry || safeCountry === 'cache') return safeCity;
+  if (safeCity.endsWith(`_${safeCountry}`)) return safeCity;
+  
+  return `${safeCity}_${safeCountry}`;
 };
-
 /**
  * Checks if a city exists in cache using the new slug format.
  */
