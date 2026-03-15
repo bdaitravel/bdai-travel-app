@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+// @ts-ignore
+import lamejs from 'lamejs';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
 const rawUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -72,27 +74,36 @@ const generateHash = async (text: string): Promise<string> => {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
-const addWavHeader = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
-    const header = new ArrayBuffer(44);
-    const view = new DataView(header);
-    view.setUint32(0, 0x52494646, false); // RIFF
-    view.setUint32(4, 36 + pcmData.length, true); // File size
-    view.setUint32(8, 0x57415645, false); // WAVE
-    view.setUint32(12, 0x666d7420, false); // fmt 
-    view.setUint16(16, 16, true); // Subchunk1Size
-    view.setUint16(20, 1, true); // AudioFormat (PCM)
-    view.setUint16(22, 1, true); // NumChannels (Mono)
-    view.setUint32(24, sampleRate, true); // SampleRate
-    view.setUint32(28, sampleRate * 2, true); // ByteRate
-    view.setUint16(32, 2, true); // BlockAlign
-    view.setUint16(34, 16, true); // BitsPerSample
-    view.setUint32(36, 0x64617461, false); // data
-    view.setUint32(40, pcmData.length, true); // Subchunk2Size
+const encodeToMp3 = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
+    const int16Data = new Int16Array(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength / 2);
+    const encoder = new lamejs.Mp3Encoder(1, sampleRate, 64);
     
-    const wav = new Uint8Array(44 + pcmData.length);
-    wav.set(new Uint8Array(header), 0);
-    wav.set(pcmData, 44);
-    return wav;
+    const maxSamples = 1152;
+    const mp3Data = [];
+    
+    for (let i = 0; i < int16Data.length; i += maxSamples) {
+        const chunk = int16Data.subarray(i, i + maxSamples);
+        const encoded = encoder.encodeBuffer(chunk);
+        if (encoded.length > 0) {
+            mp3Data.push(encoded);
+        }
+    }
+    
+    const flush = encoder.flush();
+    if (flush.length > 0) {
+        mp3Data.push(flush);
+    }
+    
+    const totalLength = mp3Data.reduce((acc, current) => acc + current.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    
+    for (const chunk of mp3Data) {
+        result.set(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength), offset);
+        offset += chunk.length;
+    }
+    
+    return result;
 };
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
@@ -379,13 +390,13 @@ export const saveAudioToCache = async (text: string, lang: string, audioData: Ui
     try {
         const hash = await generateHash(text);
         const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.wav`;
+        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.mp3`;
         
-        // Add WAV header to raw PCM data from Gemini
-        const wavData = addWavHeader(audioData);
-        const audioBlob = new Blob([wavData.buffer as ArrayBuffer], { type: 'audio/wav' });
+        // Convert to MP3
+        const mp3Data = encodeToMp3(audioData);
+        const audioBlob = new Blob([mp3Data.buffer as ArrayBuffer], { type: 'audio/mpeg' });
         
-        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/wav', cacheControl: '3600' });
+        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/mpeg', cacheControl: '3600' });
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
         await supabase.from('audio_cache').upsert({ 
