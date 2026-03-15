@@ -583,7 +583,7 @@ export default function App() {
                         <h1 className="text-8xl font-black text-white lowercase tracking-tighter leading-none">bdai</h1>
                         <p className="text-[11px] font-medium text-purple-400 mt-2 lowercase opacity-80 mb-4">better destinations by ai</p>
                         <p className="text-xs text-slate-400 max-w-[280px] mx-auto mb-10 leading-relaxed font-medium">
-                            {user.language === 'es' ? 'Descubre ciudades con rutas únicas generadas por IA. Sin paradas repetidas, solo experiencias auténticas y gemas ocultas.' : 'Discover cities with unique AI-generated tours. No repeated stops, only authentic experiences and hidden gems.'}
+                            {APP_DESC[user.language] || APP_DESC['en']}                     
                         </p>
                         
                         <div className="w-full relative">
