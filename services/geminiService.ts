@@ -53,19 +53,26 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `The user typed: "${input}" and is looking for a city to visit.
-            
-            RULES:
-            - Correct typos (e.g. "florensia" → Florence, "barcelon" → Barcelona).
-            - Recognize city names in ANY language (e.g. "Florencia"=Florence, "Londra"=London).
-            - If ambiguous, return most famous first. Max 4 results.
-            
-            For each city return:
-            - "cityEn": Official English name ONLY (e.g. "Florence", never "Florencia").
-            - "cityLocal": Name in ${userLanguage}. If no translation, use English.
-            - "country": Country name in ${userLanguage}.
-            - "countryEn": Country name in English ONLY (e.g. "Italy", "United Kingdom").
-            - "countryCode": 2-letter ISO uppercase (e.g. "IT", "ES").`,
+            contents: `The user typed: "${input}" in language "${userLanguage}" and is looking for a city or town to visit.
+
+RULES:
+- Correct any typos (e.g. "florensia" → Florence, "barcelon" → Barcelona, "madri" → Madrid).
+- Recognize city/town names in ANY language and translate to English internally.
+  Examples: "Londres"=London UK, "Florencia"=Florence Italy, "Londra"=London UK, "Nueva York"=New York USA, "倫敦"=London UK, "لندن"=London UK
+- If the name is ambiguous and could be multiple places, return ALL of them (up to 5).
+  Example: "London" → London UK, London Ontario Canada, London Ohio USA
+  Example: "Florence" → Florence Italy, Florence Alabama USA, Florence South Carolina USA
+  Example: "Santiago" → Santiago Chile, Santiago de Compostela Spain
+- Return between 1 and 5 results, most famous/relevant first.
+
+For each result return:
+- "cityEn": Official city name in ENGLISH ONLY. Never use accents or local language names.
+- "cityLocal": City name translated to "${userLanguage}". If no translation exists, use English.
+- "country": Country name in "${userLanguage}".
+- "countryEn": Country name in ENGLISH ONLY (e.g. "Italy", "United Kingdom", "United States").
+- "countryCode": 2-letter ISO country code in UPPERCASE (e.g. "IT", "GB", "US", "ES").
+
+CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, French, or any other language for these two fields.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -92,6 +99,7 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
             country: r.country,
             countryEn: r.countryEn,
             countryCode: r.countryCode,
+            // El slug siempre se genera desde inglés — nunca desde lo que escribió el usuario
             slug: normalizeKey(r.cityEn, r.countryEn),
             fullName: r.cityLocal || r.cityEn
         }));
