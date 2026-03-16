@@ -151,6 +151,7 @@ export const generateToursForCity = async (city: string, country: string, user: 
                 You are real, accurate, but never boring.
                 CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`,
                 responseMimeType: "application/json"
+                COORDINATES: Always provide real, accurate GPS coordinates for each stop. Each stop must be in a different location within the city. Never repeat coordinates.
             },
         });
 
