@@ -160,12 +160,9 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
 
         try {
             const stream = await ai.models.generateContentStream({
-                model: 'gemini-2.5-flash',  // ✅ modelo correcto
+                model: 'gemini-2.5-flash',
                 contents: prompt,
-                config: { 
-                    systemInstruction, 
-                    tools: [{ googleSearch: {} }]
-                },
+                config: { systemInstruction },
             });
 
             for await (const chunk of stream) {
@@ -212,12 +209,9 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
         } catch (streamError) {
             console.warn("Streaming failed, falling back to non-streaming", streamError);
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',  // ✅ modelo correcto
+                model: 'gemini-2.5-flash',
                 contents: prompt,
-                config: { 
-                    systemInstruction,
-                    tools: [{ googleSearch: {} }]
-                },
+                config: { systemInstruction },
             });
             const text = (response.text || '[]')
                 .replace(/\[\d+\]/g, '')
@@ -390,3 +384,4 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
         return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };
+
