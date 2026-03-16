@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BdaiLogo } from './BdaiLogo';
 import { UserProfile } from '../types';
+import { translations } from '../data/translations';
 
 interface OnboardingProps {
     onComplete: () => void;
@@ -152,10 +153,105 @@ const ONBOARDING_TEXTS: Record<string, any> = {
         btnNext: "HURRENGOA", btnDone: "ULERTUTA",
         catHistory: "Historia", catArt: "Artea", catFood: "Janaria", catNature: "Natura", catPhoto: "Argazkia", catCulture: "Kultura", catArchi: "Arkit.", catSpecial: "Berezia",
         rankLabel: "Maila", visaLabel: "Bisatua"
-    }
+    },
+    ro: {
+        step1: { title: "Bun venit la bdai", subtitle: "Ecosistemul Tău de Călătorie", content: "bdai este companionul tău inteligent de călătorie. Aici vei descoperi secretele cele mai bine păzite ale oricărui oraș din lume, ghidat de inteligența artificială." },
+        step2: { title: "Tururi Unice", subtitle: "Generare Inteligentă", content: "Caută orice oraș și voi crea 3 rute tematice instantaneu. Zero opriri repetate, 100% locuri incredibile și bijuterii ascunse!" },
+        step3: { title: "Geolocalizare", subtitle: "Check-in Real", content: "Pentru a avansa în tur, trebuie să fii fizic la mai puțin de 50 de metri de oprire. GPS-ul va valida poziția ta pentru 'Check-in'." },
+        step4: { title: "Mile și Clasament", subtitle: "Gamificare Reală", content: "Fiecare 'Check-in' îți acordă Mile. Acumulează mile pentru a urca în Clasamentul Global (de la ZERO la ZENITH). Concurează cu alți călători!" },
+        step5: { title: "Insigne", subtitle: "Colecționează descoperirile tale", content: "Câștigă puncte și insigne în funcție de tipul de locuri vizitate. Fiecare oprire are o categorie specială. Explorează toate fațetele orașului!" },
+        step6: { title: "Împărtășește Realizările", subtitle: "Vize și Rang", content: "La terminarea unui tur, vei primi o Viză digitală a orașului. Distribuie-o pe rețelele sociale împreună cu nivelul tău din Clasamentul Global!" },
+        step7: { title: "De Reținut", subtitle: "Detalii mici", content: "1. GPS-ul poate fi mai puțin precis pe străzi foarte înguste.\n2. Am nevoie de câteva secunde pentru a genera cele mai bune tururi.\n3. Ține ochii deschiși și bucură-te de călătorie!" },
+        btnNext: "URMĂTOR", btnDone: "AM ÎNȚELES",
+        catHistory: "Istorie", catArt: "Artă", catFood: "Mâncare", catNature: "Natură", catPhoto: "Foto", catCulture: "Cultură", catArchi: "Arhit.", catSpecial: "Special",
+        rankLabel: "Rang", visaLabel: "Viză"
+    },
+    nl: {
+        step1: { title: "Welkom bij bdai", subtitle: "Uw Reisecosysteem", content: "bdai is uw slimme reisgezel. Hier ontdekt u de best bewaarde geheimen van elke stad ter wereld, geleid door kunstmatige intelligentie." },
+        step2: { title: "Unieke Tours", subtitle: "Slimme Generatie", content: "Zoek een stad en ik maak direct 3 thematische routes. Geen herhaalde stops, 100% geweldige plekken en verborgen juweeltjes!" },
+        step3: { title: "Geolocalisatie", subtitle: "Echte Check-in", content: "Om verder te gaan in de tour moet u fysiek binnen 50 meter van de stop zijn. GPS valideert uw positie voor 'Check-in'." },
+        step4: { title: "Mijlen & Ranking", subtitle: "Echte Gamificatie", content: "Elke 'Check-in' geeft u Mijlen. Spaar mijlen om te stijgen in de Wereldranglijst (van ZERO naar ZENITH). Concurreer met andere reizigers!" },
+        step5: { title: "Badges", subtitle: "Verzamel uw ontdekkingen", content: "Verdien punten en badges op basis van het type bezochte plaatsen. Elke stop heeft een speciale categorie. Verken alle facetten van de stad!" },
+        step6: { title: "Deel uw Prestaties", subtitle: "Visa en Rang", content: "Na het voltooien van een tour ontvangt u een digitaal Visum van de stad. Deel het op uw sociale netwerken samen met uw Wereldranglijst niveau!" },
+        step7: { title: "Houd Rekening Mee", subtitle: "Kleine details", content: "1. GPS kan minder nauwkeurig zijn in zeer smalle straten.\n2. Ik heb een paar seconden nodig om de beste tours te genereren.\n3. Houd uw ogen open en geniet van de reis!" },
+        btnNext: "VOLGENDE", btnDone: "BEGREPEN",
+        catHistory: "Geschiedenis", catArt: "Kunst", catFood: "Eten", catNature: "Natuur", catPhoto: "Foto", catCulture: "Cultuur", catArchi: "Archit.", catSpecial: "Speciaal",
+        rankLabel: "Rang", visaLabel: "Visum"
+    },
+    pl: {
+        step1: { title: "Witamy w bdai", subtitle: "Twój Ekosystem Podróży", content: "bdai to Twój inteligentny towarzysz podróży. Tutaj odkryjesz najlepiej strzeżone sekrety każdego miasta na świecie, prowadzony przez sztuczną inteligencję." },
+        step2: { title: "Unikalne Trasy", subtitle: "Inteligentna Generacja", content: "Wyszukaj dowolne miasto, a ja natychmiast stworzę 3 trasy tematyczne. Zero powtarzających się przystanków, 100% niesamowitych miejsc i ukrytych klejnotów!" },
+        step3: { title: "Geolokalizacja", subtitle: "Prawdziwy Check-in", content: "Aby przejść dalej w trasie, musisz znajdować się fizycznie w odległości 50 metrów od przystanku. GPS potwierdzi Twoją pozycję do 'Check-in'." },
+        step4: { title: "Mile i Ranking", subtitle: "Prawdziwa Gamifikacja", content: "Każdy 'Check-in' daje Ci Mile. Zbieraj mile, aby awansować w Rankingu Globalnym (od ZERO do ZENITH). Rywalizuj z innymi podróżnikami!" },
+        step5: { title: "Odznaki", subtitle: "Zbieraj odkrycia", content: "Zdobywaj punkty i odznaki w zależności od typu odwiedzanych miejsc. Każdy przystanek ma specjalną kategorię. Poznaj wszystkie oblicza miasta!" },
+        step6: { title: "Dziel się Osiągnięciami", subtitle: "Wizy i Ranga", content: "Po ukończeniu trasy otrzymasz cyfrową Wizę miasta. Udostępnij ją w mediach społecznościowych wraz z poziomem w Rankingu Globalnym!" },
+        step7: { title: "Pamiętaj", subtitle: "Małe szczegóły", content: "1. GPS może być mniej dokładny na bardzo wąskich ulicach.\n2. Potrzebuję kilku sekund, aby wygenerować najlepsze trasy.\n3. Trzymaj oczy otwarte i ciesz się podróżą!" },
+        btnNext: "DALEJ", btnDone: "ROZUMIEM",
+        catHistory: "Historia", catArt: "Sztuka", catFood: "Jedzenie", catNature: "Natura", catPhoto: "Foto", catCulture: "Kultura", catArchi: "Archit.", catSpecial: "Specjalne",
+        rankLabel: "Ranga", visaLabel: "Wiza"
+    },
+    hi: {
+        step1: { title: "bdai में आपका स्वागत है", subtitle: "आपका यात्रा पारिस्थितिकी तंत्र", content: "bdai आपका स्मार्ट यात्रा साथी है। यहां आप कृत्रिम बुद्धिमत्ता द्वारा निर्देशित होकर दुनिया के किसी भी शहर के सबसे अच्छे रहस्य खोजेंगे।" },
+        step2: { title: "अनूठे टूर", subtitle: "स्मार्ट जनरेशन", content: "किसी भी शहर की खोज करें और मैं तुरंत 3 थीमैटिक मार्ग बनाऊंगा। शून्य दोहराई गई रुकावटें, 100% अद्भुत स्थान और छिपे हुए रत्न!" },
+        step3: { title: "जियोलोकेशन", subtitle: "वास्तविक चेक-इन", content: "टूर में आगे बढ़ने के लिए, आपको स्टॉप से 50 मीटर के भीतर भौतिक रूप से होना चाहिए। GPS आपकी स्थिति को 'Check-in' के लिए सत्यापित करेगा।" },
+        step4: { title: "मील और रैंकिंग", subtitle: "वास्तविक गेमिफिकेशन", content: "प्रत्येक 'Check-in' आपको मील देता है। वैश्विक रैंकिंग में स्तर बढ़ाने के लिए मील जमा करें (ZERO से ZENITH तक)। अन्य यात्रियों के साथ प्रतिस्पर्धा करें!" },
+        step5: { title: "बैज", subtitle: "अपनी खोजें एकत्र करें", content: "आपके द्वारा देखे जाने वाले स्थानों के प्रकार के आधार पर अंक और बैज अर्जित करें। प्रत्येक स्टॉप में एक विशेष श्रेणी होती है।" },
+        step6: { title: "अपनी उपलब्धियां साझा करें", subtitle: "वीजा और रैंक", content: "एक टूर समाप्त करने पर, आपको शहर का एक डिजिटल वीजा मिलेगा। इसे अपने वैश्विक रैंकिंग स्तर के साथ सोशल नेटवर्क पर साझा करें!" },
+        step7: { title: "ध्यान रखें", subtitle: "छोटी-छोटी बातें", content: "1. बहुत संकरी गलियों में GPS कम सटीक हो सकता है।\n2. मुझे आपके लिए सर्वोत्तम टूर उत्पन्न करने में कुछ सेकंड लगते हैं।\n3. आंखें खुली रखें और यात्रा का आनंद लें!" },
+        btnNext: "अगला", btnDone: "समझ गया",
+        catHistory: "इतिहास", catArt: "कला", catFood: "भोजन", catNature: "प्रकृति", catPhoto: "फोटो", catCulture: "संस्कृति", catArchi: "वास्तु", catSpecial: "विशेष",
+        rankLabel: "रैंक", visaLabel: "वीजा"
+    },
+    ko: {
+        step1: { title: "bdai에 오신 것을 환영합니다", subtitle: "당신의 여행 생태계", content: "bdai는 당신의 스마트 여행 동반자입니다. 여기서 인공지능의 안내를 받아 세계 어느 도시의 가장 잘 간직된 비밀을 발견하게 됩니다." },
+        step2: { title: "독특한 투어", subtitle: "스마트 생성", content: "어느 도시나 검색하면 즉시 3개의 테마 경로를 만들어드립니다. 반복 정류장 없음, 100% 놀라운 장소와 숨겨진 보석!" },
+        step3: { title: "지오로케이션", subtitle: "실제 체크인", content: "투어를 진행하려면 정류장에서 50미터 이내에 물리적으로 있어야 합니다. GPS가 '체크인'을 위해 위치를 확인합니다." },
+        step4: { title: "마일 및 랭킹", subtitle: "실제 게임화", content: "모든 '체크인'마다 마일을 획득합니다. 마일을 쌓아 글로벌 랭킹에서 레벨업하세요 (ZERO에서 ZENITH까지). 다른 여행자들과 경쟁하세요!" },
+        step5: { title: "배지", subtitle: "발견을 수집하세요", content: "방문하는 장소 유형에 따라 점수와 배지를 획득합니다. 각 정류장에는 특별한 카테고리가 있습니다." },
+        step6: { title: "성과 공유하기", subtitle: "비자 및 랭크", content: "투어를 마치면 도시의 디지털 비자를 받게 됩니다. 글로벌 랭킹 레벨과 함께 소셜 네트워크에 공유하세요!" },
+        step7: { title: "유의사항", subtitle: "작은 세부사항", content: "1. 매우 좁은 거리에서는 GPS가 덜 정확할 수 있습니다.\n2. 최고의 투어를 생성하는 데 몇 초가 필요합니다.\n3. 눈을 크게 뜨고 여행을 즐기세요!" },
+        btnNext: "다음", btnDone: "알겠습니다",
+        catHistory: "역사", catArt: "예술", catFood: "음식", catNature: "자연", catPhoto: "사진", catCulture: "문화", catArchi: "건축", catSpecial: "특별",
+        rankLabel: "랭크", visaLabel: "비자"
+    },
+    tr: {
+        step1: { title: "bdai'ye Hoş Geldiniz", subtitle: "Seyahat Ekosisteминiz", content: "bdai, akıllı seyahat arkadaşınızdır. Burada yapay zeka rehberliğinde dünyanın herhangi bir şehrinin en iyi saklanan sırlarını keşfedeceksiniz." },
+        step2: { title: "Benzersiz Turlar", subtitle: "Akıllı Üretim", content: "Herhangi bir şehri arayın ve anında 3 tematik rota oluşturayım. Sıfır tekrarlanan durak, %100 inanılmaz yerler ve gizli mücevherler!" },
+        step3: { title: "Jeolokasyon", subtitle: "Gerçek Check-in", content: "Turda ilerlemek için durağa 50 metre mesafede fiziksel olarak bulunmalısınız. GPS, 'Check-in' için konumunuzu doğrulayacaktır." },
+        step4: { title: "Mil ve Sıralama", subtitle: "Gerçek Oyunlaştırma", content: "Her 'Check-in' size Mil kazandırır. Global Sıralamada yükselmek için mil biriktirin (ZERO'dan ZENITH'e). Diğer gezginlerle rekabet edin!" },
+        step5: { title: "Rozetler", subtitle: "Keşiflerinizi toplayın", content: "Ziyaret ettiğiniz yerlerin türüne göre puan ve rozet kazanın. Her durağın özel bir kategorisi vardır." },
+        step6: { title: "Başarılarınızı Paylaşın", subtitle: "Vizeler ve Rütbe", content: "Turu tamamladığınızda şehrin dijital Vizesini alacaksınız. Global Sıralama seviyenizle birlikte sosyal ağlarınızda paylaşın!" },
+        step7: { title: "Aklınızda Bulundurun", subtitle: "Küçük detaylar", content: "1. GPS çok dar sokaklarda daha az doğru olabilir.\n2. En iyi turları oluşturmam için birkaç saniyeye ihtiyacım var.\n3. Gözlerinizi açık tutun ve yolculuğun tadını çıkarın!" },
+        btnNext: "SONRAKI", btnDone: "ANLADIM",
+        catHistory: "Tarih", catArt: "Sanat", catFood: "Yemek", catNature: "Doğa", catPhoto: "Foto", catCulture: "Kültür", catArchi: "Mimari", catSpecial: "Özel",
+        rankLabel: "Rütbe", visaLabel: "Vize"
+    },
+    vi: {
+        step1: { title: "Chào mừng đến với bdai", subtitle: "Hệ sinh thái Du lịch của bạn", content: "bdai là người bạn đồng hành du lịch thông minh của bạn. Tại đây bạn sẽ khám phá những bí mật được giữ kín nhất của bất kỳ thành phố nào trên thế giới, được hướng dẫn bởi trí tuệ nhân tạo." },
+        step2: { title: "Tour Độc đáo", subtitle: "Tạo Thông minh", content: "Tìm kiếm bất kỳ thành phố nào và tôi sẽ tạo ngay 3 tuyến đường theo chủ đề. Không có điểm dừng lặp lại, 100% địa điểm tuyệt vời và viên ngọc ẩn!" },
+        step3: { title: "Định vị địa lý", subtitle: "Check-in Thực tế", content: "Để tiến trong tour, bạn phải ở trong phạm vi 50 mét vật lý từ điểm dừng. GPS sẽ xác nhận vị trí của bạn để 'Check-in'." },
+        step4: { title: "Dặm & Xếp hạng", subtitle: "Trò chơi hóa Thực tế", content: "Mỗi lần 'Check-in' cho bạn Dặm. Tích lũy dặm để lên cấp trong Bảng xếp hạng Toàn cầu (từ ZERO đến ZENITH). Cạnh tranh với các du khách khác!" },
+        step5: { title: "Huy hiệu", subtitle: "Thu thập khám phá của bạn", content: "Kiếm điểm và huy hiệu dựa trên loại địa điểm bạn ghé thăm. Mỗi điểm dừng có một danh mục đặc biệt." },
+        step6: { title: "Chia sẻ Thành tích", subtitle: "Thị thực và Hạng", content: "Sau khi hoàn thành tour, bạn sẽ nhận được Thị thực kỹ thuật số của thành phố. Chia sẻ nó trên mạng xã hội cùng với cấp độ Bảng xếp hạng Toàn cầu của bạn!" },
+        step7: { title: "Lưu ý", subtitle: "Chi tiết nhỏ", content: "1. GPS có thể kém chính xác hơn trên các con phố rất hẹp.\n2. Tôi cần vài giây để tạo các tour tốt nhất cho bạn.\n3. Hãy mở to mắt và tận hưởng chuyến đi!" },
+        btnNext: "TIẾP THEO", btnDone: "ĐÃ HIỂU",
+        catHistory: "Lịch sử", catArt: "Nghệ thuật", catFood: "Ẩm thực", catNature: "Thiên nhiên", catPhoto: "Ảnh", catCulture: "Văn hóa", catArchi: "Kiến trúc", catSpecial: "Đặc biệt",
+        rankLabel: "Hạng", visaLabel: "Thị thực"
+    },
+    th: {
+        step1: { title: "ยินดีต้อนรับสู่ bdai", subtitle: "ระบบนิเวศการท่องเที่ยวของคุณ", content: "bdai คือเพื่อนร่วมเดินทางอัจฉริยะของคุณ ที่นี่คุณจะค้นพบความลับที่ถูกเก็บรักษาไว้อย่างดีที่สุดของทุกเมืองในโลก โดยได้รับคำแนะนำจากปัญญาประดิษฐ์" },
+        step2: { title: "ทัวร์ที่ไม่เหมือนใคร", subtitle: "การสร้างอัจฉริยะ", content: "ค้นหาเมืองใดก็ได้และฉันจะสร้าง 3 เส้นทางตามธีมทันที ไม่มีจุดแวะพักซ้ำ 100% สถานที่ที่น่าทึ่งและอัญมณีที่ซ่อนอยู่!" },
+        step3: { title: "การระบุตำแหน่งทางภูมิศาสตร์", subtitle: "เช็คอินจริง", content: "เพื่อก้าวหน้าในทัวร์ คุณต้องอยู่ในระยะ 50 เมตรจากจุดแวะพักทางกายภาพ GPS จะตรวจสอบตำแหน่งของคุณเพื่อ 'เช็คอิน'" },
+        step4: { title: "ไมล์และการจัดอันดับ", subtitle: "เกมมิฟิเคชันจริง", content: "ทุกครั้งที่ 'เช็คอิน' คุณได้รับไมล์ สะสมไมล์เพื่อเลื่อนระดับในการจัดอันดับโลก (จาก ZERO ถึง ZENITH) แข่งขันกับนักท่องเที่ยวคนอื่นๆ!" },
+        step5: { title: "เหรียญตรา", subtitle: "เก็บสะสมการค้นพบของคุณ", content: "รับคะแนนและเหรียญตราตามประเภทของสถานที่ที่คุณเยี่ยมชม แต่ละจุดแวะพักมีหมวดหมู่พิเศษ" },
+        step6: { title: "แบ่งปันความสำเร็จ", subtitle: "วีซ่าและอันดับ", content: "เมื่อทำทัวร์เสร็จ คุณจะได้รับวีซ่าดิจิทัลของเมือง แบ่งปันบนโซเชียลเน็ตเวิร์กพร้อมกับระดับการจัดอันดับโลกของคุณ!" },
+        step7: { title: "โปรดทราบ", subtitle: "รายละเอียดเล็กน้อย", content: "1. GPS อาจมีความแม่นยำน้อยลงบนถนนที่แคบมาก\n2. ฉันต้องการเวลาสองสามวินาทีเพื่อสร้างทัวร์ที่ดีที่สุดสำหรับคุณ\n3. เปิดตาให้กว้างและสนุกกับการเดินทาง!" },
+        btnNext: "ถัดไป", btnDone: "เข้าใจแล้ว",
+        catHistory: "ประวัติศาสตร์", catArt: "ศิลปะ", catFood: "อาหาร", catNature: "ธรรมชาติ", catPhoto: "ภาพถ่าย", catCulture: "วัฒนธรรม", catArchi: "สถาปัตยกรรม", catSpecial: "พิเศษ",
+        rankLabel: "อันดับ", visaLabel: "วีซ่า"
+    },
 };
 
-// Fallback to English for languages without full translation
 const getTexts = (language: string) => ONBOARDING_TEXTS[language] || ONBOARDING_TEXTS.en;
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, user }) => {
