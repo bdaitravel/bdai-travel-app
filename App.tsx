@@ -292,11 +292,47 @@ export default function App() {
     } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
   };
 
-  // ─── BUSCAR EN CACHÉ ────────────────────────────────────────────────────────
-  // Busca el slug exacto primero, luego prueba variantes del mismo nombre de ciudad
+  // ─── NOMINATIM: corregir coordenadas con OpenStreetMap ────────────────────
+  const fixCoordinatesWithNominatim = async (tours: Tour[], city: string, country: string): Promise<Tour[]> => {
+    const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+    
+    const geocode = async (placeName: string) => {
+      try {
+        const query = encodeURIComponent(`${placeName}, ${city}, ${country}`);
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+          { headers: { 'Accept-Language': 'en', 'User-Agent': 'bdai-travel-app' } }
+        );
+        const data = await res.json();
+        if (data && data.length > 0) {
+          return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        }
+      } catch (e) {
+        console.warn(`Nominatim failed for ${placeName}`);
+      }
+      return null;
+    };
+
+    const fixedTours: Tour[] = [];
+    for (const tour of tours) {
+      const fixedStops = [];
+      for (const stop of tour.stops) {
+        await delay(200); // Nominatim tiene límite de velocidad — 1 petición cada 200ms
+        const coords = await geocode(stop.name);
+        fixedStops.push({
+          ...stop,
+          latitude: coords ? coords.lat : stop.latitude,
+          longitude: coords ? coords.lng : stop.longitude,
+        });
+      }
+      fixedTours.push({ ...tour, stops: fixedStops });
+    }
+    return fixedTours;
+  };
+
+  // ─── BUSCAR EN CACHÉ ──────────────────────────────────────────────────────
   const findInCache = async (slug: string, langCode: string): Promise<Tour[] | null> => {
     try {
-      // 1. Búsqueda exacta — el slug es idéntico al guardado
       const { data: exact } = await supabase
         .from('tours_cache')
         .select('data, city')
@@ -305,12 +341,9 @@ export default function App() {
         .maybeSingle();
 
       if (exact?.data && Array.isArray(exact.data) && exact.data.length > 0) {
-        console.log(`✅ Cache exacto: "${slug}"`);
         return exact.data;
       }
 
-      // 2. Búsqueda flexible — busca por nombre de ciudad ignorando el país
-      // Esto encuentra "londres_unitedkingdom" cuando buscamos "london_united_kingdom"
       const cityOnly = slug.split('_')[0];
       if (!cityOnly) return null;
 
@@ -322,7 +355,6 @@ export default function App() {
         .maybeSingle();
 
       if (fuzzy?.data && Array.isArray(fuzzy.data) && fuzzy.data.length > 0) {
-        console.log(`✅ Cache flexible: buscado="${slug}", encontrado="${fuzzy.city}"`);
         return fuzzy.data;
       }
     } catch (e) {
@@ -341,7 +373,6 @@ export default function App() {
     setSelectedCountry(selection.country);
     setSelectedCountryEn(selection.countryEn || selection.country);
     
-    // Slug siempre en inglés, generado desde cityEn + countryEn
     const slug = (selection.slug || normalizeKey(cleanName, selection.countryEn || selection.country))
       .replace(/-/g, '_')
       .toLowerCase();
@@ -353,7 +384,6 @@ export default function App() {
 
       if (forceRefresh) {
         setLoadingMessage("PURGING OLD DATA...");
-        // Borrar todas las variantes del slug de esta ciudad en este idioma
         const cityOnly = slug.split('_')[0];
         const { data: existing } = await supabase
           .from('tours_cache')
@@ -368,7 +398,6 @@ export default function App() {
           }
         }
       } else {
-        // Buscar en caché
         const cachedData = await findInCache(slug, langCode);
         if (cachedData) {
           setTours(cachedData);
@@ -378,7 +407,6 @@ export default function App() {
         }
       }
 
-      // No está en caché — generar con Gemini
       setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
       let firstTourReceived = false;
 
@@ -402,15 +430,24 @@ export default function App() {
       );
       
       if (generated.length > 0) {
-        // Guardar con el slug canónico en inglés
+        // Corregir coordenadas con Nominatim antes de guardar
+        setLoadingMessage("FIXING COORDINATES...");
+        const fixedTours = await fixCoordinatesWithNominatim(
+          generated, 
+          cleanName, 
+          selection.countryEn || selection.country
+        );
+
         await supabase.from('tours_cache').upsert({
           city: slug,
           language: langCode.toLowerCase(),
-          data: generated
+          data: fixedTours
         }, { onConflict: 'city,language' });
+
+        // Actualizar los tours en pantalla con coordenadas corregidas
+        setTours(fixedTours);
         
         if (!firstTourReceived) {
-          setTours(generated);
           if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
         }
       } else { 
@@ -431,7 +468,6 @@ export default function App() {
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
         try {
-            // Gemini devuelve hasta 5 ciudades con nombre en inglés + slug canónico
             const aiResults = await normalizeCityWithAI(val, user.language);
             
             const results = await Promise.all(aiResults.map(async (res) => {
@@ -719,4 +755,3 @@ export default function App() {
     </div>
   );
 }
-
