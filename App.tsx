@@ -299,9 +299,7 @@ export default function App() {
     const geocode = async (placeName: string) => {
       try {
         const query = encodeURIComponent(`${placeName}, ${city}, ${country}`);
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-          { headers: { 'Accept-Language': 'en', 'User-Agent': 'bdai-travel-app' } }
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(`${placeName}, ${city}, ${country}`)}`);
         );
         const data = await res.json();
         if (data && data.length > 0) {
