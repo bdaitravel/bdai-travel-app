@@ -5,6 +5,7 @@ import { syncUserProfile, supabase } from '../services/supabaseClient';
 import { translations } from '../data/translations';
 import { LegalModal } from './LegalModal';
 import { ReportBugModal } from './ReportBugModal';
+import { ShareableBadge } from './ShareableBadge';
 
 interface ProfileModalProps {
   user: UserProfile;
@@ -374,4 +375,5 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
     </div>
   );
 };
+
 
