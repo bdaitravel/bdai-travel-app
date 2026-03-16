@@ -159,9 +159,8 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
         let toursEmitted = 0;
 
         try {
-            // Use streaming to progressively emit tours as they complete
             const stream = await ai.models.generateContentStream({
-                model: 'gemini-3.1-pro-preview',
+                model: 'gemini-2.5-flash',  // ✅ modelo correcto
                 contents: prompt,
                 config: { 
                     systemInstruction, 
@@ -173,7 +172,6 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
                 const chunkText = chunk.text || '';
                 accumulated += chunkText;
 
-                // Try to extract complete tour objects as they stream in
                 if (onProgress && toursEmitted < 3) {
                     const parsed = tryExtractTours(accumulated);
                     while (parsed.length > toursEmitted) {
@@ -187,7 +185,6 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
                 }
             }
 
-            // Final parse to catch anything missed
             const finalText = accumulated
                 .replace(/\[\d+\]/g, '')
                 .replace(/\(\d+\)/g, '')
@@ -199,7 +196,6 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
 
             const finalTours = tryExtractTours(finalText);
 
-            // Emit any remaining tours not yet emitted
             if (onProgress) {
                 while (toursEmitted < finalTours.length) {
                     const tour = finalTours[toursEmitted];
@@ -214,10 +210,9 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
             return allTours.length > 0 ? allTours : finalTours.filter(t => t && t.stops && t.stops.length > 0);
 
         } catch (streamError) {
-            // Fallback to non-streaming if streaming not supported
             console.warn("Streaming failed, falling back to non-streaming", streamError);
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-pro-preview',
+                model: 'gemini-2.5-flash',  // ✅ modelo correcto
                 contents: prompt,
                 config: { 
                     systemInstruction,
@@ -237,11 +232,9 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
     });
 };
 
-// Helper: try to extract as many complete tour objects as possible from partial JSON
 const tryExtractTours = (text: string): Tour[] => {
     let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
     
-    // Attempt to find the first '[' and last ']'
     const firstBracket = cleanText.indexOf('[');
     const lastBracket = cleanText.lastIndexOf(']');
     if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
@@ -255,10 +248,8 @@ const tryExtractTours = (text: string): Tour[] => {
         console.warn("Failed to parse full JSON array, falling back to regex extraction", e);
     }
 
-    // Try to find the array and parse complete objects within it
     const tours: Tour[] = [];
     try {
-        // Find objects that look like complete tours (have stops array)
         const tourMatches = text.matchAll(/\{[^{}]*"stops"\s*:\s*\[[^\]]*(?:\{[^{}]*\}[^\]]*)*\][^{}]*\}/gs);
         for (const match of tourMatches) {
             try {
@@ -292,15 +283,21 @@ export const generateAudio = async (text: string, language: string, city: string
     const cleanText = (text || "").trim();
     if (!cleanText) return null;
 
+    // ✅ FIX: verificar que el audio cacheado es válido antes de devolverlo
     const cachedUrl = await getCachedAudio(cleanText, language);
     if (cachedUrl) {
         try {
             const response = await fetch(cachedUrl);
-            const buffer = await response.arrayBuffer();
-            return new Uint8Array(buffer);
+            if (response.ok) {
+                const buffer = await response.arrayBuffer();
+                if (buffer.byteLength > 0) {
+                    return new Uint8Array(buffer);
+                }
+            }
         } catch (e) {
             console.error("Error loading cached audio:", e);
         }
+        // Si falla la carga del caché, continúa a generar nuevo audio
     }
 
     const voiceName = VOICE_MAP[language] || 'Kore';
@@ -328,6 +325,7 @@ export const generateAudio = async (text: string, language: string, city: string
         const binaryString = atob(base64);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+        // Guardar en caché en segundo plano — no bloquea la reproducción
         saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
         return bytes;
     }
