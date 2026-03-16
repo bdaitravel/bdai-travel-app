@@ -1,3 +1,4 @@
+import ReactDOM from 'react-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, AVATARS, APP_BADGES } from '../types';
 import { syncUserProfile, supabase } from '../services/supabaseClient';
@@ -338,7 +339,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
         </div>
       </div>
 
-      {showLegal && <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />}
+      {showLegal && ReactDOM.createPortal(
+  <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />,
+  document.body
+)}
       {showReportBug && <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />}
       {showDeleteConfirm && (
           <DeleteConfirmModal user={user} pt={pt} onCancel={() => setShowDeleteConfirm(false)} onConfirm={handleDeleteAccount} isDeleting={isDeleting} />
