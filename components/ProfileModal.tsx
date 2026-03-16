@@ -5,7 +5,6 @@ import { syncUserProfile, supabase } from '../services/supabaseClient';
 import { translations } from '../data/translations';
 import { LegalModal } from './LegalModal';
 import { ReportBugModal } from './ReportBugModal';
-import { ShareableBadge } from './ShareableBadge';
 
 interface ProfileModalProps {
   user: UserProfile;
@@ -146,6 +145,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showReportBug, setShowReportBug] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<any>(null);
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -254,14 +254,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                     <div className="grid grid-cols-3 gap-3">
                         {APP_BADGES.map((b) => {
                             const isEarned = user.badges?.some(ub => ub.id === b.id);
+                            const earnedBadge = user.badges?.find(ub => ub.id === b.id);
                             return (
-                                <div key={b.id} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'}`}>
+                                <button
+                                    key={b.id}
+                                    onClick={() => setSelectedBadge({ ...b, isEarned, earnedAt: earnedBadge?.earnedAt })}
+                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all active:scale-95 ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'}`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
                                         <i className={`fas ${b.icon} text-sm`}></i>
                                     </div>
                                     <span className={`text-[7px] font-black uppercase text-center leading-tight mb-1 ${isEarned ? 'text-slate-900' : 'text-slate-500'}`}>{b.name}</span>
                                     <span className={`text-[5px] font-medium text-center leading-none opacity-60 ${isEarned ? 'text-slate-700' : 'text-slate-400'}`}>{pt(b.description)}</span>
-                                </div>
+                                </button>
                             );
                         })}
                     </div>
@@ -310,11 +314,57 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       </div>
 
       {showBragModal && ReactDOM.createPortal(
-        <ShareableBadge 
-          rank={user.rank} 
-          miles={user.miles} 
-          onClose={() => setShowBragModal(false)} 
-        />,
+        <div className="fixed inset-0 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md" style={{ zIndex: 999999 }}>
+          <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
+            <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6"><i className="fas fa-crown text-3xl text-white"></i></div>
+            <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
+            <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
+            <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
+               <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
+               <p className="text-2xl font-black text-cyan-400">{user.miles.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
+            </div>
+            <button onClick={() => { handleShareRank(); setShowBragModal(false); }} className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4">
+              <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
+            </button>
+            <button onClick={() => setShowBragModal(false)} className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Cancel</button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {selectedBadge && ReactDOM.createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
+          style={{ zIndex: 999999 }}
+          onClick={() => setSelectedBadge(null)}>
+          <div className="w-full max-w-[320px] bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}>
+            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-5 shadow-2xl ${selectedBadge.isEarned ? 'bg-purple-600 shadow-purple-500/40' : 'bg-slate-800'}`}>
+              <i className={`fas ${selectedBadge.icon} text-3xl ${selectedBadge.isEarned ? 'text-white' : 'text-slate-600'}`}></i>
+            </div>
+            <div className={`text-[8px] font-black uppercase tracking-widest mb-2 ${selectedBadge.isEarned ? 'text-purple-400' : 'text-slate-600'}`}>
+              {selectedBadge.isEarned ? '✓ Conseguida' : '🔒 Bloqueada'}
+            </div>
+            <h3 className="text-white font-black text-xl uppercase tracking-tighter mb-3">{selectedBadge.name}</h3>
+            <p className="text-slate-400 text-xs leading-relaxed mb-4">
+              {selectedBadge.isEarned
+                ? selectedBadge.description
+                : `Para conseguirla: ${selectedBadge.requirement || selectedBadge.description}`}
+            </p>
+            {selectedBadge.isEarned && selectedBadge.earnedAt && (
+              <div className="w-full bg-purple-600/10 border border-purple-500/20 rounded-xl px-4 py-3 mb-5">
+                <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mb-1">Conseguida el</p>
+                <p className="text-white font-black text-xs">
+                  {new Date(selectedBadge.earnedAt).toLocaleDateString(user.language || 'es', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            )}
+            <button onClick={() => setSelectedBadge(null)}
+              className="w-full py-4 bg-white/5 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-colors">
+              Cerrar
+            </button>
+          </div>
+        </div>,
         document.body
       )}
 
