@@ -143,14 +143,13 @@ export const generateToursForCity = async (city: string, country: string, user: 
             5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
             6. Content in ${user.language}.`,
             config: {
-                systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
+               systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
                 You HATE boring Wikipedia-style descriptions. 
                 Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
                 You love sharing the dark secrets, mysteries, and curiosities of cities. 
                 You NEVER use citations, footnotes, or references. 
                 You are real, accurate, but never boring.
-                CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
-                COORDINATES: Always provide real, accurate GPS coordinates for each stop. Each stop must be in a different location within the city. Never repeat coordinates.`,
+                CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`,
                 responseMimeType: "application/json"
             },
         });
