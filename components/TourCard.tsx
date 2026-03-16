@@ -62,48 +62,57 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 
 // Nominatim geocoding — busca coordenadas precisas para cada parada
 // Llama con nombre en inglés + ciudad + país para máxima precisión
-const geocodeStop = async (stopName: string, city: string, country: string): Promise<{ lat: number; lng: number } | null> => {
+// Nominatim geocoding — anclado a las coords de Gemini con viewbox
+// bounded=1 garantiza que NUNCA saldrá del área de la ciudad correcta
+// Esto hace imposible confundir Logroño España con Ecuador o Argentina
+const geocodeStop = async (
+    stopName: string,
+    city: string,
+    geminiLat: number,
+    geminiLng: number
+): Promise<{ lat: number; lng: number } | null> => {
     try {
-        const query = `${stopName}, ${city}, ${country}`;
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=en`;
-        const res = await fetch(url, {
-            headers: { 'User-Agent': 'bdai-travel-app/1.0' }
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (data && data.length > 0) {
-            return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        // Radio de 0.15 grados (~15km) centrado en las coords de Gemini
+        const delta = 0.15;
+        const viewbox = `${geminiLng - delta},${geminiLat + delta},${geminiLng + delta},${geminiLat - delta}`;
+
+        // Intento 1: nombre de la parada + ciudad dentro del viewbox
+        const q1 = encodeURIComponent(`${stopName}, ${city}`);
+        const url1 = `https://nominatim.openstreetmap.org/search?q=${q1}&format=json&limit=1&accept-language=en&viewbox=${viewbox}&bounded=1`;
+        const res1 = await fetch(url1, { headers: { 'User-Agent': 'bdai-travel-app/1.0' } });
+        if (res1.ok) {
+            const data1 = await res1.json();
+            if (data1?.length > 0) return { lat: parseFloat(data1[0].lat), lng: parseFloat(data1[0].lon) };
         }
-        // Si no encuentra con ciudad+país, intenta solo con el nombre
-        const url2 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(stopName)}&format=json&limit=1&accept-language=en`;
+
+        // Intento 2: solo nombre de la parada dentro del mismo viewbox
+        await new Promise(r => setTimeout(r, 600));
+        const q2 = encodeURIComponent(stopName);
+        const url2 = `https://nominatim.openstreetmap.org/search?q=${q2}&format=json&limit=1&accept-language=en&viewbox=${viewbox}&bounded=1`;
         const res2 = await fetch(url2, { headers: { 'User-Agent': 'bdai-travel-app/1.0' } });
-        if (!res2.ok) return null;
-        const data2 = await res2.json();
-        if (data2 && data2.length > 0) {
-            return { lat: parseFloat(data2[0].lat), lng: parseFloat(data2[0].lon) };
+        if (res2.ok) {
+            const data2 = await res2.json();
+            if (data2?.length > 0) return { lat: parseFloat(data2[0].lat), lng: parseFloat(data2[0].lon) };
         }
-        return null;
+
+        return null; // fallback a coords de Gemini
     } catch {
         return null;
     }
 };
 
-// Enriquece las paradas del tour con coordenadas de Nominatim
-// Procesa en lotes de 3 para respetar el rate limit de Nominatim (1 req/s)
+// Enriquece las paradas con Nominatim respetando rate limit (1 req/seg)
 const enrichStopsWithNominatim = async (
     stops: Stop[],
     city: string,
-    country: string,
     onStopGeocoded: (stopId: string, lat: number, lng: number) => void
 ): Promise<void> => {
     for (let i = 0; i < stops.length; i++) {
         const stop = stops[i];
-        // Pequeña pausa para respetar rate limit de Nominatim (1 req/seg)
         if (i > 0) await new Promise(r => setTimeout(r, 1100));
-        const coords = await geocodeStop(stop.name, city, country);
-        if (coords) {
-            onStopGeocoded(stop.id, coords.lat, coords.lng);
-        }
+        // Anclar a las coords de Gemini — nunca sale de esa ciudad
+        const coords = await geocodeStop(stop.name, city, stop.latitude, stop.longitude);
+        if (coords) onStopGeocoded(stop.id, coords.lat, coords.lng);
     }
 };
 
@@ -182,7 +191,6 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         enrichStopsWithNominatim(
             tour.stops,
             tour.city,
-            tour.country || '',
             (stopId, lat, lng) => {
                 setEnrichedStops(prev => prev.map(s =>
                     s.id === stopId ? { ...s, latitude: lat, longitude: lng } : s
