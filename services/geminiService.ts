@@ -140,6 +140,7 @@ export const generateToursForCity = async (city: string, country: string, user: 
             1. Format: Return ONLY a valid JSON array containing exactly 3 tour objects.
             2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
             3. Each stop: { "id", "name", "description" (200-300 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
+            4. MINIMUM 10 STOPS PER TOUR.
             5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
             6. Content in ${user.language}.`,
             config: {
