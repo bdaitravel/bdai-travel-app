@@ -285,7 +285,6 @@ export default function App() {
 
       if (forceRefresh) {
         setLoadingMessage("PURGING OLD DATA...");
-        // Borrar slug exacto y variantes
         const cityOnly = slug.split('_')[0];
         const { data: existing } = await supabase
           .from('tours_cache').select('city')
@@ -321,7 +320,6 @@ export default function App() {
         }
       }
 
-      // Generar con Gemini
       setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
       let firstTourReceived = false;
 
@@ -362,6 +360,24 @@ export default function App() {
       console.error("Selection error:", e);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ─── Cuando se selecciona ciudad desde TravelServices (Intel/Home) ─────────
+  const handleTravelServiceSelect = (name: string, country?: string) => {
+    if (country) {
+      // Viene desde Intel o Destinos Top con nombre y país — ir directo sin buscador
+      const slug = normalizeKey(name, country);
+      processCitySelection({
+        city: name,
+        name: name,
+        country: country,
+        countryEn: country,
+        slug: slug
+      }, user.language);
+    } else {
+      // Viene como texto libre — usar buscador
+      handleCitySearch(name);
     }
   };
 
@@ -551,7 +567,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <TravelServices mode="HOME" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} />
+                <TravelServices mode="HOME" lang={user.language} onCitySelect={handleTravelServiceSelect} />
               </div>
             )}
 
@@ -602,7 +618,7 @@ export default function App() {
             {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
             {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigateTo(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigateTo(AppView.ADMIN)} onLangChange={handleLangChange} />}
             {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
-            {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={(name: string) => handleCitySearch(name)} /></div>}
+            {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={handleTravelServiceSelect} /></div>}
             {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => navigateTo(AppView.PROFILE)} />}
           </div>
 
