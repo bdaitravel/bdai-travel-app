@@ -176,8 +176,8 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
                 // Extract city and country from slug for display
-                const parts = curr.city.split('-');
-                const cityName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+                const parts = curr.city.split('_');
+                const cityName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : '';
                 const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
                 
                 acc.push({

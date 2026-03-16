@@ -151,7 +151,7 @@ You love sharing the dark secrets, mysteries, and curiosities of cities.
 You NEVER use citations, footnotes, or references. 
 You are real, accurate, but never boring.
 CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
-CRITICAL: You MUST use the Google Maps tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include.`;
+CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include.`;
 
     return handleAiCall(async () => {
         const allTours: Tour[] = [];
@@ -161,11 +161,11 @@ CRITICAL: You MUST use the Google Maps tool to find the EXACT GPS coordinates (l
         try {
             // Use streaming to progressively emit tours as they complete
             const stream = await ai.models.generateContentStream({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-pro-preview',
                 contents: prompt,
                 config: { 
                     systemInstruction, 
-                    tools: [{ googleMaps: {} }]
+                    tools: [{ googleSearch: {} }]
                 },
             });
 
@@ -217,11 +217,11 @@ CRITICAL: You MUST use the Google Maps tool to find the EXACT GPS coordinates (l
             // Fallback to non-streaming if streaming not supported
             console.warn("Streaming failed, falling back to non-streaming", streamError);
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-pro-preview',
                 contents: prompt,
                 config: { 
                     systemInstruction,
-                    tools: [{ googleMaps: {} }]
+                    tools: [{ googleSearch: {} }]
                 },
             });
             const text = (response.text || '[]')

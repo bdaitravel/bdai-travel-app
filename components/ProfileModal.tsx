@@ -5,6 +5,7 @@ import { syncUserProfile, supabase } from '../services/supabaseClient';
 import { translations } from '../data/translations';
 import { LegalModal } from './LegalModal';
 import { ReportBugModal } from './ReportBugModal';
+import { ShareableBadge } from './ShareableBadge';
 
 interface ProfileModalProps {
   user: UserProfile;
@@ -309,22 +310,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       </div>
 
       {showBragModal && ReactDOM.createPortal(
-        <div className="fixed inset-0 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md" style={{ zIndex: 999999 }}>
-          <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
-            <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6"><i className="fas fa-crown text-3xl text-white"></i></div>
-            <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
-            <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
-            <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
-               <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
-               <p className="text-2xl font-black text-cyan-400">{user.miles.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
-            </div>
-            <button onClick={() => { handleShareRank(); setShowBragModal(false); }} className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4">
-              <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
-            </button>
-            <button onClick={() => setShowBragModal(false)} className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Cancel</button>
-          </div>
-        </div>,
+        <ShareableBadge 
+          rank={user.rank} 
+          miles={user.miles} 
+          onClose={() => setShowBragModal(false)} 
+        />,
         document.body
       )}
 

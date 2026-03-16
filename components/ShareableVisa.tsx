@@ -1,6 +1,8 @@
 
 import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
+import { toast } from './Toast';
+import { BdaiLogo } from './BdaiLogo';
 
 interface ShareableVisaProps {
   cityName: string;
@@ -9,8 +11,6 @@ interface ShareableVisaProps {
   rank: string;
   onClose?: () => void;
 }
-
-import { toast } from './Toast';
 
 /**
  * ShareableVisa: High-fidelity Tech-Noir achievement card.
@@ -156,8 +156,8 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
 
         <div className="relative z-10 flex justify-between items-end">
           <div className="flex flex-col">
-            <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Digital Auth</p>
-            <p className="text-[10px] font-black text-white tracking-tighter opacity-80 uppercase">bdai.travel/intel</p>
+            <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1">Digital Auth</p>
+            <BdaiLogo className="h-4 text-white opacity-80" />
           </div>
           
           <div className="w-20 h-20 rounded-full border-2 border-dashed border-purple-500/40 flex flex-col items-center justify-center p-2 transform rotate-12 bg-purple-500/10 shadow-inner">
