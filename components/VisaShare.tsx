@@ -35,13 +35,12 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `bdai-visa-${cityName.toLowerCase().replace(/\s/g, '-')}.png`, { type: 'image/png' });
-
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
             title: `bdai Visa — ${cityName}`,
-            text: `🌍 Acabo de conquistar ${cityName} en bdai! Rango: ${user.rank} · +${milesEarned} millas ✈️ #bdai #travel #${cityName.replace(/\s/g, '')}`,
+            text: `🌍 Acabo de conquistar ${cityName} en bdai! Rango: ${user.rank} · +${milesEarned} millas ✈️ #bdai #travel`,
           });
         } catch (e: any) {
           if (e.name !== 'AbortError') {
@@ -71,25 +70,16 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'center', padding: '24px',
     }}>
-
-      {/* VISA CARD 1:1 — todo inline para exportar perfecto */}
       <div ref={visaRef} style={{
         width: '320px', height: '320px',
         background: theme.bg,
         borderRadius: '24px', overflow: 'hidden', position: 'relative',
         fontFamily: 'Arial Black, Arial, sans-serif',
       }}>
-        {/* Fondo decorativo */}
         <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '150px', height: '150px', background: 'rgba(0,0,0,0.15)', borderRadius: '50%' }} />
-
-        {/* Franja top */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: theme.strip }} />
-
-        {/* Contenido */}
         <div style={{ position: 'relative', zIndex: 2, padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-
-          {/* Header con logo real */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <img src={BDAI_LOGO_B64} alt="bdai" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
@@ -98,16 +88,11 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
                 <div style={{ color: 'white', fontSize: '18px', fontWeight: 900, fontStyle: 'italic', letterSpacing: '-1px', lineHeight: 1 }}>bdai</div>
               </div>
             </div>
-            <div style={{
-              background: theme.badge, borderRadius: '12px', padding: '6px 10px',
-              textAlign: 'center', border: '1px solid rgba(255,255,255,0.2)',
-            }}>
+            <div style={{ background: theme.badge, borderRadius: '12px', padding: '6px 10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
               <div style={{ color: theme.accent, fontSize: '6px', fontWeight: 900, letterSpacing: '2px' }}>RANK</div>
               <div style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1px' }}>{user.rank}</div>
             </div>
           </div>
-
-          {/* Ciudad */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ color: theme.accent, fontSize: '7px', fontWeight: 900, letterSpacing: '4px', opacity: 0.6, marginBottom: '4px' }}>DESTINATION</div>
             <div style={{ color: 'white', fontSize: cityName.length > 10 ? '26px' : '34px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-1px', lineHeight: 1.1 }}>
@@ -115,39 +100,25 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
             </div>
             <div style={{ width: '40px', height: '3px', background: theme.strip, borderRadius: '2px', marginTop: '10px' }} />
           </div>
-
-          {/* Footer datos viajero */}
-          <div style={{
-            background: 'rgba(0,0,0,0.25)', borderRadius: '14px', padding: '10px 12px',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}>
+          <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '14px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
               <div>
                 <div style={{ color: theme.accent, fontSize: '6px', fontWeight: 900, letterSpacing: '2px', opacity: 0.6 }}>TRAVELER</div>
-                <div style={{ color: 'white', fontSize: '13px', fontWeight: 900, marginTop: '2px' }}>
-                  {user.username || user.firstName || 'Traveler'}
-                </div>
+                <div style={{ color: 'white', fontSize: '13px', fontWeight: 900, marginTop: '2px' }}>{user.username || user.firstName || 'Traveler'}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: theme.accent, fontSize: '6px', fontWeight: 900, letterSpacing: '2px', opacity: 0.6 }}>MILES</div>
                 <div style={{ color: theme.accent, fontSize: '20px', fontWeight: 900 }}>+{milesEarned}</div>
               </div>
             </div>
-            <div style={{
-              paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.1)',
-              display: 'flex', justifyContent: 'space-between',
-            }}>
+            <div style={{ paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '6px', fontWeight: 900, letterSpacing: '2px' }}>{date}</span>
               <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '6px', fontWeight: 900, letterSpacing: '2px' }}>bdai.travel</span>
             </div>
           </div>
         </div>
-
-        {/* Franja bottom */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px', background: theme.strip, opacity: 0.6 }} />
       </div>
-
-      {/* Botones */}
       <div style={{ marginTop: '20px', width: '320px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <button onClick={handleShare} disabled={isGenerating} style={{
           width: '100%', padding: '18px',
@@ -169,3 +140,6 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
           Cerrar
         </button>
       </div>
+    </div>
+  );
+};
