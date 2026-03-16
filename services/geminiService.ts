@@ -141,7 +141,7 @@ STRICT RULES:
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. MINIMUM 10 STOPS PER TOUR.
 5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
-6. CRITICAL: Latitude and Longitude MUST be exact, real-world GPS coordinates (numbers, not strings). Do not hallucinate locations. They must be precisely located in ${city}, ${country}. If you don't know the exact GPS coordinates of a place, DO NOT include it in the tour.
+6. CRITICAL: Latitude and Longitude MUST be real GPS coordinates (numbers, not strings) located in ${city}, ${country}. Use your best knowledge to provide accurate coordinates. If unsure of the exact location, provide approximate coordinates within the city area. NEVER omit a stop just because you are unsure of coords — always include at least 10 stops per tour.
 7. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
