@@ -576,10 +576,12 @@ export default function App() {
                 <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
                   <button onClick={() => navigateTo(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
                   <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
-                  <button onClick={() => processCitySelection({ city: selectedCity, country: selectedCountry, countryEn: selectedCountryEn, slug: selectedCitySlug }, user.language, true)} 
-                    className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center active:rotate-180 transition-transform">
-                    <i className="fas fa-sync-alt text-xs"></i>
-                  </button>
+                  {(user.email === 'travelbdai@gmail.com' || user.isAdmin) && (
+                    <button onClick={() => processCitySelection({ city: selectedCity, country: selectedCountry, countryEn: selectedCountryEn, slug: selectedCitySlug }, user.language, true)} 
+                      className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center active:rotate-180 transition-transform">
+                      <i className="fas fa-sync-alt text-xs"></i>
+                    </button>
+                  )}
                 </header>
                 <div className="space-y-6 pb-12">
                   {tours.map(tour => (
@@ -638,5 +640,4 @@ export default function App() {
     </div>
   );
 }
-
 
