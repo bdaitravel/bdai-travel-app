@@ -5,6 +5,7 @@ import { toast } from './Toast';
 import { generateAudio } from '../services/geminiService';
 import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges } from '../services/supabaseClient';
 import { VisaShare } from './VisaShare';
+import { audioManager } from '../services/audioManager';
 
 const TEXTS: any = {
     es: { 
@@ -175,11 +176,15 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         return tour.stops.reduce((acc: number, s: Stop) => acc + (s.photoSpot?.milesReward || 0), 0);
     }, [tour]);
 
-    const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
-    const [isAudioLoading, setIsAudioLoading] = useState(false);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
-    const htmlAudioRef = useRef<HTMLAudioElement | null>(null);
+    const [audioState, setAudioState] = useState(audioManager.getState());
+
+    useEffect(() => {
+        audioManager.setOnStateChange(setAudioState);
+        return () => audioManager.setOnStateChange(() => {});
+    }, []);
+
+    const isAudioLoading = audioState.isLoading && audioState.stopName === currentStop?.name;
+    const audioPlayingId = audioState.isPlaying ? audioState.stopName : null;
 
     const distToTarget = useMemo(() => {
         if (!userLocation || !currentStop) return null;
@@ -188,24 +193,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
     const IS_IN_RANGE = distToTarget !== null && distToTarget <= 50;
 
-    const stopAudio = () => {
-        if (sourceNodeRef.current) {
-            try { sourceNodeRef.current.stop(); } catch(e) {}
-            sourceNodeRef.current = null;
-        }
-        if (htmlAudioRef.current) {
-            try { htmlAudioRef.current.pause(); } catch(e) {}
-            htmlAudioRef.current = null;
-        }
-        setAudioPlayingId(null);
-        setIsAudioLoading(false);
-    };
+    const stopAudio = () => audioManager.stop();
 
     useEffect(() => {
-        const handleGlobalStop = () => stopAudio();
+        const handleGlobalStop = () => audioManager.stop();
         window.addEventListener('bdai-stop-audio', handleGlobalStop);
         return () => {
-            stopAudio();
             window.removeEventListener('bdai-stop-audio', handleGlobalStop);
         };
     }, []);
@@ -239,45 +232,21 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         }
     };
 
-    const handlePlayAudio = async (stopId: string, text: string) => {
-        // ✅ FIX 1: Guard contra doble click mientras carga
-        if (isAudioLoading) return;
-        if (audioPlayingId === stopId) { stopAudio(); return; }
-        stopAudio();
-        setIsAudioLoading(true);
-        if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (audioContextRef.current.state === 'suspended') audioContextRef.current.resume();
-        const unlockAudio = new Audio();
-        unlockAudio.play().catch(() => {});
-        htmlAudioRef.current = unlockAudio;
+    const handlePlayAudio = async (stopName: string, text: string) => {
+        if (audioState.isLoading) return;
+        if (audioState.isPlaying && audioState.stopName === stopName) {
+            audioManager.stop();
+            return;
+        }
+        audioManager.setLoading(stopName);
         try {
             const audioResult = await generateAudio(text, user.language, tour.city);
-            if (!audioResult) { setIsAudioLoading(false); return; }
-            const ctx = audioContextRef.current;
-            try {
-                const audioBuffer = await ctx.decodeAudioData(audioResult.buffer.slice(0) as ArrayBuffer);
-                const source = ctx.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(ctx.destination);
-                source.onended = () => setAudioPlayingId(null);
-                sourceNodeRef.current = source;
-                source.start(0);
-                setAudioPlayingId(stopId);
-            } catch {
-                const dataInt16 = new Int16Array(audioResult.buffer);
-                const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
-                const channelData = buffer.getChannelData(0);
-                for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-                const source = ctx.createBufferSource();
-                source.buffer = buffer;
-                source.connect(ctx.destination);
-                source.onended = () => setAudioPlayingId(null);
-                sourceNodeRef.current = source;
-                source.start(0);
-                setAudioPlayingId(stopId);
-            }
-        } catch (e) { console.error("Audio playback error:", e); }
-        finally { setIsAudioLoading(false); }
+            if (!audioResult) { audioManager.stop(); return; }
+            await audioManager.play(audioResult, stopName);
+        } catch (e) {
+            console.error("Audio error:", e);
+            audioManager.stop();
+        }
     };
 
     // ✅ FIX 2: handleBack para el audio antes de salir
@@ -384,11 +353,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     <i className="fas fa-list-ul text-[10px] text-slate-400 ml-2 shrink-0"></i>
                 </button>
                 <button 
-                    onClick={() => handlePlayAudio(currentStop.id, (currentStop.description || ""))} 
+                    onClick={() => handlePlayAudio(currentStop.name, (currentStop.description || ""))} 
                     disabled={isAudioLoading}
-                    className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'} disabled:opacity-70`}
+                    className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.name ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'} disabled:opacity-70`}
                 >
-                    {isAudioLoading ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-play'} text-xs`}></i>}
+                    {isAudioLoading ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${audioPlayingId === currentStop.name ? 'fa-stop' : 'fa-play'} text-xs`}></i>}
                 </button>
              </div>
 
@@ -435,3 +404,4 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         </div>
     );
 };
+
