@@ -299,7 +299,9 @@ export default function App() {
     const geocode = async (placeName: string) => {
       try {
         const query = encodeURIComponent(`${placeName}, ${city}, ${country}`);
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(`${placeName}, ${city}, ${country}`)}`);
+        // Limpiar el nombre — quitar paréntesis y texto entre corchetes
+const cleanName = placeName.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
+const res = await fetch(`/api/geocode?q=${encodeURIComponent(`${cleanName}, ${city}, ${country}`)}`);
         const data = await res.json();
         if (data && data.length > 0) {
           return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
