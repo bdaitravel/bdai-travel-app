@@ -141,7 +141,7 @@ STRICT RULES:
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. MINIMUM 10 STOPS PER TOUR.
 5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
-6. CRITICAL: Latitude and Longitude MUST be real GPS coordinates (numbers, not strings) located in ${city}, ${country}. Use your best knowledge to provide accurate coordinates. If unsure of the exact location, provide approximate coordinates within the city area. NEVER omit a stop just because you are unsure of coords — always include at least 10 stops per tour.
+6. COORDINATES ARE CRITICAL: All stops MUST be physically located inside ${city}, ${country}. All coordinates must be within 2km of the center of ${city}. Use approximate coordinates if needed — NEVER place a stop outside the town limits. NEVER omit stops due to coordinate uncertainty — always generate at least 10 stops per tour.
 7. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
@@ -151,7 +151,7 @@ You love sharing the dark secrets, mysteries, and curiosities of cities.
 You NEVER use citations, footnotes, or references. 
 You are real, accurate, but never boring.
 CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
-CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include.`;
+GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. For small towns, use the town center coordinates as reference and place stops within 2km radius. Never place stops in neighboring towns or wrong locations.`;
 
     return handleAiCall(async () => {
         const allTours: Tour[] = [];
