@@ -284,19 +284,12 @@ export default function App() {
       setTours([]);
 
       if (forceRefresh) {
+        // Borrar SOLO el slug exacto — nunca borrar otras ciudades con nombre similar
         setLoadingMessage("PURGING OLD DATA...");
-        const cityOnly = slug.split('_')[0];
-        const { data: existing } = await supabase
-          .from('tours_cache').select('city')
-          .ilike('city', `${cityOnly}%`).eq('language', langCode.toLowerCase());
-        if (existing) {
-          for (const row of existing) {
-            await supabase.from('tours_cache').delete()
-              .eq('city', row.city).eq('language', langCode.toLowerCase());
-          }
-        }
+        await supabase.from('tours_cache').delete()
+          .eq('city', slug).eq('language', langCode.toLowerCase());
       } else {
-        // 1. Búsqueda exacta
+        // Búsqueda EXACTA únicamente — nunca mezclar ciudades distintas
         const { data: exact } = await supabase
           .from('tours_cache').select('data')
           .eq('city', slug).eq('language', langCode.toLowerCase()).maybeSingle();
@@ -306,20 +299,9 @@ export default function App() {
           setIsLoading(false);
           return;
         }
-
-        // 2. Búsqueda flexible por nombre de ciudad
-        const cityOnly = slug.split('_')[0];
-        const { data: fuzzy } = await supabase
-          .from('tours_cache').select('data')
-          .ilike('city', `${cityOnly}%`).eq('language', langCode.toLowerCase()).maybeSingle();
-        if (fuzzy?.data?.length > 0) {
-          setTours(fuzzy.data);
-          navigateTo(AppView.CITY_DETAIL);
-          setIsLoading(false);
-          return;
-        }
       }
 
+      // Generar con Gemini
       setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
       let firstTourReceived = false;
 
@@ -363,10 +345,8 @@ export default function App() {
     }
   };
 
-  // ─── Cuando se selecciona ciudad desde TravelServices (Intel/Home) ─────────
   const handleTravelServiceSelect = (name: string, country?: string) => {
     if (country) {
-      // Viene desde Intel o Destinos Top con nombre y país — ir directo sin buscador
       const slug = normalizeKey(name, country);
       processCitySelection({
         city: name,
@@ -376,7 +356,6 @@ export default function App() {
         slug: slug
       }, user.language);
     } else {
-      // Viene como texto libre — usar buscador
       handleCitySearch(name);
     }
   };
