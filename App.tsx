@@ -300,7 +300,11 @@ export default function App() {
       try {
         const query = encodeURIComponent(`${placeName}, ${city}, ${country}`);
         // Limpiar el nombre — quitar paréntesis y texto entre corchetes
-const cleanName = placeName.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
+const cleanName = placeName
+  .replace(/\(.*?\)/g, '')
+  .replace(/\[.*?\]/g, '')
+  .split(' ').slice(0, 4).join(' ')
+  .trim();
 const res = await fetch(`/api/geocode?q=${encodeURIComponent(`${cleanName}, ${city}, ${country}`)}`);
         const data = await res.json();
         if (data && data.length > 0) {
