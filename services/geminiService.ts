@@ -110,77 +110,139 @@ CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, Fre
 
 export const generateToursForCity = async (city: string, country: string, user: UserProfile, onProgress?: (tour: Tour) => void): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
+
+    const prompt = `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
+
+THEMES:
+1. "Hidden Gems & Dark Secrets"
+2. "Historical & Architectural Marvels"
+3. "Local Culture, Art & Food"
+
+DAI'S ABSOLUTE COMMANDS:
+- You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
+- Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
+- Tell the secrets, the mysteries, and the dark curiosities.
+- Mock the "typical" tourist while revealing the true soul of the city.
+- NEVER use citations like [1] or (2). NEVER.
+- All facts MUST be 100% real. DO NOT INVENT.
+
+STRICT CATEGORIZATION RULES (CRITICAL):
+- 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
+- 'historical': MUST be used for palaces, castles, ruins, and monuments.
+- 'culture': ONLY for theaters, music venues, festivals, or intangible traditions.
+- 'food': ONLY for places where you eat or buy food.
+- 'art': ONLY for museums, galleries, or street art.
+- 'nature': ONLY for parks, gardens, or viewpoints.
+- 'photo': ONLY for spots whose primary value is the view/photo.
+
+STRICT RULES:
+1. Format: Return ONLY a valid JSON array containing exactly 3 tour objects.
+2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
+3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
+4. MINIMUM 10 STOPS PER TOUR.
+5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
+6. Content in ${user.language}.`;
+
+    const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
+You HATE boring Wikipedia-style descriptions. 
+Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
+You love sharing the dark secrets, mysteries, and curiosities of cities. 
+You NEVER use citations, footnotes, or references. 
+You are real, accurate, but never boring.
+CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`;
+
     return handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
-            
-            THEMES:
-            1. "Hidden Gems & Dark Secrets"
-            2. "Historical & Architectural Marvels"
-            3. "Local Culture, Art & Food"
-            
-            DAI'S ABSOLUTE COMMANDS:
-            - You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
-            - Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
-            - Tell the secrets, the mysteries, and the dark curiosities.
-            - Mock the "typical" tourist while revealing the true soul of the city.
-            - NEVER use citations like [1] or (2). NEVER.
-            - All facts MUST be 100% real. DO NOT INVENT.
-            
-            STRICT CATEGORIZATION RULES (CRITICAL):
-            - 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
-            - 'historical': MUST be used for palaces, castles, ruins, and monuments.
-            - 'culture': ONLY for theaters, music venues, festivals, or intangible traditions.
-            - 'food': ONLY for places where you eat or buy food.
-            - 'art': ONLY for museums, galleries, or street art.
-            - 'nature': ONLY for parks, gardens, or viewpoints.
-            - 'photo': ONLY for spots whose primary value is the view/photo.
-            
-            STRICT RULES:
-            1. Format: Return ONLY a valid JSON array containing exactly 3 tour objects.
-            2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
-            3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-            4. MINIMUM 10 STOPS PER TOUR.
-            5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
-            6. Content in ${user.language}.`,
-            config: {
-                systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
-                You HATE boring Wikipedia-style descriptions. 
-                Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
-                You love sharing the dark secrets, mysteries, and curiosities of cities. 
-                You NEVER use citations, footnotes, or references. 
-                You are real, accurate, but never boring.
-                CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`,
-                responseMimeType: "application/json"
-            },
-        });
+        const allTours: Tour[] = [];
+        let accumulated = '';
+        let toursEmitted = 0;
 
-        let text = response.text || "[]";
-        text = text.replace(/\[\d+\]/g, '')
-                   .replace(/\(\d+\)/g, '')
-                   .replace(/【\d+†source】/g, '')
-                   .replace(/\[source\]/g, '')
-                   .replace(/\s+/g, ' ')
-                   .trim();
-
-        let tours: Tour[] = [];
         try {
-            tours = JSON.parse(text);
-        } catch (e) {
-            console.error("Failed to parse tours JSON", e);
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (jsonMatch) tours = JSON.parse(jsonMatch[0]);
-        }
-        
-        if (Array.isArray(tours)) {
-            tours.forEach(tour => { if (onProgress) onProgress(tour); });
+            // Use streaming to progressively emit tours as they complete
+            const stream = await ai.models.generateContentStream({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: { systemInstruction, responseMimeType: "application/json" },
+            });
+
+            for await (const chunk of stream) {
+                const chunkText = chunk.text || '';
+                accumulated += chunkText;
+
+                // Try to extract complete tour objects as they stream in
+                if (onProgress && toursEmitted < 3) {
+                    const parsed = tryExtractTours(accumulated);
+                    while (parsed.length > toursEmitted) {
+                        const tour = parsed[toursEmitted];
+                        if (tour && tour.stops && tour.stops.length > 0) {
+                            onProgress(tour);
+                            allTours.push(tour);
+                        }
+                        toursEmitted++;
+                    }
+                }
+            }
+
+            // Final parse to catch anything missed
+            const finalText = accumulated
+                .replace(/\[\d+\]/g, '')
+                .replace(/\(\d+\)/g, '')
+                .replace(/【\d+†source】/g, '')
+                .replace(/\[source\]/g, '')
+                .trim();
+
+            const finalTours = tryExtractTours(finalText);
+
+            // Emit any remaining tours not yet emitted
+            if (onProgress) {
+                while (toursEmitted < finalTours.length) {
+                    const tour = finalTours[toursEmitted];
+                    if (tour && tour.stops && tour.stops.length > 0) {
+                        onProgress(tour);
+                        allTours.push(tour);
+                    }
+                    toursEmitted++;
+                }
+            }
+
+            return allTours.length > 0 ? allTours : finalTours.filter(t => t && t.stops && t.stops.length > 0);
+
+        } catch (streamError) {
+            // Fallback to non-streaming if streaming not supported
+            console.warn("Streaming failed, falling back to non-streaming", streamError);
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: { systemInstruction, responseMimeType: "application/json" },
+            });
+            const text = (response.text || '[]').replace(/\[\d+\]/g, '').replace(/\(\d+\)/g, '').trim();
+            const tours = tryExtractTours(text);
+            if (onProgress) tours.forEach(t => { if (t?.stops?.length > 0) onProgress(t); });
             return tours.filter(t => t && t.stops && t.stops.length > 0);
         }
-        
-        return [];
     });
+};
+
+// Helper: try to extract as many complete tour objects as possible from partial JSON
+const tryExtractTours = (text: string): Tour[] => {
+    try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed;
+    } catch {}
+
+    // Try to find the array and parse complete objects within it
+    const tours: Tour[] = [];
+    try {
+        // Find objects that look like complete tours (have stops array)
+        const tourMatches = text.matchAll(/\{[^{}]*"stops"\s*:\s*\[[^\]]*(?:\{[^{}]*\}[^\]]*)*\][^{}]*\}/gs);
+        for (const match of tourMatches) {
+            try {
+                const tour = JSON.parse(match[0]);
+                if (tour && tour.stops) tours.push(tour);
+            } catch {}
+        }
+    } catch {}
+
+    return tours;
 };
 
 const VOICE_MAP: Record<string, string> = {
@@ -304,4 +366,3 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
         return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };
-
