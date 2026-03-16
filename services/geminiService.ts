@@ -108,10 +108,35 @@ CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, Fre
     });
 };
 
+// Obtiene las coords del centro de una ciudad via Nominatim
+const getCityCenter = async (city: string, country: string): Promise<{ lat: number, lng: number } | null> => {
+    try {
+        const query = encodeURIComponent(`${city}, ${country}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+            headers: { 'Accept-Language': 'en', 'User-Agent': 'bdai-travel-app/1.0' }
+        });
+        const data = await res.json();
+        if (data && data.length > 0) {
+            return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        }
+    } catch (e) {
+        console.warn('Nominatim lookup failed:', e);
+    }
+    return null;
+};
+
 export const generateToursForCity = async (city: string, country: string, user: UserProfile, onProgress?: (tour: Tour) => void): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+    // Obtener centro del pueblo antes de generar — ancla geográfica para Gemini
+    const cityCenter = await getCityCenter(city, country);
+    const coordsAnchor = cityCenter
+        ? `The exact center of ${city} is at latitude ${cityCenter.lat.toFixed(6)}, longitude ${cityCenter.lng.toFixed(6)}. ALL stops must be within 1.5km of this point.`
+        : `All stops must be located within the urban area of ${city}, ${country}.`;
+
     const prompt = `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
+
+GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
 
 THEMES:
 1. "Hidden Gems & Dark Secrets"
@@ -141,7 +166,7 @@ STRICT RULES:
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. MINIMUM 10 STOPS PER TOUR.
 5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
-6. COORDINATES ARE CRITICAL: All stops MUST be physically located inside ${city}, ${country}. All coordinates must be within 2km of the center of ${city}. Use approximate coordinates if needed — NEVER place a stop outside the town limits. NEVER omit stops due to coordinate uncertainty — always generate at least 10 stops per tour.
+6. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be within 1.5km of the city center provided. Use realistic offsets (streets, plazas, buildings) around that center point. NEVER place stops on highways or outside the town.
 7. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
@@ -384,4 +409,3 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
         return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };
-
