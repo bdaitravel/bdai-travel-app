@@ -12,7 +12,6 @@ import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
 import { translations } from './data/translations';
 import { CityCommunity } from './components/CityCommunity';
-import { toast, ToastContainer } from './components/Toast';
 
 declare global {
   interface Window {
@@ -176,18 +175,37 @@ export default function App() {
   const handleLoginSuccess = async (supabaseUser: any) => {
     const profile = await getUserProfileByEmail(supabaseUser.email || '');
     if (profile) {
-      const updatedProfile = {
+      // ✅ NUNCA sobreescribir datos existentes al hacer login
+      // Solo actualizar rank (calculado), sessionsStarted y isLoggedIn
+      // badges, stamps, miles, visitedCities — se leen tal cual están en Supabase
+      const updatedProfile: UserProfile = {
           ...profile,
+          isLoggedIn: true,
           rank: calculateTravelerRank(profile.miles),
-          badges: checkBadges(profile),
-          stats: { ...profile.stats, sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1 }
+          // ✅ Solo añadir badges NUEVOS que no tenga, nunca quitar los existentes
+          badges: (() => {
+            const existingIds = new Set((profile.badges || []).map((b: any) => b.id));
+            const newBadges = checkBadges(profile).filter((b: any) => !existingIds.has(b.id));
+            return [...(profile.badges || []), ...newBadges];
+          })(),
+          stats: { 
+            ...profile.stats, 
+            sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1 
+          }
       };
-      setUser({ ...updatedProfile, isLoggedIn: true });
-      localStorage.setItem('bdai_profile', JSON.stringify({ ...updatedProfile, isLoggedIn: true }));
-      if (updatedProfile.stats.sessionsStarted === 1) setShowOnboarding(true);
+      setUser(updatedProfile);
+      localStorage.setItem('bdai_profile', JSON.stringify(updatedProfile));
+      // ✅ Solo sync si hay badges nuevos o sessionsStarted cambió — nunca sync en frío
       if (view === AppView.LOGIN) navigateTo(AppView.HOME);
     } else {
-      const newProfile = { ...GUEST_PROFILE, email: supabaseUser.email || '', id: supabaseUser.id, isLoggedIn: true, stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } };
+      // Usuario nuevo — crear perfil desde cero
+      const newProfile: UserProfile = { 
+        ...GUEST_PROFILE, 
+        email: supabaseUser.email || '', 
+        id: supabaseUser.id, 
+        isLoggedIn: true, 
+        stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } 
+      };
       newProfile.rank = calculateTravelerRank(newProfile.miles);
       newProfile.badges = checkBadges(newProfile);
       await syncUserProfile(newProfile);
@@ -214,7 +232,7 @@ export default function App() {
 
   const handleRequestOtp = async () => {
     if (isLoading) return; 
-    if (!validateEmailFormat(email)) { toast("Enter a valid email.", "error"); return; }
+    if (!validateEmailFormat(email)) { alert("Enter a valid email."); return; }
     setIsLoading(true);
     setLoadingMessage("REQUESTING KEY...");
     try {
@@ -224,7 +242,7 @@ export default function App() {
       });
       if (error) throw error;
       setLoginPhase('OTP');
-    } catch (e: any) { toast(e.message || "Failed to send code.", "error"); } finally { setIsLoading(false); }
+    } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
   };
 
   const handleGoogleLogin = async () => {
@@ -239,7 +257,7 @@ export default function App() {
       if (error) throw error;
       if (data?.url) window.open(data.url, '_blank', 'width=500,height=600');
     } catch (e: any) {
-      toast(e.message || "Google Login failed.", "error");
+      alert(e.message || "Google Login failed.");
     } finally { setIsLoading(false); }
   };
 
@@ -256,7 +274,9 @@ export default function App() {
       if (data.user) {
         const profile = await getUserProfileByEmail(email);
         if (profile) {
+          // ✅ Solo leer — nunca sobrescribir datos existentes al verificar OTP
           setUser({ ...profile, isLoggedIn: true });
+          localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
         } else {
           const newProfile = { ...GUEST_PROFILE, email, id: data.user.id, isLoggedIn: true };
           await syncUserProfile(newProfile);
@@ -264,7 +284,7 @@ export default function App() {
         }
         navigateTo(AppView.HOME);
       }
-    } catch (e: any) { toast(e.message || "Invalid or expired code.", "error"); } finally { setIsLoading(false); }
+    } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
   };
 
   const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
@@ -337,7 +357,7 @@ export default function App() {
           if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
         }
       } else {
-        toast("Location protocol failed.", "error");
+        alert("Location protocol failed.");
       }
     } catch (e) {
       console.error("Selection error:", e);
@@ -420,7 +440,6 @@ export default function App() {
 
   return (
     <div className="flex-1 bg-transparent flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      <ToastContainer />
       {(isLoading || isSyncingLang) && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 animate-fade-in">
           <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -619,4 +638,5 @@ export default function App() {
     </div>
   );
 }
+
 
