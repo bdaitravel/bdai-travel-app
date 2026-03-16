@@ -343,10 +343,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />,
   document.body
 )}
-      {showReportBug && <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />}
-      {showDeleteConfirm && (
-          <DeleteConfirmModal user={user} pt={pt} onCancel={() => setShowDeleteConfirm(false)} onConfirm={handleDeleteAccount} isDeleting={isDeleting} />
-      )}
+    {showReportBug && ReactDOM.createPortal(
+  <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />,
+  document.body
+)}
+{showDeleteConfirm && ReactDOM.createPortal(
+  <DeleteConfirmModal user={user} pt={pt} onCancel={() => setShowDeleteConfirm(false)} onConfirm={handleDeleteAccount} isDeleting={isDeleting} />,
+  document.body
+)}
     </div>
   );
 };
