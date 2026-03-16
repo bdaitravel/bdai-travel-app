@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
@@ -61,6 +60,53 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
+// Nominatim geocoding — busca coordenadas precisas para cada parada
+// Llama con nombre en inglés + ciudad + país para máxima precisión
+const geocodeStop = async (stopName: string, city: string, country: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+        const query = `${stopName}, ${city}, ${country}`;
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=en`;
+        const res = await fetch(url, {
+            headers: { 'User-Agent': 'bdai-travel-app/1.0' }
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data && data.length > 0) {
+            return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        }
+        // Si no encuentra con ciudad+país, intenta solo con el nombre
+        const url2 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(stopName)}&format=json&limit=1&accept-language=en`;
+        const res2 = await fetch(url2, { headers: { 'User-Agent': 'bdai-travel-app/1.0' } });
+        if (!res2.ok) return null;
+        const data2 = await res2.json();
+        if (data2 && data2.length > 0) {
+            return { lat: parseFloat(data2[0].lat), lng: parseFloat(data2[0].lon) };
+        }
+        return null;
+    } catch {
+        return null;
+    }
+};
+
+// Enriquece las paradas del tour con coordenadas de Nominatim
+// Procesa en lotes de 3 para respetar el rate limit de Nominatim (1 req/s)
+const enrichStopsWithNominatim = async (
+    stops: Stop[],
+    city: string,
+    country: string,
+    onStopGeocoded: (stopId: string, lat: number, lng: number) => void
+): Promise<void> => {
+    for (let i = 0; i < stops.length; i++) {
+        const stop = stops[i];
+        // Pequeña pausa para respetar rate limit de Nominatim (1 req/seg)
+        if (i > 0) await new Promise(r => setTimeout(r, 1100));
+        const coords = await geocodeStop(stop.name, city, country);
+        if (coords) {
+            onStopGeocoded(stop.id, coords.lat, coords.lng);
+        }
+    }
+};
+
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
   const [isLaunching, setIsLaunching] = useState(false);
@@ -118,7 +164,34 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
 
 export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
-    const currentStop = tour.stops[currentStopIndex] as Stop;
+
+    // Estado enriquecido de paradas con coordenadas de Nominatim
+    const [enrichedStops, setEnrichedStops] = useState<Stop[]>(tour.stops);
+    const [geocodingStatus, setGeocodingStatus] = useState<'idle' | 'loading' | 'done'>('idle');
+    const geocodedRef = useRef(false);
+
+    // Al montar, enriquecer coordenadas con Nominatim en segundo plano
+    useEffect(() => {
+        if (geocodedRef.current) return;
+        geocodedRef.current = true;
+        setGeocodingStatus('loading');
+
+        // Copia inicial para no bloquear el mapa
+        setEnrichedStops([...tour.stops]);
+
+        enrichStopsWithNominatim(
+            tour.stops,
+            tour.city,
+            tour.country || '',
+            (stopId, lat, lng) => {
+                setEnrichedStops(prev => prev.map(s =>
+                    s.id === stopId ? { ...s, latitude: lat, longitude: lng } : s
+                ));
+            }
+        ).finally(() => setGeocodingStatus('done'));
+    }, [tour.id]);
+
+    const currentStop = enrichedStops[currentStopIndex] as Stop;
     
     const [claimedStops, setClaimedStops] = useState<Set<string>>(new Set());
     const rewardClaimed = claimedStops.has(currentStop.id);
@@ -126,14 +199,10 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const handleCheckIn = async () => {
         if (IS_IN_RANGE) {
             setClaimedStops(prev => new Set(prev).add(currentStop.id));
-            
-            // Update user points based on stop type
             const updatedUser = { ...user };
             const type = currentStop.type?.toLowerCase();
             const earnedMiles = currentStop.photoSpot?.milesReward || 10;
-            
             updatedUser.miles = (updatedUser.miles || 0) + earnedMiles;
-            
             if (type === 'historical') updatedUser.historyPoints = (updatedUser.historyPoints || 0) + 1;
             else if (type === 'food') updatedUser.foodPoints = (updatedUser.foodPoints || 0) + 1;
             else if (type === 'art') updatedUser.artPoints = (updatedUser.artPoints || 0) + 1;
@@ -141,20 +210,17 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             else if (type === 'photo') updatedUser.photoPoints = (updatedUser.photoPoints || 0) + 1;
             else if (type === 'culture') updatedUser.culturePoints = (updatedUser.culturePoints || 0) + 1;
             else if (type === 'architecture') updatedUser.archPoints = (updatedUser.archPoints || 0) + 1;
-            
-            // Re-check badges
             updatedUser.badges = checkBadges(updatedUser);
-            
             onUpdateUser(updatedUser);
         } else {
             alert(`${tl.tooFar}: ${distToTarget}m`);
         }
     };
+
     const [showPhotoTip, setShowPhotoTip] = useState(false);
     const [showItinerary, setShowItinerary] = useState(false);
     const [showCompletion, setShowCompletion] = useState(false);
     const [showSocialVisa, setShowSocialVisa] = useState(false);
-
     const [isFixing, setIsFixing] = useState(false);
     const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
 
@@ -165,9 +231,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         const success = await updateTourStopLocation(citySlug, language, currentStop.id, userLocation.lat, userLocation.lng);
         if (success) {
             alert(tl.locationFixed);
-            // Update local state to reflect change immediately
-            currentStop.latitude = userLocation.lat;
-            currentStop.longitude = userLocation.lng;
+            setEnrichedStops(prev => prev.map(s =>
+                s.id === currentStop.id ? { ...s, latitude: userLocation.lat, longitude: userLocation.lng } : s
+            ));
         } else {
             alert("Error updating location.");
         }
@@ -220,33 +286,22 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             date: new Date().toLocaleDateString(),
             color: ['#9333ea', '#ef4444', '#10b981', '#f59e0b'][Math.floor(Math.random() * 4)]
         };
-
-        // Aplicar bonus y registrar ciudad
         let updatedUser = completeTourBonus(user, tour.city.toLowerCase());
-        
         updatedUser = {
             ...updatedUser,
             stamps: [...(user.stamps || []), newStamp],
             completedTours: [...(user.completedTours || []), tour.id]
         };
-
         onUpdateUser(updatedUser);
-        if (user.isLoggedIn) {
-            await syncUserProfile(updatedUser);
-        }
+        if (user.isLoggedIn) await syncUserProfile(updatedUser);
         setShowCompletion(true);
     };
 
     const handleShare = async () => {
         const shareText = tl.shareText.replace('{city}', tour.city);
         if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `bdai Passport - ${tour.city}`,
-                    text: shareText,
-                    url: window.location.href
-                });
-            } catch (e) { console.error("Error sharing", e); }
+            try { await navigator.share({ title: `bdai Passport - ${tour.city}`, text: shareText, url: window.location.href }); }
+            catch (e) { console.error("Error sharing", e); }
         } else {
             navigator.clipboard.writeText(shareText);
             alert("Copied.");
@@ -257,36 +312,17 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         if (audioPlayingId === stopId) { stopAudio(); return; }
         stopAudio();
         setIsAudioLoading(true);
-        
-        // Unlock Web Audio API synchronously
         if (!audioContextRef.current) audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (audioContextRef.current.state === 'suspended') {
-            audioContextRef.current.resume();
-        }
-
-        // Unlock HTML Audio synchronously for fallback
+        if (audioContextRef.current.state === 'suspended') audioContextRef.current.resume();
         const unlockAudio = new Audio();
         unlockAudio.play().catch(() => {});
         htmlAudioRef.current = unlockAudio;
-
         try {
             const audioResult = await generateAudio(text, user.language, tour.city);
-            if (!audioResult) {
-                setIsAudioLoading(false);
-                return;
-            }
-            
+            if (!audioResult) { setIsAudioLoading(false); return; }
             const ctx = audioContextRef.current;
-            let audioData: Uint8Array | null = audioResult;
-
-            if (!audioData) {
-                setIsAudioLoading(false);
-                return;
-            }
-            
-            // Try decoding as standard audio first (MP3/WAV)
             try {
-                const audioBuffer = await ctx.decodeAudioData(audioData.buffer.slice(0) as ArrayBuffer);
+                const audioBuffer = await ctx.decodeAudioData(audioResult.buffer.slice(0) as ArrayBuffer);
                 const source = ctx.createBufferSource();
                 source.buffer = audioBuffer;
                 source.connect(ctx.destination);
@@ -294,13 +330,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 sourceNodeRef.current = source;
                 source.start(0);
                 setAudioPlayingId(stopId);
-            } catch (decodeError) {
-                // Fallback to raw PCM if decodeAudioData fails (Gemini TTS returns raw PCM)
-                const dataInt16 = new Int16Array(audioData.buffer);
+            } catch {
+                const dataInt16 = new Int16Array(audioResult.buffer);
                 const buffer = ctx.createBuffer(1, dataInt16.length, 24000);
                 const channelData = buffer.getChannelData(0);
                 for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-                
                 const source = ctx.createBufferSource();
                 source.buffer = buffer;
                 source.connect(ctx.destination);
@@ -309,11 +343,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 source.start(0);
                 setAudioPlayingId(stopId);
             }
-        } catch (e) { 
-            console.error("Audio playback error:", e); 
-        } finally {
-            setIsAudioLoading(false);
-        }
+        } catch (e) { console.error("Audio playback error:", e); }
+        finally { setIsAudioLoading(false); }
     };
 
     return (
@@ -340,7 +371,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                          <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
                          <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6">{tl.itinerary}</h3>
                          <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2">
-                             {tour.stops.map((s: Stop, idx: number) => (
+                             {enrichedStops.map((s: Stop, idx: number) => (
                                  <button key={s.id} onClick={() => { onJumpTo(idx); setShowItinerary(false); stopAudio(); }} className={`w-full p-5 rounded-2xl flex items-center gap-4 border transition-all ${idx === currentStopIndex ? 'bg-purple-50 border-purple-200' : 'bg-slate-50 border-slate-100'}`}>
                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${idx === currentStopIndex ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
                                          <i className={`fas ${STOP_ICONS[s.type?.toLowerCase()] || 'fa-location-dot'}`}></i>
@@ -393,12 +424,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              )}
 
              {showSocialVisa && (
-                 <VisaShare 
-                     user={user}
-                     cityName={tour.city} 
-                     milesEarned={totalMiles} 
-                     onClose={() => setShowSocialVisa(false)} 
-                  />
+                 <VisaShare user={user} cityName={tour.city} milesEarned={totalMiles} onClose={() => setShowSocialVisa(false)} />
              )}
 
              <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 gap-3">
@@ -409,7 +435,14 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                             <i className={`fas ${STOP_ICONS[currentStop.type?.toLowerCase()] || 'fa-location-dot'} text-xs`}></i>
                         </div>
                         <div className="flex flex-col text-left truncate">
-                            <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">{tl.stop} {currentStopIndex + 1}</p>
+                            <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">
+                                {tl.stop} {currentStopIndex + 1}
+                                {geocodingStatus === 'loading' && (
+                                    <span className="ml-2 text-slate-400 normal-case">
+                                        <i className="fas fa-satellite-dish fa-pulse text-[6px]"></i> GPS
+                                    </span>
+                                )}
+                            </p>
                             <h2 className="text-[10px] font-black text-slate-900 uppercase truncate leading-tight">{currentStop.name}</h2>
                         </div>
                     </div>
@@ -420,17 +453,13 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     disabled={isAudioLoading}
                     className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.id ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'} disabled:opacity-70`}
                 >
-                    {isAudioLoading ? (
-                        <i className="fas fa-spinner fa-spin text-xs"></i>
-                    ) : (
-                        <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-play'} text-xs`}></i>
-                    )}
+                    {isAudioLoading ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${audioPlayingId === currentStop.id ? 'fa-stop' : 'fa-play'} text-xs`}></i>}
                 </button>
              </div>
 
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50">
                 <div className="h-[45vh] w-full">
-                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
+                    <SchematicMap stops={enrichedStops} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
                 <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-xl z-[200] relative min-h-[55vh]">
                     <div className="grid grid-cols-2 gap-4">
@@ -448,15 +477,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     </div>
 
                     {isAdmin && (
-                        <button 
-                            onClick={handleFixLocation} 
-                            disabled={isFixing || !userLocation}
-                            className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[9px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
-                        >
+                        <button onClick={handleFixLocation} disabled={isFixing || !userLocation} className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[9px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
                             <i className={`fas ${isFixing ? 'fa-spinner fa-spin' : 'fa-map-marker-alt'}`}></i>
                             {isFixing ? 'Fixing...' : tl.fixLocation}
                         </button>
                     )}
+
                     <div className="space-y-6 text-slate-800 text-lg leading-relaxed font-medium">
                         {(currentStop.description || "").split('\n\n').map((p, i) => <p key={i} className="animate-fade-in">{p}</p>)}
                     </div>
