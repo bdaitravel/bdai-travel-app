@@ -149,9 +149,9 @@ export const generateToursForCity = async (city: string, country: string, user: 
                 You love sharing the dark secrets, mysteries, and curiosities of cities. 
                 You NEVER use citations, footnotes, or references. 
                 You are real, accurate, but never boring.
-                CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`,
+                CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
+                COORDINATES: Always provide real, accurate GPS coordinates for each stop. Each stop must be in a different location within the city. Never repeat coordinates.`,
                 responseMimeType: "application/json"
-                COORDINATES: Always provide real, accurate GPS coordinates for each stop. Each stop must be in a different location within the city. Never repeat coordinates.
             },
         });
 
