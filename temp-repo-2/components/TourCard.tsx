@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
-import { toast } from './Toast';
 import { generateAudio } from '../services/geminiService';
 import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges } from '../services/supabaseClient';
 import { VisaShare } from './VisaShare';
@@ -51,19 +50,12 @@ const STOP_ICONS: Record<string, string> = {
     architecture: 'fa-archway' 
 };
 
-const calculateDistance = (lat1: number | string, lon1: number | string, lat2: number | string, lon2: number | string) => {
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371000;
-    const l1 = typeof lat1 === 'string' ? parseFloat(lat1) : lat1;
-    const ln1 = typeof lon1 === 'string' ? parseFloat(lon1) : lon1;
-    const l2 = typeof lat2 === 'string' ? parseFloat(lat2) : lat2;
-    const ln2 = typeof lon2 === 'string' ? parseFloat(lon2) : lon2;
-    
-    if (isNaN(l1) || isNaN(ln1) || isNaN(l2) || isNaN(ln2)) return Infinity;
-
-    const dLat = (l2 - l1) * Math.PI / 180;
-    const dLon = (ln2 - ln1) * Math.PI / 180;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(l1 * Math.PI / 180) * Math.cos(l2 * Math.PI / 180) *
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
@@ -149,7 +141,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             updatedUser.badges = checkBadges(updatedUser);
             onUpdateUser(updatedUser);
         } else {
-            toast(`${tl.tooFar}: ${distToTarget}m`, "error");
+            alert(`${tl.tooFar}: ${distToTarget}m`);
         }
     };
 
@@ -166,11 +158,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         const citySlug = normalizeKey(tour.city, tour.country);
         const success = await updateTourStopLocation(citySlug, language, currentStop.id, userLocation.lat, userLocation.lng);
         if (success) {
-            toast(tl.locationFixed, "success");
+            alert(tl.locationFixed);
             currentStop.latitude = userLocation.lat;
             currentStop.longitude = userLocation.lng;
         } else {
-            toast("Error updating location.", "error");
+            alert("Error updating location.");
         }
         setIsFixing(false);
     };
@@ -239,7 +231,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             catch (e) { console.error("Error sharing", e); }
         } else {
             navigator.clipboard.writeText(shareText);
-            toast("Copied.", "success");
+            alert("Copied.");
         }
     };
 

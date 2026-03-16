@@ -138,11 +138,10 @@ STRICT CATEGORIZATION RULES (CRITICAL):
 STRICT RULES:
 1. Format: Return ONLY a valid JSON array containing exactly 3 tour objects.
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
-3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
+3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. MINIMUM 10 STOPS PER TOUR.
 5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
-6. CRITICAL: Latitude and Longitude MUST be exact, real-world GPS coordinates (numbers, not strings). Do not hallucinate locations. They must be precisely located in ${city}, ${country}. If you don't know the exact GPS coordinates of a place, DO NOT include it in the tour.
-7. Content in ${user.language}.`;
+6. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
 You HATE boring Wikipedia-style descriptions. 
@@ -150,8 +149,7 @@ Your tone is witty, sophisticated, and slightly mocking of typical tourists.
 You love sharing the dark secrets, mysteries, and curiosities of cities. 
 You NEVER use citations, footnotes, or references. 
 You are real, accurate, but never boring.
-CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
-CRITICAL: You MUST use the Google Maps tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include.`;
+CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.`;
 
     return handleAiCall(async () => {
         const allTours: Tour[] = [];
@@ -163,10 +161,7 @@ CRITICAL: You MUST use the Google Maps tool to find the EXACT GPS coordinates (l
             const stream = await ai.models.generateContentStream({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
-                config: { 
-                    systemInstruction, 
-                    tools: [{ googleMaps: {} }]
-                },
+                config: { systemInstruction, responseMimeType: "application/json" },
             });
 
             for await (const chunk of stream) {
@@ -193,8 +188,6 @@ CRITICAL: You MUST use the Google Maps tool to find the EXACT GPS coordinates (l
                 .replace(/\(\d+\)/g, '')
                 .replace(/【\d+†source】/g, '')
                 .replace(/\[source\]/g, '')
-                .replace(/```json/g, '')
-                .replace(/```/g, '')
                 .trim();
 
             const finalTours = tryExtractTours(finalText);
@@ -219,17 +212,9 @@ CRITICAL: You MUST use the Google Maps tool to find the EXACT GPS coordinates (l
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
-                config: { 
-                    systemInstruction,
-                    tools: [{ googleMaps: {} }]
-                },
+                config: { systemInstruction, responseMimeType: "application/json" },
             });
-            const text = (response.text || '[]')
-                .replace(/\[\d+\]/g, '')
-                .replace(/\(\d+\)/g, '')
-                .replace(/```json/g, '')
-                .replace(/```/g, '')
-                .trim();
+            const text = (response.text || '[]').replace(/\[\d+\]/g, '').replace(/\(\d+\)/g, '').trim();
             const tours = tryExtractTours(text);
             if (onProgress) tours.forEach(t => { if (t?.stops?.length > 0) onProgress(t); });
             return tours.filter(t => t && t.stops && t.stops.length > 0);
@@ -239,21 +224,10 @@ CRITICAL: You MUST use the Google Maps tool to find the EXACT GPS coordinates (l
 
 // Helper: try to extract as many complete tour objects as possible from partial JSON
 const tryExtractTours = (text: string): Tour[] => {
-    let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    
-    // Attempt to find the first '[' and last ']'
-    const firstBracket = cleanText.indexOf('[');
-    const lastBracket = cleanText.lastIndexOf(']');
-    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-        cleanText = cleanText.substring(firstBracket, lastBracket + 1);
-    }
-
     try {
-        const parsed = JSON.parse(cleanText);
+        const parsed = JSON.parse(text);
         if (Array.isArray(parsed)) return parsed;
-    } catch (e) {
-        console.warn("Failed to parse full JSON array, falling back to regex extraction", e);
-    }
+    } catch {}
 
     // Try to find the array and parse complete objects within it
     const tours: Tour[] = [];

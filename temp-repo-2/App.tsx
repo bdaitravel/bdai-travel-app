@@ -12,7 +12,6 @@ import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
 import { translations } from './data/translations';
 import { CityCommunity } from './components/CityCommunity';
-import { toast, ToastContainer } from './components/Toast';
 
 declare global {
   interface Window {
@@ -214,7 +213,7 @@ export default function App() {
 
   const handleRequestOtp = async () => {
     if (isLoading) return; 
-    if (!validateEmailFormat(email)) { toast("Enter a valid email.", "error"); return; }
+    if (!validateEmailFormat(email)) { alert("Enter a valid email."); return; }
     setIsLoading(true);
     setLoadingMessage("REQUESTING KEY...");
     try {
@@ -224,7 +223,7 @@ export default function App() {
       });
       if (error) throw error;
       setLoginPhase('OTP');
-    } catch (e: any) { toast(e.message || "Failed to send code.", "error"); } finally { setIsLoading(false); }
+    } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
   };
 
   const handleGoogleLogin = async () => {
@@ -239,7 +238,7 @@ export default function App() {
       if (error) throw error;
       if (data?.url) window.open(data.url, '_blank', 'width=500,height=600');
     } catch (e: any) {
-      toast(e.message || "Google Login failed.", "error");
+      alert(e.message || "Google Login failed.");
     } finally { setIsLoading(false); }
   };
 
@@ -264,7 +263,7 @@ export default function App() {
         }
         navigateTo(AppView.HOME);
       }
-    } catch (e: any) { toast(e.message || "Invalid or expired code.", "error"); } finally { setIsLoading(false); }
+    } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
   };
 
   const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
@@ -337,7 +336,7 @@ export default function App() {
           if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
         }
       } else {
-        toast("Location protocol failed.", "error");
+        alert("Location protocol failed.");
       }
     } catch (e) {
       console.error("Selection error:", e);
@@ -420,7 +419,6 @@ export default function App() {
 
   return (
     <div className="flex-1 bg-transparent flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      <ToastContainer />
       {(isLoading || isSyncingLang) && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 animate-fade-in">
           <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>

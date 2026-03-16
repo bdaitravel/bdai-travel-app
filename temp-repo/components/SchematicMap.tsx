@@ -41,13 +41,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const tl = TEXTS[language] || TEXTS.es;
   
   // Validar paradas antes de usarlas
-  const validStops = (stops || [])
-    .map((s: any) => ({
-      ...s,
-      latitude: typeof s.latitude === 'string' ? parseFloat(s.latitude) : s.latitude,
-      longitude: typeof s.longitude === 'string' ? parseFloat(s.longitude) : s.longitude
-    }))
-    .filter((s: any) => !isNaN(s.latitude) && !isNaN(s.longitude) && s.latitude !== 0 && s.longitude !== 0);
+  const validStops = (stops || []).filter((s: Stop) => s.latitude !== 0 && s.longitude !== 0 && typeof s.latitude === 'number');
   const currentStop = validStops[currentStopIndex] || validStops[0];
 
   useEffect(() => {
@@ -68,16 +62,8 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     
     map.on('dragstart', () => setIsAutoFollowing(false));
     mapInstanceRef.current = map;
-
-    const resizeObserver = new ResizeObserver(() => {
-        if (mapInstanceRef.current) {
-            mapInstanceRef.current.invalidateSize();
-        }
-    });
-    resizeObserver.observe(mapContainerRef.current);
     
     return () => { 
-        resizeObserver.disconnect();
         if (mapInstanceRef.current) {
             mapInstanceRef.current.remove();
             mapInstanceRef.current = null;
@@ -85,15 +71,14 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     };
   }, []);
 
-  // Actualizar ubicación del usuario y seguimiento
+  // Actualizar ubicación del usuario
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !L) return;
+    if (!map || !L || !userLocation) return;
 
-    // Actualizar marcador de usuario si hay ubicación
-    if (userLocation) {
-        if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
-        
+    if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
+    
+    if (typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
         userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { 
             zIndexOffset: 1000,
             icon: L.divIcon({ 
@@ -114,37 +99,21 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         if (activeLineRef.current) map.removeLayer(activeLineRef.current);
         
         if (currentStop) {
-            const dist = map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]);
-            if (dist < 50000) { // Only draw line if within 50km
-                activeLineRef.current = L.polyline([
-                    [userLocation.lat, userLocation.lng], 
-                    [currentStop.latitude, currentStop.longitude]
-                ], { 
-                    color: '#9333ea', 
-                    weight: 5, 
-                    dashArray: '10, 15', 
-                    opacity: 0.9,
-                    lineCap: 'round'
-                }).addTo(map);
-            }
-        }
-    }
+            activeLineRef.current = L.polyline([
+                [userLocation.lat, userLocation.lng], 
+                [currentStop.latitude, currentStop.longitude]
+            ], { 
+                color: '#9333ea', 
+                weight: 5, 
+                dashArray: '10, 15', 
+                opacity: 0.9,
+                lineCap: 'round'
+            }).addTo(map);
 
-    // Lógica de seguimiento (Auto-following)
-    if (isAutoFollowing && currentStop) {
-        if (userLocation) {
-            const dist = map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]);
-            if (dist < 50000) {
-                // Si estamos cerca, encuadrar usuario y parada
+            if (isAutoFollowing) {
                 const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]]);
-                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17, animate: true });
-            } else {
-                // Si estamos muy lejos, centrar solo en la parada
-                map.flyTo([currentStop.latitude, currentStop.longitude], 16, { animate: true });
+                map.fitBounds(bounds, { padding: [100, 100], maxZoom: 17, animate: true });
             }
-        } else {
-            // Si no hay ubicación, centrar en la parada actual
-            map.flyTo([currentStop.latitude, currentStop.longitude], 16, { animate: true });
         }
     }
   }, [userLocation, currentStop, isAutoFollowing]);
@@ -209,29 +178,12 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
             
             markersRef.current.push(marker);
         });
-    }
-  }, [stops, currentStopIndex]);
 
-  // Ajustar zoom inicial a todas las paradas solo cuando cambian las paradas
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !L || validStops.length === 0) return;
-    
-    const group = L.featureGroup(markersRef.current);
-    if (group.getLayers().length > 0) {
+        // IMPORTANTE: Ajustar zoom para ver TODAS las paradas
+        const group = L.featureGroup(markersRef.current);
         map.fitBounds(group.getBounds().pad(0.2));
     }
-  }, [stops]);
-
-  // Volar a la parada cuando cambia el índice si no estamos en auto-following
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !L || !currentStop) return;
-    
-    if (!isAutoFollowing) {
-        map.flyTo([currentStop.latitude, currentStop.longitude], 16, { animate: true });
-    }
-  }, [currentStopIndex]);
+  }, [stops, currentStopIndex]);
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-slate-950">

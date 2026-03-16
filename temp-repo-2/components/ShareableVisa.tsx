@@ -10,8 +10,6 @@ interface ShareableVisaProps {
   onClose?: () => void;
 }
 
-import { toast } from './Toast';
-
 /**
  * ShareableVisa: High-fidelity Tech-Noir achievement card.
  */
@@ -29,7 +27,7 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
   const handleCopyLink = () => {
     const epicLink = `https://bdai.travel/visa/${cityName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
     navigator.clipboard.writeText(epicLink);
-    toast("🚀 LINK ÉPICO COPIADO AL PORTAPAPELES", "success");
+    alert("🚀 LINK ÉPICO COPIADO AL PORTAPAPELES");
   };
 
   const triggerDownload = (blob: Blob, fileName: string) => {
@@ -91,19 +89,19 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
             // Sharing failed but we have a fallback
             console.error("Native share failed:", shareError);
             triggerDownload(blob, fileName);
-            toast("📸 ¡Visado guardado en Fotos! Abre Instagram o TikTok para compartirlo. ✨", "success");
+            alert("📸 ¡Visado guardado en Fotos! Abre Instagram o TikTok para compartirlo. ✨");
             setStatusText('✅ READY TO SHARE');
           }
         }
       } else {
         // 3. Fallback: Direct Download for Desktop/Unsupported browsers
         triggerDownload(blob, fileName);
-        toast("📸 ¡Visado guardado en Fotos! Abre Instagram o TikTok para compartirlo. ✨", "success");
+        alert("📸 ¡Visado guardado en Fotos! Abre Instagram o TikTok para compartirlo. ✨");
         setStatusText('✅ READY TO SHARE');
       }
     } catch (error: any) {
       console.error("Critical failure during Visa generation:", error);
-      toast(`Error: ${error.message || "Could not generate Visa."}`, "error");
+      alert(`Error: ${error.message || "Could not generate Visa."}`);
       setStatusText('');
     } finally {
       setIsGenerating(false);

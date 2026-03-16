@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { getCommunityPosts, addCommunityPost } from '../services/supabaseClient';
 import { moderateContent } from '../services/geminiService';
-import { toast } from './Toast';
 
 const UI_TEXTS: any = {
     en: { placeholder: "Share a secret tip...", boardTitle: "Traveler Intelligence", anonymous: "Explorer", postBtn: "Transmit", members: "Travelers nearby", loading: "Accessing intel...", loginToPost: "Login to share", reply: "Reply", toxicAlert: "Rejected: inappropriate content." },
@@ -31,7 +30,7 @@ export const CommunityBoard: React.FC<any> = ({ city, language, user }) => {
     const handlePost = async () => {
         if (!newPost.trim() || !user.isLoggedIn || isPosting) return;
         setIsPosting(true);
-        if (!(await moderateContent(newPost))) { toast(t.toxicAlert, "error"); setIsPosting(false); return; }
+        if (!(await moderateContent(newPost))) { alert(t.toxicAlert); setIsPosting(false); return; }
         await addCommunityPost({ city, userId: user.id, user: user.firstName || t.anonymous, avatar: user.avatar, content: newPost, type: 'comment' });
         setNewPost(''); setIsPosting(false); fetchPosts(); 
     };
