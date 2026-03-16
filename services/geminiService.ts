@@ -59,11 +59,14 @@ RULES:
 - Correct any typos (e.g. "florensia" → Florence, "barcelon" → Barcelona, "madri" → Madrid).
 - Recognize city/town names in ANY language and translate to English internally.
   Examples: "Londres"=London UK, "Florencia"=Florence Italy, "Londra"=London UK, "Nueva York"=New York USA, "倫敦"=London UK, "لندن"=London UK
-- If the name is ambiguous and could be multiple places, return ALL of them (up to 5).
+- CRITICAL: If the city name exists in multiple countries, return ALL of them.
+  Example: "Logrono" → Logroño Spain, Logroño Ecuador, Logroño Argentina (all 3!)
   Example: "London" → London UK, London Ontario Canada, London Ohio USA
   Example: "Florence" → Florence Italy, Florence Alabama USA, Florence South Carolina USA
   Example: "Santiago" → Santiago Chile, Santiago de Compostela Spain
+  Example: "Victoria" → Victoria Canada, Victoria Australia, Victoria Seychelles
 - Return between 1 and 5 results, most famous/relevant first.
+- NEVER return only 1 result if the name exists in multiple places.
 
 For each result return:
 - "cityEn": Official city name in ENGLISH ONLY. Never use accents or local language names.
@@ -99,7 +102,6 @@ CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, Fre
             country: r.country,
             countryEn: r.countryEn,
             countryCode: r.countryCode,
-            // El slug siempre se genera desde inglés — nunca desde lo que escribió el usuario
             slug: normalizeKey(r.cityEn, r.countryEn),
             fullName: r.cityLocal || r.cityEn
         }));
@@ -139,12 +141,12 @@ export const generateToursForCity = async (city: string, country: string, user: 
             STRICT RULES:
             1. Format: Return ONLY a valid JSON array containing exactly 3 tour objects.
             2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
-            3. Each stop: { "id", "name", "description" (200-300 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
+            3. Each stop: { "id", "name", "description" (150-200 words), "latitude", "longitude", "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
             4. MINIMUM 10 STOPS PER TOUR.
             5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
             6. Content in ${user.language}.`,
             config: {
-               systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
+                systemInstruction: `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
                 You HATE boring Wikipedia-style descriptions. 
                 Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
                 You love sharing the dark secrets, mysteries, and curiosities of cities. 
