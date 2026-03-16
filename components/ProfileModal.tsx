@@ -45,7 +45,6 @@ const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onC
     </button>
 );
 
-// ✅ SAFE DELETE CONFIRMATION — requires typing email + 5s countdown
 const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => string; onCancel: () => void; onConfirm: () => void; isDeleting: boolean }> = ({ user, pt, onCancel, onConfirm, isDeleting }) => {
     const [emailInput, setEmailInput] = useState('');
     const [countdown, setCountdown] = useState(5);
@@ -61,38 +60,27 @@ const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => strin
     const canDelete = emailMatches && countdownDone && !isDeleting;
 
     return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md" style={{ zIndex: 999999 }}>
             <div className="w-full max-w-[340px] bg-slate-900 border-2 border-red-500/50 rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl shadow-red-500/20">
                 <div className="w-16 h-16 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center mb-4">
                     <i className="fas fa-skull text-2xl text-red-500"></i>
                 </div>
                 <h3 className="text-white font-black text-base uppercase tracking-widest mb-3">{pt('deleteConfirmTitle')}</h3>
                 <p className="text-slate-400 text-xs mb-5 leading-relaxed">{pt('deleteConfirmText')}</p>
-
                 <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest mb-2 w-full text-left">{pt('deleteConfirmInstruction')}</p>
-                <input
-                    type="email"
-                    value={emailInput}
-                    onChange={e => setEmailInput(e.target.value)}
-                    placeholder={user.email}
+                <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder={user.email}
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white text-xs mb-1 focus:outline-none focus:border-red-500 transition-colors"
-                    disabled={isDeleting}
-                    autoComplete="off"
-                />
+                    disabled={isDeleting} autoComplete="off" />
                 {emailInput.length > 0 && !emailMatches && (
                     <p className="text-red-400 text-[9px] font-bold mb-3 w-full text-left">{pt('deleteEmailMismatch')}</p>
                 )}
                 {emailInput.length === 0 && <div className="mb-3"></div>}
-
                 <div className="w-full flex gap-3 mt-2">
                     <button onClick={onCancel} disabled={isDeleting} className="flex-1 py-3 bg-white/5 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-white/10 transition-colors">
                         {pt('deleteConfirmCancel')}
                     </button>
-                    <button
-                        onClick={canDelete ? onConfirm : undefined}
-                        disabled={!canDelete}
-                        className={`flex-[2] py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${canDelete ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
-                    >
+                    <button onClick={canDelete ? onConfirm : undefined} disabled={!canDelete}
+                        className={`flex-[2] py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${canDelete ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>
                         {isDeleting ? pt('deleting') : !countdownDone ? pt('deleteCountdown').replace('{n}', String(countdown)) : pt('deleteConfirmYes')}
                     </button>
                 </div>
@@ -179,33 +167,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       {showToast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[1000] bg-purple-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl animate-bounce">
           <i className="fas fa-check-circle mr-2"></i> {pt('copiedToClipboard')}
-        </div>
-      )}
-
-{showBragModal && ReactDOM.createPortal(
-  <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-    <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
-      <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6"><i className="fas fa-crown text-3xl text-white"></i></div>
-      <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
-      <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
-      <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
-         <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
-         <p className="text-2xl font-black text-cyan-400">{user.miles.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
-      </div>
-      <button onClick={() => { handleShareRank(); setShowBragModal(false); }} className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4">
-        <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
-      </button>
-      <button onClick={() => setShowBragModal(false)} className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Cancel</button>
-    </div>
-  </div>,
-  document.body
-)}
-            <button onClick={() => { handleShareRank(); setShowBragModal(false); }} className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4">
-              <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
-            </button>
-            <button onClick={() => setShowBragModal(false)} className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Cancel</button>
-          </div>
         </div>
       )}
 
@@ -347,18 +308,40 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
         </div>
       </div>
 
+      {showBragModal && ReactDOM.createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md" style={{ zIndex: 999999 }}>
+          <div className="w-full max-w-[320px] bg-slate-950 border-4 border-slate-900 rounded-[3rem] p-8 relative overflow-hidden flex flex-col items-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-cyan-900/20"></div>
+            <div className="relative z-10 w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.5)] mb-6"><i className="fas fa-crown text-3xl text-white"></i></div>
+            <p className="relative z-10 text-[10px] font-black text-purple-400 uppercase tracking-[0.4em] mb-2">Current Status</p>
+            <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-4">{user.rank}</h3>
+            <div className="relative z-10 w-full p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md mb-8">
+               <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
+               <p className="text-2xl font-black text-cyan-400">{user.miles.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">Miles</span></p>
+            </div>
+            <button onClick={() => { handleShareRank(); setShowBragModal(false); }} className="relative z-10 w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4">
+              <i className="fas fa-paper-plane mr-2"></i> Confirm & Share
+            </button>
+            <button onClick={() => setShowBragModal(false)} className="relative z-10 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Cancel</button>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {showLegal && ReactDOM.createPortal(
-  <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />,
-  document.body
-)}
-    {showReportBug && ReactDOM.createPortal(
-  <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />,
-  document.body
-)}
-{showDeleteConfirm && ReactDOM.createPortal(
-  <DeleteConfirmModal user={user} pt={pt} onCancel={() => setShowDeleteConfirm(false)} onConfirm={handleDeleteAccount} isDeleting={isDeleting} />,
-  document.body
-)}
+        <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />,
+        document.body
+      )}
+
+      {showReportBug && ReactDOM.createPortal(
+        <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />,
+        document.body
+      )}
+
+      {showDeleteConfirm && ReactDOM.createPortal(
+        <DeleteConfirmModal user={user} pt={pt} onCancel={() => setShowDeleteConfirm(false)} onConfirm={handleDeleteAccount} isDeleting={isDeleting} />,
+        document.body
+      )}
     </div>
   );
 };
