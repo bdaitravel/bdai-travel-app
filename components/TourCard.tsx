@@ -57,9 +57,7 @@ const calculateDistance = (lat1: number | string, lon1: number | string, lat2: n
     const ln1 = typeof lon1 === 'string' ? parseFloat(lon1) : lon1;
     const l2 = typeof lat2 === 'string' ? parseFloat(lat2) : lat2;
     const ln2 = typeof lon2 === 'string' ? parseFloat(lon2) : lon2;
-    
     if (isNaN(l1) || isNaN(ln1) || isNaN(l2) || isNaN(ln2)) return Infinity;
-
     const dLat = (l2 - l1) * Math.PI / 180;
     const dLon = (ln2 - ln1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -67,7 +65,6 @@ const calculateDistance = (lat1: number | string, lon1: number | string, lat2: n
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
-
 
 export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
@@ -126,7 +123,6 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
 
 export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
-
     const currentStop = tour.stops[currentStopIndex] as Stop;
     
     const [claimedStops, setClaimedStops] = useState<Set<string>>(new Set());
@@ -244,6 +240,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const handlePlayAudio = async (stopId: string, text: string) => {
+        // ✅ FIX 1: Guard contra doble click mientras carga
+        if (isAudioLoading) return;
         if (audioPlayingId === stopId) { stopAudio(); return; }
         stopAudio();
         setIsAudioLoading(true);
@@ -280,6 +278,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             }
         } catch (e) { console.error("Audio playback error:", e); }
         finally { setIsAudioLoading(false); }
+    };
+
+    // ✅ FIX 2: handleBack para el audio antes de salir
+    const handleBack = () => {
+        stopAudio();
+        onBack();
     };
 
     return (
@@ -352,7 +356,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                          </div>
                          <div className="p-6 bg-slate-50 border-t-2 border-slate-100 space-y-3">
                              <button onClick={() => setShowSocialVisa(true)} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"><i className="fas fa-share-nodes text-sm"></i> {tl.shareIg}</button>
-                             <button onClick={onBack} className="w-full py-4 bg-slate-200 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest">{tl.close}</button>
+                             <button onClick={handleBack} className="w-full py-4 bg-slate-200 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest">{tl.close}</button>
                          </div>
                      </div>
                  </div>
@@ -363,7 +367,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
              )}
 
              <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 gap-3">
-                <button onClick={onBack} className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center shrink-0"><i className="fas fa-arrow-left text-xs"></i></button>
+                {/* ✅ FIX 2: stop audio antes de salir */}
+                <button onClick={handleBack} className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center shrink-0"><i className="fas fa-arrow-left text-xs"></i></button>
                 <button onClick={() => setShowItinerary(true)} className="flex-1 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between min-w-0">
                     <div className="flex items-center gap-3 truncate">
                         <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
