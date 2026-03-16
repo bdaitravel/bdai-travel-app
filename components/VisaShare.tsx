@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import * as htmlToImage from 'html-to-image';
 import { UserProfile } from '../types';
@@ -10,40 +9,54 @@ interface VisaShareProps {
   onClose: () => void;
 }
 
-const RANK_THEMES: Record<string, { bg: string, accent: string, text: string }> = {
-  'ZERO': { bg: 'bg-slate-700', accent: 'text-slate-300', text: 'text-white' },
-  'SCOUT': { bg: 'bg-emerald-600', accent: 'text-emerald-200', text: 'text-white' },
-  'ROVER': { bg: 'bg-blue-600', accent: 'text-blue-200', text: 'text-white' },
-  'TITAN': { bg: 'bg-purple-700', accent: 'text-purple-200', text: 'text-white' },
-  'ZENITH': { bg: 'bg-amber-500', accent: 'text-amber-100', text: 'text-slate-900' },
+const RANK_THEMES: Record<string, { bg: string, accent: string, badge: string, strip: string }> = {
+  'ZERO':   { bg: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', accent: '#94a3b8', badge: '#334155', strip: '#475569' },
+  'SCOUT':  { bg: 'linear-gradient(135deg, #065f46 0%, #022c22 100%)', accent: '#6ee7b7', badge: '#047857', strip: '#10b981' },
+  'ROVER':  { bg: 'linear-gradient(135deg, #1e40af 0%, #0c1a6b 100%)', accent: '#93c5fd', badge: '#1d4ed8', strip: '#3b82f6' },
+  'TITAN':  { bg: 'linear-gradient(135deg, #6b21a8 0%, #2e1065 100%)', accent: '#d8b4fe', badge: '#7e22ce', strip: '#a855f7' },
+  'ZENITH': { bg: 'linear-gradient(135deg, #92400e 0%, #451a03 100%)', accent: '#fcd34d', badge: '#b45309', strip: '#f59e0b' },
 };
 
 export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarned, onClose }) => {
   const visaRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const theme = RANK_THEMES[user.rank] || RANK_THEMES['ZERO'];
+  const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+  const cityCode = cityName.substring(0, 3).toUpperCase();
 
   const handleShare = async () => {
-    if (!visaRef.current) return;
+    if (!visaRef.current || isGenerating) return;
     setIsGenerating(true);
     try {
+      // Esperar a que las fuentes e imágenes carguen
+      await new Promise(r => setTimeout(r, 300));
+
       const dataUrl = await htmlToImage.toPng(visaRef.current, {
         quality: 1,
         pixelRatio: 3,
+        cacheBust: true,
+        skipFonts: false,
       });
 
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `bdai-visa-${cityName.toLowerCase()}.png`, { type: 'image/png' });
+      const file = new File([blob], `bdai-visa-${cityName.toLowerCase().replace(/\s/g, '-')}.png`, { type: 'image/png' });
 
-      if (navigator.share) {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `bdai Visa - ${cityName}`,
-          text: `Just conquered ${cityName}! My rank is ${user.rank}. #bdai #travel`,
+          title: `bdai Visa — ${cityName}`,
+          text: `🌍 Acabo de conquistar ${cityName} en bdai! Rango: ${user.rank} · +${milesEarned} millas ✈️ #bdai #travel #${cityName.replace(/\s/g, '')}`,
+        });
+      } else if (navigator.share) {
+        await navigator.share({
+          title: `bdai Visa — ${cityName}`,
+          text: `🌍 Acabo de conquistar ${cityName} en bdai! Rango: ${user.rank} · +${milesEarned} millas ✈️`,
+          url: 'https://www.bdai.travel',
         });
       } else {
+        // Fallback: descargar
         const link = document.createElement('a');
-        link.download = `bdai-visa-${cityName.toLowerCase()}.png`;
+        link.download = `bdai-visa-${cityName.toLowerCase().replace(/\s/g, '-')}.png`;
         link.href = dataUrl;
         link.click();
       }
@@ -55,80 +68,146 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 animate-fade-in">
-      <div 
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 10000,
+      background: 'rgba(2,6,23,0.97)', backdropFilter: 'blur(20px)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', padding: '24px',
+    }}>
+      {/* VISA CARD — formato cuadrado 1:1 para Instagram */}
+      <div
         ref={visaRef}
-        className={`w-full max-w-[320px] aspect-[9/16] ${theme.bg} rounded-[2.5rem] p-8 flex flex-col relative overflow-hidden shadow-2xl`}
+        style={{
+          width: '320px', height: '320px',
+          background: theme.bg,
+          borderRadius: '24px',
+          overflow: 'hidden',
+          position: 'relative',
+          fontFamily: "'Arial Black', Arial, sans-serif",
+          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+        }}
       >
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full -ml-16 -mb-16 blur-2xl"></div>
-        
-        <div className="relative z-10 flex justify-between items-start">
-          <div className="flex flex-col">
-            <span className={`text-[8px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>Official Visa</span>
-            <h1 className={`text-2xl font-black italic tracking-tighter ${theme.text}`}>bdai</h1>
-          </div>
-          <div className={`w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center`}>
-            <i className={`fas fa-passport ${theme.text} text-xl`}></i>
-          </div>
-        </div>
+        {/* Fondo decorativo */}
+        <div style={{
+          position: 'absolute', top: '-60px', right: '-60px',
+          width: '200px', height: '200px',
+          background: 'rgba(255,255,255,0.06)',
+          borderRadius: '50%',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-40px', left: '-40px',
+          width: '150px', height: '150px',
+          background: 'rgba(0,0,0,0.15)',
+          borderRadius: '50%',
+        }} />
 
-        <div className="flex-1 flex flex-col justify-center py-10">
-          <p className={`text-[10px] font-black uppercase tracking-[0.5em] mb-2 ${theme.accent} opacity-60`}>Destination</p>
-          <h2 className={`text-5xl font-black uppercase tracking-tighter leading-none break-words ${theme.text}`}>
-            {cityName}
-          </h2>
-          <div className={`w-16 h-2 bg-white/30 mt-6 rounded-full`}></div>
-        </div>
+        {/* Franja superior de color */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          height: '4px', background: theme.strip,
+        }} />
 
-        <div className="space-y-6">
-          <div className="bg-white/10 backdrop-blur-md border border-white/10 p-5 rounded-3xl">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className={`text-[8px] font-black uppercase tracking-widest ${theme.accent} opacity-60`}>Traveler</p>
-                <p className={`text-lg font-black ${theme.text}`}>{user.firstName} {user.lastName}</p>
-                <p className={`text-[7px] font-bold uppercase tracking-widest ${theme.accent} opacity-40 mt-0.5`}>{user.country}</p>
-              </div>
-              <div className="text-right">
-                <p className={`text-[8px] font-black uppercase tracking-widest ${theme.accent} opacity-60`}>Rank</p>
-                <p className={`text-lg font-black ${theme.text}`}>{user.rank}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-end">
+        {/* Contenido */}
+        <div style={{ position: 'relative', zIndex: 2, padding: '24px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
             <div>
-              <p className={`text-[8px] font-black uppercase tracking-widest ${theme.accent} opacity-60`}>Miles Earned</p>
-              <p className={`text-3xl font-black ${theme.text}`}>+{milesEarned}</p>
+              <div style={{ color: theme.accent, fontSize: '8px', fontWeight: 900, letterSpacing: '3px', textTransform: 'uppercase', opacity: 0.7 }}>OFFICIAL TRAVEL VISA</div>
+              <div style={{ color: 'white', fontSize: '22px', fontWeight: 900, fontStyle: 'italic', letterSpacing: '-1px', lineHeight: 1 }}>bdai</div>
             </div>
-            <div className="text-right">
-              <p className={`text-[8px] font-black uppercase tracking-widest ${theme.accent} opacity-60`}>Date</p>
-              <p className={`text-xs font-black ${theme.text}`}>{new Date().toLocaleDateString()}</p>
+            <div style={{
+              background: theme.badge,
+              borderRadius: '12px',
+              padding: '8px 12px',
+              textAlign: 'center',
+              border: `1px solid rgba(255,255,255,0.2)`,
+            }}>
+              <div style={{ color: theme.accent, fontSize: '7px', fontWeight: 900, letterSpacing: '2px' }}>RANK</div>
+              <div style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1px' }}>{user.rank}</div>
+            </div>
+          </div>
+
+          {/* Ciudad — el protagonista */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ color: theme.accent, fontSize: '8px', fontWeight: 900, letterSpacing: '4px', textTransform: 'uppercase', opacity: 0.6, marginBottom: '4px' }}>DESTINATION</div>
+            <div style={{ color: 'white', fontSize: cityName.length > 10 ? '28px' : '36px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-1px', lineHeight: 1.1 }}>
+              {cityName}
+            </div>
+            <div style={{ width: '40px', height: '3px', background: theme.strip, borderRadius: '2px', marginTop: '10px' }} />
+          </div>
+
+          {/* Footer — datos del viajero */}
+          <div style={{
+            background: 'rgba(0,0,0,0.25)',
+            borderRadius: '16px',
+            padding: '12px 14px',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ color: theme.accent, fontSize: '7px', fontWeight: 900, letterSpacing: '2px', opacity: 0.6 }}>TRAVELER</div>
+                <div style={{ color: 'white', fontSize: '13px', fontWeight: 900, marginTop: '2px' }}>
+                  {user.username || user.firstName || 'Traveler'}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: theme.accent, fontSize: '7px', fontWeight: 900, letterSpacing: '2px', opacity: 0.6 }}>MILES</div>
+                <div style={{ color: theme.accent, fontSize: '18px', fontWeight: 900 }}>+{milesEarned}</div>
+              </div>
+            </div>
+            <div style={{
+              marginTop: '8px', paddingTop: '8px',
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '7px', fontWeight: 900, letterSpacing: '2px' }}>
+                {date}
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '7px', fontWeight: 900, letterSpacing: '2px' }}>
+                bdai.travel
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20">
-          <div className="h-full bg-white/40 animate-scan"></div>
-        </div>
+        {/* Franja inferior */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          height: '3px', background: theme.strip, opacity: 0.6,
+        }} />
       </div>
 
-      <div className="mt-10 w-full max-w-[320px] space-y-3">
-        <button 
+      {/* Botones */}
+      <div style={{ marginTop: '24px', width: '320px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <button
           onClick={handleShare}
           disabled={isGenerating}
-          className="w-full py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+          style={{
+            width: '100%', padding: '18px',
+            background: isGenerating ? '#334155' : 'white',
+            color: '#0f172a', borderRadius: '20px',
+            fontWeight: 900, fontSize: '11px', letterSpacing: '3px',
+            textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            transition: 'all 0.2s',
+          }}
         >
-          <i className="fas fa-share-alt"></i>
-          {isGenerating ? 'Generating...' : 'Share Visa'}
+          <span style={{ fontSize: '16px' }}>📤</span>
+          {isGenerating ? 'Generando...' : 'Compartir Visado'}
         </button>
-        <button 
+        <button
           onClick={onClose}
-          className="w-full py-4 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-white transition-colors"
+          style={{
+            width: '100%', padding: '14px',
+            background: 'transparent', color: '#64748b',
+            borderRadius: '16px', fontWeight: 900,
+            fontSize: '10px', letterSpacing: '2px',
+            textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+          }}
         >
-          Close
+          Cerrar
         </button>
       </div>
     </div>
