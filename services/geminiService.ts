@@ -405,3 +405,4 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
         return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };
+
