@@ -134,6 +134,8 @@ export default function App() {
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const searchTimeoutRef = useRef<any>(null);
+  // FIX: flag to prevent double-fire between checkAuth and onAuthStateChange
+  const loginHandledRef = useRef(false);
 
   const t = useCallback((key: string) => {
     const lang = user.language || 'es';
@@ -146,7 +148,8 @@ export default function App() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                handleLoginSuccess(session.user);
+                loginHandledRef.current = true;
+                await handleLoginSuccess(session.user);
             } else {
                const saved = localStorage.getItem('bdai_profile');
                if (saved) {
@@ -158,10 +161,13 @@ export default function App() {
         finally { setIsVerifyingSession(false); }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      if (session?.user) {
-        handleLoginSuccess(session.user);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
+      if (session?.user && !loginHandledRef.current) {
+        // FIX: only fire if checkAuth hasn't already handled it
+        loginHandledRef.current = true;
+        await handleLoginSuccess(session.user);
       } else if (_event === 'SIGNED_OUT') {
+        loginHandledRef.current = false;
         setUser(GUEST_PROFILE);
         navigateTo(AppView.LOGIN);
       }
@@ -177,13 +183,10 @@ export default function App() {
       const profile = await getUserProfileByEmail(supabaseUser.email || '');
       if (profile) {
         // ✅ NUNCA sobreescribir datos existentes al hacer login
-        // Solo actualizar rank (calculado), sessionsStarted y isLoggedIn
-        // badges, stamps, miles, visitedCities — se leen tal cual están en Supabase
         const updatedProfile: UserProfile = {
             ...profile,
             isLoggedIn: true,
             rank: calculateTravelerRank(profile.miles),
-            // ✅ Solo añadir badges NUEVOS que no tenga, nunca quitar los existentes
             badges: (() => {
               const existingIds = new Set((profile.badges || []).map((b: any) => b.id));
               const newBadges = checkBadges(profile).filter((b: any) => !existingIds.has(b.id));
@@ -196,8 +199,9 @@ export default function App() {
         };
         setUser(updatedProfile);
         localStorage.setItem('bdai_profile', JSON.stringify(updatedProfile));
-        // ✅ Solo sync si hay badges nuevos o sessionsStarted cambió — nunca sync en frío
-        if (view === AppView.LOGIN) navigateTo(AppView.HOME);
+        // Sync in background — don't await, don't block
+        syncUserProfile(updatedProfile).catch(e => console.warn("Background sync failed:", e));
+        setView(prev => prev === AppView.LOGIN ? AppView.HOME : prev);
       } else {
         // Usuario nuevo — crear perfil desde cero
         const newProfile: UserProfile = { 
@@ -211,20 +215,53 @@ export default function App() {
         newProfile.badges = checkBadges(newProfile);
         await syncUserProfile(newProfile);
         setUser(newProfile);
+        localStorage.setItem('bdai_profile', JSON.stringify(newProfile));
         setShowOnboarding(true);
-        if (view === AppView.LOGIN) navigateTo(AppView.HOME);
+        setView(prev => prev === AppView.LOGIN ? AppView.HOME : prev);
       }
     } catch (e) {
-      console.error("Failed to load profile, keeping local state to prevent data wipe", e);
-      // Fallback to local storage if network fails
+      console.error("Failed to load profile — using localStorage to prevent data wipe", e);
+      // ✅ FIX: fallback to localStorage — NEVER create blank profile on network error
       const saved = localStorage.getItem('bdai_profile');
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.email === supabaseUser.email) {
-          setUser({ ...parsed, isLoggedIn: true });
-          if (view === AppView.LOGIN) navigateTo(AppView.HOME);
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.email === supabaseUser.email) {
+            setUser({ ...parsed, isLoggedIn: true });
+            setView(prev => prev === AppView.LOGIN ? AppView.HOME : prev);
+            return;
+          }
+        } catch (parseError) {
+          console.error("localStorage parse error", parseError);
         }
       }
+      // Only create blank profile if we have absolutely nothing saved
+      // and this is genuinely a new user (no localStorage at all)
+      console.error("No cached profile found — cannot recover without network");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (isLoading) return; 
+    if (otpToken.length < 6) return;
+    setIsLoading(true);
+    setLoadingMessage("DECRYPTING ACCESS...");
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({ 
+        email, token: otpToken, type: 'email' 
+      });
+      if (error) throw error;
+      if (data.user) {
+        // ✅ FIX: use full handleLoginSuccess instead of inline logic
+        // This ensures same protection against data wipe as the auth state change handler
+        loginHandledRef.current = true;
+        await handleLoginSuccess(data.user);
+        navigateTo(AppView.HOME);
+      }
+    } catch (e: any) { 
+      alert(e.message || "Invalid or expired code."); 
+    } finally { 
+      setIsLoading(false); 
     }
   };
 
@@ -274,32 +311,6 @@ export default function App() {
     } finally { setIsLoading(false); }
   };
 
-  const handleVerifyOtp = async () => {
-    if (isLoading) return; 
-    if (otpToken.length < 8) return;
-    setIsLoading(true);
-    setLoadingMessage("DECRYPTING ACCESS...");
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({ 
-        email, token: otpToken, type: 'email' 
-      });
-      if (error) throw error;
-      if (data.user) {
-        const profile = await getUserProfileByEmail(email);
-        if (profile) {
-          // ✅ Solo leer — nunca sobrescribir datos existentes al verificar OTP
-          setUser({ ...profile, isLoggedIn: true });
-          localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
-        } else {
-          const newProfile = { ...GUEST_PROFILE, email, id: data.user.id, isLoggedIn: true };
-          await syncUserProfile(newProfile);
-          setUser(newProfile);
-        }
-        navigateTo(AppView.HOME);
-      }
-    } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
-  };
-
   const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
     setIsLoading(true); 
     setSearchOptions(null); 
@@ -318,12 +329,10 @@ export default function App() {
       setTours([]);
 
       if (forceRefresh) {
-        // Borrar SOLO el slug exacto — nunca borrar otras ciudades con nombre similar
         setLoadingMessage("PURGING OLD DATA...");
         await supabase.from('tours_cache').delete()
           .eq('city', slug).eq('language', langCode.toLowerCase());
       } else {
-        // Búsqueda EXACTA únicamente — nunca mezclar ciudades distintas
         const { data: exact } = await supabase
           .from('tours_cache').select('data')
           .eq('city', slug).eq('language', langCode.toLowerCase()).maybeSingle();
@@ -335,7 +344,6 @@ export default function App() {
         }
       }
 
-      // Generar con Gemini
       setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
       let firstTourReceived = false;
 
@@ -503,7 +511,7 @@ export default function App() {
                   className="flex-1 h-14 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black lowercase text-[10px] tracking-widest disabled:opacity-50">
                   {t('back')}
                 </button>
-                <button onClick={handleVerifyOtp} disabled={otpToken.length < 8 || isLoading}
+                <button onClick={handleVerifyOtp} disabled={otpToken.length < 6 || isLoading}
                   className="flex-[2] h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-30">
                   {t('verifyCode')}
                 </button>
@@ -613,21 +621,6 @@ export default function App() {
                 onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
             )}
 
-            {isLoading && (
-              <div className="fixed inset-0 z-[10000] flex items-center justify-center">
-                <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
-                <div className="relative flex flex-col items-center">
-                  <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/40 animate-pulse mb-6 overflow-hidden border-4 border-white/20">
-                    <i className="fas fa-brain text-3xl text-white"></i>
-                  </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping"></div>
-                    <span className="text-white font-black uppercase tracking-[0.3em] text-[10px]">bdai exploring</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
             {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
             {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
@@ -653,4 +646,3 @@ export default function App() {
     </div>
   );
 }
-
