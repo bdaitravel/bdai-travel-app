@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Stop } from '../types';
 
@@ -40,7 +39,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const [isAutoFollowing, setIsAutoFollowing] = useState(true);
   const tl = TEXTS[language] || TEXTS.es;
   
-  // Validar paradas antes de usarlas
+  // FIX 1 + FIX 3: parsear coordenadas (comas→puntos) y preservar índice original
   const validStops = (stops || []).map((s: any, originalIndex: number) => {
     const lat = typeof s.latitude === 'string' ? parseFloat(s.latitude.replace(',', '.')) : s.latitude;
     const lng = typeof s.longitude === 'string' ? parseFloat(s.longitude.replace(',', '.')) : s.longitude;
@@ -52,7 +51,10 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
       isValid: !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0
     };
   });
-  const currentStop = validStops[currentStopIndex]?.isValid ? validStops[currentStopIndex] : validStops.find((s: any) => s.isValid);
+
+  const currentStop = validStops[currentStopIndex]?.isValid 
+    ? validStops[currentStopIndex] 
+    : validStops.find((s: any) => s.isValid);
 
   useEffect(() => {
     if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
@@ -94,7 +96,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     const map = mapInstanceRef.current;
     if (!map || !L) return;
 
-    // Actualizar marcador de usuario si hay ubicación
     if (userLocation) {
         if (userMarkerRef.current) map.removeLayer(userMarkerRef.current);
         
@@ -119,7 +120,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         
         if (currentStop) {
             const dist = map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]);
-            if (dist < 50000) { // Only draw line if within 50km
+            if (dist < 50000) {
                 activeLineRef.current = L.polyline([
                     [userLocation.lat, userLocation.lng], 
                     [currentStop.latitude, currentStop.longitude]
@@ -134,20 +135,16 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
         }
     }
 
-    // Lógica de seguimiento (Auto-following)
     if (isAutoFollowing && currentStop) {
         if (userLocation) {
             const dist = map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]);
             if (dist < 50000) {
-                // Si estamos cerca, encuadrar usuario y parada
                 const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]]);
                 map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17, animate: true });
             } else {
-                // Si estamos muy lejos, centrar solo en la parada
                 map.flyTo([currentStop.latitude, currentStop.longitude], 16, { animate: true });
             }
         } else {
-            // Si no hay ubicación, centrar en la parada actual
             map.flyTo([currentStop.latitude, currentStop.longitude], 16, { animate: true });
         }
     }
@@ -158,7 +155,6 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     const map = mapInstanceRef.current;
     if (!map || !L) return;
 
-    // Limpieza
     markersRef.current.forEach(m => map.removeLayer(m));
     geofenceCirclesRef.current.forEach(c => map.removeLayer(c));
     if (fullPathRef.current) map.removeLayer(fullPathRef.current);
@@ -166,8 +162,10 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     markersRef.current = [];
     geofenceCirclesRef.current = [];
 
-    if (validStops.length > 0) {
-        const routeCoordinates = validStops.map((s: any) => [s.latitude, s.longitude]);
+    const activeStops = validStops.filter((s: any) => s.isValid);
+
+    if (activeStops.length > 0) {
+        const routeCoordinates = activeStops.map((s: any) => [s.latitude, s.longitude]);
         fullPathRef.current = L.polyline(routeCoordinates, {
             color: 'white',
             weight: 2,
@@ -175,7 +173,15 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
             dashArray: '1, 10'
         }).addTo(map);
 
+        // FIX 3: iterar sobre TODOS los stops (incluso inválidos) pero solo renderizar los válidos
+        // así los índices de marcadores coinciden siempre con los índices de la UI
         validStops.forEach((stop: any, idx: number) => {
+            if (!stop.isValid) {
+                markersRef.current.push(null); // placeholder para mantener índice
+                geofenceCirclesRef.current.push(null);
+                return;
+            }
+
             const isActive = idx === currentStopIndex;
             const stopType = (stop.type || 'architecture').toLowerCase();
             const config = STOP_CONFIG[stopType] || STOP_CONFIG['architecture'] || { icon: 'fa-location-dot', color: '#9333ea' };
@@ -216,19 +222,18 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     }
   }, [stops, currentStopIndex]);
 
-  // Ajustar zoom inicial a todas las paradas solo cuando cambian las paradas
+  // FIX 2: maxZoom: 16 al ajustar vista inicial — evita zoom extremo en pueblos pequeños
   useEffect(() => {
     const map = mapInstanceRef.current;
     const activeStops = validStops.filter((s: any) => s.isValid);
     if (!map || !L || activeStops.length === 0) return;
     
-    const group = L.featureGroup(markersRef.current);
+    const group = L.featureGroup(markersRef.current.filter(Boolean));
     if (group.getLayers().length > 0) {
         map.fitBounds(group.getBounds().pad(0.2), { maxZoom: 16 });
     }
   }, [stops]);
 
-  // Volar a la parada cuando cambia el índice si no estamos en auto-following
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !L || !currentStop) return;
@@ -242,8 +247,21 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     <div className="w-full h-full relative overflow-hidden bg-slate-950">
         <div ref={mapContainerRef} className="w-full h-full" />
         <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-3">
-            <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
-            <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"><i className="fas fa-bullseye text-lg"></i></button>
+            <button 
+                onClick={() => setIsAutoFollowing(!isAutoFollowing)} 
+                className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}
+            >
+                <i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i>
+            </button>
+            <button 
+                onClick={() => { 
+                    if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); 
+                    setIsAutoFollowing(false); 
+                }} 
+                className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"
+            >
+                <i className="fas fa-bullseye text-lg"></i>
+            </button>
         </div>
     </div>
   );
