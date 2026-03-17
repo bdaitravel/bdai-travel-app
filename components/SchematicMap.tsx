@@ -266,3 +266,4 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     </div>
   );
 };
+
