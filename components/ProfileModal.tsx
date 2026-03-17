@@ -16,7 +16,7 @@ interface ProfileModalProps {
   onOpenAdmin?: () => void;
   language?: string;
   onLangChange?: (code: string) => void;
-  onNavigateToCity?: (cityName: string, country: string) => void;
+
 }
 
 const MODAL_TEXTS: any = {
@@ -95,7 +95,7 @@ const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => strin
     );
 };
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin, language, onLangChange, onNavigateToCity }) => {
+export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin, language, onLangChange }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -262,24 +262,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                                             </p>
                                         )}
                                     </div>
-                                    <div className="flex flex-col gap-1.5 shrink-0">
-                                        {/* Share visa */}
-                                        <button
-                                            onClick={() => setVisaShareStamp(s)}
-                                            className="w-8 h-8 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-600 flex items-center justify-center active:scale-90 transition-all"
-                                            title={pt('shareVisa')}>
-                                            <i className="fas fa-share-alt text-[10px]"></i>
-                                        </button>
-                                        {/* Return to city */}
-                                        {onNavigateToCity && (
-                                            <button
-                                                onClick={() => { onNavigateToCity(s.city, s.country); onClose(); }}
-                                                className="w-8 h-8 rounded-lg bg-cyan-600/15 border border-cyan-500/30 text-cyan-600 flex items-center justify-center active:scale-90 transition-all"
-                                                title={pt('returnToCity')}>
-                                                <i className="fas fa-map-marker-alt text-[10px]"></i>
-                                            </button>
-                                        )}
-                                    </div>
+                                    <button
+                                        onClick={() => setVisaShareStamp(s)}
+                                        className="w-8 h-8 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-600 flex items-center justify-center active:scale-90 transition-all shrink-0"
+                                        title={pt('shareVisa')}>
+                                        <i className="fas fa-share-alt text-[10px]"></i>
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -454,3 +442,4 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
     </div>
   );
 };
+
