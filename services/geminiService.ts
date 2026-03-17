@@ -160,7 +160,7 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
 
         try {
             const stream = await ai.models.generateContentStream({
-                model: 'gemini-2.5-pro-preview-06-05',
+                model: 'gemini-2.5-flash',
                 contents: prompt,
                 config: { 
                     systemInstruction, 
@@ -212,7 +212,7 @@ CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates 
         } catch (streamError) {
             console.warn("Streaming failed, falling back to non-streaming", streamError);
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-pro-preview-06-05',
+                model: 'gemini-2.5-flash',
                 contents: prompt,
                 config: { 
                     systemInstruction,
