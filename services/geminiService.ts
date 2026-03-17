@@ -29,7 +29,7 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-pro-preview-06-05",
             contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
             Return JSON object: { "english": "English Name", "detected": "Detected Language Code" }`,
             config: {
@@ -52,7 +52,7 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-pro-preview-06-05",
             contents: `The user typed: "${input}" in language "${userLanguage}" and is looking for a city or town to visit.
 
 RULES:
@@ -396,7 +396,7 @@ export const generateCityPostcard = async (city: string, interests: string[]): P
     return handleAiCall(async () => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-2.5-flash',
             contents: { parts: [{ text: `Postcard of ${city}` }] },
             config: { imageConfig: { aspectRatio: "9:16" } }
         });
