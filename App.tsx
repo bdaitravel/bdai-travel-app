@@ -173,45 +173,58 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = async (supabaseUser: any) => {
-    const profile = await getUserProfileByEmail(supabaseUser.email || '');
-    if (profile) {
-      // ✅ NUNCA sobreescribir datos existentes al hacer login
-      // Solo actualizar rank (calculado), sessionsStarted y isLoggedIn
-      // badges, stamps, miles, visitedCities — se leen tal cual están en Supabase
-      const updatedProfile: UserProfile = {
-          ...profile,
-          isLoggedIn: true,
-          rank: calculateTravelerRank(profile.miles),
-          // ✅ Solo añadir badges NUEVOS que no tenga, nunca quitar los existentes
-          badges: (() => {
-            const existingIds = new Set((profile.badges || []).map((b: any) => b.id));
-            const newBadges = checkBadges(profile).filter((b: any) => !existingIds.has(b.id));
-            return [...(profile.badges || []), ...newBadges];
-          })(),
-          stats: { 
-            ...profile.stats, 
-            sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1 
-          }
-      };
-      setUser(updatedProfile);
-      localStorage.setItem('bdai_profile', JSON.stringify(updatedProfile));
-      // ✅ Solo sync si hay badges nuevos o sessionsStarted cambió — nunca sync en frío
-      if (view === AppView.LOGIN) navigateTo(AppView.HOME);
-    } else {
-      // Usuario nuevo — crear perfil desde cero
-      const newProfile: UserProfile = { 
-        ...GUEST_PROFILE, 
-        email: supabaseUser.email || '', 
-        id: supabaseUser.id, 
-        isLoggedIn: true, 
-        stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } 
-      };
-      newProfile.rank = calculateTravelerRank(newProfile.miles);
-      newProfile.badges = checkBadges(newProfile);
-      await syncUserProfile(newProfile);
-      setUser(newProfile);
-      setShowOnboarding(true);
-      if (view === AppView.LOGIN) navigateTo(AppView.HOME);
+    try {
+      const profile = await getUserProfileByEmail(supabaseUser.email || '');
+      if (profile) {
+        // ✅ NUNCA sobreescribir datos existentes al hacer login
+        // Solo actualizar rank (calculado), sessionsStarted y isLoggedIn
+        // badges, stamps, miles, visitedCities — se leen tal cual están en Supabase
+        const updatedProfile: UserProfile = {
+            ...profile,
+            isLoggedIn: true,
+            rank: calculateTravelerRank(profile.miles),
+            // ✅ Solo añadir badges NUEVOS que no tenga, nunca quitar los existentes
+            badges: (() => {
+              const existingIds = new Set((profile.badges || []).map((b: any) => b.id));
+              const newBadges = checkBadges(profile).filter((b: any) => !existingIds.has(b.id));
+              return [...(profile.badges || []), ...newBadges];
+            })(),
+            stats: { 
+              ...profile.stats, 
+              sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1 
+            }
+        };
+        setUser(updatedProfile);
+        localStorage.setItem('bdai_profile', JSON.stringify(updatedProfile));
+        // ✅ Solo sync si hay badges nuevos o sessionsStarted cambió — nunca sync en frío
+        if (view === AppView.LOGIN) navigateTo(AppView.HOME);
+      } else {
+        // Usuario nuevo — crear perfil desde cero
+        const newProfile: UserProfile = { 
+          ...GUEST_PROFILE, 
+          email: supabaseUser.email || '', 
+          id: supabaseUser.id, 
+          isLoggedIn: true, 
+          stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } 
+        };
+        newProfile.rank = calculateTravelerRank(newProfile.miles);
+        newProfile.badges = checkBadges(newProfile);
+        await syncUserProfile(newProfile);
+        setUser(newProfile);
+        setShowOnboarding(true);
+        if (view === AppView.LOGIN) navigateTo(AppView.HOME);
+      }
+    } catch (e) {
+      console.error("Failed to load profile, keeping local state to prevent data wipe", e);
+      // Fallback to local storage if network fails
+      const saved = localStorage.getItem('bdai_profile');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.email === supabaseUser.email) {
+          setUser({ ...parsed, isLoggedIn: true });
+          if (view === AppView.LOGIN) navigateTo(AppView.HOME);
+        }
+      }
     }
   };
 

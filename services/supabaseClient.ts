@@ -1,6 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-// @ts-ignore
-import lamejs from 'lamejs';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
 const rawUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -36,7 +34,6 @@ try {
       limit: () => query,
       maybeSingle: async () => ({ data: null, error: null }),
       single: async () => ({ data: null, error: null }),
-      // Support for async/await directly on the query
       then: (onfulfilled: any) => Promise.resolve({ data: [], error: null }).then(onfulfilled)
     };
     return query;
@@ -63,7 +60,6 @@ try {
 export { supabase };
 
 const generateHash = async (text: string): Promise<string> => {
-    // Normalize text to be more resilient to minor AI variations
     const normalized = text.toLowerCase()
         .replace(/\s+/g, ' ')
         .replace(/[.,!?;:]/g, '')
@@ -74,52 +70,38 @@ const generateHash = async (text: string): Promise<string> => {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
-const encodeToMp3 = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
-    const int16Data = new Int16Array(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength / 2);
-    const encoder = new lamejs.Mp3Encoder(1, sampleRate, 64);
-    
-    const maxSamples = 1152;
-    const mp3Data = [];
-    
-    for (let i = 0; i < int16Data.length; i += maxSamples) {
-        const chunk = int16Data.subarray(i, i + maxSamples);
-        const encoded = encoder.encodeBuffer(chunk);
-        if (encoded.length > 0) {
-            mp3Data.push(encoded);
-        }
-    }
-    
-    const flush = encoder.flush();
-    if (flush.length > 0) {
-        mp3Data.push(flush);
-    }
-    
-    const totalLength = mp3Data.reduce((acc, current) => acc + current.length, 0);
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-    
-    for (const chunk of mp3Data) {
-        result.set(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength), offset);
-        offset += chunk.length;
-    }
-    
-    return result;
+// ✅ WAV encoder — sin dependencias externas, sin lamejs
+const encodeToWav = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+    const blockAlign = numChannels * bitsPerSample / 8;
+    const dataSize = pcmData.byteLength;
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    const writeStr = (offset: number, str: string) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    };
+
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeStr(36, 'data');
+    view.setUint32(40, dataSize, true);
+    new Uint8Array(buffer, 44).set(pcmData);
+
+    return new Uint8Array(buffer);
 };
 
-const base64ToUint8Array = (base64: string): Uint8Array => {
-    const binaryString = atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
-};
-
-/**
- * Normalizes keys for database storage/retrieval.
- * Format: city-country (e.g., madrid-spain)
- */
 export const normalizeKey = (city: string | undefined | null, country?: string): string => {
   const clean = (text: string) => text
     .normalize("NFD")
@@ -138,18 +120,14 @@ export const normalizeKey = (city: string | undefined | null, country?: string):
   
   return `${safeCity}_${safeCountry}`;
 };
-/**
- * Checks if a city exists in cache using the new slug format.
- */
+
 export const checkIfCityCached = async (city: string, slug: string): Promise<boolean> => {
   if (!slug) return false;
   try {
-    // 1. Try exact English slug: florence_italy
     const { data: d1 } = await supabase
       .from('tours_cache').select('city').eq('city', slug).limit(1);
     if (d1 && d1.length > 0) return true;
 
-    // 2. Fallback: search by city name only to find old Spanish slugs
     const cityOnly = slug.split('_')[0];
     if (!cityOnly) return false;
     const { data: d2 } = await supabase
@@ -162,7 +140,6 @@ export const checkIfCityCached = async (city: string, slug: string): Promise<boo
 export const searchCitiesInCache = async (query: string): Promise<any[]> => {
     if (!query || query.length < 2) return [];
     try {
-        // Fuzzy search: ignore case and accents using ilike
         const { data, error } = await supabase
             .from('tours_cache')
             .select('city, language')
@@ -175,11 +152,9 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
         return (data || []).reduce((acc: any[], curr: any) => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
-                // Extract city and country from slug for display
                 const parts = curr.city.split('_');
                 const cityName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : '';
                 const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
-                
                 acc.push({
                     name: cityName,
                     country: countryName,
@@ -199,7 +174,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
   try {
     const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
     if (error) {
-      console.error("Error fetching profile:", error);
+      console.error("Error fetching profile from Supabase:", error);
       throw error;
     }
     if (!data) return null;
@@ -221,7 +196,7 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       badges: data.badges || [], stamps: data.stamps || [], capturedMoments: data.captured_moments || []
     };
   } catch (e) { 
-    console.error("Exception in getUserProfileByEmail:", e);
+    console.error("Critical error in getUserProfileByEmail:", e);
     throw e; 
   }
 };
@@ -238,61 +213,43 @@ export const checkBadges = (profile: UserProfile): Badge[] => {
   const earnedBadges = [...(profile.badges || [])];
   const badgeIds = new Set(earnedBadges.map(b => b.id));
 
-  // Debutante
   if (!badgeIds.has('debutante') && (profile.stats.photosTaken > 0 || profile.completedTours.length > 0)) {
      const b = APP_BADGES.find(x => x.id === 'debutante');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
-
-  // On Fire
   if (!badgeIds.has('onfire') && profile.stats.streakDays >= 3) {
      const b = APP_BADGES.find(x => x.id === 'onfire');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
-
-  // Historiador (History)
   if (!badgeIds.has('historiador') && profile.historyPoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'historiador');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
-
-  // Foodie (Food)
   if (!badgeIds.has('foodie') && profile.foodPoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'foodie');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
-
-  // Culture Guru
   if (!badgeIds.has('culture_master') && profile.culturePoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'culture_master');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
-
-  // Nature Explorer
   if (!badgeIds.has('nature_master') && profile.naturePoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'nature_master');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
-
-  // Art Connoisseur
   if (!badgeIds.has('art_master') && profile.artPoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'art_master');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
-
-  // Architecture Critic
   if (!badgeIds.has('arch_master') && profile.archPoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'arch_master');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
-
-  // Photo Visionary
   if (!badgeIds.has('photo_master') && profile.photoPoints >= 10) {
      const b = APP_BADGES.find(x => x.id === 'photo_master');
      if (b) earnedBadges.push({...b, earnedAt: new Date().toISOString()});
   }
 
-  // Rank Badges
   const currentRank = calculateTravelerRank(profile.miles);
   const rankBadgeId = `rank_${currentRank.toLowerCase()}`;
   if (!badgeIds.has(rankBadgeId)) {
@@ -310,11 +267,8 @@ export const completeTourBonus = (profile: UserProfile, cityId: string): UserPro
         miles: profile.miles + 50,
         visitedCities: updatedCities
     };
-    
-    // Recalcular rango y badges
     updatedProfile.rank = calculateTravelerRank(updatedProfile.miles);
     updatedProfile.badges = checkBadges(updatedProfile);
-    
     return updatedProfile;
 };
 
@@ -341,22 +295,15 @@ export const syncUserProfile = async (profile: UserProfile) => {
   } catch (e) { console.error("❌ Sync Error:", e); }
 };
 
-/**
- * Aggressively searches for cached tours.
- * 1. Exact match for City_Country.
- * 2. Case-insensitive match for City Name only using ilike.
- */
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{data: Tour[], langFound: string, cityName: string} | null> => {
   const slug = normalizeKey(city, country);
   if (!slug) return null;
   try {
-    // 1. Try exact English slug
     const { data, error } = await supabase.from('tours_cache')
       .select('data, language, city')
       .eq('city', slug).eq('language', language.toLowerCase()).maybeSingle();
     if (!error && data?.data) return { data: data.data, langFound: language, cityName: data.city };
 
-    // 2. Fallback: city name only (finds old Spanish slugs like alcaladehenares_spain)
     const cityOnly = slug.split('_')[0];
     const { data: d2 } = await supabase.from('tours_cache')
       .select('data, language, city')
@@ -391,21 +338,27 @@ export const saveAudioToCache = async (text: string, lang: string, audioData: Ui
     try {
         const hash = await generateHash(text);
         const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.mp3`;
+        // ✅ WAV en vez de MP3 — sin lamejs, sin dependencias externas
+        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.wav`;
         
-        // Convert to MP3
-        const mp3Data = encodeToMp3(audioData);
-        const audioBlob = new Blob([mp3Data.buffer as ArrayBuffer], { type: 'audio/mpeg' });
+        const wavData = encodeToWav(audioData);
+        const audioBlob = new Blob([wavData.buffer as ArrayBuffer], { type: 'audio/wav' });
         
-        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { contentType: 'audio/mpeg', cacheControl: '3600' });
+        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { 
+            contentType: 'audio/wav', 
+            cacheControl: '3600' 
+        });
         if (uploadError) throw uploadError;
+
         const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
+        
         await supabase.from('audio_cache').upsert({ 
           text_hash: hash, 
           language: lang.toLowerCase(), 
           city: city, 
           audio_url: publicUrl 
         }, { onConflict: 'text_hash,language' });
+
         return publicUrl;
     } catch (e) { 
         console.error("Audio cache error:", e);
