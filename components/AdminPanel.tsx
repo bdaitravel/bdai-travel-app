@@ -73,15 +73,15 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
             const todayStr = now.toISOString().split('T')[0];
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-            const newToday = profiles.filter(p => p.join_date?.startsWith(todayStr)).length;
-            const newWeek = profiles.filter(p => p.join_date && p.join_date > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()).length;
-            const activeWeek = profiles.filter(p => p.updated_at && p.updated_at > weekAgo).length;
-            const totalMiles = profiles.reduce((acc, p) => acc + (p.miles || 0), 0);
-            const totalTours = profiles.reduce((acc, p) => acc + (p.completed_tours?.length || 0), 0);
+            const newToday = profiles.filter((p: any) => p.join_date?.startsWith(todayStr)).length;
+            const newWeek = profiles.filter((p: any) => p.join_date && p.join_date > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()).length;
+            const activeWeek = profiles.filter((p: any) => p.updated_at && p.updated_at > weekAgo).length;
+            const totalMiles = profiles.reduce((acc: number, p: any) => acc + (p.miles || 0), 0);
+            const totalTours = profiles.reduce((acc: number, p: any) => acc + (p.completed_tours?.length || 0), 0);
 
             // Cities visited
             const cityCount: Record<string, number> = {};
-            profiles.forEach(p => {
+            profiles.forEach((p: any) => {
                 (p.visited_cities || []).forEach((c: string) => {
                     const name = c.split('_')[0];
                     cityCount[name] = (cityCount[name] || 0) + 1;
@@ -94,7 +94,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
 
             // Countries
             const countryCount: Record<string, number> = {};
-            profiles.forEach(p => { if (p.country) countryCount[p.country] = (countryCount[p.country] || 0) + 1; });
+            profiles.forEach((p: any) => { if (p.country) countryCount[p.country] = (countryCount[p.country] || 0) + 1; });
             const topCountries = Object.entries(countryCount)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 8)
@@ -102,7 +102,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
 
             // Languages
             const langCount: Record<string, number> = {};
-            profiles.forEach(p => { if (p.language) langCount[p.language] = (langCount[p.language] || 0) + 1; });
+            profiles.forEach((p: any) => { if (p.language) langCount[p.language] = (langCount[p.language] || 0) + 1; });
             const topLanguages = Object.entries(langCount)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 6)
@@ -110,7 +110,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
 
             // Rank distribution
             const rankCount: Record<string, number> = { ZERO: 0, SCOUT: 0, ROVER: 0, TITAN: 0, ZENITH: 0 };
-            profiles.forEach(p => { if (p.rank && rankCount[p.rank] !== undefined) rankCount[p.rank]++; });
+            profiles.forEach((p: any) => { if (p.rank && rankCount[p.rank] !== undefined) rankCount[p.rank]++; });
             const rankDistribution = Object.entries(rankCount).map(([rank, count]) => ({ rank, count }));
 
             // Daily signups last 14 days
@@ -119,7 +119,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
                 dailyMap[d.toISOString().split('T')[0]] = 0;
             }
-            profiles.forEach(p => {
+            profiles.forEach((p: any) => {
                 if (p.join_date) {
                     const d = p.join_date.split('T')[0];
                     if (dailyMap[d] !== undefined) dailyMap[d]++;
@@ -129,7 +129,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
 
             // Recent users
             const recentUsers = [...profiles]
-                .sort((a, b) => new Date(b.join_date || 0).getTime() - new Date(a.join_date || 0).getTime())
+                .sort((a: any, b: any) => new Date(b.join_date || 0).getTime() - new Date(a.join_date || 0).getTime())
                 .slice(0, 20);
 
             // Total unique cities in cache
@@ -549,3 +549,4 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         </div>
     );
 };
+
