@@ -108,35 +108,10 @@ CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, Fre
     });
 };
 
-// Obtiene las coords del centro de una ciudad via Nominatim
-const getCityCenter = async (city: string, country: string): Promise<{ lat: number, lng: number } | null> => {
-    try {
-        const query = encodeURIComponent(`${city}, ${country}`);
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
-            headers: { 'Accept-Language': 'en', 'User-Agent': 'bdai-travel-app/1.0' }
-        });
-        const data = await res.json();
-        if (data && data.length > 0) {
-            return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-        }
-    } catch (e) {
-        console.warn('Nominatim lookup failed:', e);
-    }
-    return null;
-};
-
 export const generateToursForCity = async (city: string, country: string, user: UserProfile, onProgress?: (tour: Tour) => void): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    // Obtener centro del pueblo antes de generar — ancla geográfica para Gemini
-    const cityCenter = await getCityCenter(city, country);
-    const coordsAnchor = cityCenter
-        ? `The exact center of ${city} is at latitude ${cityCenter.lat.toFixed(6)}, longitude ${cityCenter.lng.toFixed(6)}. ALL stops must be within 1.5km of this point.`
-        : `All stops must be located within the urban area of ${city}, ${country}.`;
-
     const prompt = `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
-
-GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
 
 THEMES:
 1. "Hidden Gems & Dark Secrets"
@@ -164,9 +139,9 @@ STRICT RULES:
 1. Format: Return ONLY a valid JSON array containing exactly 3 tour objects.
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-4. MINIMUM 10 STOPS PER TOUR.
+4. MINIMUM 10 STOPS PER TOUR. If the location is a small town or village, you may reduce this to a minimum of 5 stops per tour.
 5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
-6. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be within 1.5km of the city center provided. Use realistic offsets (streets, plazas, buildings) around that center point. NEVER place stops on highways or outside the town.
+6. CRITICAL: Latitude and Longitude MUST be exact, real-world GPS coordinates (numbers, not strings). Do not hallucinate locations. They must be precisely located in ${city}, ${country}. If you don't know the exact GPS coordinates of a place, DO NOT include it in the tour.
 7. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
@@ -176,7 +151,7 @@ You love sharing the dark secrets, mysteries, and curiosities of cities.
 You NEVER use citations, footnotes, or references. 
 You are real, accurate, but never boring.
 CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
-GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. For small towns, use the town center coordinates as reference and place stops within 2km radius. Never place stops in neighboring towns or wrong locations.`;
+CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. NEVER guess or estimate coordinates. Always search for the real location.`;
 
     return handleAiCall(async () => {
         const allTours: Tour[] = [];
@@ -185,9 +160,12 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
 
         try {
             const stream = await ai.models.generateContentStream({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-2.5-pro-preview-06-05',
                 contents: prompt,
-                config: { systemInstruction },
+                config: { 
+                    systemInstruction, 
+                    tools: [{ googleSearch: {} }]
+                },
             });
 
             for await (const chunk of stream) {
@@ -234,9 +212,12 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
         } catch (streamError) {
             console.warn("Streaming failed, falling back to non-streaming", streamError);
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-2.5-pro-preview-06-05',
                 contents: prompt,
-                config: { systemInstruction },
+                config: { 
+                    systemInstruction,
+                    tools: [{ googleSearch: {} }]
+                },
             });
             const text = (response.text || '[]')
                 .replace(/\[\d+\]/g, '')
@@ -264,19 +245,41 @@ const tryExtractTours = (text: string): Tour[] => {
         const parsed = JSON.parse(cleanText);
         if (Array.isArray(parsed)) return parsed;
     } catch (e) {
-        // Expected during streaming, silently fallback to regex extraction
+        // Expected during streaming
     }
 
     const tours: Tour[] = [];
-    try {
-        const tourMatches = text.matchAll(/\{[^{}]*"stops"\s*:\s*\[[^\]]*(?:\{[^{}]*\}[^\]]*)*\][^{}]*\}/gs);
-        for (const match of tourMatches) {
-            try {
-                const tour = JSON.parse(match[0]);
-                if (tour && tour.stops) tours.push(tour);
-            } catch {}
+    let braceCount = 0;
+    let inString = false;
+    let escapeNext = false;
+    let objStart = -1;
+
+    for (let i = 0; i < cleanText.length; i++) {
+        const char = cleanText[i];
+        if (escapeNext) { escapeNext = false; continue; }
+        if (char === '\\') { escapeNext = true; continue; }
+        if (char === '"') { inString = !inString; continue; }
+        if (!inString) {
+            if (char === '{') {
+                if (braceCount === 0) objStart = i;
+                braceCount++;
+            } else if (char === '}') {
+                braceCount--;
+                if (braceCount === 0 && objStart !== -1) {
+                    try {
+                        const objStr = cleanText.substring(objStart, i + 1);
+                        const tour = JSON.parse(objStr);
+                        if (tour && tour.stops && Array.isArray(tour.stops)) {
+                            tours.push(tour);
+                        }
+                    } catch (e) {
+                        // Ignore
+                    }
+                    objStart = -1;
+                }
+            }
         }
-    } catch {}
+    }
 
     return tours;
 };
@@ -302,21 +305,15 @@ export const generateAudio = async (text: string, language: string, city: string
     const cleanText = (text || "").trim();
     if (!cleanText) return null;
 
-    // ✅ FIX: verificar que el audio cacheado es válido antes de devolverlo
     const cachedUrl = await getCachedAudio(cleanText, language);
     if (cachedUrl) {
         try {
             const response = await fetch(cachedUrl);
-            if (response.ok) {
-                const buffer = await response.arrayBuffer();
-                if (buffer.byteLength > 0) {
-                    return new Uint8Array(buffer);
-                }
-            }
+            const buffer = await response.arrayBuffer();
+            return new Uint8Array(buffer);
         } catch (e) {
             console.error("Error loading cached audio:", e);
         }
-        // Si falla la carga del caché, continúa a generar nuevo audio
     }
 
     const voiceName = VOICE_MAP[language] || 'Kore';
@@ -344,7 +341,6 @@ export const generateAudio = async (text: string, language: string, city: string
         const binaryString = atob(base64);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-        // Guardar en caché en segundo plano — no bloquea la reproducción
         saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
         return bytes;
     }
