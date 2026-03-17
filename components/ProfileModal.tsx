@@ -145,4 +145,312 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       } catch (e) {} finally { setIsSyncing(false); }
   };
 
+  const [showBragModal, setShowBragModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [showLegal, setShowLegal] = useState<'privacy' | 'terms' | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReportBug, setShowReportBug] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<any>(null);
+  const [visaShareStamp, setVisaShareStamp] = useState<any>(null);
 
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      await supabase.from('profiles').delete().eq('email', user.email);
+      await supabase.auth.signOut();
+      if (onLogout) onLogout();
+    } catch (e) { console.error("Error deleting account", e); }
+    finally { setIsDeleting(false); }
+  };
+
+  // Split badges by type
+  const rankBadges = APP_BADGES.filter(b => RANK_BADGE_IDS.includes(b.id));
+  const achievementBadges = APP_BADGES.filter(b => !RANK_BADGE_IDS.includes(b.id));
+
+  return (
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start overflow-y-auto no-scrollbar bg-slate-950/98 backdrop-blur-2xl">
+      {showToast && (
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[1000] bg-purple-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl animate-bounce">
+          <i className="fas fa-check-circle mr-2"></i> {pt('copiedToClipboard')}
+        </div>
+      )}
+
+      <div className="w-full max-w-sm px-4 pt-12">
+        <div className="flex justify-between items-center mb-6 w-full px-2">
+            <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-red-500/20">
+                <i className="fas fa-sign-out-alt"></i> {pt('logout')}
+            </button>
+            <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/5 active:scale-90 shadow-lg"><i className="fas fa-times"></i></button>
+        </div>
+
+        <div className="bg-[#f3f0e6] w-full rounded-[2.5rem] overflow-hidden shadow-2xl relative border-[3px] border-[#d7d2c3] flex flex-col text-slate-900 mb-64">
+            <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleFileChange} />
+            <div className="bg-[#8b2b2b] p-6 flex justify-between items-center shrink-0 border-b-2 border-[#d7d2c3]">
+                <div>
+                    <h2 className="text-yellow-500 font-black text-[11px] uppercase tracking-widest leading-none">{pt('title')}</h2>
+                    <p className="text-white/40 text-[7px] font-bold uppercase tracking-widest mt-1.5">{pt('subtitle')}</p>
+                </div>
+                <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className={`w-10 h-10 rounded-xl flex items-center justify-center ${isEditing ? 'bg-blue-600' : 'bg-white/10'} text-white transition-all shadow-lg`}>
+                    {isSyncing ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${isEditing ? 'fa-save' : 'fa-edit'} text-xs`}></i>}
+                </button>
+            </div>
+
+            <div className="p-6 space-y-8">
+                {/* Profile header */}
+                <div className="flex gap-6 items-start">
+                    <div onClick={() => fileInputRef.current?.click()} className="shrink-0 w-28 h-36 bg-white border-2 border-[#d7d2c3] rounded-xl shadow-lg overflow-hidden p-1 relative cursor-pointer group">
+                        <img src={formData.avatar} className="w-full h-full object-cover grayscale contrast-125 saturate-0" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-[8px] font-black text-center px-2 opacity-0 group-hover:opacity-100 transition-opacity">{pt('changeAvatar')}</div>
+                    </div>
+                    <div className="flex-1 space-y-4">
+                        <div className="pb-2 border-b border-slate-200">
+                            <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">ID_NOMAD</p>
+                            <div className="flex items-center gap-2">
+                                {isEditing ? (
+                                    <input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px]" placeholder="username" maxLength={20} />
+                                ) : (
+                                    <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
+                                )}
+                                {!isEditing && formData.country && (
+                                    <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : formData.country.substring(0,2).toUpperCase()}/flat/64.png`} className="w-3 h-3 rounded-full" alt="" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="pb-2 border-b border-slate-200">
+                            <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('email')}</p>
+                            <p className="font-bold text-slate-600 text-[8px] truncate leading-none">{user.email}</p>
+                        </div>
+                        <div><p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('rank')}</p><p className="font-black text-purple-600 text-[9px] uppercase">{user.rank}</p></div>
+                        <div className="flex justify-between border-t border-slate-200 pt-3">
+                            <div><p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('miles')}</p><p className="font-black text-slate-900 text-[9px] mt-1">{user.miles.toLocaleString()}</p></div>
+                            <div className="text-right"><p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('streak')}</p><p className="font-black text-orange-600 text-[9px] mt-1"><i className="fas fa-fire mr-1"></i> {user.stats.streakDays}</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Personal data fields */}
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                    {[['givenNames','firstName'],['surname','lastName'],['city','city'],['birthday','birthday']].map(([label, field]) => (
+                        <div key={field} className="space-y-1">
+                            <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt(label)}</p>
+                            {isEditing ? (
+                                <input type={field === 'birthday' ? 'date' : 'text'} value={(formData as any)[field]} onChange={e => setFormData({...formData, [field]: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" />
+                            ) : (
+                                <p className="font-bold text-slate-800 text-[10px] uppercase">{(formData as any)[field] || '---'}</p>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* ── VISADOS ── */}
+                <div className="pt-6 border-t-2 border-dashed border-slate-300">
+                    <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('stamps')}</p>
+                    {user.stamps.length > 0 ? (
+                        <div className="space-y-3">
+                            {user.stamps.map((s: any, i: number) => (
+                                <div key={i} className="bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border-2" style={{ borderColor: s.color || '#6366f1', background: `${s.color || '#6366f1'}15` }}>
+                                        <i className="fas fa-stamp text-lg" style={{ color: s.color || '#6366f1' }}></i>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-black text-slate-900 text-xs uppercase truncate leading-tight">{s.city}</p>
+                                        <p className="font-bold text-slate-400 text-[8px] uppercase truncate">{s.country}</p>
+                                        {s.date && (
+                                            <p className="text-[7px] text-slate-300 mt-0.5">
+                                                {new Date(s.date).toLocaleDateString(user.language || 'es', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col gap-1.5 shrink-0">
+                                        {/* Share visa */}
+                                        <button
+                                            onClick={() => setVisaShareStamp(s)}
+                                            className="w-8 h-8 rounded-lg bg-purple-600/15 border border-purple-500/30 text-purple-600 flex items-center justify-center active:scale-90 transition-all"
+                                            title={pt('shareVisa')}>
+                                            <i className="fas fa-share-alt text-[10px]"></i>
+                                        </button>
+                                        {/* Return to city */}
+                                        {onNavigateToCity && (
+                                            <button
+                                                onClick={() => { onNavigateToCity(s.city, s.country); onClose(); }}
+                                                className="w-8 h-8 rounded-lg bg-cyan-600/15 border border-cyan-500/30 text-cyan-600 flex items-center justify-center active:scale-90 transition-all"
+                                                title={pt('returnToCity')}>
+                                                <i className="fas fa-map-marker-alt text-[10px]"></i>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-4 gap-3">
+                            {[1,2,3,4].map(i => <div key={i} className="aspect-square bg-slate-100 border-2 border-dashed border-slate-200 rounded-2xl"></div>)}
+                        </div>
+                    )}
+                </div>
+
+                {/* ── RANGOS ── */}
+                <div className="pt-2">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="text-base">🏅</span>
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{pt('rankBadges')}</p>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                        {rankBadges.map((b) => {
+                            const isEarned = user.badges?.some((ub: any) => ub.id === b.id);
+                            const earnedBadge = user.badges?.find((ub: any) => ub.id === b.id);
+                            return (
+                                <button
+                                    key={b.id}
+                                    onClick={() => setSelectedBadge({ ...b, isEarned, earnedAt: earnedBadge?.earnedAt })}
+                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all active:scale-95 ${isEarned ? 'bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_12px_rgba(234,179,8,0.25)] scale-105' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'}`}>
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 ${isEarned ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/40' : 'bg-slate-800 text-slate-600'}`}>
+                                        <i className={`fas ${b.icon} text-xs`}></i>
+                                    </div>
+                                    <span className={`text-[6px] font-black uppercase text-center leading-tight ${isEarned ? 'text-slate-900' : 'text-slate-500'}`}>{b.name}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* ── LOGROS ── */}
+                <div className="pt-2">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="text-base">⚡</span>
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{pt('achievementBadges')}</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                        {achievementBadges.map((b) => {
+                            const isEarned = user.badges?.some((ub: any) => ub.id === b.id);
+                            const earnedBadge = user.badges?.find((ub: any) => ub.id === b.id);
+                            return (
+                                <button
+                                    key={b.id}
+                                    onClick={() => setSelectedBadge({ ...b, isEarned, earnedAt: earnedBadge?.earnedAt })}
+                                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all active:scale-95 ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
+                                        <i className={`fas ${b.icon} text-sm`}></i>
+                                    </div>
+                                    <span className={`text-[7px] font-black uppercase text-center leading-tight mb-1 ${isEarned ? 'text-slate-900' : 'text-slate-500'}`}>{b.name}</span>
+                                    <span className={`text-[5px] font-medium text-center leading-none opacity-60 ${isEarned ? 'text-slate-700' : 'text-slate-400'}`}>{pt(b.description)}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Share rank */}
+                <div className="pt-4">
+                    <button onClick={() => setShowBragModal(true)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5">
+                        <i className="fas fa-bullhorn text-purple-400"></i>{pt('shareRank')}
+                    </button>
+                </div>
+
+                {/* Language selector + admin + footer */}
+                <div className="pt-6">
+                    <p className="text-[8px] font-black text-slate-500 uppercase mb-4 tracking-widest">{pt('langLabel')}</p>
+                    <div className="flex flex-wrap gap-2 mb-20">
+                        {LANGUAGES.map(lang => (
+                            <LangCircle key={lang.code} label={lang.name} code={lang.code} isActive={user.language === lang.code} onClick={() => onLangChange?.(lang.code)} />
+                        ))}
+                    </div>
+                    {isAdmin && (
+                        <div className="flex gap-2 mb-3">
+                            <button onClick={onOpenAdmin} className="flex-1 py-4 bg-slate-900 text-yellow-500 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
+                                <i className="fas fa-tools text-xs"></i> {pt('admin')}
+                            </button>
+                            <button onClick={() => { onClose(); (window as any).dispatchEvent(new CustomEvent('open-partner-dashboard')); }} className="flex-1 py-4 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
+                                <i className="fas fa-chart-line text-xs"></i> PARTNER
+                            </button>
+                        </div>
+                    )}
+                    <button onClick={() => { if (onLogout) onLogout(); else { supabase.auth.signOut().catch(() => {}); onClose(); } }} className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all mb-4">
+                        <i className="fas fa-sign-out-alt"></i>{pt('logout')}
+                    </button>
+                    <div className="flex justify-center gap-4 mb-6">
+                        <button onClick={() => setShowLegal('privacy')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">{pt('privacy')}</button>
+                        <span className="text-slate-700">•</span>
+                        <button onClick={() => setShowLegal('terms')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">{pt('terms')}</button>
+                    </div>
+                    <button onClick={() => setShowReportBug(true)} className="w-full py-3 mb-2 bg-transparent text-slate-400 hover:text-orange-500 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
+                        <i className="fas fa-bug"></i>{pt('reportBug')}
+                    </button>
+                    <button onClick={() => setShowDeleteConfirm(true)} className="w-full py-3 bg-transparent text-slate-600 hover:text-red-400 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
+                        <i className="fas fa-trash-alt"></i>{pt('deleteAccount')}
+                    </button>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {/* ── PORTALS ── */}
+
+      {showBragModal && ReactDOM.createPortal(
+        <ShareableBadge rank={user.rank} miles={user.miles} onClose={() => setShowBragModal(false)} />,
+        document.body
+      )}
+
+      {visaShareStamp && ReactDOM.createPortal(
+        <VisaShare
+          user={user}
+          cityName={visaShareStamp.city}
+          milesEarned={visaShareStamp.miles || 0}
+          onClose={() => setVisaShareStamp(null)}
+        />,
+        document.body
+      )}
+
+      {selectedBadge && ReactDOM.createPortal(
+        <div className="fixed inset-0 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
+          style={{ zIndex: 999999 }}
+          onClick={() => setSelectedBadge(null)}>
+          <div className="w-full max-w-[320px] bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}>
+            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-5 shadow-2xl ${selectedBadge.isEarned ? (RANK_BADGE_IDS.includes(selectedBadge.id) ? 'bg-yellow-500 shadow-yellow-500/40' : 'bg-purple-600 shadow-purple-500/40') : 'bg-slate-800'}`}>
+              <i className={`fas ${selectedBadge.icon} text-3xl ${selectedBadge.isEarned ? 'text-white' : 'text-slate-600'}`}></i>
+            </div>
+            <div className={`text-[8px] font-black uppercase tracking-widest mb-2 ${selectedBadge.isEarned ? (RANK_BADGE_IDS.includes(selectedBadge.id) ? 'text-yellow-400' : 'text-purple-400') : 'text-slate-600'}`}>
+              {selectedBadge.isEarned ? '✓ Conseguida' : '🔒 Bloqueada'}
+            </div>
+            <h3 className="text-white font-black text-xl uppercase tracking-tighter mb-3">{selectedBadge.name}</h3>
+            <p className="text-slate-400 text-xs leading-relaxed mb-4">
+              {selectedBadge.isEarned
+                ? pt(selectedBadge.description)
+                : `Para conseguirla: ${pt(selectedBadge.description)}`}
+            </p>
+            {selectedBadge.isEarned && selectedBadge.earnedAt && (
+              <div className={`w-full rounded-xl px-4 py-3 mb-5 border ${RANK_BADGE_IDS.includes(selectedBadge.id) ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-purple-600/10 border-purple-500/20'}`}>
+                <p className={`text-[8px] font-black uppercase tracking-widest mb-1 ${RANK_BADGE_IDS.includes(selectedBadge.id) ? 'text-yellow-400' : 'text-purple-400'}`}>Conseguida el</p>
+                <p className="text-white font-black text-xs">
+                  {new Date(selectedBadge.earnedAt).toLocaleDateString(user.language || 'es', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            )}
+            <button onClick={() => setSelectedBadge(null)}
+              className="w-full py-4 bg-white/5 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-colors">
+              Cerrar
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showLegal && ReactDOM.createPortal(
+        <LegalModal type={showLegal} onClose={() => setShowLegal(null)} language={user.language || 'es'} />,
+        document.body
+      )}
+
+      {showReportBug && ReactDOM.createPortal(
+        <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />,
+        document.body
+      )}
+
+      {showDeleteConfirm && ReactDOM.createPortal(
+        <DeleteConfirmModal user={user} pt={pt} onCancel={() => setShowDeleteConfirm(false)} onConfirm={handleDeleteAccount} isDeleting={isDeleting} />,
+        document.body
+      )}
+    </div>
+  );
+};
