@@ -1,9 +1,12 @@
+
 {
   "appId": "com.techtravel.bdai",
   "appName": "bdai",
   "webDir": "dist",
+  "bundledWebRuntime": false,
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "cleartext": true
   },
   "plugins": {
     "SplashScreen": {
@@ -28,10 +31,10 @@
   "ios": {
     "contentInset": "always",
     "allowsLinkPreview": false,
+    "isResizeElement": true,
     "preferredContentMode": "mobile"
   },
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": true
   }
 }
-

@@ -41,14 +41,18 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const tl = TEXTS[language] || TEXTS.es;
   
   // Validar paradas antes de usarlas
-  const validStops = (stops || [])
-    .map((s: any) => ({
+  const validStops = (stops || []).map((s: any, originalIndex: number) => {
+    const lat = typeof s.latitude === 'string' ? parseFloat(s.latitude.replace(',', '.')) : s.latitude;
+    const lng = typeof s.longitude === 'string' ? parseFloat(s.longitude.replace(',', '.')) : s.longitude;
+    return {
       ...s,
-      latitude: typeof s.latitude === 'string' ? parseFloat(s.latitude) : s.latitude,
-      longitude: typeof s.longitude === 'string' ? parseFloat(s.longitude) : s.longitude
-    }))
-    .filter((s: any) => !isNaN(s.latitude) && !isNaN(s.longitude) && s.latitude !== 0 && s.longitude !== 0);
-  const currentStop = validStops[currentStopIndex] || validStops[0];
+      latitude: lat,
+      longitude: lng,
+      originalIndex,
+      isValid: !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0
+    };
+  });
+  const currentStop = validStops[currentStopIndex]?.isValid ? validStops[currentStopIndex] : validStops.find((s: any) => s.isValid);
 
   useEffect(() => {
     if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
@@ -215,11 +219,12 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   // Ajustar zoom inicial a todas las paradas solo cuando cambian las paradas
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !L || validStops.length === 0) return;
+    const activeStops = validStops.filter((s: any) => s.isValid);
+    if (!map || !L || activeStops.length === 0) return;
     
     const group = L.featureGroup(markersRef.current);
     if (group.getLayers().length > 0) {
-        map.fitBounds(group.getBounds().pad(0.2));
+        map.fitBounds(group.getBounds().pad(0.2), { maxZoom: 16 });
     }
   }, [stops]);
 

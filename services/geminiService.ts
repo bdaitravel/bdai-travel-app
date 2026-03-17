@@ -264,7 +264,7 @@ const tryExtractTours = (text: string): Tour[] => {
         const parsed = JSON.parse(cleanText);
         if (Array.isArray(parsed)) return parsed;
     } catch (e) {
-        console.warn("Failed to parse full JSON array, falling back to regex extraction", e);
+        // Expected during streaming, silently fallback to regex extraction
     }
 
     const tours: Tour[] = [];

@@ -584,8 +584,8 @@ export default function App() {
                   )}
                 </header>
                 <div className="space-y-6 pb-12">
-                  {tours.map(tour => (
-                    <TourCard key={tour.id} tour={tour} onSelect={() => { setActiveTour(tour); navigateTo(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
+                  {tours.map((tour, idx) => (
+                    <TourCard key={`${tour.id}-${idx}`} tour={tour} onSelect={() => { setActiveTour(tour); navigateTo(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
                   ))}
                   {selectedCitySlug && <CityCommunity citySlug={selectedCitySlug} user={user} />}
                 </div>
