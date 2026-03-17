@@ -132,4 +132,3 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, onC
     </div>
   );
 };
-
