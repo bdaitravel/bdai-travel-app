@@ -42,8 +42,8 @@ const MODAL_TEXTS: any = {
     th: { title: "พาสปอร์ตทั่วโลก bdai", subtitle: "รหัสนักเดินทาง", surname: "นามสกุล", givenNames: "ชื่อ", city: "เมือง", country: "ประเทศ", age: "อายุ", birthday: "วันเกิด", save: "บันทึก", edit: "แก้ไข", logout: "ออก", stamps: "วีซ่า", badges: "เหรียญตรา", langLabel: "ภาษา", rank: "อันดับ", miles: "ไมล์", admin: "ผู้ดูแล", streak: "สถิติ", changeAvatar: "เปลี่ยนรูป", email: "ที่อยู่อีเมล", reportBug: "รายงานปัญหา", privacy: "ความเป็นส่วนตัว", terms: "ข้อกำหนด", deleteAccount: "ลบบัญชี (GDPR)", deleteConfirmTitle: "⚠️ เขตอันตราย", deleteConfirmText: "การกระทำนี้ไม่สามารถยกเลิกได้", deleteConfirmInstruction: "พิมพ์อีเมลของคุณเพื่อยืนยัน:", deleteConfirmPlaceholder: "your@email.com", deleteConfirmCancel: "ยกเลิก", deleteConfirmYes: "ลบถาวร", deleting: "กำลังลบ...", deleteCountdown: "รอ {n}s...", deleteEmailMismatch: "อีเมลไม่ตรงกัน", rankBadges: "อันดับ", achievementBadges: "ความสำเร็จ", returnToCity: "กลับไปที่เมือง", shareVisa: "แชร์วีซ่า" }
 };
 
-// IDs of rank-type badges
-const RANK_BADGE_IDS = ['badge_zero', 'badge_scout', 'badge_rover', 'badge_titan', 'badge_zenith'];
+// Rank badges use category: 'rank'
+const isRankBadge = (b: any) => b.category === 'rank';
 
 const LangCircle: React.FC<{ code: string; label: string; isActive: boolean; onClick: () => void }> = ({ code, label, isActive, onClick }) => (
     <button onClick={onClick} className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-90 shrink-0 ${isActive ? 'bg-purple-600 border-purple-400 text-white font-black scale-110 shadow-lg' : 'bg-white border-slate-200 text-slate-400 font-bold hover:bg-slate-50'}`}>
@@ -165,8 +165,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   };
 
   // Split badges by type
-  const rankBadges = APP_BADGES.filter(b => RANK_BADGE_IDS.includes(b.id));
-  const achievementBadges = APP_BADGES.filter(b => !RANK_BADGE_IDS.includes(b.id));
+  const rankBadges = APP_BADGES.filter(b => isRankBadge(b));
+  const achievementBadges = APP_BADGES.filter(b => !isRankBadge(b));
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start overflow-y-auto no-scrollbar bg-slate-950/98 backdrop-blur-2xl">
@@ -408,10 +408,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
           onClick={() => setSelectedBadge(null)}>
           <div className="w-full max-w-[320px] bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center text-center shadow-2xl"
             onClick={(e) => e.stopPropagation()}>
-            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-5 shadow-2xl ${selectedBadge.isEarned ? (RANK_BADGE_IDS.includes(selectedBadge.id) ? 'bg-yellow-500 shadow-yellow-500/40' : 'bg-purple-600 shadow-purple-500/40') : 'bg-slate-800'}`}>
+            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-5 shadow-2xl ${selectedBadge.isEarned ? (isRankBadge(selectedBadge) ? 'bg-yellow-500 shadow-yellow-500/40' : 'bg-purple-600 shadow-purple-500/40') : 'bg-slate-800'}`}>
               <i className={`fas ${selectedBadge.icon} text-3xl ${selectedBadge.isEarned ? 'text-white' : 'text-slate-600'}`}></i>
             </div>
-            <div className={`text-[8px] font-black uppercase tracking-widest mb-2 ${selectedBadge.isEarned ? (RANK_BADGE_IDS.includes(selectedBadge.id) ? 'text-yellow-400' : 'text-purple-400') : 'text-slate-600'}`}>
+            <div className={`text-[8px] font-black uppercase tracking-widest mb-2 ${selectedBadge.isEarned ? (isRankBadge(selectedBadge) ? 'text-yellow-400' : 'text-purple-400') : 'text-slate-600'}`}>
               {selectedBadge.isEarned ? '✓ Conseguida' : '🔒 Bloqueada'}
             </div>
             <h3 className="text-white font-black text-xl uppercase tracking-tighter mb-3">{selectedBadge.name}</h3>
@@ -421,8 +421,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 : `Para conseguirla: ${pt(selectedBadge.description)}`}
             </p>
             {selectedBadge.isEarned && selectedBadge.earnedAt && (
-              <div className={`w-full rounded-xl px-4 py-3 mb-5 border ${RANK_BADGE_IDS.includes(selectedBadge.id) ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-purple-600/10 border-purple-500/20'}`}>
-                <p className={`text-[8px] font-black uppercase tracking-widest mb-1 ${RANK_BADGE_IDS.includes(selectedBadge.id) ? 'text-yellow-400' : 'text-purple-400'}`}>Conseguida el</p>
+              <div className={`w-full rounded-xl px-4 py-3 mb-5 border ${isRankBadge(selectedBadge) ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-purple-600/10 border-purple-500/20'}`}>
+                <p className={`text-[8px] font-black uppercase tracking-widest mb-1 ${isRankBadge(selectedBadge) ? 'text-yellow-400' : 'text-purple-400'}`}>Conseguida el</p>
                 <p className="text-white font-black text-xs">
                   {new Date(selectedBadge.earnedAt).toLocaleDateString(user.language || 'es', { day: '2-digit', month: 'long', year: 'numeric' })}
                 </p>
