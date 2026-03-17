@@ -182,4 +182,3 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
     </div>
   );
 };
-
