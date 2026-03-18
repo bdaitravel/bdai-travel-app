@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import { toast } from './Toast';
 import { BdaiLogo } from './BdaiLogo';
 
@@ -14,42 +14,22 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, onC
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
 
-  const triggerDownload = (blob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
   const handleShare = async () => {
     if (!badgeRef.current || isGenerating) return;
-    
     setIsGenerating(true);
     setStatusText('🎨 MINTING BADGE...');
-    
+
     try {
-      const canvas = await html2canvas(badgeRef.current, {
-        scale: 3, 
-        backgroundColor: '#020617',
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        onclone: (clonedDoc) => {
-          const el = clonedDoc.querySelector('[data-badge-container]');
-          if (el) (el as HTMLElement).style.borderRadius = '3rem';
-        }
+      await new Promise(r => setTimeout(r, 300));
+
+      const dataUrl = await htmlToImage.toPng(badgeRef.current, {
+        quality: 1,
+        pixelRatio: 3,
+        cacheBust: true,
+        skipFonts: true,
       });
 
-      const blob = await new Promise<Blob | null>((resolve) => 
-        canvas.toBlob(resolve, 'image/png', 1.0)
-      );
-
-      if (!blob) throw new Error("Image processing failed.");
-
+      const blob = await (await fetch(dataUrl)).blob();
       const fileName = `bdai-rank-${rank.toLowerCase().replace(/\s+/g, '-')}.png`;
       const file = new File([blob], fileName, { type: 'image/png' });
 
@@ -67,13 +47,19 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, onC
           if (shareError.name === 'AbortError') {
             setStatusText('');
           } else {
-            triggerDownload(blob, fileName);
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = fileName;
+            a.click();
             toast("📸 ¡Insignia guardada en Fotos! Abre Instagram o TikTok para compartirla. ✨", "success");
             setStatusText('✅ READY TO SHARE');
           }
         }
       } else {
-        triggerDownload(blob, fileName);
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = fileName;
+        a.click();
         toast("📸 ¡Insignia descargada! Compártela en tus redes. ✨", "success");
         setStatusText('✅ READY TO SHARE');
       }

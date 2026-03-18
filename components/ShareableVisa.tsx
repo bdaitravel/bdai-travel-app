@@ -1,6 +1,6 @@
 
 import React, { useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import { toast } from './Toast';
 import { BdaiLogo } from './BdaiLogo';
 
@@ -12,9 +12,6 @@ interface ShareableVisaProps {
   onClose?: () => void;
 }
 
-/**
- * ShareableVisa: High-fidelity Tech-Noir achievement card.
- */
 export const ShareableVisa: React.FC<ShareableVisaProps> = ({ 
   cityName, 
   milesEarned, 
@@ -32,49 +29,27 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
     toast("🚀 LINK ÉPICO COPIADO AL PORTAPAPELES", "success");
   };
 
-  const triggerDownload = (blob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
   const handleShare = async () => {
     if (!visaRef.current || isGenerating) return;
-    
     setIsGenerating(true);
     setStatusText('🎨 MINTING VISA...');
-    
+
     try {
-      // 1. Capture the component as a high-quality image
-      const canvas = await html2canvas(visaRef.current, {
-        scale: 3, 
-        backgroundColor: '#020617',
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        onclone: (clonedDoc) => {
-          const el = clonedDoc.querySelector('[data-visa-container]');
-          if (el) (el as HTMLElement).style.borderRadius = '3rem';
-        }
+      await new Promise(r => setTimeout(r, 300));
+
+      const dataUrl = await htmlToImage.toPng(visaRef.current, {
+        quality: 1,
+        pixelRatio: 3,
+        cacheBust: true,
+        skipFonts: true,
       });
 
-      const blob = await new Promise<Blob | null>((resolve) => 
-        canvas.toBlob(resolve, 'image/png', 1.0)
-      );
-
-      if (!blob) throw new Error("Image processing failed.");
-
+      const blob = await (await fetch(dataUrl)).blob();
       const fileName = `bdai-visa-${cityName.toLowerCase().replace(/\s+/g, '-')}.png`;
       const file = new File([blob], fileName, { type: 'image/png' });
 
       setStatusText('🛰️ TRANSMITTING...');
 
-      // 2. Attempt Native Sharing
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
@@ -85,24 +60,26 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
           setStatusText('✅ READY TO SHARE');
         } catch (shareError: any) {
           if (shareError.name === 'AbortError') {
-            console.debug("User canceled sharing.");
             setStatusText('');
           } else {
-            // Sharing failed but we have a fallback
-            console.error("Native share failed:", shareError);
-            triggerDownload(blob, fileName);
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = fileName;
+            a.click();
             toast("📸 ¡Visado guardado en Fotos! Abre Instagram o TikTok para compartirlo. ✨", "success");
             setStatusText('✅ READY TO SHARE');
           }
         }
       } else {
-        // 3. Fallback: Direct Download for Desktop/Unsupported browsers
-        triggerDownload(blob, fileName);
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = fileName;
+        a.click();
         toast("📸 ¡Visado guardado en Fotos! Abre Instagram o TikTok para compartirlo. ✨", "success");
         setStatusText('✅ READY TO SHARE');
       }
     } catch (error: any) {
-      console.error("Critical failure during Visa generation:", error);
+      console.error("Visa generation error:", error);
       toast(`Error: ${error.message || "Could not generate Visa."}`, "error");
       setStatusText('');
     } finally {
@@ -159,11 +136,10 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
             <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1">Digital Auth</p>
             <BdaiLogo className="h-4 text-white opacity-80" />
           </div>
-          
           <div className="w-20 h-20 rounded-full border-2 border-dashed border-purple-500/40 flex flex-col items-center justify-center p-2 transform rotate-12 bg-purple-500/10 shadow-inner">
-             <span className="text-[6px] font-black text-purple-400 uppercase tracking-tighter">VERIFIED</span>
-             <span className="text-[8px] font-black text-white uppercase border-y border-purple-500/30 my-1 px-1">{stampDate}</span>
-             <span className="text-[5px] font-black text-purple-500/50 uppercase">GEN_CORE_7</span>
+            <span className="text-[6px] font-black text-purple-400 uppercase tracking-tighter">VERIFIED</span>
+            <span className="text-[8px] font-black text-white uppercase border-y border-purple-500/30 my-1 px-1">{stampDate}</span>
+            <span className="text-[5px] font-black text-purple-500/50 uppercase">GEN_CORE_7</span>
           </div>
         </div>
 
@@ -175,21 +151,21 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
       {/* CONTROLS */}
       <div className="mt-10 w-full max-w-[340px] space-y-4">
         <div className="grid grid-cols-2 gap-3">
-            <button 
-                onClick={handleShare}
-                disabled={isGenerating}
-                className="py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-[0_10px_40px_rgba(147,51,234,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:bg-slate-800 disabled:text-slate-500"
-            >
-                <i className="fas fa-camera"></i>
-                {isGenerating ? 'MINTING...' : 'IMAGE'}
-            </button>
-            <button 
-                onClick={handleCopyLink}
-                className="py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
-            >
-                <i className="fas fa-link"></i>
-                SHARE
-            </button>
+          <button 
+            onClick={handleShare}
+            disabled={isGenerating}
+            className="py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-[0_10px_40px_rgba(147,51,234,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:bg-slate-800 disabled:text-slate-500"
+          >
+            <i className="fas fa-camera"></i>
+            {isGenerating ? 'MINTING...' : 'IMAGE'}
+          </button>
+          <button 
+            onClick={handleCopyLink}
+            className="py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <i className="fas fa-link"></i>
+            SHARE
+          </button>
         </div>
 
         <button 
