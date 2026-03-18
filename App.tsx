@@ -258,7 +258,7 @@ export default function App() {
     try {
       const { error } = await supabase.auth.signInWithOtp({ 
         email,
-        options: { emailRedirectTo: "https://www.bdai.travel" }
+        options: { emailRedirectTo: window.location.origin }
       });
       if (error) throw error;
       setLoginPhase('OTP');
@@ -272,7 +272,7 @@ export default function App() {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: "https://www.bdai.travel", skipBrowserRedirect: true }
+        options: { redirectTo: window.location.origin, skipBrowserRedirect: true }
       });
       if (error) throw error;
       if (data?.url) window.open(data.url, '_blank', 'width=500,height=600');
