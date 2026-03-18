@@ -77,7 +77,7 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
       setTimeout(() => {
           onSelect(tour);
           setIsLaunching(false);
-      }, 600);
+      }, 300);
   };
 
   if (!tour) return null;
@@ -361,11 +361,11 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                 </button>
              </div>
 
-             <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50">
-                <div className="h-[45vh] w-full">
+             <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
+                <div className="h-[45vh] w-full sticky top-0 z-0">
                     <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
-                <div className="px-8 pt-10 pb-44 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-xl z-[200] relative min-h-[55vh]">
+                <div className="px-8 pt-10 pb-10 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)] z-10 relative min-h-[60vh]">
                     <div className="grid grid-cols-2 gap-4">
                         <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
                             <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg mb-1`}></i>
@@ -388,12 +388,12 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     )}
 
                     <div className="space-y-6 text-slate-800 text-lg leading-relaxed font-medium">
-                        {(currentStop.description || "").split('\n\n').map((p, i) => <p key={i} className="animate-fade-in">{p}</p>)}
+                        {(currentStop.description || "").split('\n\n').map((p: string, i: number) => <p key={i} className="animate-fade-in">{p}</p>)}
                     </div>
                 </div>
              </div>
 
-             <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 p-6 flex gap-3 z-[6000] pb-safe-iphone">
+             <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 p-6 flex gap-3 z-[6000] pb-safe-iphone shrink-0">
                 <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0">{tl.prev}</button>
                 {currentStopIndex === tour.stops.length - 1 ? (
                     <button onClick={handleFinishTour} className="flex-[2] py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98]">{tl.finish}</button>

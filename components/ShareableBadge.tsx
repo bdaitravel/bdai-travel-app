@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import * as htmlToImage from 'html-to-image';
+import html2canvas from 'html2canvas';
 import { toast } from './Toast';
 import { BdaiLogo } from './BdaiLogo';
 
@@ -14,22 +14,42 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, onC
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
 
+  const triggerDownload = (blob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const handleShare = async () => {
     if (!badgeRef.current || isGenerating) return;
+    
     setIsGenerating(true);
     setStatusText('🎨 MINTING BADGE...');
-
+    
     try {
-      await new Promise(r => setTimeout(r, 300));
-
-      const dataUrl = await htmlToImage.toPng(badgeRef.current, {
-        quality: 1,
-        pixelRatio: 3,
-        cacheBust: true,
-        skipFonts: true,
+      const canvas = await html2canvas(badgeRef.current, {
+        scale: 3, 
+        backgroundColor: '#020617',
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.querySelector('[data-badge-container]');
+          if (el) (el as HTMLElement).style.borderRadius = '3rem';
+        }
       });
 
-      const blob = await (await fetch(dataUrl)).blob();
+      const blob = await new Promise<Blob | null>((resolve) => 
+        canvas.toBlob(resolve, 'image/png', 1.0)
+      );
+
+      if (!blob) throw new Error("Image processing failed.");
+
       const fileName = `bdai-rank-${rank.toLowerCase().replace(/\s+/g, '-')}.png`;
       const file = new File([blob], fileName, { type: 'image/png' });
 
@@ -47,19 +67,13 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, onC
           if (shareError.name === 'AbortError') {
             setStatusText('');
           } else {
-            const a = document.createElement('a');
-            a.href = dataUrl;
-            a.download = fileName;
-            a.click();
+            triggerDownload(blob, fileName);
             toast("📸 ¡Insignia guardada en Fotos! Abre Instagram o TikTok para compartirla. ✨", "success");
             setStatusText('✅ READY TO SHARE');
           }
         }
       } else {
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = fileName;
-        a.click();
+        triggerDownload(blob, fileName);
         toast("📸 ¡Insignia descargada! Compártela en tus redes. ✨", "success");
         setStatusText('✅ READY TO SHARE');
       }
@@ -97,10 +111,10 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, onC
           <h3 className="relative z-10 text-4xl font-black text-white uppercase tracking-tighter mb-6 text-center leading-none">{rank}</h3>
           
           <div className="relative z-10 w-full p-5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md flex flex-col items-center">
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
-            <p className="text-3xl font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
-              {miles.toLocaleString()} <span className="text-[12px] text-slate-400 uppercase">Miles</span>
-            </p>
+             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Distance</p>
+             <p className="text-3xl font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+               {miles.toLocaleString()} <span className="text-[12px] text-slate-400 uppercase">Miles</span>
+             </p>
           </div>
           
           {/* Watermark */}
@@ -109,7 +123,7 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, onC
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons (Not captured in image) */}
         <button 
           onClick={handleShare} 
           disabled={isGenerating}
