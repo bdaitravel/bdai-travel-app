@@ -33,7 +33,14 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
 
     // User Dashboard State
     const [users, setUsers] = useState<UserProfile[]>([]);
-    const [userStats, setUserStats] = useState({ total: 0, activeToday: 0, byLanguage: {} as Record<string, number>, byCountry: {} as Record<string, number> });
+    const [userStats, setUserStats] = useState({
+    total: 0,
+    activeToday: 0,
+    byLanguage: {} as Record<string, number>,
+    byCountry: {} as Record<string, number>,
+    avgAge: 0,
+    topInterests: [] as {interest: string, count: number}[],
+  });
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
     const addLog = (msg: string) => setLog(prev => [msg, ...prev].slice(0, 30));
@@ -57,12 +64,15 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 
                 const today = new Date().toISOString().split('T')[0];
                 let activeToday = 0;
+                let totalAge = 0;
+                let ageCount = 0;
                 const byLanguage: Record<string, number> = {};
                 const byCountry: Record<string, number> = {};
+                const byInterest: Record<string, number> = {};
 
                 data.forEach((u: any) => {
                     // Active today?
-                    if (u.stats?.lastActive?.startsWith(today)) activeToday++;
+                    if (u.stats?.lastActive?.startsWith(today) || u.lastActive?.startsWith(today)) activeToday++;
                     
                     // Language
                     const lang = u.language || 'es';
@@ -71,13 +81,34 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                     // Country
                     const country = u.country || 'Unknown';
                     byCountry[country] = (byCountry[country] || 0) + 1;
+
+                    // Age
+                    if (u.age) {
+                        totalAge += u.age;
+                        ageCount++;
+                    }
+
+                    // Interests
+                    if (u.interests && Array.isArray(u.interests)) {
+                        u.interests.forEach((i: string) => {
+                            byInterest[i] = (byInterest[i] || 0) + 1;
+                        });
+                    }
                 });
+
+                const avgAge = ageCount > 0 ? Math.round(totalAge / ageCount) : 0;
+                const topInterests = Object.entries(byInterest)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([interest, count]) => ({ interest, count }));
 
                 setUserStats({
                     total: data.length,
                     activeToday,
                     byLanguage,
-                    byCountry
+                    byCountry,
+                    avgAge,
+                    topInterests
                 });
             }
         } catch (e) {
@@ -393,7 +424,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center">
                                     <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Usuarios</p>
                                     <span className="text-2xl font-black text-white">{userStats.total}</span>
@@ -402,9 +433,19 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                                     <p className="text-[6px] font-black text-green-500 uppercase tracking-widest mb-1">Activos Hoy</p>
                                     <span className="text-2xl font-black text-green-400">{userStats.activeToday}</span>
                                 </div>
+                                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center border-purple-500/20">
+                                    <p className="text-[6px] font-black text-purple-500 uppercase tracking-widest mb-1">Edad Media</p>
+                                    <span className="text-2xl font-black text-purple-400">{userStats.avgAge || '--'}</span>
+                                </div>
+                                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center border-blue-500/20">
+                                    <p className="text-[6px] font-black text-blue-500 uppercase tracking-widest mb-1">Top País</p>
+                                    <span className="text-lg font-black text-blue-400 truncate block max-w-full">
+                                        {Object.entries(userStats.byCountry).sort((a, b) => b[1] - a[1])[0]?.[0] || '--'}
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Por Idioma</p>
                                     <div className="space-y-2">
@@ -427,28 +468,72 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                                         ))}
                                     </div>
                                 </div>
+                                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Top Intereses</p>
+                                    <div className="space-y-2">
+                                        {userStats.topInterests.map(({interest, count}) => (
+                                            <div key={interest} className="flex justify-between items-center text-[10px]">
+                                                <span className="text-white font-bold uppercase truncate max-w-[80px]">{interest}</span>
+                                                <span className="text-emerald-400 font-black">{count}</span>
+                                            </div>
+                                        ))}
+                                        {userStats.topInterests.length === 0 && <p className="text-[10px] text-slate-500 text-center italic">Sin datos</p>}
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-4 overflow-hidden flex flex-col">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4 px-2">Últimos Usuarios</p>
-                                <div className="flex-1 overflow-y-auto no-scrollbar space-y-2">
-                                    {users.slice().sort((a, b) => {
-                                        const dateA = a.stats?.lastActive || '';
-                                        const dateB = b.stats?.lastActive || '';
-                                        return dateB.localeCompare(dateA);
-                                    }).map(u => (
-                                        <div key={u.id} className="bg-black/40 rounded-2xl p-3 flex items-center gap-3">
-                                            <img src={u.avatar} className="w-8 h-8 rounded-full bg-slate-800" alt="" />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[10px] font-black text-white truncate">{u.name || u.email}</p>
-                                                <p className="text-[8px] text-slate-500 uppercase truncate">{u.city || 'Unknown'} • {u.language}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] font-black text-purple-400">{u.miles} M</p>
-                                                <p className="text-[7px] text-slate-500 uppercase">{u.rank}</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                            <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-6 overflow-hidden flex flex-col">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Directorio de Usuarios</p>
+                                <div className="flex-1 overflow-y-auto no-scrollbar">
+                                    <table className="w-full text-left text-[10px]">
+                                        <thead className="text-slate-500 uppercase font-black tracking-widest sticky top-0 bg-slate-900/90 backdrop-blur-sm z-10">
+                                            <tr>
+                                                <th className="pb-3 px-2">Usuario</th>
+                                                <th className="pb-3 px-2">Edad</th>
+                                                <th className="pb-3 px-2">Ubicación</th>
+                                                <th className="pb-3 px-2">Millas</th>
+                                                <th className="pb-3 px-2">Tours</th>
+                                                <th className="pb-3 px-2 text-right">Última Conexión</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {users.slice().sort((a, b) => {
+                                                const dateA = a.stats?.lastActive || '';
+                                                const dateB = b.stats?.lastActive || '';
+                                                return dateB.localeCompare(dateA);
+                                            }).map(u => {
+                                                const lastActiveRaw = u.stats?.lastActive;
+                                                const lastActiveFormatted = lastActiveRaw ? new Date(lastActiveRaw).toLocaleString() : 'Nunca';
+                                                
+                                                return (
+                                                    <tr key={u.id} className="hover:bg-white/5 transition-colors">
+                                                        <td className="py-3 px-2">
+                                                            <div className="flex items-center gap-2">
+                                                                {u.avatar ? (
+                                                                    <img src={u.avatar} alt={u.name} className="w-6 h-6 rounded-full object-cover border border-white/10" />
+                                                                ) : (
+                                                                    <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 font-bold border border-white/10">
+                                                                        {u.name?.charAt(0) || '?'}
+                                                                    </div>
+                                                                )}
+                                                                <div>
+                                                                    <p className="text-white font-bold">{u.name || 'Anónimo'}</p>
+                                                                    <p className="text-slate-500 text-[8px]">{u.email}</p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-2 text-slate-300">{u.age || '-'}</td>
+                                                        <td className="py-3 px-2 text-slate-300">
+                                                            {u.city ? `${u.city}, ${u.country}` : (u.country || '-')}
+                                                        </td>
+                                                        <td className="py-3 px-2 text-purple-400 font-black">{u.miles || 0}</td>
+                                                        <td className="py-3 px-2 text-slate-300">{u.completedTours?.length || 0}</td>
+                                                        <td className="py-3 px-2 text-slate-500 text-right">{lastActiveFormatted}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </>

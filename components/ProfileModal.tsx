@@ -111,11 +111,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
     });
   }, [user]);
 
+  const [showBragModal, setShowBragModal] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<{badge: Badge, isEarned: boolean} | null>(null);
+  const [selectedVisa, setSelectedVisa] = useState<VisaStamp | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [showLegal, setShowLegal] = useState<'privacy' | 'terms' | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReportBug, setShowReportBug] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const pt = (key: string) => {
     const lang = user.language || 'es';
     const dict = MODAL_TEXTS[lang] || MODAL_TEXTS['en'];
     const globalDict = translations[lang] || translations['en'];
-    return dict[key] || globalDict[key] || key;
+    
+    const extra: any = {
+        es: { locked: "BLOQUEADO", unlockReq: "Requisito:", milesReq: "Millas necesarias:", confirmShare: "Compartir", cancel: "Cerrar", image: "Guardar Imagen", share: "Compartir Enlace", backToPassport: "Volver al Pasaporte", statusVerified: "Estado: Verificado", missionAccomplished: "MISIÓN CUMPLIDA", locationIdentity: "Identidad de Ubicación", protocolReward: "Recompensa", currentRank: "Rango Actual", digitalAuth: "Autenticación", verified: "VERIFICADO", totalDistance: "Distancia Total", minting: "GENERANDO...", transmitting: "TRANSMITIENDO...", readyToShare: "LISTO PARA COMPARTIR" },
+        en: { locked: "LOCKED", unlockReq: "Requirement:", milesReq: "Miles needed:", confirmShare: "Share", cancel: "Close", image: "Save Image", share: "Share Link", backToPassport: "Back to Passport", statusVerified: "Status: Verified", missionAccomplished: "MISSION ACCOMPLISHED", locationIdentity: "Location Identity", protocolReward: "Protocol Reward", currentRank: "Current Rank", digitalAuth: "Digital Auth", verified: "VERIFIED", totalDistance: "Total Distance", minting: "MINTING...", transmitting: "TRANSMITTING...", readyToShare: "READY TO SHARE" }
+    };
+    const extraDict = extra[lang] || extra['en'];
+
+    return dict[key] || globalDict[key] || extraDict[key] || key;
   };
 
   const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
@@ -141,15 +157,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
           setIsEditing(false);
       } catch (e) {} finally { setIsSyncing(false); }
   };
-
-  const [showBragModal, setShowBragModal] = useState(false);
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
-  const [selectedVisa, setSelectedVisa] = useState<VisaStamp | null>(null);
-  const [showToast, setShowToast] = useState(false);
-  const [showLegal, setShowLegal] = useState<'privacy' | 'terms' | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showReportBug, setShowReportBug] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -268,7 +275,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         {APP_BADGES.filter(b => b.category === 'rank').map((b) => {
                             const isEarned = user.badges?.some(ub => ub.id === b.id);
                             return (
-                                <div key={b.id} onClick={() => isEarned && setSelectedBadge(b)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105 cursor-pointer' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'}`}>
+                                <div key={b.id} onClick={() => setSelectedBadge({badge: b, isEarned})} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105 cursor-pointer' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale cursor-pointer hover:opacity-50'}`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
                                         <i className={`fas ${b.icon} text-sm`}></i>
                                     </div>
@@ -285,7 +292,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         {APP_BADGES.filter(b => b.category !== 'rank').map((b) => {
                             const isEarned = user.badges?.some(ub => ub.id === b.id);
                             return (
-                                <div key={b.id} onClick={() => isEarned && setSelectedBadge(b)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105 cursor-pointer' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale'}`}>
+                                <div key={b.id} onClick={() => setSelectedBadge({badge: b, isEarned})} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105 cursor-pointer' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale cursor-pointer hover:opacity-50'}`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
                                         <i className={`fas ${b.icon} text-sm`}></i>
                                     </div>
@@ -350,8 +357,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
       {selectedBadge && ReactDOM.createPortal(
         <ShareableBadge 
-          badge={selectedBadge}
-          badgeDescription={pt(selectedBadge.description)}
+          badge={selectedBadge.badge}
+          isEarned={selectedBadge.isEarned}
+          badgeDescription={pt(selectedBadge.badge.description)}
           onClose={() => setSelectedBadge(null)} 
           pt={pt}
         />,

@@ -8,12 +8,13 @@ interface ShareableBadgeProps {
   rank?: string;
   miles?: number;
   badge?: Badge;
+  isEarned?: boolean;
   badgeDescription?: string;
   onClose: () => void;
   pt: (key: string) => string;
 }
 
-export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, badge, badgeDescription, onClose, pt }) => {
+export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, badge, isEarned = true, badgeDescription, onClose, pt }) => {
   const badgeRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusText, setStatusText] = useState('');
@@ -30,7 +31,6 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, bad
         quality: 1,
         pixelRatio: 3,
         cacheBust: true,
-        skipFonts: true,
       });
 
       const blob = await (await fetch(dataUrl)).blob();
@@ -94,16 +94,18 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, bad
           {/* bdai Logo */}
           <div className="relative z-10 w-full flex justify-between items-start mb-8">
             <div className="flex flex-col">
-              <span className="text-[6px] font-black uppercase tracking-[0.4em] text-purple-400 mb-1">ACHIEVEMENT_UNLOCKED</span>
+              <span className={`text-[6px] font-black uppercase tracking-[0.4em] mb-1 ${isEarned ? 'text-purple-400' : 'text-red-500'}`}>
+                {isEarned ? 'ACHIEVEMENT_UNLOCKED' : 'RESTRICTED_ACCESS'}
+              </span>
               <span className="text-xs font-black text-white italic tracking-tighter">B-DAI_SYS</span>
             </div>
-            <BdaiLogo className="h-4 text-purple-400 drop-shadow-[0_0_10px_rgba(147,51,234,0.5)]" />
+            <BdaiLogo className={`h-4 ${isEarned ? 'text-purple-400 drop-shadow-[0_0_10px_rgba(147,51,234,0.5)]' : 'text-slate-600'}`} />
           </div>
 
-          <div className="relative z-10 w-32 h-32 rounded-full bg-slate-900 flex items-center justify-center shadow-[0_0_50px_rgba(147,51,234,0.4)] mb-8 border-4 border-double border-purple-500/50 relative">
-            <div className="absolute inset-0 rounded-full border border-purple-400/20 animate-ping" style={{ animationDuration: '3s' }}></div>
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-inner">
-              <i className={`fas ${badge ? badge.icon : 'fa-crown'} text-5xl text-white drop-shadow-lg`}></i>
+          <div className={`relative z-10 w-32 h-32 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(147,51,234,0.4)] mb-8 border-4 border-double relative ${isEarned ? 'bg-slate-900 border-purple-500/50' : 'bg-slate-950 border-red-500/30 grayscale'}`}>
+            {isEarned && <div className="absolute inset-0 rounded-full border border-purple-400/20 animate-ping" style={{ animationDuration: '3s' }}></div>}
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center shadow-inner ${isEarned ? 'bg-gradient-to-br from-purple-600 to-blue-600' : 'bg-slate-800'}`}>
+              <i className={`fas ${badge ? badge.icon : 'fa-crown'} text-5xl ${isEarned ? 'text-white drop-shadow-lg' : 'text-slate-600'}`}></i>
             </div>
           </div>
           
@@ -118,9 +120,18 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, bad
           </div>
           
           {badge && badgeDescription && (
-            <div className="relative z-10 w-full p-4 bg-purple-900/20 border border-purple-500/30 rounded-2xl backdrop-blur-md shadow-inner mb-4">
-              <p className="text-xs font-bold text-purple-200 text-center">
+            <div className={`relative z-10 w-full p-4 border rounded-2xl backdrop-blur-md shadow-inner mb-4 ${isEarned ? 'bg-purple-900/20 border-purple-500/30' : 'bg-slate-900/50 border-slate-700'}`}>
+              <p className={`text-xs font-bold text-center ${isEarned ? 'text-purple-200' : 'text-slate-400'}`}>
                 {badgeDescription}
+              </p>
+            </div>
+          )}
+
+          {badge && !isEarned && (
+            <div className="relative z-10 w-full p-4 bg-red-900/10 border border-red-500/30 rounded-2xl backdrop-blur-md shadow-inner mb-4 flex flex-col items-center">
+              <p className="text-[8px] font-black text-red-400 uppercase tracking-widest mb-1">{pt('unlockReq')}</p>
+              <p className="text-sm font-bold text-slate-300 text-center">
+                {badge.category === 'rank' ? `${pt('milesReq')} ${badge.requiredPoints}` : `${pt('unlockReq')} ${badge.requiredPoints} pts`}
               </p>
             </div>
           )}
@@ -141,17 +152,23 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, bad
         </div>
 
         {/* Action Buttons (Not captured in image) */}
-        <button 
-          onClick={handleShare} 
-          disabled={isGenerating}
-          className="w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4 disabled:opacity-50 disabled:active:scale-100"
-        >
-          {isGenerating ? (
-            <span className="animate-pulse">{statusText}</span>
-          ) : (
-            <><i className="fas fa-paper-plane mr-2"></i> {pt('confirmShare') || 'Confirm & Share'}</>
-          )}
-        </button>
+        {isEarned ? (
+          <button 
+            onClick={handleShare} 
+            disabled={isGenerating}
+            className="w-full py-5 bg-purple-600 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all mb-4 disabled:opacity-50 disabled:active:scale-100"
+          >
+            {isGenerating ? (
+              <span className="animate-pulse">{statusText}</span>
+            ) : (
+              <><i className="fas fa-paper-plane mr-2"></i> {pt('confirmShare') || 'Confirm & Share'}</>
+            )}
+          </button>
+        ) : (
+          <div className="w-full py-5 bg-slate-800 border border-slate-700 text-slate-500 rounded-[2rem] font-black uppercase text-[11px] tracking-widest text-center mb-4 shadow-inner">
+            <i className="fas fa-lock mr-2"></i> {pt('locked')}
+          </div>
+        )}
         <button 
           onClick={onClose} 
           disabled={isGenerating}

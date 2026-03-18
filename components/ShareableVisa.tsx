@@ -43,7 +43,6 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
         quality: 1,
         pixelRatio: 3,
         cacheBust: true,
-        skipFonts: true,
       });
 
       const blob = await (await fetch(dataUrl)).blob();
