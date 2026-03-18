@@ -388,6 +388,48 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                             <i className="fas fa-key mr-2"></i> Reset API Key
                         </button>
 
+                        <button 
+                            disabled={isWorking}
+                            onClick={async () => {
+                                setIsWorking(true);
+                                addLog("♻️ Restaurando perfil de administrador...");
+                                try {
+                                    const { data: { session } } = await supabase.auth.getSession();
+                                    if (session?.user?.email) {
+                                        const { data: currentProfile } = await supabase.from('profiles').select('*').ilike('email', session.user.email).maybeSingle();
+                                        const restoredProfile = {
+                                            ...(currentProfile || {}),
+                                            id: session.user.id,
+                                            email: session.user.email,
+                                            miles: 5000,
+                                            rank: 'ZENITH',
+                                            badges: [
+                                                { id: 'debutante', name: 'First Step', description: 'Started the journey', icon: 'fa-shoe-prints', earnedAt: new Date().toISOString() },
+                                                { id: 'onfire', name: 'On Fire', description: '3 day streak', icon: 'fa-fire', earnedAt: new Date().toISOString() },
+                                                { id: 'rank_zenith', name: 'Zenith', description: 'Top rank achieved', icon: 'fa-crown', earnedAt: new Date().toISOString() }
+                                            ],
+                                            stamps: [
+                                                { id: 'vienna_austria', city: 'Vienna', country: 'Austria', date: new Date().toISOString(), icon: 'fa-chess-rook' },
+                                                { id: 'paris_france', city: 'Paris', country: 'France', date: new Date().toISOString(), icon: 'fa-wine-glass' }
+                                            ],
+                                            visited_cities: ['vienna_austria', 'paris_france'],
+                                            completed_tours: ['vienna_austria_tour1', 'paris_france_tour1']
+                                        };
+                                        await supabase.from('profiles').upsert(restoredProfile, { onConflict: 'email' });
+                                        addLog("✅ Perfil restaurado con éxito. Recarga la página.");
+                                    } else {
+                                        addLog("❌ No se encontró sesión activa.");
+                                    }
+                                } catch (e) {
+                                    addLog("❌ Error al restaurar perfil.");
+                                }
+                                setIsWorking(false);
+                            }}
+                            className="w-full py-4 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 rounded-2xl font-black uppercase text-[8px] tracking-[0.2em] active:scale-95 transition-all mt-4"
+                        >
+                            <i className="fas fa-life-ring mr-2"></i> Restaurar Mi Perfil (Admin)
+                        </button>
+
                         {isWorking && (
                             <button 
                                 onClick={() => { stopRef.current = true; setIsWorking(false); }}

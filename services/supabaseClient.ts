@@ -172,7 +172,7 @@ export const searchCitiesInCache = async (query: string): Promise<any[]> => {
 
 export const getUserProfileByEmail = async (email: string): Promise<UserProfile | null> => {
   try {
-    const { data, error } = await supabase.from('profiles').select('*').eq('email', email).maybeSingle();
+    const { data, error } = await supabase.from('profiles').select('*').ilike('email', email).maybeSingle();
     if (error) {
       console.error("Error fetching profile from Supabase:", error);
       throw error;
