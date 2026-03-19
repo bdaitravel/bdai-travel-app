@@ -197,9 +197,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                     <h2 className="text-yellow-500 font-black text-[11px] uppercase tracking-widest leading-none">{pt('title')}</h2>
                     <p className="text-white/40 text-[7px] font-bold uppercase tracking-widest mt-1.5">{pt('subtitle')}</p>
                 </div>
-                <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className={`w-10 h-10 rounded-xl flex items-center justify-center ${isEditing ? 'bg-blue-600' : 'bg-white/10'} text-white transition-all shadow-lg`}>
-                    {isSyncing ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${isEditing ? 'fa-save' : 'fa-edit'} text-xs`}></i>}
-                </button>
+                <div className="flex gap-2">
+                    {isEditing && (
+                        <button 
+                            onClick={() => {
+                                setIsEditing(false);
+                                setFormData({
+                                    firstName: user.firstName || '', lastName: user.lastName || '', username: user.username || 'traveler',
+                                    city: user.city || '', country: user.country || '', avatar: user.avatar || AVATARS[0],
+                                    birthday: user.birthday || '1995-01-01', language: user.language || 'es'
+                                });
+                            }} 
+                            className="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-800 text-white transition-all shadow-lg"
+                        >
+                            <i className="fas fa-times-circle text-xs"></i>
+                        </button>
+                    )}
+                    <button onClick={() => isEditing ? handleSave() : setIsEditing(true)} className={`w-10 h-10 rounded-xl flex items-center justify-center ${isEditing ? 'bg-blue-600' : 'bg-white/10'} text-white transition-all shadow-lg`}>
+                        {isSyncing ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${isEditing ? 'fa-save' : 'fa-edit'} text-xs`}></i>}
+                    </button>
+                </div>
             </div>
 
             <div className="p-6 space-y-8">
