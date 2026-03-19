@@ -114,6 +114,14 @@ export const COUNTRY_TRANSLATIONS: Record<string, any> = {
   "fiji": { es: "Fiyi", en: "Fiji", fr: "Fidji", de: "Fidschi", it: "Figi", pt: "Fiji", ro: "Fiji", zh: "斐济", ja: "フィジー", ru: "Фиджи", ar: "فيجي", hi: "फिजी", ko: "피지", tr: "Fiji", pl: "Fidżi", nl: "Fiji", ca: "Fiji", eu: "Fiji", vi: "Fiji", th: "ฟิจิ" }
 };
 
+export const CONTINENT_TRANSLATIONS: Record<string, any> = {
+  europa: { es: "Europa", en: "Europe", fr: "Europe", de: "Europa", it: "Europa", pt: "Europa", ro: "Europa", zh: "欧洲", ja: "ヨーロッパ", ru: "Европа", ar: "أوروبا", hi: "यूरोप", ko: "유럽", tr: "Avrupa", pl: "Europa", nl: "Europa", ca: "Europa", eu: "Europa", vi: "Châu Âu", th: "ยุโรป" },
+  america: { es: "América", en: "America", fr: "Amérique", de: "Amerika", it: "America", pt: "América", ro: "America", zh: "美洲", ja: "アメリカ", ru: "Америка", ar: "أمريكا", hi: "अमेरिका", ko: "아메리카", tr: "Amerika", pl: "Ameryka", nl: "Amerika", ca: "Amèrica", eu: "Amerika", vi: "Châu Mỹ", th: "อเมริกา" },
+  asia: { es: "Asia", en: "Asia", fr: "Asie", de: "Asien", it: "Asia", pt: "Ásia", ro: "Asia", zh: "亚洲", ja: "アジア", ru: "Азия", ar: "آسيا", hi: "एशिया", ko: "아시아", tr: "Asya", pl: "Azja", nl: "Azië", ca: "Àsia", eu: "Asia", vi: "Châu Á", th: "เอเชีย" },
+  africa: { es: "África", en: "Africa", fr: "Afrique", de: "Afrika", it: "Africa", pt: "África", ro: "Africa", zh: "非洲", ja: "アフリカ", ru: "Африка", ar: "أفريقيا", hi: "अफ़्रीका", ko: "아프리카", tr: "Afrika", pl: "Afryka", nl: "Afrika", ca: "Àfrica", eu: "Afrika", vi: "Châu Phi", th: "แอฟริกา" },
+  oceania: { es: "Oceanía", en: "Oceania", fr: "Océanie", de: "Ozeanien", it: "Oceania", pt: "Oceania", ro: "Oceania", zh: "大洋洲", ja: "オセアニア", ru: "Океания", ar: "أوقيانوسيا", hi: "ओशินिया", ko: "오세아니아", tr: "Okyanusya", pl: "Oceania", nl: "Oceanië", ca: "Oceania", eu: "Ozeania", vi: "Châu Đại Dương", th: "โอเชียเนีย" }
+};
+
 const normalizeKey = (str: string): string => {
   return str.normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -231,7 +239,7 @@ export const TravelServices = ({
                     : 'bg-white/5 border-white/10 text-white/40'
                 }`}
               >
-                {tab}
+                {CONTINENT_TRANSLATIONS[tab]?.[lang] || tab}
               </button>
             ))}
           </div>
