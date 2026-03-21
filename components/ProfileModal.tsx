@@ -126,8 +126,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
     const globalDict = translations[lang] || translations['en'];
     
     const extra: any = {
-        es: { locked: "BLOQUEADO", unlockReq: "Requisito:", milesReq: "Millas necesarias:", confirmShare: "Compartir", cancel: "Cerrar", image: "Guardar Imagen", share: "Compartir Enlace", backToPassport: "Volver al Pasaporte", statusVerified: "Estado: Verificado", missionAccomplished: "MISIÓN CUMPLIDA", locationIdentity: "Identidad de Ubicación", protocolReward: "Recompensa", currentRank: "Rango Actual", digitalAuth: "Autenticación", verified: "VERIFICADO", totalDistance: "Distancia Total", minting: "GENERANDO...", transmitting: "TRANSMITIENDO...", readyToShare: "LISTO PARA COMPARTIR" },
-        en: { locked: "LOCKED", unlockReq: "Requirement:", milesReq: "Miles needed:", confirmShare: "Share", cancel: "Close", image: "Save Image", share: "Share Link", backToPassport: "Back to Passport", statusVerified: "Status: Verified", missionAccomplished: "MISSION ACCOMPLISHED", locationIdentity: "Location Identity", protocolReward: "Protocol Reward", currentRank: "Current Rank", digitalAuth: "Digital Auth", verified: "VERIFIED", totalDistance: "Total Distance", minting: "MINTING...", transmitting: "TRANSMITTING...", readyToShare: "READY TO SHARE" }
+        es: { locked: "BLOQUEADO", unlockReq: "Requisito:", milesReq: "Millas restantes:", confirmShare: "Compartir", cancel: "Cerrar", image: "Guardar Imagen", share: "Compartir Enlace", backToPassport: "Volver al Pasaporte", statusVerified: "Estado: Verificado", missionAccomplished: "MISIÓN CUMPLIDA", locationIdentity: "Identidad de Ubicación", protocolReward: "Recompensa", currentRank: "Rango Actual", digitalAuth: "Autenticación", verified: "VERIFICADO", totalDistance: "Distancia Total", minting: "GENERANDO...", transmitting: "TRANSMITIENDO...", readyToShare: "LISTO PARA COMPARTIR" },
+        en: { locked: "LOCKED", unlockReq: "Requirement:", milesReq: "Miles remaining:", confirmShare: "Share", cancel: "Close", image: "Save Image", share: "Share Link", backToPassport: "Back to Passport", statusVerified: "Status: Verified", missionAccomplished: "MISSION ACCOMPLISHED", locationIdentity: "Location Identity", protocolReward: "Protocol Reward", currentRank: "Current Rank", digitalAuth: "Autenticación", verified: "VERIFIED", totalDistance: "Total Distance", minting: "MINTING...", transmitting: "TRANSMITTING...", readyToShare: "READY TO SHARE" },
+        fr: { locked: "VERROUILLÉ", unlockReq: "Exigence :", milesReq: "Miles restants :", confirmShare: "Partager", cancel: "Fermer" },
+        de: { locked: "GESPERRT", unlockReq: "Anforderung:", milesReq: "Verbleibende Meilen:", confirmShare: "Teilen", cancel: "Schließen" },
+        it: { locked: "BLOCCATO", unlockReq: "Requisito:", milesReq: "Miglia rimanenti:", confirmShare: "Condividi", cancel: "Chiudi" },
+        pt: { locked: "BLOQUEADO", unlockReq: "Requisito:", milesReq: "Milhas restantes:", confirmShare: "Compartilhar", cancel: "Fechar" },
+        ro: { locked: "BLOCAT", unlockReq: "Cerință:", milesReq: "Mile rămase:", confirmShare: "Distribuie", cancel: "Închide" },
+        zh: { locked: "已锁定", unlockReq: "要求：", milesReq: "剩余里程：", confirmShare: "分享", cancel: "关闭" },
+        ja: { locked: "ロック済み", unlockReq: "要件：", milesReq: "残りマイル：", confirmShare: "共有", cancel: "閉じる" },
+        ru: { locked: "ЗАБЛОКИРОВАНО", unlockReq: "Требование:", milesReq: "Оставшиеся мили:", confirmShare: "Поделиться", cancel: "Закрыть" },
+        ar: { locked: "مغلق", unlockReq: "المتطلبات:", milesReq: "الأميال المتبقية:", confirmShare: "مشاركة", cancel: "إغلاق" },
+        hi: { locked: "लॉक किया गया", unlockReq: "आवश्यकता:", milesReq: "शेष मील:", confirmShare: "साझा करें", cancel: "बंद करें" },
+        ko: { locked: "잠김", unlockReq: "요구 사항:", milesReq: "남은 마일:", confirmShare: "공유", cancel: "닫기" },
+        tr: { locked: "KİLİTLİ", unlockReq: "Gereksinim:", milesReq: "Kalan miller:", confirmShare: "Paylaş", cancel: "Kapat" },
+        pl: { locked: "ZABLOKOWANE", unlockReq: "Wymaganie:", milesReq: "Pozostałe mile:", confirmShare: "Udostępnij", cancel: "Zamknij" },
+        nl: { locked: "VERGRENDELD", unlockReq: "Vereiste:", milesReq: "Resterende mijlen:", confirmShare: "Delen", cancel: "Sluiten" },
+        ca: { locked: "BLOQUEJAT", unlockReq: "Requisit:", milesReq: "Milles restants:", confirmShare: "Comparteix", cancel: "Tanca" },
+        eu: { locked: "BLOKEATUTA", unlockReq: "Baldintza:", milesReq: "Geratzen diren miliak:", confirmShare: "Partekatu", cancel: "Itxi" },
+        vi: { locked: "ĐÃ KHÓA", unlockReq: "Yêu cầu:", milesReq: "Số dặm còn lại:", confirmShare: "Chia sẻ", cancel: "Đóng" },
+        th: { locked: "ล็อคแล้ว", unlockReq: "ข้อกำหนด:", milesReq: "ไมล์ที่เหลือ:", confirmShare: "แชร์", cancel: "ปิด" }
     };
     const extraDict = extra[lang] || extra['en'];
 
@@ -379,6 +397,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
           badgeDescription={pt(selectedBadge.badge.description)}
           onClose={() => setSelectedBadge(null)} 
           pt={pt}
+          miles={user.miles}
         />,
         document.body
       )}

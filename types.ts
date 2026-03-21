@@ -95,10 +95,10 @@ export const APP_BADGES: Badge[] = [
   { id: 'arch_master', name: 'CRITIC', icon: 'fa-archway', description: 'badge_arch_desc', category: 'architecture', requiredPoints: 10 },
   { id: 'photo_master', name: 'VISIONARY', icon: 'fa-camera', description: 'badge_photo_desc', category: 'photo', requiredPoints: 10 },
   { id: 'rank_zero', name: 'ZERO', icon: 'fa-circle-dot', description: 'badge_zero_desc', category: 'rank', requiredPoints: 0 },
-  { id: 'rank_scout', name: 'SCOUT', icon: 'fa-compass', description: 'badge_scout_desc', category: 'rank', requiredPoints: 0 },
-  { id: 'rank_rover', name: 'ROVER', icon: 'fa-person-walking', description: 'badge_rover_desc', category: 'rank', requiredPoints: 0 },
-  { id: 'rank_titan', name: 'TITAN', icon: 'fa-mountain', description: 'badge_titan_desc', category: 'rank', requiredPoints: 0 },
-  { id: 'rank_zenith', name: 'ZENITH', icon: 'fa-crown', description: 'badge_zenith_desc', category: 'rank', requiredPoints: 0 }
+  { id: 'rank_scout', name: 'SCOUT', icon: 'fa-compass', description: 'badge_scout_desc', category: 'rank', requiredPoints: 251 },
+  { id: 'rank_rover', name: 'ROVER', icon: 'fa-person-walking', description: 'badge_rover_desc', category: 'rank', requiredPoints: 1201 },
+  { id: 'rank_titan', name: 'TITAN', icon: 'fa-mountain', description: 'badge_titan_desc', category: 'rank', requiredPoints: 4001 },
+  { id: 'rank_zenith', name: 'ZENITH', icon: 'fa-crown', description: 'badge_zenith_desc', category: 'rank', requiredPoints: 10001 }
 ];
 
 export interface LeaderboardEntry {

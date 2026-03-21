@@ -131,7 +131,9 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, bad
             <div className="relative z-10 w-full p-4 bg-red-900/10 border border-red-500/30 rounded-2xl backdrop-blur-md shadow-inner mb-4 flex flex-col items-center">
               <p className="text-[8px] font-black text-red-400 uppercase tracking-widest mb-1">{pt('unlockReq')}</p>
               <p className="text-sm font-bold text-slate-300 text-center">
-                {badge.category === 'rank' ? `${pt('milesReq')} ${badge.requiredPoints}` : `${pt('unlockReq')} ${badge.requiredPoints} pts`}
+                {badge.category === 'rank' 
+                  ? `${pt('milesReq')} ${Math.max(0, badge.requiredPoints - (miles || 0)).toLocaleString()}` 
+                  : `${pt('unlockReq')} ${badge.requiredPoints} pts`}
               </p>
             </div>
           )}
