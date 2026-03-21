@@ -149,6 +149,7 @@ export interface Tour {
   theme: string;
   stops: Stop[];
   isEssential?: boolean;
+  routePolyline?: string;
 }
 
 export enum AppView {

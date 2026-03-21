@@ -23,12 +23,28 @@ const STOP_CONFIG: Record<string, { icon: string, color: string }> = {
     church: { icon: 'fa-church', color: '#5856D6' }
 };
 
+// Helper to decode Google Polyline algorithm
+const decodePolyline = (str: string, precision: number = 5) => {
+    let index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null;
+    const factor = Math.pow(10, precision);
+    while (index < str.length) {
+        byte = null; shift = 0; result = 0;
+        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
+        const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1)); lat += dlat;
+        byte = null; shift = 0; result = 0;
+        do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
+        const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1)); lng += dlng;
+        coordinates.push([lat / factor, lng / factor]);
+    }
+    return coordinates;
+};
+
 const TEXTS: any = {
     es: { guide: "Ir a", openInMaps: "GPS", follow: "Seguir", stopFollow: "Libre", focus: "Fijar", dist: "a" },
     en: { guide: "Go to", openInMaps: "GPS", follow: "Follow", stopFollow: "Free", focus: "Fix", dist: "at" }
 };
 
-export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language = 'es', onStopSelect, userLocation }) => {
+export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopIndex, language = 'es', onStopSelect, userLocation }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -38,6 +54,7 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
   const geofenceCirclesRef = useRef<any[]>([]);
   
   const [isAutoFollowing, setIsAutoFollowing] = useState(true);
+  const [walkingTime, setWalkingTime] = useState<number | null>(null);
   const tl = TEXTS[language] || TEXTS.es;
   
   // Validar paradas antes de usarlas
@@ -121,24 +138,53 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
 
         if (currentStop?.latitude && currentStop?.longitude) {
             const dist = map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]);
-            if (dist < 50000) { // Only draw line if within 50km
-                if (activeLineRef.current) {
-                    activeLineRef.current.setLatLngs([
-                        [userLocation.lat, userLocation.lng], 
-                        [currentStop.latitude, currentStop.longitude]
-                    ]);
-                } else {
-                    activeLineRef.current = L.polyline([
-                        [userLocation.lat, userLocation.lng], 
-                        [currentStop.latitude, currentStop.longitude]
-                    ], { 
-                        color: '#9333ea', 
-                        weight: 5, 
-                        dashArray: '10, 15', 
-                        opacity: 0.9,
-                        lineCap: 'round'
-                    }).addTo(map);
-                }
+            
+            if (dist < 40000) { // Only draw route if within 40km
+                // Optimized dynamic routing
+                const fetchRouting = async () => {
+                    const url = `https://router.project-osrm.org/route/v1/foot/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline`;
+                    try {
+                        const res = await fetch(url);
+                        const data = await res.json();
+                        if (data.code === 'Ok' && data.routes?.[0]) {
+                            const points = decodePolyline(data.routes[0].geometry);
+                            setWalkingTime(Math.round(data.routes[0].duration / 60)); // Minutes
+                            if (activeLineRef.current) {
+                                activeLineRef.current.setLatLngs(points);
+                            } else {
+                                activeLineRef.current = L.polyline(points, { 
+                                    color: '#9333ea', 
+                                    weight: 6, 
+                                    dashArray: '12, 20', 
+                                    opacity: 0.8,
+                                    lineCap: 'round',
+                                    className: 'animate-marching-ants'
+                                }).addTo(map);
+
+                                // Add CSS for animation if not exists
+                                if (!document.getElementById('marching-ants-style')) {
+                                    const style = document.createElement('style');
+                                    style.id = 'marching-ants-style';
+                                    style.innerHTML = `
+                                        @keyframes marching-ants {
+                                            from { stroke-dashoffset: 64; }
+                                            to { stroke-dashoffset: 0; }
+                                        }
+                                        .animate-marching-ants {
+                                            animation: marching-ants 1.5s linear infinite;
+                                        }
+                                    `;
+                                    document.head.appendChild(style);
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        // Fallback to straight line if API fails
+                        if (activeLineRef.current) activeLineRef.current.setLatLngs([[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]]);
+                    }
+                };
+
+                fetchRouting();
             } else if (activeLineRef.current) {
                 map.removeLayer(activeLineRef.current);
                 activeLineRef.current = null;
@@ -175,12 +221,19 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
     geofenceCirclesRef.current = [];
 
     if (validStops.length > 0) {
-        const routeCoordinates = validStops.map((s: any) => [s.latitude, s.longitude]);
-        fullPathRef.current = L.polyline(routeCoordinates, {
+        let routePoints = [];
+        if (routePolyline) {
+            routePoints = decodePolyline(routePolyline);
+        } else {
+            routePoints = validStops.map((s: any) => [s.latitude, s.longitude]);
+        }
+
+        fullPathRef.current = L.polyline(routePoints, {
             color: 'white',
-            weight: 2,
-            opacity: 0.2,
-            dashArray: '1, 10'
+            weight: 3,
+            opacity: 0.3,
+            dashArray: routePolyline ? undefined : '1, 10',
+            lineJoin: 'round'
         }).addTo(map);
 
         validStops.forEach((stop: any, idx: number) => {
@@ -299,6 +352,12 @@ export const SchematicMap: React.FC<any> = ({ stops, currentStopIndex, language 
             <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
             <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"><i className="fas fa-bullseye text-lg"></i></button>
         </div>
+        {walkingTime !== null && isAutoFollowing && (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-10 z-[450] bg-purple-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl border-2 border-purple-400 flex items-center gap-2 animate-bounce">
+                <i className="fas fa-person-walking"></i>
+                <span>{walkingTime} min {tl.dist} {currentStop?.name || ''}</span>
+            </div>
+        )}
     </div>
   );
 };

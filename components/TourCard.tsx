@@ -363,7 +363,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
 
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
                 <div className="h-[45vh] w-full sticky top-0 z-0">
-                    <SchematicMap stops={tour.stops} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
+                    <SchematicMap stops={tour.stops} routePolyline={tour.routePolyline} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
                 <div className="px-8 pt-10 pb-10 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)] z-10 relative min-h-[60vh]">
                     <div className="grid grid-cols-2 gap-4">
