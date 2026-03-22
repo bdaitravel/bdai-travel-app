@@ -52,6 +52,7 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
   const fullPathRef = useRef<any>(null);
   const activeLineRef = useRef<any>(null);
   const geofenceCirclesRef = useRef<any[]>([]);
+  const lastRoutingRef = useRef<{lat: number, lng: number, time: number} | null>(null);
   
   const [isAutoFollowing, setIsAutoFollowing] = useState(true);
   const [walkingTime, setWalkingTime] = useState<number | null>(null);
@@ -140,51 +141,76 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
             const dist = map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]);
             
             if (dist < 40000) { // Only draw route if within 40km
-                // Optimized dynamic routing
-                const fetchRouting = async () => {
-                    const url = `https://router.project-osrm.org/route/v1/foot/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline`;
-                    try {
-                        const res = await fetch(url);
-                        const data = await res.json();
-                        if (data.code === 'Ok' && data.routes?.[0]) {
+                const now = Date.now();
+                let shouldFetchRouting = false;
+
+                if (!lastRoutingRef.current) {
+                    shouldFetchRouting = true;
+                } else {
+                    const timeElapsed = now - lastRoutingRef.current.time;
+                    const distMoved = map.distance([userLocation.lat, userLocation.lng], [lastRoutingRef.current.lat, lastRoutingRef.current.lng]);
+                    // Geo-Debounce: Solo recalcular si se ha movido > 25m o han pasado > 15s
+                    if (timeElapsed > 15000 || distMoved > 25) {
+                        shouldFetchRouting = true;
+                    }
+                }
+
+                if (shouldFetchRouting) {
+                    lastRoutingRef.current = { lat: userLocation.lat, lng: userLocation.lng, time: now };
+                    
+                    const fetchRouting = async () => {
+                        // Prioridad 1: OSRM Public Server con flag para evitar rutas serpenteantes
+                        const urlPrimary = `https://router.project-osrm.org/route/v1/foot/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline&continue_straight=true`;
+                        // Prioridad 2: Ruta alternativa pública
+                        const urlFallback = `https://routing.openstreetmap.de/routed-foot/route/v1/driving/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline`;
+                        
+                        const drawRoute = (data: any) => {
                             const points = decodePolyline(data.routes[0].geometry);
                             setWalkingTime(Math.round(data.routes[0].duration / 60)); // Minutes
                             if (activeLineRef.current) {
                                 activeLineRef.current.setLatLngs(points);
                             } else {
                                 activeLineRef.current = L.polyline(points, { 
-                                    color: '#9333ea', 
-                                    weight: 6, 
-                                    dashArray: '12, 20', 
-                                    opacity: 0.8,
-                                    lineCap: 'round',
-                                    className: 'animate-marching-ants'
+                                    color: '#9333ea', weight: 6, dashArray: '12, 20', opacity: 0.8, lineCap: 'round', className: 'animate-marching-ants'
                                 }).addTo(map);
 
-                                // Add CSS for animation if not exists
                                 if (!document.getElementById('marching-ants-style')) {
                                     const style = document.createElement('style');
                                     style.id = 'marching-ants-style';
-                                    style.innerHTML = `
-                                        @keyframes marching-ants {
-                                            from { stroke-dashoffset: 64; }
-                                            to { stroke-dashoffset: 0; }
-                                        }
-                                        .animate-marching-ants {
-                                            animation: marching-ants 1.5s linear infinite;
-                                        }
-                                    `;
+                                    style.innerHTML = `@keyframes marching-ants { from { stroke-dashoffset: 64; } to { stroke-dashoffset: 0; } } .animate-marching-ants { animation: marching-ants 1.5s linear infinite; }`;
                                     document.head.appendChild(style);
                                 }
                             }
-                        }
-                    } catch (e) {
-                        // Fallback to straight line if API fails
-                        if (activeLineRef.current) activeLineRef.current.setLatLngs([[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]]);
-                    }
-                };
+                        };
 
-                fetchRouting();
+                        try {
+                            const res = await fetch(urlPrimary, { signal: AbortSignal.timeout(4000) });
+                            if (!res.ok) throw new Error("Primary failed");
+                            const data = await res.json();
+                            if (data.code === 'Ok' && data.routes?.[0]) {
+                                drawRoute(data);
+                                return;
+                            }
+                            throw new Error("Primary returned bad response");
+                        } catch (e) {
+                            console.warn("OSRM Primary failed, trying fallback...", e);
+                            try {
+                                const res2 = await fetch(urlFallback, { signal: AbortSignal.timeout(4000) });
+                                if (!res2.ok) throw new Error("Fallback failed");
+                                const data2 = await res2.json();
+                                if (data2.code === 'Ok' && data2.routes?.[0]) {
+                                    drawRoute(data2);
+                                    return;
+                                }
+                                throw new Error("Fallback returned bad response");
+                            } catch (e2) {
+                                console.warn("All routing APIs failed. Falling back to straight line.", e2);
+                                if (activeLineRef.current) activeLineRef.current.setLatLngs([[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]]);
+                            }
+                        }
+                    };
+                    fetchRouting();
+                }
             } else if (activeLineRef.current) {
                 map.removeLayer(activeLineRef.current);
                 activeLineRef.current = null;
