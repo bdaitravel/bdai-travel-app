@@ -32,25 +32,7 @@ export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) =>
         <div className="pb-44 animate-fade-in bg-[#020617] min-h-full">
             <header className="bg-gradient-to-b from-purple-900/40 to-slate-950 p-10 rounded-b-[4rem] border-b border-purple-500/20 shadow-2xl">
                 <h2 className={`text-4xl font-black text-white tracking-tighter uppercase ${user.language === 'ar' ? 'text-right' : ''}`}>{t.title}</h2>
-                <p className={`text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mb-8 ${user.language === 'ar' ? 'text-right' : ''}`}>{t.subtitle}</p>
-                
-                <button 
-                    disabled
-                    className="w-full bg-white/10 text-white/40 p-6 rounded-[2rem] font-black uppercase text-[11px] tracking-widest border border-white/5 flex items-center justify-center gap-3 mb-8 cursor-not-allowed"
-                >
-                    <i className="fas fa-lock"></i>
-                    {t.mainBtn}
-                </button>
-
-                <div className="bg-purple-600/20 border border-purple-500/30 p-6 rounded-[2rem] backdrop-blur-sm">
-                    <div className="flex items-center gap-3 mb-2">
-                        <i className="fas fa-info-circle text-purple-400"></i>
-                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Update</span>
-                    </div>
-                    <p className="text-white/80 text-xs font-medium leading-relaxed italic">
-                        "{t.devMsg || SHOP_TEXTS.en.devMsg}"
-                    </p>
-                </div>
+                <p className={`text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mb-4 ${user.language === 'ar' ? 'text-right' : ''}`}>{t.subtitle}</p>
             </header>
 
             <div className="p-8 space-y-6">

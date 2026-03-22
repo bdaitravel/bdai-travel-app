@@ -366,7 +366,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         <span className="text-slate-700">•</span>
                         <button onClick={() => setShowLegal('terms')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">{pt('terms')}</button>
                     </div>
-                    <button onClick={() => setShowReportBug(true)} className="w-full py-3 mb-2 bg-transparent text-slate-400 hover:text-orange-500 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
+                    <button onClick={() => setShowReportBug(true)} className="w-full py-3 mb-2 bg-transparent text-slate-500 hover:text-purple-500 rounded-2xl font-black text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
                         <i className="fas fa-bug"></i>{pt('reportBug')}
                     </button>
                     <button onClick={() => setShowDeleteConfirm(true)} className="w-full py-3 bg-transparent text-slate-600 hover:text-red-400 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
