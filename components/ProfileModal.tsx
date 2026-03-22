@@ -306,7 +306,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
                 <div className="pt-6 border-t border-slate-200">
                     <p className="text-[8px] font-black text-slate-500 mb-4 tracking-widest uppercase">{pt('rankBadges')}</p>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-3 mb-6">
                         {APP_BADGES.filter(b => b.category === 'rank').map((b) => {
                             const isEarned = user.badges?.some(ub => ub.id === b.id);
                             return (
@@ -319,6 +319,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             );
                         })}
                     </div>
+                    <button onClick={() => setShowBragModal(true)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5">
+                        <i className="fas fa-bullhorn text-purple-400"></i>{pt('shareRank')}
+                    </button>
                 </div>
 
                 <div className="pt-6 border-t border-slate-200">
@@ -336,12 +339,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             );
                         })}
                     </div>
-                </div>
-
-                <div className="pt-4">
-                    <button onClick={() => setShowBragModal(true)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 shadow-2xl active:scale-95 border border-white/5">
-                        <i className="fas fa-bullhorn text-purple-400"></i>{pt('shareRank')}
-                    </button>
                 </div>
 
                 <div className="pt-6">
