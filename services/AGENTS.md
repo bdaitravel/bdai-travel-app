@@ -50,7 +50,7 @@
 
 **Diseño (UI/UX):**
 - System: TailwindCSS.
-- Filosofía: Mobile-First, premium y moderno.
+- Filosofía: Responsive Web Design (RWD) obligatorio. Diseño Mobile-First pero con adaptabilidad total a Desktop y Tablet (Uso intensivo de CSS Grid, Flexbox y breakpoints md:, lg:, xl:). PROHIBIDO encapsular vistas enteras en contenedores de móvil estilo `max-w-md` si hay espacio disponible.
 - Componentes: Alto impacto visual (transiciones fluidas, micro-animaciones, modales).
 - Nativo: Adaptabilidad total para Capacitor.
 

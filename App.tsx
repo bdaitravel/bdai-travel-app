@@ -534,7 +534,7 @@ export default function App() {
         <div className="flex-1 flex flex-col relative h-full">
           <div className={`flex-1 overflow-y-auto no-scrollbar relative ${view === AppView.TOUR_ACTIVE ? 'pb-0' : 'pb-36'}`}>
             {view === AppView.HOME && (
-              <div className="space-y-6 pt-safe-iphone max-w-md mx-auto animate-fade-in">
+              <div className="space-y-6 pt-safe-iphone w-full max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto px-0 sm:px-6 md:px-8 animate-fade-in">
                 <header className="flex justify-between items-center py-4 px-6">
                   <div className="flex items-center gap-3"><BdaiLogo className="w-8 h-8"/><span className="font-black text-xl tracking-tighter lowercase">bdai</span></div>
                   <div className="flex items-center gap-2">
@@ -592,7 +592,7 @@ export default function App() {
             )}
 
             {view === AppView.CITY_DETAIL && (
-              <div className="pt-safe-iphone px-6 max-w-md mx-auto animate-fade-in">
+              <div className="pt-safe-iphone w-full max-w-lg md:max-w-4xl lg:max-w-7xl mx-auto px-4 sm:px-6 md:px-8 animate-fade-in">
                 <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
                   <button onClick={() => navigateTo(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
                   <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
@@ -603,7 +603,7 @@ export default function App() {
                     </button>
                   )}
                 </header>
-                <div className="space-y-6 pb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
                   {tours.map((tour, idx) => (
                     <TourCard key={`${tour.id}-${idx}`} tour={tour} onSelect={() => { setActiveTour(tour); navigateTo(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
                   ))}
@@ -637,16 +637,16 @@ export default function App() {
 
             {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
             {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
-            {view === AppView.LEADERBOARD && <div className="max-w-md mx-auto h-full"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
+            {view === AppView.LEADERBOARD && <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>}
             {view === AppView.PROFILE && <ProfileModal user={user} onClose={() => navigateTo(AppView.HOME)} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigateTo(AppView.LOGIN); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigateTo(AppView.ADMIN)} onLangChange={handleLangChange} />}
-            {view === AppView.SHOP && <div className="max-w-md mx-auto h-full"><Shop user={user} onPurchase={() => {}} /></div>}
-            {view === AppView.TOOLS && <div className="max-w-md mx-auto h-full"><TravelServices mode="HUB" lang={user.language} onCitySelect={handleTravelServiceSelect} /></div>}
+            {view === AppView.SHOP && <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Shop user={user} onPurchase={() => {}} /></div>}
+            {view === AppView.TOOLS && <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><TravelServices mode="HUB" lang={user.language} onCitySelect={handleTravelServiceSelect} /></div>}
             {view === AppView.ADMIN && <AdminPanel user={user} onBack={() => navigateTo(AppView.PROFILE)} />}
           </div>
 
           {view !== AppView.TOUR_ACTIVE && view !== AppView.ADMIN && (
             <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
-              <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm rounded-[2.5rem] pointer-events-auto shadow-2xl">
+              <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm md:max-w-lg lg:max-w-2xl rounded-[2.5rem] pointer-events-auto shadow-2xl">
                 <NavButton icon="fa-trophy" label={t('navElite')} isActive={view === AppView.LEADERBOARD} onClick={() => navigateTo(AppView.LEADERBOARD)} />
                 <NavButton icon="fa-compass" label={t('navHub')} isActive={view === AppView.TOOLS} onClick={() => navigateTo(AppView.TOOLS)} />
                 <button onClick={() => navigateTo(AppView.HOME)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${view === AppView.HOME ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>

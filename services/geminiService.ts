@@ -125,6 +125,39 @@ const getCityCenter = async (city: string, country: string): Promise<{ lat: numb
     return null;
 };
 
+// Validar y corregir coordenadas alucinadas por la IA
+const verifyStopCoordinates = async (stop: Stop, city: string, country: string): Promise<Stop> => {
+    try {
+        // Optimización: limpiar nombres excesivamente largos o descriptivos que la IA a veces genera
+        const cleanName = stop.name.split('-')[0].split('(')[0].trim();
+        const query = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+            headers: { 'Accept-Language': 'es', 'User-Agent': 'bdai-travel-app/GIS-Check' }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.length > 0) {
+                // Sobreescribir con las exactas de la realidad
+                return { ...stop, latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) };
+            }
+        }
+    } catch (e) {
+        console.warn(`GIS Check failed for ${stop.name}`);
+    }
+    // Fallback a las coordenadas inventadas de Gemini si la calle no existe en el mapa
+    return stop;
+};
+
+const processTourStops = async (tour: Tour, city: string, country: string): Promise<Tour> => {
+    const updatedStops: Stop[] = [];
+    for (const stop of tour.stops) {
+        updatedStops.push(await verifyStopCoordinates(stop, city, country));
+        // Espera 600ms para no saturar Nominatim (límite público estricto de ~1 req/s)
+        await new Promise(r => setTimeout(r, 600)); 
+    }
+    return { ...tour, stops: updatedStops };
+};
+
 export const generateToursForCity = async (city: string, country: string, user: UserProfile, onProgress?: (tour: Tour) => void): Promise<Tour[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -197,8 +230,10 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 if (onProgress && toursEmitted < 3) {
                     const parsed = tryExtractTours(accumulated);
                     while (parsed.length > toursEmitted) {
-                        const tour = parsed[toursEmitted];
+                        let tour = parsed[toursEmitted];
                         if (tour && tour.stops && tour.stops.length > 0) {
+                            // Paso 2: Geocoding real antes de renderizar
+                            tour = await processTourStops(tour, city, country);
                             onProgress(tour);
                             allTours.push(tour);
                         }
@@ -220,12 +255,22 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
 
             if (onProgress) {
                 while (toursEmitted < finalTours.length) {
-                    const tour = finalTours[toursEmitted];
+                    let tour = finalTours[toursEmitted];
                     if (tour && tour.stops && tour.stops.length > 0) {
+                        tour = await processTourStops(tour, city, country);
                         onProgress(tour);
                         allTours.push(tour);
                     }
                     toursEmitted++;
+                }
+            }
+
+            if (allTours.length === 0) {
+                // Si no había onProgress, curar las finales
+                for (let i = 0; i < finalTours.length; i++) {
+                    if (finalTours[i] && finalTours[i].stops?.length > 0) {
+                        finalTours[i] = await processTourStops(finalTours[i], city, country);
+                    }
                 }
             }
 

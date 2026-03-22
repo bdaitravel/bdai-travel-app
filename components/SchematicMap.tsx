@@ -375,6 +375,11 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
     <div className="w-full h-full relative overflow-hidden bg-slate-950">
         <div ref={mapContainerRef} className="w-full h-full" />
         <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-3">
+            {currentStop && (
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${currentStop.latitude},${currentStop.longitude}&travelmode=walking`} target="_blank" rel="noopener noreferrer" className="w-14 h-14 rounded-2xl bg-white text-slate-800 border-2 border-slate-200 shadow-2xl flex items-center justify-center transition-all hover:bg-slate-100 active:scale-95">
+                    <i className="fas fa-arrow-up-right-from-square text-lg"></i>
+                </a>
+            )}
             <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
             <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"><i className="fas fa-bullseye text-lg"></i></button>
         </div>

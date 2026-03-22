@@ -83,21 +83,21 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
   if (!tour) return null;
 
   return (
-    <div onClick={handleLaunch} className="group bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden p-8 mb-6 cursor-pointer relative active:scale-[0.98] transition-all hover:border-purple-500/40 shadow-2xl">
+    <div onClick={handleLaunch} className="group bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden p-8 mb-0 cursor-pointer relative active:scale-[0.98] transition-all hover:border-purple-500/40 shadow-2xl flex flex-col h-full w-full">
       {isLaunching && (
           <div className="absolute inset-0 bg-purple-600/20 backdrop-blur-[2px] z-10 flex items-center justify-center animate-fade-in">
               <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
           </div>
       )}
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-1">
           {tour.theme && (
               <div className="inline-block bg-purple-600/20 border border-purple-500/30 text-purple-400 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 self-start">
                   {tour.theme}
               </div>
           )}
           <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
-          <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-6 font-medium">{tour.description}</p>
-          <div className="flex items-center justify-between pt-6 border-t border-white/5">
+          <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-6 font-medium flex-1">{tour.description}</p>
+          <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
                <div className="flex gap-4">
                   <div className="flex flex-col">
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.duration}</span>
@@ -366,22 +366,18 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     <SchematicMap stops={tour.stops} routePolyline={tour.routePolyline} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
                 <div className="px-8 pt-10 pb-10 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)] z-10 relative min-h-[60vh]">
-                    <div className="grid grid-cols-3 gap-3">
-                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-4 rounded-[1.5rem] font-black uppercase border transition-all shadow-sm active:scale-95 ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
                             <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg mb-1`}></i>
-                            <span className="text-[8px] tracking-wide">{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
+                            <span className="text-[9px]">{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
                             {distToTarget !== null && !rewardClaimed && (
                                 <span className="text-[7px] mt-1 opacity-60 font-bold">{distToTarget}{tl.meters}</span>
                             )}
                         </button>
-                        <button onClick={() => setShowPhotoTip(true)} className="flex flex-col items-center justify-center p-4 rounded-[1.5rem] font-black uppercase border bg-slate-900 text-white border-slate-800 shadow-xl shadow-slate-900/10 active:scale-95 transition-all">
+                        <button onClick={() => setShowPhotoTip(true)} className="flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border bg-slate-900 text-white border-slate-800 shadow-xl shadow-slate-900/10 active:scale-95 transition-all">
                             <i className="fas fa-camera text-lg mb-1"></i>
-                            <span className="text-[8px] tracking-wide">{tl.daiShot}</span>
+                            <span className="text-[9px]">{tl.daiShot}</span>
                         </button>
-                        <a href={`https://www.google.com/maps/dir/?api=1&destination=${currentStop.latitude},${currentStop.longitude}&travelmode=walking`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 rounded-[1.5rem] font-black uppercase border bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 active:scale-95 transition-all">
-                            <i className="fas fa-arrow-up-right-from-square text-lg mb-1 opacity-70"></i>
-                            <span className="text-[8px] tracking-wide text-center leading-tight mt-0.5">Maps</span>
-                        </a>
                     </div>
 
                     {isAdmin && (
