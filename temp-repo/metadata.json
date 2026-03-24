@@ -1,9 +1,0 @@
-{
-  "name": "bdai",
-  "description": "bdai: better destinations by ai. Un ecosistema de datos turísticos y gamificación Tech-Noir que conecta viajeros con el comercio local.",
-  "requestFramePermissions": [
-    "geolocation",
-    "camera",
-    "microphone"
-  ]
-}

@@ -24,7 +24,6 @@
 - **Explore:** Buscador tours (Prioriza DB -> Genera vía IA y guarda).
 - **Passport:** Historial, niveles, insignias, visados digitales.
 - **Shop & Connect:** Marketplace de viajes y planes eSIM.
-- **Travel Services:** Conversor divisas, utilidades.
 - **Mecánicas:** Multi-idioma dinámico (10+), Gamificación (Leaderboard, recompensas).
 
 **Privada:**
@@ -39,14 +38,19 @@
 - CSS: TailwindCSS
 - Backend: Supabase
 - IA: Google Gemini AI
+- Estado Global: Zustand (con persistencia inteligente por entorno)
 - Mobile Bridge: Capacitor
 - Extras: Leaflet (Mapas), Recharts (Gráficos)
 
 ## Preferencias y Reglas Core
-**Generales:**
+**Generales & Arquitectura:**
 - Idioma UI por defecto: Español.
 - Config: Variables en `.env`.
-- Arquitectura: Priorizar servicios gratuitos; optimizar batería vs rendimiento (Mobile).
+- Infraestructura: Priorizar servicios gratuitos; optimizar batería vs rendimiento (Mobile).
+- **Gestión de Estado (`zustand`):** El estado global volátil (reproductor de audio, tours activos) debe centralizarse con `zustand`. Evitar estados gigantes en `App.tsx` y el prop-drilling excesivo.
+- **Caché por Entorno (Obligatorio):** Cualquier persistencia de estado debe evaluar siempre la plataforma:
+  - **Móvil (Capacitor):** Usar almacenamiento persistente (`localStorage`) para ahorrar cuota de red y batería al viajero.
+  - **Web:** Usar almacenamiento efímero (`sessionStorage`). Todos los datos de sesión deben desaparecer auto-destruyéndose al cerrar la pestaña.
 
 **Diseño (UI/UX):**
 - System: TailwindCSS.
@@ -56,7 +60,9 @@
 
 **Código (Clean Code):**
 - Tipo: TypeScript estricto.
-- Calidad: Legible, modular, con mínimas dependencias externas.
+- Calidad: Priorizar código legible, mantenible y sencillo de entender (modular y limpio).
+- **Dudas:** Ante cualquier incertidumbre, revisar especificaciones o preguntar al usuario antes de proceder.
+- **Dependencias:** Minimizar dependencias. Excepción: si mejora UX/rendimiento >4x (ej. `lamejs`), proponer y esperar aprobación.
 - Seguridad: OWASP, sanitización, manejo de secretos.
 - Errores: Manejo proactivo con feedback visual en el DOM.
 

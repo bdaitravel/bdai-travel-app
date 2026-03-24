@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import lamejs from 'lamejs';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
 const rawUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -100,6 +101,32 @@ const encodeToWav = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Arra
     new Uint8Array(buffer, 44).set(pcmData);
 
     return new Uint8Array(buffer);
+};
+
+// ✅ MP3 encoder — optimiza tamaño y carga (requiere lamejs)
+const encodeToMp3 = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
+    // Gemini devuelve PCM 16-bit. lamejs necesita Int16Array
+    const dataInt16 = new Int16Array(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength / 2);
+    const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 64); // Mono, 24kHz, 64kbps
+    const mp3Data: any[] = [];
+
+    const sampleBlockSize = 1152; // múltiplo para lamejs
+    for (let i = 0; i < dataInt16.length; i += sampleBlockSize) {
+        const sampleChunk = dataInt16.subarray(i, i + sampleBlockSize);
+        const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+        if (mp3buf.length > 0) mp3Data.push(mp3buf);
+    }
+    const mp3buf = mp3encoder.flush();
+    if (mp3buf.length > 0) mp3Data.push(mp3buf);
+
+    const totalLength = mp3Data.reduce((acc, curr) => acc + curr.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of mp3Data) {
+        result.set(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength), offset);
+        offset += chunk.length;
+    }
+    return result;
 };
 
 export const normalizeKey = (city: string | undefined | null, country?: string): string => {
@@ -338,14 +365,14 @@ export const saveAudioToCache = async (text: string, lang: string, audioData: Ui
     try {
         const hash = await generateHash(text);
         const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
-        // ✅ WAV en vez de MP3 — sin lamejs, sin dependencias externas
-        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.wav`;
+        // ✅ MP3 en vez de WAV — optimizado para carga móvil
+        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.mp3`;
         
-        const wavData = encodeToWav(audioData);
-        const audioBlob = new Blob([wavData.buffer as ArrayBuffer], { type: 'audio/wav' });
+        const mp3Data = encodeToMp3(audioData);
+        const audioBlob = new Blob([mp3Data.buffer as ArrayBuffer], { type: 'audio/mpeg' });
         
         const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { 
-            contentType: 'audio/wav', 
+            contentType: 'audio/mpeg', 
             cacheControl: '3600' 
         });
         if (uploadError) throw uploadError;

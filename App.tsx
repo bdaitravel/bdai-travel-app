@@ -22,6 +22,8 @@ declare global {
   }
 }
 
+import { useAppStore, GUEST_PROFILE } from './store/useAppStore';
+
 import { 
   supabase, 
   getUserProfileByEmail, 
@@ -58,15 +60,6 @@ const APP_DESC: Record<string, string> = {
   th: "ค้นพบเมืองด้วยเส้นทางท่องเที่ยวเฉพาะตัวที่สร้างโดย AI ไม่มีจุดหยุดซ้ำ มีแต่ประสบการณ์แท้จริงและสถานที่ซ่อนเร้น",
 };
 
-const GUEST_PROFILE: UserProfile = { 
-  id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
-  email: '', language: 'es', miles: 0, rank: 'ZERO', 
-  culturePoints: 0, foodPoints: 0, photoPoints: 0, historyPoints: 0, naturePoints: 0, artPoints: 0, archPoints: 0,
-  interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, 
-  stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }, 
-  visitedCities: [], completedTours: [], badges: [], stamps: [], capturedMoments: []
-};
 
 const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
   <button 
@@ -79,7 +72,14 @@ const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: st
 );
 
 export default function App() {
-  const [view, setView] = useState<AppView>(AppView.LOGIN);
+  const { 
+    currentView: view, setCurrentView: setView,
+    userProfile: user, setUserProfile: setUser,
+    activeTours: tours, setActiveTours: setTours,
+    currentTour: activeTour, setCurrentTour: setActiveTour,
+    currentStopIndex, setCurrentStopIndex,
+    userLocation, setUserLocation
+  } = useAppStore();
   
   const navigateTo = useCallback((newView: AppView, pushState = true) => {
     if (pushState) {
@@ -96,10 +96,8 @@ export default function App() {
       if (event.state && event.state.view) {
         setView(event.state.view);
       } else {
-        setView(prev => {
-          if (prev === AppView.LOGIN) return AppView.LOGIN;
-          return AppView.HOME;
-        });
+        // Fallback or handle back logic manually using useAppStore.getState().currentView if needed.
+        setView(AppView.HOME);
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -122,17 +120,12 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false);
   const [isSyncingLang, setIsSyncingLang] = useState(false);
   const [searchOptions, setSearchOptions] = useState<any[] | null>(null);
-  const [user, setUser] = useState<UserProfile>(GUEST_PROFILE);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedCountryEn, setSelectedCountryEn] = useState<string | null>(null);
   const [selectedCitySlug, setSelectedCitySlug] = useState<string | null>(null);
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [activeTour, setActiveTour] = useState<Tour | null>(null);
-  const [currentStopIndex, setCurrentStopIndex] = useState(0);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const searchTimeoutRef = useRef<any>(null);
 
   const t = useCallback((key: string) => {
@@ -614,8 +607,8 @@ export default function App() {
 
             {view === AppView.TOUR_ACTIVE && activeTour && (
               <ActiveTourCard tour={activeTour} user={user} currentStopIndex={currentStopIndex} 
-                onNext={() => setCurrentStopIndex(i => i + 1)} onPrev={() => setCurrentStopIndex(i => i - 1)} 
-                onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} 
+              onNext={() => setCurrentStopIndex(currentStopIndex + 1)} onPrev={() => setCurrentStopIndex(currentStopIndex - 1)} 
+              onJumpTo={(i: number) => setCurrentStopIndex(i)} onUpdateUser={(u: any) => updateUserAndSync(u)} 
                 language={user.language} onBack={() => navigateTo(AppView.CITY_DETAIL)} userLocation={userLocation} 
                 onTourComplete={() => setVisaToShare({ cityName: activeTour.city, miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) })} />
             )}
