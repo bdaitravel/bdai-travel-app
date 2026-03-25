@@ -17,6 +17,17 @@ class AudioManager {
     stopName: '',
   };
 
+  constructor() {
+    // A5: Suspender AudioContext cuando la app va a segundo plano (ahorra batería en móvil)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.audioContext?.suspend();
+      } else {
+        this.audioContext?.resume();
+      }
+    });
+  }
+
   private notify() {
     this.state.onStateChange?.({ ...this.state });
   }

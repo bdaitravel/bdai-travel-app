@@ -2,6 +2,19 @@ import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
 import { getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
 
+// ── Singleton: una sola instancia para todo el módulo ──────────────────────
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// ── Tipos auxiliares ───────────────────────────────────────────────────────
+type CityTier = 'SMALL' | 'MEDIUM' | 'LARGE';
+
+interface CityInfo {
+    lat: number;
+    lng: number;
+    population: number | null;
+}
+
+// ── Clases de error propias ────────────────────────────────────────────────
 export class QuotaError extends Error {
     constructor(message: string) {
         super(message);
@@ -9,6 +22,7 @@ export class QuotaError extends Error {
     }
 }
 
+// ── Wrapper con reintentos y backoff exponencial ───────────────────────────
 const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
     try {
         return await fn();
@@ -25,9 +39,9 @@ const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000):
     }
 };
 
+// ── Traduce o normaliza la búsqueda del usuario ───────────────────────────
 export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
@@ -48,9 +62,9 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
     });
 };
 
+// ── Normaliza el nombre de ciudad con IA ──────────────────────────────────
 export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<any[]> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: `The user typed: "${input}" in language "${userLanguage}" and is looking for a city or town to visit.
@@ -108,27 +122,41 @@ CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, Fre
     });
 };
 
-// Obtiene las coords del centro de una ciudad via Nominatim
-const getCityCenter = async (city: string, country: string): Promise<{ lat: number, lng: number } | null> => {
+// ── Obtiene coords + población via Nominatim ──────────────────────────────
+const getCityInfo = async (city: string, country: string): Promise<CityInfo | null> => {
     try {
         const query = encodeURIComponent(`${city}, ${country}`);
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&extratags=1`, {
             headers: { 'Accept-Language': 'en', 'User-Agent': 'bdai-travel-app/1.0' }
         });
         const data = await res.json();
         if (data && data.length > 0) {
-            return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+            const population = data[0].extratags?.population
+                ? parseInt(data[0].extratags.population, 10)
+                : null;
+            return {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon),
+                population
+            };
         }
     } catch (e) {
-        console.warn('Nominatim lookup failed:', e);
+        console.warn('Nominatim city lookup failed:', e);
     }
     return null;
 };
 
-// Validar y corregir coordenadas alucinadas por la IA
+// ── Clasifica la localidad en 3 niveles ───────────────────────────────────
+const getCityTier = (population: number | null): CityTier => {
+    if (population === null) return 'MEDIUM'; // Sin datos → asumimos tamaño medio
+    if (population < 10_000) return 'SMALL';
+    if (population < 200_000) return 'MEDIUM';
+    return 'LARGE';
+};
+
+// ── Valida coordenadas de una parada contra Nominatim ────────────────────
 const verifyStopCoordinates = async (stop: Stop, city: string, country: string): Promise<Stop> => {
     try {
-        // Optimización: limpiar nombres excesivamente largos o descriptivos que la IA a veces genera
         const cleanName = stop.name.split('-')[0].split('(')[0].trim();
         const query = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
         const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
@@ -137,52 +165,104 @@ const verifyStopCoordinates = async (stop: Stop, city: string, country: string):
         if (res.ok) {
             const data = await res.json();
             if (data && data.length > 0) {
-                // Sobreescribir con las exactas de la realidad
-                return { ...stop, latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) };
+                return {
+                    ...stop,
+                    latitude: parseFloat(data[0].lat),
+                    longitude: parseFloat(data[0].lon),
+                    coordinatesVerified: true
+                };
             }
         }
     } catch (e) {
         console.warn(`GIS Check failed for ${stop.name}`);
     }
-    // Fallback a las coordenadas inventadas de Gemini si la calle no existe en el mapa
-    return stop;
+    // Nominatim no encontró el lugar: se devuelven las coords de Gemini sin verificar
+    return { ...stop, coordinatesVerified: false };
 };
 
+// ── Geocodifica todas las paradas de un tour (concurrente, pool de 4) ────
 const processTourStops = async (tour: Tour, city: string, country: string): Promise<Tour> => {
-    const updatedStops: Stop[] = [];
-    for (const stop of tour.stops) {
-        updatedStops.push(await verifyStopCoordinates(stop, city, country));
-        // Espera 600ms para no saturar Nominatim (límite público estricto de ~1 req/s)
-        await new Promise(r => setTimeout(r, 600)); 
+    const stops = tour.stops;
+    const CONCURRENCY = 4; // Máximo simultáneo para no saturar Nominatim
+    const results: Stop[] = new Array(stops.length);
+
+    // Procesa en batches de CONCURRENCY con 250ms entre batches
+    for (let i = 0; i < stops.length; i += CONCURRENCY) {
+        const batch = stops.slice(i, i + CONCURRENCY);
+        const batchResults = await Promise.all(
+            batch.map(stop => verifyStopCoordinates(stop, city, country))
+        );
+        batchResults.forEach((result, j) => { results[i + j] = result; });
+        // Pequeña pausa entre batches para respetar el rate limit de Nominatim
+        if (i + CONCURRENCY < stops.length) {
+            await new Promise(r => setTimeout(r, 250));
+        }
     }
-    return { ...tour, stops: updatedStops };
+
+    return { ...tour, stops: results };
 };
 
-export const generateToursForCity = async (city: string, country: string, user: UserProfile, onProgress?: (tour: Tour) => void): Promise<Tour[]> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// ── Generación adaptada de tours por nivel de ciudad ─────────────────────
+export const generateToursForCity = async (
+    city: string,
+    country: string,
+    user: UserProfile,
+    onProgress?: (tour: Tour) => void
+): Promise<Tour[]> => {
 
-    // Obtener centro del pueblo antes de generar — ancla geográfica para Gemini
-    const cityCenter = await getCityCenter(city, country);
-    const coordsAnchor = cityCenter
-        ? `The exact center of ${city} is at latitude ${cityCenter.lat.toFixed(6)}, longitude ${cityCenter.lng.toFixed(6)}. ALL stops must be within 1.5km of this point.`
+    // 1. Datos geográficos reales para anclar la generación
+    const cityInfo = await getCityInfo(city, country);
+    const tier = getCityTier(cityInfo?.population ?? null);
+
+    const coordsAnchor = cityInfo
+        ? `The exact center of ${city} is at latitude ${cityInfo.lat.toFixed(6)}, longitude ${cityInfo.lng.toFixed(6)}. ALL stops must be within 2km of this point.`
         : `All stops must be located within the urban area of ${city}, ${country}.`;
 
-    const prompt = `Generate EXACTLY 3 distinct thematic tours for ${city}, ${country} in ${user.language}.
+    // 2. Reglas de calidad según nivel (la cantidad de tours la decide la IA según contenido)
+    const inventionRules = {
+        SMALL: `STOP RULES FOR SMALL TOWNS (CRITICAL):
+- Include ONLY real, documented, and verifiable places with a proper name.
+- DO NOT INVENT street names, bar names, shops, or local monuments.
+- If a place cannot be confirmed to exist today, DO NOT include it.
+- Quality always beats quantity: fewer real stops are better than more invented ones.`,
+        MEDIUM: `STOP RULES FOR MEDIUM CITIES:
+- Prioritize real, documented places. Avoid inventing niche bars or unofficial spots.
+- If a place name cannot be verified with certainty, replace it with a verified alternative.
+- Well-known local spots (markets, plazas, parks, famous bars) are acceptable if they are genuinely famous.`,
+        LARGE: `STOP RULES FOR LARGE CITIES:
+- You may include a wide range of well-documented points of interest.
+- DAI's wit and sarcasm are MANDATORY. But only after verifying the place exists today.
+- Even iconic cities have places that closed or changed — do not include them if uncertain.`
+    };
+
+    const prompt = `You are generating tours for ${city}, ${country} in ${user.language}.
 
 GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
 
-THEMES:
+DYNAMIC TOUR COUNT — CONTENT-BASED DECISION (CRITICAL):
+First, mentally assess how many truly verifiable, real, documented points of interest exist in ${city}.
+Then apply this rule strictly:
+- If fewer than 12 real stops exist: generate EXACTLY 1 tour with all of them.
+- If 12 to 23 real stops exist: generate EXACTLY 2 tours, splitting stops EQUALLY between them.
+- If 24 or more real stops exist: generate EXACTLY 3 tours, splitting stops EQUALLY between them.
+DO NOT repeat any stop across tours. DO NOT generate more tours than this rule allows.
+
+THEMES TO USE (pick as many as needed based on stop count above):
 1. "Hidden Gems & Dark Secrets"
 2. "Historical & Architectural Marvels"
 3. "Local Culture, Art & Food"
+(If only 1 tour, use the most fitting theme or combine them in the title.)
 
 DAI'S ABSOLUTE COMMANDS:
 - You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
+- TRUTH FIRST, STYLE SECOND. Before adding any wit or sarcasm, verify the place actually exists and is open TODAY. Your humor is the cherry on top of undeniable truth — not a substitute for it.
 - Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
 - Tell the secrets, the mysteries, and the dark curiosities.
 - Mock the "typical" tourist while revealing the true soul of the city.
 - NEVER use citations like [1] or (2). NEVER.
 - All facts MUST be 100% real. DO NOT INVENT.
+
+${inventionRules[tier]}
 
 STRICT CATEGORIZATION RULES (CRITICAL):
 - 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
@@ -193,23 +273,22 @@ STRICT CATEGORIZATION RULES (CRITICAL):
 - 'nature': ONLY for parks, gardens, or viewpoints.
 - 'photo': ONLY for spots whose primary value is the view/photo.
 
-STRICT RULES:
-1. Format: Return ONLY a valid JSON array containing exactly 3 tour objects.
+FORMAT RULES:
+1. Return ONLY a valid JSON array.
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-4. MINIMUM 10 STOPS PER TOUR.
-5. DO NOT REPEAT ANY STOPS ACROSS THE 3 TOURS.
-6. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be within 1.5km of the city center provided. Use realistic offsets (streets, plazas, buildings) around that center point. NEVER place stops on highways or outside the town.
-7. Content in ${user.language}.`;
+4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be within 2km of the city center. Use realistic offsets (streets, plazas, buildings). NEVER place stops on highways or outside the town.
+5. Content in ${user.language}.`;
 
-    const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide. 
-You HATE boring Wikipedia-style descriptions. 
-Your tone is witty, sophisticated, and slightly mocking of typical tourists. 
-You love sharing the dark secrets, mysteries, and curiosities of cities. 
-You NEVER use citations, footnotes, or references. 
+    const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide.
+You HATE boring Wikipedia-style descriptions.
+Your tone is witty, sophisticated, and slightly mocking of typical tourists.
+You love sharing the dark secrets, mysteries, and curiosities of cities.
+You NEVER use citations, footnotes, or references.
 You are real, accurate, but never boring.
+TRUTH BEFORE STYLE: Always confirm a place exists before describing it. Wit is meaningless without accuracy.
 CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
-GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. For small towns, use the town center coordinates as reference and place stops within 2km radius. Never place stops in neighboring towns or wrong locations.`;
+GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. Place stops within 2km radius of the provided center. Never place stops in neighboring towns or wrong locations.`;
 
     return handleAiCall(async () => {
         const allTours: Tour[] = [];
@@ -232,7 +311,6 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                     while (parsed.length > toursEmitted) {
                         let tour = parsed[toursEmitted];
                         if (tour && tour.stops && tour.stops.length > 0) {
-                            // Paso 2: Geocoding real antes de renderizar
                             tour = await processTourStops(tour, city, country);
                             onProgress(tour);
                             allTours.push(tour);
@@ -266,7 +344,6 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
             }
 
             if (allTours.length === 0) {
-                // Si no había onProgress, curar las finales
                 for (let i = 0; i < finalTours.length; i++) {
                     if (finalTours[i] && finalTours[i].stops?.length > 0) {
                         finalTours[i] = await processTourStops(finalTours[i], city, country);
@@ -296,9 +373,10 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
     });
 };
 
+// ── Extracción robusta de tours del JSON parcial/streaming ────────────────
 const tryExtractTours = (text: string): Tour[] => {
     let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    
+
     const firstBracket = cleanText.indexOf('[');
     const lastBracket = cleanText.lastIndexOf(']');
     if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
@@ -326,13 +404,16 @@ const tryExtractTours = (text: string): Tour[] => {
     return tours;
 };
 
+// ── Mapa de voces por idioma para TTS ────────────────────────────────────
 const VOICE_MAP: Record<string, string> = {
-    es: 'Kore', en: 'Zephyr', fr: 'Charon', de: 'Fenrir', it: 'Puck', pt: 'Charon', ja: 'Puck', zh: 'Puck', ro: 'Kore'
+    es: 'Kore', en: 'Zephyr', fr: 'Charon', de: 'Fenrir', it: 'Puck',
+    pt: 'Charon', ja: 'Puck', zh: 'Puck', ro: 'Kore', ru: 'Charon',
+    ar: 'Kore', ko: 'Puck', tr: 'Fenrir', pl: 'Charon', nl: 'Zephyr',
 };
 
+// ── Mensaje de bienvenida de DAI al nuevo usuario ─────────────────────────
 export const generateDaiWelcome = async (user: UserProfile): Promise<string> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: `As DAI, welcome a new user named ${user.firstName || 'Traveler'} in ${user.language}.
@@ -343,42 +424,50 @@ export const generateDaiWelcome = async (user: UserProfile): Promise<string> => 
     });
 };
 
+// ── Generación de audio con caché y tono DAI ──────────────────────────────
 export const generateAudio = async (text: string, language: string, city: string): Promise<Uint8Array | null> => {
     const cleanText = (text || "").trim();
     if (!cleanText) return null;
 
-    // ✅ FIX: verificar que el audio cacheado es válido antes de devolverlo
+    // Verificar caché antes de llamar a la API
     const cachedUrl = await getCachedAudio(cleanText, language);
     if (cachedUrl) {
         try {
             const response = await fetch(cachedUrl);
             if (response.ok) {
                 const buffer = await response.arrayBuffer();
-                if (buffer.byteLength > 0) {
-                    return new Uint8Array(buffer);
-                }
+                if (buffer.byteLength > 0) return new Uint8Array(buffer);
             }
         } catch (e) {
             console.error("Error loading cached audio:", e);
         }
-        // Si falla la carga del caché, continúa a generar nuevo audio
     }
 
-    const voiceName = VOICE_MAP[language] || 'Kore';
-    const base64 = await handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        const prompt = language === 'es' 
-            ? `Actúa como Dai, una guía elegante y sarcástica con acento de España. Di esto de forma divertida y natural: ${cleanText}`
-            : `Act as Dai, an elegant and sarcastic guide. Say this in a natural and engaging tone: ${cleanText}`;
+    // Prompts de narración por idioma para preservar el tono DAI en cada lengua
+    const daiAudioPrompts: Record<string, string> = {
+        es: `Actúa como Dai, una guía de viajes elegante y sarcástica con acento de España. Di esto de forma natural y con personalidad: ${cleanText}`,
+        en: `Act as Dai, an elegant and sarcastic travel guide. Say this in a natural and engaging tone: ${cleanText}`,
+        fr: `Joue le rôle de Dai, un guide de voyage élégant et sarcastique. Dis ceci de façon naturelle et engageante : ${cleanText}`,
+        de: `Spiel die Rolle von Dai, einem eleganten und sarkastischen Reiseführer. Sag dies auf natürliche und einnehmende Weise: ${cleanText}`,
+        it: `Interpreta Dai, una guida turistica elegante e sarcastica. Di questo in modo naturale e coinvolgente: ${cleanText}`,
+        pt: `Atua como Dai, um guia de viagens elegante e sarcástico. Diz isto de forma natural e envolvente: ${cleanText}`,
+        ro: `Joacă rolul lui Dai, un ghid de călătorie elegant și sarcastic. Spune asta într-un mod natural și captivant: ${cleanText}`,
+        ja: `DaiというエレガントでサルカスティックなAI旅行ガイドとして、次の内容を自然に読み上げてください：${cleanText}`,
+        zh: `你是Dai，一位优雅而讽刺的旅行导游。请用自然而引人入胜的方式说出以下内容：${cleanText}`,
+        ko: `Dai라는 우아하고 풍자적인 여행 가이드로서 다음 내용을 자연스럽고 매력적으로 말해주세요: ${cleanText}`,
+    };
 
+    const daiPrompt = daiAudioPrompts[language] || `Act as Dai, an elegant and sarcastic travel guide. Say this in a natural and engaging tone: ${cleanText}`;
+    const voiceName = VOICE_MAP[language] || 'Kore';
+
+    const base64 = await handleAiCall(async () => {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [{ parts: [{ text: daiPrompt }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
                 speechConfig: {
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
+                    voiceConfig: { prebuiltVoiceConfig: { voiceName } },
                 },
             },
         });
@@ -397,9 +486,9 @@ export const generateAudio = async (text: string, language: string, city: string
     return null;
 };
 
+// ── Traducción batch de tours completos ───────────────────────────────────
 export const translateToursBatch = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
@@ -409,9 +498,9 @@ export const translateToursBatch = async (tours: Tour[], targetLanguage: string)
     });
 };
 
+// ── Moderación básica de contenido ────────────────────────────────────────
 export const moderateContent = async (text: string): Promise<boolean> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: `Is this text safe? "${text}"`,
@@ -427,9 +516,9 @@ export const moderateContent = async (text: string): Promise<boolean> => {
     });
 };
 
+// ── Status de la API ──────────────────────────────────────────────────────
 export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }> => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: "Say 'OK'",
@@ -441,13 +530,16 @@ export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }
     }
 };
 
+// ── Generación de postal/imagen de ciudad ─────────────────────────────────
 export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
     return handleAiCall(async () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-2.0-flash-preview-image-generation',
             contents: { parts: [{ text: `Postcard of ${city}` }] },
-            config: { imageConfig: { aspectRatio: "9:16" } }
+            config: {
+                responseModalities: [Modality.IMAGE, Modality.TEXT],
+                imageConfig: { aspectRatio: "9:16" }
+            }
         });
         const parts = response.candidates?.[0]?.content?.parts;
         const part = parts?.find((p: any) => p.inlineData);

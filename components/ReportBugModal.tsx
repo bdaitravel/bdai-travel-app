@@ -4,6 +4,7 @@ import { supabase } from '../services/supabaseClient';
 interface ReportBugModalProps {
     onClose: () => void;
     language: string;
+    prefillText?: string;
 }
 
 const BUG_TEXTS: Record<string, any> = {
@@ -31,8 +32,8 @@ const BUG_TEXTS: Record<string, any> = {
 
 const getText = (lang: string) => BUG_TEXTS[lang] || BUG_TEXTS['en'];
 
-export const ReportBugModal: React.FC<ReportBugModalProps> = ({ onClose, language }) => {
-    const [text, setText] = useState('');
+export const ReportBugModal: React.FC<ReportBugModalProps> = ({ onClose, language, prefillText }) => {
+    const [text, setText] = useState(prefillText || '');
     const [sent, setSent] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const t = getText(language);

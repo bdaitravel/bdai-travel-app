@@ -2,16 +2,17 @@ import { createClient } from '@supabase/supabase-js';
 import lamejs from 'lamejs';
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
-const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
 
-const supabaseUrl = (rawUrl && typeof rawUrl === 'string' && rawUrl.startsWith('http')) 
-  ? rawUrl.trim() 
-  : "https://slldavgsoxunkphqeamx.supabase.co";
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    "❌ BDAI: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in your .env file.\n" +
+    "Copy .env.example to .env and fill in the values."
+  );
+}
 
-const supabaseAnonKey = (rawKey && typeof rawKey === 'string' && rawKey.length > 20)
-  ? rawKey.trim()
-  : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo";
+
 
 const originalConsoleError = console.error;
 console.error = (...args) => {

@@ -134,6 +134,7 @@ export interface Stop {
   longitude: number;
   type: 'historical' | 'food' | 'art' | 'nature' | 'photo' | 'culture' | 'architecture';
   visited: boolean;
+  coordinatesVerified?: boolean;
   photoSpot?: PhotoSpot;
   b2bPartner?: B2BPartner;
 }

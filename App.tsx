@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { generateToursForCity, translateSearchQuery, QuotaError, normalizeCityWithAI } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
@@ -12,6 +12,8 @@ import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
 import { translations } from './data/translations';
 import { CityCommunity } from './components/CityCommunity';
+import { toast } from './components/Toast';
+import { useDebounce } from './lib/useDebounce';
 
 declare global {
   interface Window {
@@ -126,7 +128,6 @@ export default function App() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [selectedCountryEn, setSelectedCountryEn] = useState<string | null>(null);
   const [selectedCitySlug, setSelectedCitySlug] = useState<string | null>(null);
-  const searchTimeoutRef = useRef<any>(null);
 
   const t = useCallback((key: string) => {
     const lang = user.language || 'es';
@@ -140,12 +141,6 @@ export default function App() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
                 handleLoginSuccess(session.user);
-            } else {
-               const saved = localStorage.getItem('bdai_profile');
-               if (saved) {
-                 const parsed = JSON.parse(saved);
-                 setUser(prev => ({ ...prev, language: parsed.language || 'es' }));
-               }
             }
         } catch (e) { console.error("Auth init error", e); } 
         finally { setIsVerifyingSession(false); }
@@ -171,12 +166,10 @@ export default function App() {
       if (profile) {
         // ✅ NUNCA sobreescribir datos existentes al hacer login
         // Solo actualizar rank (calculado), sessionsStarted y isLoggedIn
-        // badges, stamps, miles, visitedCities — se leen tal cual están en Supabase
         const updatedProfile: UserProfile = {
             ...profile,
             isLoggedIn: true,
             rank: calculateTravelerRank(profile.miles),
-            // ✅ Solo añadir badges NUEVOS que no tenga, nunca quitar los existentes
             badges: (() => {
               const existingIds = new Set((profile.badges || []).map((b: any) => b.id));
               const newBadges = checkBadges(profile).filter((b: any) => !existingIds.has(b.id));
@@ -187,9 +180,8 @@ export default function App() {
               sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1 
             }
         };
+        // Zustand persiste via storageProvider (localStorage en móvil, sessionStorage en web)
         setUser(updatedProfile);
-        localStorage.setItem('bdai_profile', JSON.stringify(updatedProfile));
-        // ✅ Solo sync si hay badges nuevos o sessionsStarted cambió — nunca sync en frío
         if (view === AppView.LOGIN) navigateTo(AppView.HOME);
       } else {
         // Usuario nuevo — crear perfil desde cero
@@ -208,28 +200,29 @@ export default function App() {
         if (view === AppView.LOGIN) navigateTo(AppView.HOME);
       }
     } catch (e) {
-      console.error("Failed to load profile, keeping local state to prevent data wipe", e);
-      // Fallback to local storage if network fails
-      const saved = localStorage.getItem('bdai_profile');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.email === supabaseUser.email) {
-          setUser({ ...parsed, isLoggedIn: true });
-          if (view === AppView.LOGIN) navigateTo(AppView.HOME);
-        }
-      }
+      console.error("Failed to load profile from Supabase", e);
+      toast("Error al cargar tu perfil. Reintenta.", 'error');
     }
   };
 
   useEffect(() => {
     if (!navigator.geolocation) return;
     let lastUpdate = 0;
+
+    // A4: Helper de validación de coordenadas GPS
+    const isValidCoord = (lat: number, lng: number): boolean =>
+      isFinite(lat) && isFinite(lng) &&
+      lat >= -90 && lat <= 90 &&
+      lng >= -180 && lng <= 180 &&
+      !(lat === 0 && lng === 0); // Evita el Atlántico (0,0) que indica GPS roto
+
     const watchId = navigator.geolocation.watchPosition(
         (pos) => { 
             const now = Date.now();
-            if (now - lastUpdate > 2000) {
+            const { latitude, longitude } = pos.coords;
+            if (now - lastUpdate > 2000 && isValidCoord(latitude, longitude)) {
                 lastUpdate = now;
-                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); 
+                setUserLocation({ lat: latitude, lng: longitude }); 
             }
         },
         (err) => {
@@ -245,7 +238,7 @@ export default function App() {
 
   const handleRequestOtp = async () => {
     if (isLoading) return; 
-    if (!validateEmailFormat(email)) { alert("Enter a valid email."); return; }
+    if (!validateEmailFormat(email)) { toast("Introduce un email válido.", 'error'); return; }
     setIsLoading(true);
     setLoadingMessage("REQUESTING KEY...");
     try {
@@ -255,7 +248,7 @@ export default function App() {
       });
       if (error) throw error;
       setLoginPhase('OTP');
-    } catch (e: any) { alert(e.message || "Failed to send code."); } finally { setIsLoading(false); }
+    } catch (e: any) { toast(e.message || "No se pudo enviar el código.", 'error'); } finally { setIsLoading(false); }
   };
 
   const handleGoogleLogin = async () => {
@@ -270,7 +263,7 @@ export default function App() {
       if (error) throw error;
       if (data?.url) window.open(data.url, '_blank', 'width=500,height=600');
     } catch (e: any) {
-      alert(e.message || "Google Login failed.");
+      toast(e.message || "Error al conectar con Google.", 'error');
     } finally { setIsLoading(false); }
   };
 
@@ -287,9 +280,8 @@ export default function App() {
       if (data.user) {
         const profile = await getUserProfileByEmail(email);
         if (profile) {
-          // ✅ Solo leer — nunca sobrescribir datos existentes al verificar OTP
+          // Zustand persiste automáticamente via storageProvider
           setUser({ ...profile, isLoggedIn: true });
-          localStorage.setItem('bdai_profile', JSON.stringify({ ...profile, isLoggedIn: true }));
         } else {
           const newProfile = { ...GUEST_PROFILE, email, id: data.user.id, isLoggedIn: true };
           await syncUserProfile(newProfile);
@@ -297,7 +289,7 @@ export default function App() {
         }
         navigateTo(AppView.HOME);
       }
-    } catch (e: any) { alert(e.message || "Invalid or expired code."); } finally { setIsLoading(false); }
+    } catch (e: any) { toast(e.message || "Código inválido o expirado.", 'error'); } finally { setIsLoading(false); }
   };
 
   const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
@@ -370,7 +362,7 @@ export default function App() {
           if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
         }
       } else {
-        alert("Location protocol failed.");
+        toast("No se encontró contenido para esta ciudad.", 'error');
       }
     } catch (e) {
       console.error("Selection error:", e);
@@ -394,44 +386,45 @@ export default function App() {
     }
   };
 
-  const handleCitySearch = async (val: string) => {
-    setSearchVal(val);
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    if (val.length < 2) { setSearchOptions(null); return; }
+  const doSearch = useDebounce(async (val: string) => {
+    if (val.length < 2) { setSearchOptions(null); setIsSearching(false); return; }
+    try {
+      const aiResults = await normalizeCityWithAI(val, user.language);
+      const results = await Promise.all(aiResults.map(async (res) => {
+        const slug = res.slug.replace(/-/g, '_').toLowerCase();
+        const isCached = await checkIfCityCached(res.city, slug);
+        return {
+          name: res.city,
+          city: res.city,
+          cityLocal: res.cityLocal,
+          country: res.country,
+          countryEn: res.countryEn,
+          countryCode: res.countryCode,
+          slug,
+          isCached,
+          fullName: res.cityLocal || res.city
+        };
+      }));
+      setSearchOptions(results);
+    } catch (e) {
+      console.error("Search protocol error:", e);
+    } finally {
+      setIsSearching(false);
+    }
+  }, 1000);
 
+  const handleCitySearch = (val: string) => {
+    setSearchVal(val);
+    if (val.length < 2) { setSearchOptions(null); return; }
     setIsSearching(true);
-    searchTimeoutRef.current = setTimeout(async () => {
-      try {
-        const aiResults = await normalizeCityWithAI(val, user.language);
-        const results = await Promise.all(aiResults.map(async (res) => {
-          const slug = res.slug.replace(/-/g, '_').toLowerCase();
-          const isCached = await checkIfCityCached(res.city, slug);
-          return {
-            name: res.city,
-            city: res.city,
-            cityLocal: res.cityLocal,
-            country: res.country,
-            countryEn: res.countryEn,
-            countryCode: res.countryCode,
-            slug,
-            isCached,
-            fullName: res.cityLocal || res.city
-          };
-        }));
-        setSearchOptions(results);
-      } catch (e) {
-        console.error("Search protocol error:", e);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 1000);
+    doSearch(val);
   };
 
   const handleLangChange = (code: string) => {
     setIsSyncingLang(code !== user.language);
     const updatedUser = { ...user, language: code };
+    // Zustand persiste automáticamente via storageProvider
     setUser(updatedUser);
-    localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
     if (user.isLoggedIn) syncUserProfile(updatedUser);
     setTours([]);
     setTimeout(() => setIsSyncingLang(false), 500);
@@ -439,7 +432,6 @@ export default function App() {
 
   const updateUserAndSync = (updatedUser: UserProfile) => {
     setUser(updatedUser);
-    localStorage.setItem('bdai_profile', JSON.stringify(updatedUser));
     if (updatedUser.isLoggedIn) syncUserProfile(updatedUser);
   };
 

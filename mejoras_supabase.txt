@@ -1,0 +1,107 @@
+PROMPT PARA APLICAR MEJORAS EN SUPABASE
+(Ejecutar cuando el MCP de Supabase esté disponible y autenticado)
+========================================================================
+
+Lee este fichero y aplica las siguientes mejoras en el proyecto Supabase
+con project_ref = slldavgsoxunkphqeamx usando el MCP de Supabase.
+
+---
+
+S8 - REVISAR RLS DE tours_cache
+--------------------------------
+Verificar que la tabla `tours_cache` tiene Row Level Security activa.
+Las políticas deben ser:
+- SELECT: permitido para todos (anon y authenticated)
+- INSERT / UPDATE (upsert): permitido para todos — los tours son datos públicos por ciudad, no por usuario
+- DELETE: restringido a `service_role` únicamente o al usuario `isAdmin`
+
+Si no existe RLS, habilítala y crea las políticas correspondientes.
+Comprueba que no haya filas huérfanas sin ciudad válida.
+
+---
+
+S9 - RATE LIMITING EN audio_cache
+-----------------------------------
+La tabla `audio_cache` no tiene un límite de inserción por IP o por usuario.
+Un usuario podría forzar la generación de miles de clips de audio agotando el storage.
+
+Opciones a implementar (elige la más adecuada según disponibilidad de Supabase Functions):
+a) Añadir una política RLS que limite a máximo 500 filas de audio por ciudad (city).
+b) Crear una Supabase Function (Edge Function) `check_audio_limit` que rechace
+   inserciones si la ciudad ya tiene más de 500 clips almacenados.
+
+También verificar que el bucket `audios` en Supabase Storage tiene un tamaño
+máximo por archivo (recomendado: 5MB) y política de acceso público de solo lectura.
+
+---
+
+S10 - VALIDAR CAMPO rank EN tabla profiles
+-------------------------------------------
+El campo `rank` en la tabla `profiles` almacena strings libres.
+Se ha detectado que puede contener el valor `'Turist'` (con typo) que no coincide
+con el enum TypeScript `TravelerRank = 'ZERO' | 'SCOUT' | 'ROVER' | 'TITAN' | 'ZENITH'`.
+
+Acciones:
+1. Consultar cuántas filas tienen valores de rank inválidos:
+   SELECT rank, COUNT(*) FROM profiles GROUP BY rank;
+
+2. Corregir los valores inválidos:
+   UPDATE profiles SET rank = 'ZERO' WHERE rank NOT IN ('ZERO','SCOUT','ROVER','TITAN','ZENITH');
+
+3. Añadir un CHECK constraint a la columna `rank`:
+   ALTER TABLE profiles ADD CONSTRAINT profiles_rank_check
+   CHECK (rank IN ('ZERO', 'SCOUT', 'ROVER', 'TITAN', 'ZENITH'));
+
+---
+
+S11 - PAGINACIÓN EN getGlobalRanking
+--------------------------------------
+La función `getGlobalRanking` en `services/supabaseClient.ts` solo devuelve los 
+top 50 usuarios. Cuando haya más de 50, el leaderboard quedará incompleto.
+
+Acciones en código (no en Supabase DB, pero requiere acceso para confirmar índices):
+1. Verificar que la columna `miles` en `profiles` tiene un índice descendente:
+   CREATE INDEX IF NOT EXISTS profiles_miles_idx ON profiles(miles DESC);
+
+2. El código ya usa `.limit(50)`. Para implementar scroll infinito en el Leaderboard,
+   modificar la función para aceptar un parámetro `page` y usar `.range(from, to)`.
+
+---
+
+S12 - CREAR TABLA community_posts O ELIMINAR COMPONENTES MUERTOS
+------------------------------------------------------------------
+Los componentes `CityCommunity.tsx` y `CommunityBoard.tsx` llaman a
+`getCommunityPosts()` y `addCommunityPost()` que son stubs vacíos.
+
+OPCIÓN A (Implementar la feature):
+Crear la tabla en Supabase:
+
+CREATE TABLE community_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  city_slug TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  username TEXT,
+  content TEXT NOT NULL CHECK (char_length(content) <= 500),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX community_posts_city_idx ON community_posts(city_slug, created_at DESC);
+
+ALTER TABLE community_posts ENABLE ROW LEVEL SECURITY;
+-- SELECT: todos pueden leer
+CREATE POLICY "Anyone can read posts" ON community_posts FOR SELECT USING (true);
+-- INSERT: solo usuarios autenticados
+CREATE POLICY "Auth users can post" ON community_posts FOR INSERT 
+  WITH CHECK (auth.uid() = user_id);
+-- DELETE: solo el propio usuario o admin
+CREATE POLICY "Owner can delete" ON community_posts FOR DELETE 
+  USING (auth.uid() = user_id);
+
+Después, actualizar `getCommunityPosts` y `addCommunityPost` en `supabaseClient.ts`
+para que hagan las queries reales a esta tabla.
+
+OPCIÓN B (Eliminar la feature hasta que esté lista):
+Si no se va a implementar pronto, eliminar los componentes y su renderizado en App.tsx.
+
+========================================================================
+FIN DEL PROMPT

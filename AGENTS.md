@@ -71,3 +71,26 @@
 - `/services`: Integraciones API (Supabase, Gemini).
 - `/data`: Datos estáticos, fallbacks, config.
 - `/lib`: Utilidades y helpers globales.
+
+## Decisiones Arquitectónicas (Historial)
+
+### Generación de Tours (geminiService.ts)
+- **Sistema de niveles de ciudad:** La población se obtiene vía Nominatim y clasifica la ciudad en `SMALL` (<10.000 hab), `MEDIUM` (<200.000 hab) o `LARGE` (el resto). Las reglas de invención de POIs son más estrictas cuanto menor es el nivel.
+- **Generación por contenido:** El número de tours (1, 2 o 3) lo decide la IA dinámicamente según los POIs verificables disponibles — no por la población. Umbral: <12 paradas → 1 tour, 12–23 → 2 tours, ≥24 → 3 tours.
+- **Coordinadas verificadas:** El campo `coordinatesVerified?: boolean` en la interfaz `Stop` diferencia POIs confirmados por Nominatim de los generados por Gemini sin verificar.
+- **Radio máximo:** Todos los POIs deben estar a ≤2km del centro de la ciudad.
+- **Modelo IA:** Estandarizado en `gemini-2.5-flash` para texto y `gemini-2.0-flash-preview-image-generation` para imágenes.
+- **Regla de oro:** "Truth First, Style Second". El sarcasmo DAI solo se aplica tras confirmar la existencia real del lugar.
+
+### Rendimiento & Estabilidad
+- **Nominatim concurrente:** `processTourStops` usa un pool de 4 peticiones paralelas con 250ms entre batches (en vez de 600ms secuencial). Reduce el tiempo de ~14s a ~3-4s para 24 paradas.
+- **ErrorBoundary global:** `components/ErrorBoundary.tsx` envuelve toda la app en `index.tsx`. Captura errores de render no manejados y muestra una pantalla de fallback con el botón "Reportar Fallo" pre-relleno con el stack trace, URL, timestamp y user agent.
+- **`ReportBugModal`:** Acepta `prefillText?: string` para recibir datos del `ErrorBoundary` automáticamente.
+- **GPS validation:** Las coordenadas de `watchPosition` se validan (rango válido, no NaN, no 0,0) antes de actualizar el estado.
+- **AudioContext lifecycle:** El `AudioManager` singleton suspende el `AudioContext` al ir a segundo plano (`visibilitychange`) y lo reanuda al volver. Reduce consumo de batería en iOS/Android.
+- **`useDebounce` hook:** `lib/useDebounce.ts` sustituye el patrón manual `setTimeout + useRef` en `handleCitySearch`.
+
+### Seguridad & Estado
+- **Sin credenciales hardcoded:** `supabaseClient.ts` solo lee de variables de entorno. Si faltan, loga un error claro y no falla silenciosamente.
+- **Zustand como fuente única de verdad:** Se eliminaron todas las escrituras directas a `localStorage.setItem('bdai_profile', ...)` de `App.tsx`. El perfil persiste vía `storageProvider` (localStorage en Capacitor, sessionStorage en web).
+- **Toast en vez de alert():** Todos los errores de UI usan `toast()` del componente `Toast.tsx`. Compatible con Capacitor.
