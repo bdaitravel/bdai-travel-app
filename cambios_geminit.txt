@@ -24,3 +24,8 @@ getCommunityPosts
  / 
 addCommunityPost
  son stubs (ver S3) Las tablas de comunidad o no existen en Supabase o están sin implementar. Habría que crear la migración o eliminar los componentes CityCommunity y CommunityBoard hasta que estén implementados.
+
+
+ envGEMINI_API_KEY=
+VITE_SUPABASE_URL=https://slldavgsoxunkphqeamx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo
