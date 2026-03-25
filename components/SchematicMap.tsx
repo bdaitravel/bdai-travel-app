@@ -159,10 +159,10 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
                     lastRoutingRef.current = { lat: userLocation.lat, lng: userLocation.lng, time: now };
                     
                     const fetchRouting = async () => {
-                        // Prioridad 1: OSRM Public Server con flag para evitar rutas serpenteantes
-                        const urlPrimary = `https://router.project-osrm.org/route/v1/foot/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline&continue_straight=true`;
-                        // Prioridad 2: Ruta alternativa pública
-                        const urlFallback = `https://routing.openstreetmap.de/routed-foot/route/v1/driving/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline`;
+                        // Prioridad 1: Ruta pública OpenStreetMap
+                        const urlPrimary = `https://routing.openstreetmap.de/routed-foot/route/v1/driving/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline`;
+                        // Prioridad 2: OSRM Public Server con flag para evitar rutas serpenteantes
+                        const urlFallback = `https://router.project-osrm.org/route/v1/foot/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline&continue_straight=true`;
                         
                         const drawRoute = (data: any) => {
                             const points = decodePolyline(data.routes[0].geometry);
@@ -193,7 +193,7 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
                             }
                             throw new Error("Primary returned bad response");
                         } catch (e) {
-                            console.warn("OSRM Primary failed, trying fallback...", e);
+                            console.warn("Primary routing failed, trying fallback...", e);
                             try {
                                 const res2 = await fetch(urlFallback, { signal: AbortSignal.timeout(4000) });
                                 if (!res2.ok) throw new Error("Fallback failed");
@@ -205,7 +205,22 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
                                 throw new Error("Fallback returned bad response");
                             } catch (e2) {
                                 console.warn("All routing APIs failed. Falling back to straight line.", e2);
-                                if (activeLineRef.current) activeLineRef.current.setLatLngs([[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]]);
+                                const points = [[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]];
+                                setWalkingTime(null);
+                                if (activeLineRef.current) {
+                                    activeLineRef.current.setLatLngs(points);
+                                } else {
+                                    activeLineRef.current = L.polyline(points, { 
+                                        color: '#9333ea', weight: 6, dashArray: '12, 20', opacity: 0.8, lineCap: 'round', className: 'animate-marching-ants'
+                                    }).addTo(map);
+
+                                    if (!document.getElementById('marching-ants-style')) {
+                                        const style = document.createElement('style');
+                                        style.id = 'marching-ants-style';
+                                        style.innerHTML = `@keyframes marching-ants { from { stroke-dashoffset: 64; } to { stroke-dashoffset: 0; } } .animate-marching-ants { animation: marching-ants 1.5s linear infinite; }`;
+                                        document.head.appendChild(style);
+                                    }
+                                }
                             }
                         }
                     };
