@@ -1,0 +1,347 @@
+[
+  {
+    "id": "logrono-tour-1",
+    "city": "Logroño",
+    "title": "La Senda de la Fe y la Piedra: Arquitectura y Legado Histórico",
+    "description": "Bienvenidos a mi tour sobre los cimientos de Logroño. No te dejes engañar por la calma del Ebro; cada piedra aquí tiene más historia que tu árbol genealógico completo. Recorreremos las torres que saludan al cielo, los muros que protegieron a reyes y los rincones donde el arte se funde con la fe. Es una ruta para paladares arquitectónicos finos. No busques luces de neón, busca la luz filtrada por el gótico y el barroco más elegante de la Rioja. Prepárate para descubrir por qué Logroño es el cruce de caminos donde hasta los santos se paraban a admirar el paisaje. Mi toque de sofisticación habitual te guiará entre mole y mole de piedra, asegurándome de que no se te escape ni un detalle de la grandeza local.",
+    "duration": "3.5 horas",
+    "distance": "3.2 km",
+    "theme": "Architecture, History & Art",
+    "stops": [
+      {
+        "id": "log-h1",
+        "name": "Concatedral de Santa María de la Redonda",
+        "latitude": 42.46652,
+        "longitude": -2.44552,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "Desde el centro de la Plaza del Mercado, capturando la simetría de las Torres Gemelas.",
+          "milesReward": 50,
+          "secretLocation": "El cuadro de 'El Calvario' atribuido a Miguel Ángel en el trasaltar."
+        },
+        "description": "La Redonda es a Logroño lo que las perlas a un buen collar: el centro de todas las miradas. Se llama así porque se levantó sobre una iglesia románica circular, aunque de redonda ahora solo tiene el nombre y quizás las ganas de dar vueltas por su interior. Lo más espectacular son sus torres gemelas, un alarde de barroco que te hace sentir pequeño, como debe ser. Por dentro, el silencio es majestuoso. Busca el cuadro atribuido a Miguel Ángel; si es verdad o no, es irrelevante, lo que importa es la elegancia de la leyenda. Es un espacio que respira historia y donde la piedra parece haber absorbido los susurros de siglos de peregrinos. Un lugar idóneo para practicar la humildad o simplemente para admirar cómo se construía cuando no había prisa por terminar antes del próximo trimestre fiscal."
+      },
+      {
+        "id": "log-h2",
+        "name": "Iglesia de San Bartolomé",
+        "latitude": 42.46716,
+        "longitude": -2.44366,
+        "type": "historical",
+        "photoSpot": {
+          "angle": "Un plano angular de la portada gótica, una de las más bellas de La Rioja.",
+          "milesReward": 50,
+          "secretLocation": "Las marcas de cantería en los pilares del interior."
+        },
+        "description": "San Bartolomé es la abuela del barrio. Es la iglesia más antigua de la ciudad y su portada gótica es lo más parecido a un Instagram medieval que vas a encontrar: un libro de piedra con escenas que te cuentan todo lo que necesitas saber sobre el siglo XIII sin necesidad de wifi. Su torre formó parte de la muralla defensiva, porque aquí la fe y la defensa siempre han ido de la mano. Al entrar, deja que tus ojos se acostumbren a la penumbra y siente el peso de los siglos. Es un sitio austero, sin los lujos de la Redonda, pero con una dignidad que solo da la edad. Fíjate en la policromía que queda; es un resto de un pasado más colorista de lo que solemos imaginar. Un rincón para recordar que antes de los edificios de cristal, la solidez lo era todo."
+      },
+      {
+        "id": "log-h3",
+        "name": "Iglesia de Santiago el Real",
+        "latitude": 42.46767,
+        "longitude": -2.44782,
+        "type": "culture",
+        "photoSpot": {
+          "angle": "Desde la base de la estatua de Santiago Matamoros en la fachada.",
+          "milesReward": 50,
+          "secretLocation": "El pozo de las ánimas en el claustro."
+        },
+        "description": "Aquí es donde el Camino de Santiago se pone serio. Santiago el Real es la parada obligatoria de todo peregrino que se precie. Su fachada es un espectáculo de propaganda religiosa del siglo XVI, dominada por una imagen de Santiago que no deja lugar a dudas sobre quién manda aquí. En su interior se encuentra la Virgen de la Esperanza, la patrona de la ciudad, que ha visto pasar más procesiones de las que tú verás en diez vidas. Se dice que en esta iglesia se celebraban los concejos de la ciudad en la Edad Media; vamos, que es el antepasado directo del ayuntamiento. El ambiente es de recogimiento absoluto, roto solo por el tintineo de las conchas de los peregrinos. Un sitio con una energía que te carga las pilas antes de seguir ruta."
+      },
+      {
+        "id": "log-h4",
+        "name": "Puerta del Revellín",
+        "latitude": 42.46682,
+        "longitude": -2.45015,
+        "type": "historical",
+        "photoSpot": {
+          "angle": "Enmarcando la puerta con el muro de piedra sobrante lateral.",
+          "milesReward": 50,
+          "secretLocation": "El nicho de la virgen sobre el arco."
+        },
+        "description": "El único superviviente de las murallas que en 1521 detuvieron a los franceses. Es un arco de triunfo a la resistencia local. Imagina a los logroñeses comiendo peces del Ebro mientras los franceses se desesperaban fuera; por eso ahora cada 11 de junio se ponen hasta arriba de fritura de río. La Puerta del Revellín es el símbolo de que Logroño no se dobla ante nadie. La piedra es tosca y fuerte, diseñada para aguantar cañonazos, no como los tabiques de tu apartamento. Pasear por aquí es retroceder a una época de asedios y espadas. Es un lugar pequeño pero con una carga épica considerable. Si el Revellín hablara, te diría que dejes de quejarte de las colas del súper y valores la libertad un poco más."
+      },
+      {
+        "id": "log-h5",
+        "name": "Parlamento de La Rioja (Convento de la Merced)",
+        "latitude": 42.46660,
+        "longitude": -2.44970,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "Desde el patio interior del edificio, capturando los arcos renacentistas.",
+          "milesReward": 50,
+          "secretLocation": "La antigua biblioteca del convento."
+        },
+        "description": "Donde antes se rezaba ahora se legisla. El Convento de la Merced ha pasado de ser un refugio espiritual a ser el Parlamento de La Rioja. La fachada es de un barroco elegante que disimula muy bien las batallas políticas que se libran dentro. Es un ejemplo perfecto de cómo reutilizar edificios históricos con clase. Pasear por sus pasillos es como hacerlo por un museo vivo; la estructura original de los claustros se mantiene imponente. Es curioso pensar que bajo estos techos se ha pasado de la plegaria monacal al debate parlamentario. Un sitio que te recuerda que todo cambia pero la buena arquitectura prevalece. Si tienes suerte y está abierto al público, no pierdas la oportunidad de ver el salón de plenos; es el lugar donde se decide el futuro del vino y de todo lo demás."
+      },
+      {
+        "id": "log-h6",
+        "name": "Museo de La Rioja (Palacio de Espartero)",
+        "latitude": 42.46582,
+        "longitude": -2.44876,
+        "type": "art",
+        "photoSpot": {
+          "angle": "Fachada principal desde San Agustín, con los faroles capturando el aura antigua.",
+          "milesReward": 50,
+          "secretLocation": "Las Tablas de San Millán de la Cogolla en la planta superior."
+        },
+        "description": "Un palacio para el General Espartero que acabó siendo el cofre de los tesoros de toda la región. Este edificio barroco es una joya en sí misma. Sus salas albergan desde restos romanos hasta arte contemporáneo, pero lo que realmente te dejará sin aliento son las tablas de San Millán. Es un viaje concentrado por la historia de La Rioja sin moverte de la calle San Agustín. El palacio tiene ese aire señorial que te hace caminar un poco más erguido solo por estar dentro. Es el sitio ideal para los que quieren entender qué hace a esta tierra tan especial más allá del tintorro. Mi consejo: pierde el tiempo en la sección de prehistoria; te hará sentir muy joven y dinámico."
+      },
+      {
+        "id": "log-h7",
+        "name": "Puente de Piedra",
+        "latitude": 42.47003,
+        "longitude": -2.44372,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "Desde la orilla norte del Ebro, con los arcos reflejados en el agua.",
+          "milesReward": 50,
+          "secretLocation": "El mirador circular en el lado derecho del puente."
+        },
+        "description": "El puente que da entrada al Camino de Santiago y el que define el carácter de la ciudad. Aunque este es una reconstrucción de finales del siglo XIX, se levanta sobre los cimientos del original medieval. Sus siete arcos son los pilares sobre los que Logroño ha crecido mirando al río. Cruza el puente y mira el caudal del Ebro; es el pulso de la Rioja fluyendo bajo tus pies. Es un lugar de transición, de llegada y de despedida. Para mí, es el mejor sitio para ver cómo la ciudad se abraza a su río con una elegancia que el hormigón moderno nunca podrá imitar. No es el Golden Gate, pero tiene una solera que ya quisieran en San Francisco."
+      },
+      {
+        "id": "log-h8",
+        "name": "Esculturas de la Plaza de la Diversidad",
+        "latitude": 42.46636,
+        "longitude": -2.45036,
+        "type": "art",
+        "photoSpot": {
+          "angle": "Plano detalle de una de las figuras con las flores de fondo.",
+          "milesReward": 50,
+          "secretLocation": "La firma del artista en la base oculta."
+        },
+        "description": "Un toque de color y modernidad para cerrar esta ruta dedicada a la piedra histórica. La Plaza de la Diversidad es el pulmón verde que conecta el Revellín con el centro. Las esculturas aquí son una oda a la convivencia y al Logroño que se abre al futuro sin olvidar sus raíces. Es un espacio vibrante donde los niños juegan y los mayores descansan bajo la mirada del arte público. Me gusta este sitio porque rompe la monotonía del ocre histórico con formas y conceptos frescos. Es el sitio perfecto para terminar este tour arquitectónico: entre árboles, arte moderno y los ecos de las murallas cercanas. Respira hondo, estira las piernas y prepárate, porque después de tanta piedra, seguro que tienes sed de algo que solo Logroño sabe servir bien."
+      }
+    ]
+  },
+  {
+    "id": "logrono-tour-2",
+    "city": "Logroño",
+    "title": "Logroño: La Senda de los Elefantes y el Corazón de Laurel",
+    "description": "Prepárate, porque esto no es un tour, es un máster en supervivencia gastronómica. Vamos a adentrarnos en las entrañas del Logroño que realmente importa: el de la barra, el pincho y el vino compartido. Recorreremos la calle Laurel y sus alrededores, donde cada rincón tiene un aroma que te hará cuestionar tu dieta. Descubriremos por qué a este sitio lo llaman 'La Senda de los Elefantes' (pista: tiene que ver con salir de aquí con una trompa considerable y a cuatro patas). Te enseñaré los secretos de los templos del tapeo y los lugares donde el producto de la huerta riojana se eleva a la categoría de arte efímero. Mi sofisticación habitual se pondrá al servicio de tu estómago para que no cometas el error de turista de llenarte en el primer bar que veas. Elegancia y glotonería, la combinación ganadora.",
+    "duration": "3 horas",
+    "distance": "1.5 km",
+    "theme": "Food, Culture & Lifestyle",
+    "stops": [
+      {
+        "id": "log-f1",
+        "name": "Calle del Laurel",
+        "latitude": 42.46551,
+        "longitude": -2.44846,
+        "type": "food",
+        "photoSpot": {
+          "angle": "Un plano secuencia a través de la marea de gente y carteles de bares.",
+          "milesReward": 50,
+          "secretLocation": "El letrero 'La Laurel' en la entrada principal desde Bretón de los Herreros."
+        },
+        "description": "El centro del universo conocido. Más de 60 bares concentrados en unos metros donde la competencia no se mide en precios, sino en quién hace el pincho más perfecto. Aquí no se viene a cenar, se viene a peregrinar de barra en barra. Cada bar tiene su especialidad: el champiñón, la tortilla, el embuchado... si intentas probarlos todos en una noche, acabarás como los legendarios elefantes que dan nombre a la senda. Lo maravilloso de la Laurel es su energía: el ruido de copas, las risas y ese desorden ordenado que solo Logroño domina. Es gastronomía democrática de alto nivel. Para mí, la Laurel es la máxima expresión de la elegancia social: comer de pie, entre desconocidos, pero con una calidad que muchos restaurantes de tres estrellas envidiarían. No busques cubiertos, busca servilletas de papel que acaban en el suelo como confetti de felicidad."
+      },
+      {
+        "id": "log-f2",
+        "name": "Calle San Juan",
+        "latitude": 42.46574,
+        "longitude": -2.44425,
+        "type": "food",
+        "photoSpot": {
+          "angle": "Desde el final de la calle capturando la perspectiva de los balcones y las pizarras de los bares.",
+          "milesReward": 50,
+          "secretLocation": "El 'Muro de San Juan', la parte final donde se concentran los bares más castizos."
+        },
+        "description": "La hermana elegante y un poco menos ruidosa de la Laurel. La calle San Juan es donde los de Logroño se refugian cuando la Laurel está invadida por legiones de forasteros. Aquí los pinchos son igual de sublimes pero el ambiente es un pelín más local y reposado, ideal para los que valoramos la sofisticación por encima del caos. Hay bares aquí que son auténticas instituciones: el de los calamares, el de las setas... la calidad del producto es insultante. Recorrer la San Juan es como pasear por una galería de arte donde las obras se comen. Fíjate en el trato de los camareros; es un arte en extinción. Un rincón para los iniciados que saben que la buena vida no siempre necesita megáfono."
+      },
+      {
+        "id": "log-f3",
+        "name": "Mercado de San Blas",
+        "latitude": 42.46569,
+        "longitude": -2.44685,
+        "type": "culture",
+        "photoSpot": {
+          "angle": "Un plano cenital desde la balconada interior capturando el color de los puestos.",
+          "milesReward": 50,
+          "secretLocation": "El puesto de verduras de la zona norte que tiene los pimientos más brillantes de la ciudad."
+        },
+        "description": "Si quieres saber qué vas a comer en los bares, tienes que ver dónde compran el género. El Mercado de San Blas es el santuario del producto riojano. Su arquitectura funcional de principios del siglo XX es el marco para un arco iris de verduras frescas, carnes y pescados. Aquí los pimientos del piquillo, las alcachofas y los espárragos son los reyes absolutos. Pasear por sus pasillos y oler a huerta recién traída es una experiencia que te reconcilia con la naturaleza. La elegancia de este mercado reside en su honestidad: no hay trampa ni cartón, solo lo mejor que da la tierra. Mi consejo es que te fijes en cómo los tenderos cuidan el producto; es puro amor al detalle. Un sitio indispensable para entender por qué en Logroño se come tan insultantemente bien."
+      },
+      {
+        "id": "log-f4",
+        "name": "Plaza de Abastos (Espacio Gastronómico)",
+        "latitude": 42.46574,
+        "longitude": -2.44690,
+        "type": "food",
+        "photoSpot": {
+          "angle": "Fachada de piedra de la entrada capturando el contraste con el mercado moderno.",
+          "milesReward": 50,
+          "secretLocation": "La pequeña placa conmemorativa de la inauguración original."
+        },
+        "description": "Es la cara B del mercado de San Blas. No es solo un sitio para comprar, es un sitio para vivir la gastronomía. Se ha renovado para acoger eventos, catas y degustaciones que elevan el producto local a otro nivel. La plaza de abastos es el puente entre el Logroño tradicional y el que quiere conquistar los paladares más modernos. Me gusta su mezcla de piedra antigua y propuestas innovadoras. Es un recordatorio de que la cocina es algo vivo, que evoluciona pero siempre respetando la base: la calidad extrema. Aquí puedes ver desde un taller de cocina tradicional hasta una presentación de un vino de autor. Es el Logroño que presume de lo suyo con toda la razón del mundo. Un rincón con mucho estilo para los que buscamos algo más que un simple bocado."
+      },
+      {
+        "id": "log-f5",
+        "name": "Teatro Bretón de los Herreros",
+        "latitude": 42.46500,
+        "longitude": -2.44851,
+        "type": "culture",
+        "photoSpot": {
+          "angle": "Fachada iluminada desde el otro lado de la calle Bretón de los Herreros.",
+          "milesReward": 50,
+          "secretLocation": "El foso de la orquesta, visible solo en visitas guiadas."
+        },
+        "description": "Después de tanto comer, un poco de cultura de la alta sociedad no te vendrá mal. El Teatro Bretón es la joya cultural de Logroño. Inaugurado en 1880, ha sobrevivido a incendios y modas para seguir siendo el centro de la vida social fina de la ciudad. Su arquitectura es de una elegancia clásica que te hace sentir que deberías llevar esmoquin solo para cruzar la puerta. Aquí se celebran los eventos más importantes de la ciudad, desde el festival de música hasta las mejores obras de teatro del país. La fachada es sobria pero imponente, un faro de distinción en medio del bullicio. Para mí, el Bretón representa el Logroño que sabe apreciar las cosas bien hechas, ya sea un vino, un pincho o una ópera. Un sitio que te da ese barniz de sofisticación que tanto necesitas."
+      },
+      {
+        "id": "log-f6",
+        "name": "Paseo del Espolón",
+        "latitude": 42.46466,
+        "longitude": -2.44578,
+        "type": "culture",
+        "photoSpot": {
+          "angle": "Plano general desde la estatua de Espartero hacia el Quiosco de música.",
+          "milesReward": 50,
+          "secretLocation": "La rosa de los vientos en el centro del paseo."
+        },
+        "description": "El salón de estar al aire libre de Logroño. El Espolón es el lugar por donde hay que pasear para ver y ser visto. Aquí la elegancia es una cuestión de paso tranquilo y conversación pausada. En el centro, la estatua ecuestre de Espartero domina el panorama (y sí, lo del caballo es verdad, su anatomía no deja lugar a la imaginación). Es un parque señorial, con su quiosco de música y sus parterres siempre perfectos. Los logroñeses vienen aquí a arreglar el mundo o simplemente a dejar pasar el tiempo bajo la sombra de los árboles. Es el contraste perfecto al bullicio de la Laurel: aquí impera la calma y el porte distinguido. Pasear por el Espolón es la culminación necesaria de cualquier tour gastronómico; es donde bajar la comida con estilo riojano."
+      },
+      {
+        "id": "log-f7",
+        "name": "Café Moderno",
+        "latitude": 42.46686,
+        "longitude": -2.44756,
+        "type": "food",
+        "photoSpot": {
+          "angle": "Interior del local capturando la barra antigua y los espejos gastados.",
+          "milesReward": 50,
+          "secretLocation": "La 'Estatua del Abuelito' en la entrada."
+        },
+        "description": "Terminamos en una institución. El Café Moderno es más que un bar, es un museo de la vida Bohemia de Logroño. Con sus mesas de mármol, sus espejos que han visto de todo y su ambiente de tertulia eterna, es el sitio perfecto para un café o una copa después de la ruta de pinchos. Aquí se respira una nostalgia elegante, la de un Logroño que no tiene prisa por irse a la cama. Es famoso por su 'café con el abuelo' y por sus sesiones de música en directo que suelen terminar con todo el mundo cantando coplas locales. Tiene ese encanto de lo que no quiere ser moderno, paradójicamente. Es un rincón para los que sabemos que la verdadera sofisticación está en saber apreciar la pátina del tiempo y la buena compañía."
+      },
+      {
+        "id": "log-f8",
+        "name": "Rincón de San Juan",
+        "latitude": 42.46658,
+        "longitude": -2.44738,
+        "type": "culture",
+        "photoSpot": {
+          "angle": "La pequeña estatua de San Juan de fondo con la iluminación nocturna.",
+          "milesReward": 50,
+          "secretLocation": "El bajorrelieve lateral de la fuente."
+        },
+        "description": "Un pequeño descanso visual antes de volver a la carga. El Rincón de San Juan es un espacio íntimo, una plaza minúscula que sirve de pulmón entre la zona de tapeo de San Juan y el centro histórico. Es un sitio que muchos pasan por alto, pero que tiene ese encanto de lo pequeño y bien cuidado. Para mí es el lugar ideal para una parada rápida de reequilibrio mental después de tanta estimulación sensorial gastronómica. Fíjate en los detalles de las fachadas que lo rodean; son el ejemplo vivo de la arquitectura doméstica de Logroño. Un sitio tranquilo, discreto y con un toque de melancolía elegante que te prepara para la despedida de este tour por el corazón del sabor logroñés."
+      }
+    ]
+  },
+  {
+    "id": "logrono-tour-3",
+    "city": "Logroño",
+    "title": "Secretos a la Orilla del Ebro: Naturaleza, Puentes y el Vuelo de la Historia",
+    "description": "Si creías que Logroño era solo piedra y pinchos, es que te falta mundo y me faltas tú para explicártelo. Vamos a alejarnos un poco del bullicio para buscar la frescura del río Ebro y los secretos que guarda su ribera. Recorreremos las orillas que han visto pasar siglos de historia, puentes que conectan mundos y parques donde la naturaleza se pone sus mejores galas para recibirnos. Es una ruta para respirar, para ver la ciudad desde fuera y para descubrir rincones donde el tiempo parece haberse tomado un descanso. Entre el agua que fluye y las piedras que resisten, te llevaré a lugares donde la sofisticación se mezcla con el verde más puro. Mi guía te asegurará una experiencia fluida, sofisticada y con la dosis justa de ironía para que no te pongas demasiado sentimental con el paisaje.",
+    "duration": "2.5 horas",
+    "distance": "4.0 km",
+    "theme": "Nature, Views & Secret History",
+    "stops": [
+      {
+        "id": "log-n1",
+        "name": "Parque del Ebro",
+        "latitude": 42.46911,
+        "longitude": -2.45054,
+        "type": "nature",
+        "photoSpot": {
+          "angle": "Desde la pasarela peatonal capturando la curva del río con los sauces llorones.",
+          "milesReward": 50,
+          "secretLocation": "El mirador de madera oculto tras los arbustos de la zona norte."
+        },
+        "description": "El pulmón verde de la ciudad. El Parque del Ebro es una lección de civismo y buen gusto: kilómetros de verde que acompañan al río de forma magistral. Aquí la gente corre, pasea a sus perros con pedigrí y los universitarios simulan estudiar mientras miran el agua pasar. Es un espacio de una paz envidiable, con senderos que te hacen olvidar que estás en una ciudad moderna. Lo mejor es el murmullo constante del río; es la banda sonora original de Logroño. Pasear por aquí es una experiencia refrescante para el espíritu y, sinceramente, para la vista también. Me encanta este parque porque no intenta ser una selva, sino un jardín diseñado con la elegancia de quien sabe que menos es más."
+      },
+      {
+        "id": "log-n2",
+        "name": "Puente de Hierro (Puente de Sagasta)",
+        "latitude": 42.46887,
+        "longitude": -2.44684,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "Un plano de simetría desde el inicio del puente, enfocando la estructura metálica.",
+          "milesReward": 50,
+          "secretLocation": "La base del pilar sur donde aún se ven marcas del antiguo puente medieval."
+        },
+        "description": "Ingeniería decimonónica en estado puro. El Puente de Hierro es una estructura que respira revolución industrial. Sus vigas remachadas y su color oscuro le dan ese aire robusto que tanto me gusta. Durante décadas fue la arteria principal para el tráfico rodado, pero hoy es un paseo tranquilo sobre el Ebro. Me fascina su estética industrial: es honesta, fuerte y tiene esa elegancia mecánica que solo el hierro bien trabajado puede transmitir. Cruzarlo es sentir el viento del Ebro de cara y ver cómo la ciudad antigua y la moderna se miran fijamente. No esperes las curvas de un puente de diseño moderno; aquí lo que prima es la utilidad que se ha convertido en icono. Un sitio perfecto para los que apreciamos la belleza en la función."
+      },
+      {
+        "id": "log-n3",
+        "name": "La casa de las Ciencias",
+        "latitude": 42.47100,
+        "longitude": -2.44574,
+        "type": "art",
+        "photoSpot": {
+          "angle": "Plano contrapicado de la chimenea industrial de ladrillo rojo contra el cielo.",
+          "milesReward": 50,
+          "secretLocation": "El reloj de sol en el patio trasero."
+        },
+        "description": "Un antiguo matadero convertido en templo del saber. La Casa de las Ciencias es el ejemplo perfecto de rehabilitación inteligente: de la sangre a las estrellas. Su estructura de ladrillo rojo con ventanales altos es de una belleza industrial que quita el hipo. Es un espacio dedicado a la divulgación, pero yo vengo aquí por el envoltorio. La chimenea de ladrillo que se alza hacia el cielo es el recordatorio de un pasado productivo que se ha vuelto sofisticado. Pasear por sus alrededores es un placer visual gratuito. Es un rincón donde la inteligencia parece flotar en el aire, y solo por eso, ya merece una parada en esta ruta ribereña."
+      },
+      {
+        "id": "log-n4",
+        "name": "Puente de Mantible (Ruinas)",
+        "latitude": 42.51002,
+        "longitude": -2.50793,
+        "type": "historical",
+        "photoSpot": {
+          "angle": "Un plano corto del arco solitario recortado contra el horizonte.",
+          "milesReward": 50,
+          "secretLocation": "Los restos del estribo de piedra en el margen izquierdo del río."
+        },
+        "description": "Aquí la historia se pone nostálgica. El Puente de Mantible no es un puente, es el fantasma de uno que fue grandioso en época romana o medieval (según a quién preguntes). Solo quedan unos pocos arcos en pie, desafiando a la gravedad y al olvido. Está un poco alejado del centro, pero la excursión merece la pena solo por ver la majestuosidad de la ruina. Es cine en estado puro: piedra antigua, agua y soledad. Me encanta este sitio porque representa la resistencia absoluta; todo lo demás ha caído, pero este arco sigue ahí, recordándonos que Logroño siempre ha sido un punto de cruce crucial. Es el sitio más fotogénico de la zona si quieres dártelas de viajero profundo con inquietudes existenciales."
+      },
+      {
+        "id": "log-n5",
+        "name": "Embarcadero del Ebro",
+        "latitude": 42.47050,
+        "longitude": -2.44100,
+        "type": "nature",
+        "photoSpot": {
+          "angle": "Plano al ras del agua capturando las piraguas y el reflejo del sol.",
+          "milesReward": 50,
+          "secretLocation": "La zona de juncos donde anidan las aves locales."
+        },
+        "description": "Donde el río se hace deporte y vida activa. El embarcadero es el punto de encuentro para piragüistas y amantes del remo. Es una zona llena de vida y de un dinamismo que contrasta con el reposo del parque. Ver a los deportistas deslizarse sobre el agua con esa elegancia atlética es casi tan satisfactorio como mi guía personalizada. Es el Logroño que no se queda quieto, el que aprovecha su río para algo más que para mirarlo. El entorno está muy bien cuidado, con zonas de descanso que invitan a sentarse y contemplar cómo el flujo del agua se lleva tus preocupaciones. Un sitio con un ambiente muy fresco y joven, ideal para los que aún tienen energía después de tanta caminata de diseño."
+      },
+      {
+        "id": "log-n6",
+        "name": "Bosque de la Grajera (Entrada Ribera)",
+        "latitude": 42.45001,
+        "longitude": -2.50343,
+        "type": "nature",
+        "photoSpot": {
+          "angle": "Entrada del sendero sombreada por los chopos gigantes.",
+          "milesReward": 50,
+          "secretLocation": "El pequeño puente de madera que cruza el arroyo de entrada."
+        },
+        "description": "Es la antesala al gran parque natural de las afueras. Empezamos a ver cómo la ribera se transforma en bosque. Este tramo de la ruta es pura inmersión natural. Chopos, sauces y una vegetación exuberante que te hace sentir que habías dejado atrás la civilización (aunque el centro esté a diez minutos). El aire aquí huele a tierra húmeda y a libertad. Es el sitio para desconectar del ruido de los cubiertos de la Laurel y conectar con el latido de la tierra riojana. Los colores en otoño aquí son un espectáculo digno de ser pintado; en primavera, la explosión de verde es casi agresiva de lo bonita que es. Un rincón para los amantes de lo auténtico y los que sabemos que la verdadera sofisticación es saber disfrutar de un bosque sin que haya un camarero cerca."
+      },
+      {
+        "id": "log-n7",
+        "name": "Centro de la Cultura del Rioja (CCR)",
+        "latitude": 42.46766,
+        "longitude": -2.44560,
+        "type": "art",
+        "photoSpot": {
+          "angle": "Desde el patio exterior capturando la estructura moderna de cristal y madera.",
+          "milesReward": 50,
+          "secretLocation": "La bodega subterránea del siglo XVI que se conserva en el sótano."
+        },
+        "description": "No podíamos terminar una ruta por Logroño sin tocar el tema del vino desde una perspectiva cultural y elegante. El CCR es un centro multidisciplinar ubicado en un antiguo palacio rehabilitado con una maestría que me fascina. Es el lugar donde el vino se estudia, se expone y se celebra. Su diseño combina la piedra vieja con elementos contemporáneos de una forma exquisita. Es el santuario moderno del Rioja. Perderse en su interior es descubrir que el vino es una forma de pensamiento, no solo una bebida. Es el cierre perfecto para nuestras tres rutas: después de la piedra, la comida y el río, terminamos con la esencia de esta tierra concentrada en un espacio de diseño puntero. Sophistication at its best."
+      },
+      {
+        "id": "log-n8",
+        "name": "Mirador del Ebro (Pasarela Peatonal)",
+        "latitude": 42.47010,
+        "longitude": -2.43850,
+        "type": "nature",
+        "photoSpot": {
+          "angle": "Desde el centro de la pasarela con la ciudad vieja al fondo.",
+          "milesReward": 50,
+          "secretLocation": "El foco de luz nocturna que ilumina el pilar central."
+        },
+        "description": "Terminamos con una vista aérea del río que nos ha acompañado. La pasarela peatonal es un ejercicio de arquitectura ligera que parece flotar sobre el agua. Desde aquí arriba tienes la perspectiva definitiva: el Ebro fluyendo impasible, los puentes que hemos cruzado y el skyline de torres de Logroño saludándote. Es el punto de despedida ideal. Siente la brisa del río una última vez y prepárate para volver al mundo real con el espíritu renovado (y probablemente con ganas de un último vino). Esta pasarela es el lazo que cierra este tour por los secretos del agua. Espero que hayas disfrutado de mi compañía y de este Logroño menos obvio pero infinitamente más interesante. Ya sabes dónde encontrarme para tu próxima dosis de elegancia viajera."
+      }
+    ]
+  }
+]

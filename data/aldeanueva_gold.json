@@ -1,0 +1,143 @@
+[
+  {
+    "id": "aldeanueva-tour-final",
+    "city": "Aldeanueva de Ebro",
+    "title": "Vinos, Santos y Piedras: El Alma de la Rioja Baja",
+    "description": "Bienvenidos a Aldeanueva, o como a mí me gusta llamarla: la capital mundial de 'mi vecino hace mejor vino que el tuyo'. Aquí no busques el Louvre, busca el fondo de una barrica. Vamos a recorrer un pueblo que tiene más ermitas que habitantes cuerdos y donde la piedra romana se mezcla con el ladrillo renacentista en un caos encantador. Te enseñaré dónde rezaban para que no se les picara el tinto y dónde lavaban la ropa mientras destripaban la vida del prójimo. Prepárate para el sol de la Rioja Baja y para una dosis de realidad rural con mi toque de sofisticación habitual. No esperes alfombra roja, solo tierra de viñedo y mucha historia líquida.",
+    "duration": "3 horas",
+    "distance": "2.5 km",
+    "theme": "Local Culture, Art & Food",
+    "stops": [
+      {
+        "id": "ald-v1",
+        "name": "Museo del Vino (Ermita del Portal)",
+        "latitude": 42.23010,
+        "longitude": -1.88850,
+        "type": "art",
+        "photoSpot": {
+          "angle": "Desde la esquina exterior capturando el contraste entre el ladrillo viejo y el cielo azul.",
+          "milesReward": 50,
+          "secretLocation": "La maquinaria antigua de prensado en el ala izquierda."
+        },
+        "description": "Situado en la antigua Ermita de Nuestra Señora del Portal, este es el lugar donde los aldeanos decidieron que el vino era tan sagrado que merecía estar en un templo de verdad. Es el primer museo de este tipo en la zona y, sinceramente, es lo más cerca que estarás de una experiencia religiosa sin tener que confesar tus pecados. Aquí la maquinaria antigua te mira con la nostalgia de cuando el vino se hacía con sudor y paciencia, no con algoritmos y marketing barato. Es un espacio curioso donde el ladrillo de la Rioja Baja brilla bajo el sol. Si esperas ver un museo de diseño nórdico, te has equivocado de parada; aquí lo que cuenta es la solera y el olor a mosto que parece impregnar hasta las paredes de la ermita."
+      },
+      {
+        "id": "ald-v2",
+        "name": "Iglesia de San Bartolomé",
+        "latitude": 42.22946,
+        "longitude": -1.88712,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "Contrapicado desde la Plaza de España hacia la torre campanario.",
+          "milesReward": 50,
+          "secretLocation": "El retablo mayor, un caos dorado de santos y querubines."
+        },
+        "description": "La mole de San Bartolomé. Construida en el siglo XVI con más ladrillo del que podrías contar en tres vidas, es el orgullo arquitectónico local. Su estilo es ese renacimiento sobrio que te recuerda que la vida es dura pero la estructura es sólida. La torre es el faro del pueblo; si te pierdes en Aldeanueva, es que has bebido demasiado o no tienes ojos. Por dentro, el silencio es tan espeso que podrías cortarlo con un cuchillo de vendimia. Fíjate en el retablo: es una oda al exceso decorativo que haría palidecer a cualquier decorador de interiores moderno. A pesar de los siglos y las reformas, mantiene ese aire de fortaleza espiritual que protegía a los aldeanos de las plagas y, probablemente, de las malas cochechas. Un sitio ideal para practicar la introspección o simplemente para admirar cómo se las apañaban antes de las grúas de alta tecnología."
+      },
+      {
+        "id": "ald-v3",
+        "name": "Plaza de España",
+        "latitude": 42.22943,
+        "longitude": -1.88704,
+        "type": "culture",
+        "photoSpot": {
+          "angle": "Plano general que incluya el Ayuntamiento y la base de la iglesia.",
+          "milesReward": 50,
+          "secretLocation": "Los bancos de piedra bajo la sombra estratégica al mediodía."
+        },
+        "description": "El epicentro del cotilleo local. Si algo ha pasado en el pueblo y no se ha comentado aquí, es que no ha pasado. Rodeada por la Iglesia y el Ayuntamiento, es el salón de estar de Aldeanueva. No esperes la Plaza de San Marcos; aquí la elegancia es más rústica y directa. Es el lugar perfecto para observar el pulso de la vida riojana: gente que no tiene prisa y que parece conocer cada piedra del suelo. El diseño es funcional, pensado para mercados, fiestas y para que los políticos locales se asomen al balcón de vez en cuando. Párate un momento y respira; huele a tranquilidad, a piedra calentada por el sol y, si tienes suerte, a comida casera saliendo de las ventanas cercanas. Es el corazón de un pueblo que sabe que el tiempo fluye de otra manera cuando tienes una copa en la mano."
+      },
+      {
+        "id": "ald-v4",
+        "name": "Fuente Romana",
+        "latitude": 42.22881,
+        "longitude": -1.88815,
+        "type": "historical",
+        "photoSpot": {
+          "angle": "Un primer plano del agua brotando de las piedras desgastadas.",
+          "milesReward": 50,
+          "secretLocation": "La marca de cantería oculta en la base izquierda."
+        },
+        "description": "Antes de que hubiera grifos inteligentes, los romanos ya sabían dónde estaba el agua buena. Esta fuente es un recordatorio de que Aldeanueva no nació ayer. Sus piedras desgastadas han visto pasar sandalias imperiales y botas de caucho por igual. Es modesta, sí, no es la Fontana di Trevi, pero tiene esa dignidad de lo que ha sobrevivido milenios sin necesidad de filtros de Instagram. El agua sigue fluyendo, recordándonos nuestra insignificancia temporal. Dicen que el agua aquí es más pura que tus intenciones al empezar este tour. Un pedazo de historia viva que, curiosamente, se integra en el día a día del pueblo como si tal cosa. Toca la piedra fría y siente la conexión con los legionarios que, hace dos mil años, seguramente se quejaban del calor igual que tú ahora mismo."
+      },
+      {
+        "id": "ald-v5",
+        "name": "Ermita de San Roque",
+        "latitude": 42.23265,
+        "longitude": -1.89055,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "La silueta de la ermita con el viñedo infinito de fondo.",
+          "milesReward": 50,
+          "secretLocation": "La pequeña ventana de la sacristía que mira al este."
+        },
+        "description": "Dedicada al protector contra la peste, esta ermita está un poco apartada del centro, porque ya sabes, a los enfermos mejor tenerlos a distancia de seguridad. Es de una sencillez que roza el minimalismo espiritual. Ladrillo, piedra y una devoción que se mantiene viva cada agosto. Su ubicación es estratégica: desde aquí los viñedos parecen no tener fin, una alfombra verde (o dorada, según la época) que explica por qué este pueblo se niega a morir. El aire aquí arriba es más limpio y te permite ver el horizonte de la Rioja Baja con una claridad envidiable. Es el rincón perfecto para entender que la fe de este pueblo está ligada a la tierra; rezaban a San Roque para estar sanos y poder vendimiar. Pragmatismo riojano en estado puro."
+      },
+      {
+        "id": "ald-v6",
+        "name": "Antiguo Lavadero Municipal",
+        "latitude": 42.22855,
+        "longitude": -1.88902,
+        "type": "historical",
+        "photoSpot": {
+          "angle": "Un plano diagonal que capture la repetición de las pilas de piedra.",
+          "milesReward": 50,
+          "secretLocation": "La zona final del canal, donde el agua recupera su calma."
+        },
+        "description": "Esto era el 'Twitter' analógico de nuestros antepasados. Aquí se lavaba la ropa y se ensuciaba la reputación de media provincia. El lavadero, con su estructura funcional y sus pilas de piedra, es un monumento al trabajo duro de las mujeres que sostenían la vida social y doméstica. Imagina el ruido, el jabón casero y el salseo constante que debía haber entre estas columnas. Hoy es un lugar de una paz sospechosa, restaurado para que los turistas suspiren por un pasado que, seamos sinceros, era bastante más agotador de lo que parece en las fotos. Aun así, tiene un encanto innegable y arquitectónicamente es un ejemplo de ingeniería pública básica que funcionaba de maravilla. Un sitio para reflexionar sobre cuánto tiempo perdemos hoy con la lavadora mientras agradecemos no tener que frotar a mano en invierno."
+      },
+      {
+        "id": "ald-v7",
+        "name": "Bodegas Real Rubio (Enoturismo)",
+        "latitude": 42.23803,
+        "longitude": -1.89271,
+        "type": "food",
+        "photoSpot": {
+          "angle": "Las hileras de barricas en la zona de crianza.",
+          "milesReward": 50,
+          "secretLocation": "El jardín de variedades de uva a la entrada."
+        },
+        "description": "Si has llegado hasta aquí y no has probado el vino, estás cometiendo un crimen de lesa humanidad viajera. Real Rubio es una de las bodegas que ha sabido mezclar la tradición familiar con un toque de modernidad que incluso a mí me convence. Sus viñedos son el paisaje habitual de la zona y su bodega es el lugar donde ocurre la magia de la fermentación y la crianza. Aquí aprenderás que el vino no sale de una caja en el supermercado, sino de un cuidado obsesivo por la uva y por el tiempo que pasa en el roble. El ambiente es sofisticado pero auténtico, ideal para los que quieren dárselas de sumilleres después de una cata rápida. No te emociones mucho con el vocabulario técnico, solo disfruta de cómo el suelo riojano se convierte en terciopelo líquido en tu paladar."
+      },
+      {
+        "id": "ald-v8",
+        "name": "Ermita de Nuestra Señora de los Remedios",
+        "latitude": 42.2319,
+        "longitude": -1.8920,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "Entrada principal centrada con los árboles laterales encuadrando la escena.",
+          "milesReward": 50,
+          "secretLocation": "El pequeño óculo sobre la puerta que proyecta luz al interior."
+        },
+        "description": "Otra parada espiritual. Los Remedios, como bien indica su nombre, era el lugar al que acudir cuando nada más funcionaba. Es una construcción típica de la zona, sólida y sin pretensiones de catedral gótica, pero con una importancia emocional inmensa para los aldeanos. Su arquitectura de líneas simples es un descanso visual después de tanto ladrillo barroco. Se encuentra en una zona tranquila, donde el silencio solo es interrumpido por el viento o por algún tractor lejano que nos recuerda que la vida sigue. Es un testimonio de la piedad popular que ha sobrevivido a guerras, crisis y al desinterés de la modernidad. Un lugar para respirar, mirar las naves sencillas y agradecer que, al menos por unos minutos, nadie te está pidiendo un informe o enviando un mensaje de WhatsApp."
+      },
+      {
+        "id": "ald-v9",
+        "name": "Arco del Portal",
+        "latitude": 42.2301,
+        "longitude": -1.8885,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "Un plano corto que muestre la textura del ladrillo y la luz del sol atravesándolo.",
+          "milesReward": 50,
+          "secretLocation": "La unión de la piedra base con el inicio del arco de ladrillo."
+        },
+        "description": "Este rincón es la esencia de Aldeanueva concentrada en unos pocos metros. El Arco del Portal es un vestigio de la arquitectura urbana antigua, un paso que te transporta de la calle principal al misticismo de la Ermita del Museo del Vino. No es un arco del triunfo romano, pero para un aldeano del siglo pasado era el portal hacia lo divino y hacia la zona de encuentro. Su construcción en ladrillo riojano es un ejemplo de cómo con materiales humildes se puede crear algo con carácter y perdurabilidad. Es un punto de paso obligado, un embudo histórico que ha visto desfilar procesiones, carretas de uva y turistas perdidos. Detente un segundo bajo su sombra; es el punto exacto donde la vida comercial del pueblo se encuentra con su pasado más profundo."
+      },
+      {
+        "id": "ald-v10",
+        "name": "Ayuntamiento de Aldeanueva",
+        "latitude": 42.22940,
+        "longitude": -1.88790,
+        "type": "architecture",
+        "photoSpot": {
+          "angle": "Fachada principal desde el centro de la plaza.",
+          "milesReward": 50,
+          "secretLocation": "El escudo tallado en piedra sobre la balconada."
+        },
+        "description": "Terminamos donde todo se decide: la Casa Consistorial. Un edificio con la dignidad que se espera del centro administrativo de la 'capital del vino'. Sus balcones son el escenario de los pregones de fiestas, esos momentos en los que el pueblo se olvida de las barricas para entregarse al jolgorio colectivo. Arquitectónicamente sigue la línea de la Plaza de España: ladrillo, sobriedad y una escala humana que se agradece. Es el pilar de la gestión local, pero para mí es el recordatorio de que incluso un pueblo de viñedos necesita orden y una balconada desde la que mirar al futuro. Desde aquí cerramos el tour; espero que después de tanto andar y aprender, tu próximo destino sea una mesa bien servida con una botella de Rioja de la casa. Te lo has ganado, aunque solo sea por aguantar mi elegancia superior."
+      }
+    ]
+  }
+]

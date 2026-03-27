@@ -277,7 +277,9 @@ FORMAT RULES:
 1. Return ONLY a valid JSON array.
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be within 2km of the city center. Use realistic offsets (streets, plazas, buildings). NEVER place stops on highways or outside the town.
+4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be within 2km of the city center. Use realistic offsets (streets, plazas, buildings). 
+   - CRITICAL RULE: NEVER use the center of a building (centroid). ALWAYS place the coordinate on the MAIN PEDESTRIAN ENTRANCE (FAÇADE) at street level.
+   - EXACT ADDRESS: If a specific building number is known (e.g. "Plaza San Agustín 23"), your coordinates MUST point to that specific doorway.
 5. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide.
