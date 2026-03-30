@@ -202,6 +202,308 @@ const processTourStops = async (tour: Tour, city: string, country: string): Prom
     return { ...tour, stops: results };
 };
 
+// ── Utilidades de optimización de ruta (9 reglas de pront-calcular-rutas) ─
+// Regla 1: Distancia Haversine entre dos puntos en km
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+// Regla 1: Construye la matriz NxN de distancias entre todas las paradas
+const buildDistanceMatrix = (stops: Stop[]): number[][] => {
+    const n = stops.length;
+    const matrix: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const d = haversineDistance(stops[i].latitude, stops[i].longitude, stops[j].latitude, stops[j].longitude);
+            matrix[i][j] = d;
+            matrix[j][i] = d;
+        }
+    }
+    return matrix;
+};
+
+// Regla 5: Detecta paradas en el mismo edificio (<30m) que deben ir consecutivas
+const groupSameBuilding = (stops: Stop[], distMatrix: number[][]): Map<number, number[]> => {
+    const groups = new Map<number, number[]>();
+    const assigned = new Set<number>();
+    for (let i = 0; i < stops.length; i++) {
+        if (assigned.has(i)) continue;
+        const group = [i];
+        for (let j = i + 1; j < stops.length; j++) {
+            if (assigned.has(j)) continue;
+            if (distMatrix[i][j] < 0.030) { // < 30 metros
+                group.push(j);
+                assigned.add(j);
+            }
+        }
+        if (group.length > 1) {
+            for (const idx of group) {
+                groups.set(idx, group);
+                assigned.add(idx);
+            }
+        }
+    }
+    return groups;
+};
+
+// Regla 6: Agrupa paradas en clusters por proximidad (threshold en km)
+const clusterStops = (stops: Stop[], distMatrix: number[][], threshold = 0.150): number[][] => {
+    const n = stops.length;
+    const visited = new Set<number>();
+    const clusters: number[][] = [];
+
+    for (let i = 0; i < n; i++) {
+        if (visited.has(i)) continue;
+        const cluster = [i];
+        visited.add(i);
+        // BFS para encontrar paradas conectadas dentro del umbral
+        const queue = [i];
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            for (let j = 0; j < n; j++) {
+                if (!visited.has(j) && distMatrix[current][j] <= threshold) {
+                    cluster.push(j);
+                    visited.add(j);
+                    queue.push(j);
+                }
+            }
+        }
+        clusters.push(cluster);
+    }
+    return clusters;
+};
+
+// Regla 2: Nearest Neighbor TSP probando TODOS los puntos de inicio
+const nearestNeighborTSP = (stops: Stop[], distMatrix: number[][]): number[] => {
+    const n = stops.length;
+    if (n <= 2) return stops.map((_, i) => i);
+
+    // Regla 5 + 6: pre-calcular agrupaciones
+    const buildingGroups = groupSameBuilding(stops, distMatrix);
+    const clusters = clusterStops(stops, distMatrix);
+
+    let bestOrder: number[] = [];
+    let bestDist = Infinity;
+
+    // Probar cada parada como punto de inicio
+    for (let start = 0; start < n; start++) {
+        const visited = new Set<number>();
+        const order: number[] = [];
+        let current = start;
+
+        while (order.length < n) {
+            if (visited.has(current)) {
+                // Buscar siguiente no visitado más cercano
+                let minD = Infinity;
+                let next = -1;
+                for (let j = 0; j < n; j++) {
+                    if (!visited.has(j) && distMatrix[current][j] < minD) {
+                        minD = distMatrix[current][j];
+                        next = j;
+                    }
+                }
+                if (next === -1) break;
+                current = next;
+            }
+
+            order.push(current);
+            visited.add(current);
+
+            // Regla 5: si current tiene compañeros de edificio, añadirlos todos
+            const buildingGroup = buildingGroups.get(current);
+            if (buildingGroup) {
+                for (const buddy of buildingGroup) {
+                    if (!visited.has(buddy)) {
+                        order.push(buddy);
+                        visited.add(buddy);
+                    }
+                }
+            }
+
+            // Regla 6: si quedan paradas del mismo cluster, priorizarlas
+            const currentCluster = clusters.find(c => c.includes(current));
+            if (currentCluster) {
+                const remaining = currentCluster.filter(idx => !visited.has(idx));
+                // Ordenar remaining por distancia al current
+                remaining.sort((a, b) => distMatrix[current][a] - distMatrix[current][b]);
+                for (const idx of remaining) {
+                    if (!visited.has(idx)) {
+                        order.push(idx);
+                        visited.add(idx);
+                        // También respetar regla 5 para estos
+                        const bg = buildingGroups.get(idx);
+                        if (bg) {
+                            for (const buddy of bg) {
+                                if (!visited.has(buddy)) {
+                                    order.push(buddy);
+                                    visited.add(buddy);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Siguiente: vecino más cercano no visitado
+            let minD = Infinity;
+            let next = -1;
+            for (let j = 0; j < n; j++) {
+                if (!visited.has(j) && distMatrix[current][j] < minD) {
+                    minD = distMatrix[current][j];
+                    next = j;
+                }
+            }
+            if (next === -1) break;
+            current = next;
+        }
+
+        // Calcular distancia total de esta ruta
+        let totalDist = 0;
+        for (let i = 0; i < order.length - 1; i++) {
+            totalDist += distMatrix[order[i]][order[i + 1]];
+        }
+        if (totalDist < bestDist) {
+            bestDist = totalDist;
+            bestOrder = [...order];
+        }
+    }
+
+    return bestOrder;
+};
+
+// Regla 2 (complemento): 2-opt local search para deshacer cruces
+const twoOptImprove = (order: number[], distMatrix: number[][]): number[] => {
+    const n = order.length;
+    if (n < 4) return order;
+
+    let improved = true;
+    let route = [...order];
+
+    while (improved) {
+        improved = false;
+        for (let i = 0; i < n - 2; i++) {
+            for (let j = i + 2; j < n; j++) {
+                if (j === n - 1 && i === 0) continue; // Evitar invertir toda la ruta
+
+                const currentDist = distMatrix[route[i]][route[i + 1]] + distMatrix[route[j]][route[(j + 1) % n]];
+                const newDist = distMatrix[route[i]][route[j]] + distMatrix[route[i + 1]][route[(j + 1) % n]];
+
+                if (newDist < currentDist - 0.001) { // Umbral para evitar ruido flotante
+                    // Invertir el segmento entre i+1 y j
+                    const reversed = route.slice(i + 1, j + 1).reverse();
+                    route = [...route.slice(0, i + 1), ...reversed, ...route.slice(j + 1)];
+                    improved = true;
+                }
+            }
+        }
+    }
+    return route;
+};
+
+// Regla 3: Mueve la parada más famosa (mayor milesReward) al final si desvío ≤ 20%
+const applyFamousLastRule = (order: number[], stops: Stop[], distMatrix: number[][]): number[] => {
+    if (order.length < 3) return order;
+
+    // Encontrar la parada con mayor milesReward
+    let maxReward = 0;
+    let famousIdx = -1;
+    for (const idx of order) {
+        const reward = stops[idx].photoSpot?.milesReward || 0;
+        if (reward > maxReward) {
+            maxReward = reward;
+            famousIdx = idx;
+        }
+    }
+
+    if (famousIdx === -1 || order[order.length - 1] === famousIdx) return order;
+
+    // Calcular distancia actual
+    let currentTotal = 0;
+    for (let i = 0; i < order.length - 1; i++) {
+        currentTotal += distMatrix[order[i]][order[i + 1]];
+    }
+
+    // Construir ruta alternativa con famousIdx al final
+    const withoutFamous = order.filter(idx => idx !== famousIdx);
+    withoutFamous.push(famousIdx);
+
+    let newTotal = 0;
+    for (let i = 0; i < withoutFamous.length - 1; i++) {
+        newTotal += distMatrix[withoutFamous[i]][withoutFamous[i + 1]];
+    }
+
+    // Solo aplicar si el desvío no supera el 20%
+    if (newTotal <= currentTotal * 1.20) {
+        return withoutFamous;
+    }
+
+    return order;
+};
+
+// Regla 8: Calcula distancia total de la ruta en km
+const calculateRouteDistance = (order: number[], distMatrix: number[][]): number => {
+    let total = 0;
+    for (let i = 0; i < order.length - 1; i++) {
+        total += distMatrix[order[i]][order[i + 1]];
+    }
+    return total;
+};
+
+// Regla 8: Calcula duración estimada del tour
+const calculateDuration = (distanceKm: number, numStops: number): string => {
+    const walkingMinutes = distanceKm * 15;       // 15 min/km ritmo turístico
+    const stopMinutes = numStops * 7.5;            // 7.5 min promedio por parada
+    const photoMargin = 20;                        // 20 min margen para fotos
+    const totalMinutes = Math.round(walkingMinutes + stopMinutes + photoMargin);
+
+    if (totalMinutes < 60) return `${totalMinutes} min`;
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+};
+
+// Orquestador: aplica todo el pipeline de optimización a un tour (reglas 7, 8, 9)
+const optimizeStopOrder = (tour: Tour): Tour => {
+    if (!tour.stops || tour.stops.length < 3) return tour;
+
+    const stops = tour.stops;
+    const distMatrix = buildDistanceMatrix(stops);
+
+    // 1. Nearest Neighbor TSP con clusters y agrupación de edificios
+    let order = nearestNeighborTSP(stops, distMatrix);
+
+    // 2. 2-opt para deshacer cruces
+    order = twoOptImprove(order, distMatrix);
+
+    // 3. Regla de oro: parada famosa al final (si coste ≤ 20%)
+    order = applyFamousLastRule(order, stops, distMatrix);
+
+    // 4. Reordenar stops según el nuevo orden
+    const reorderedStops = order.map(i => stops[i]);
+
+    // 5. Recalcular distance y duration
+    const totalDistKm = calculateRouteDistance(order, distMatrix);
+    const newDistance = totalDistKm < 1
+        ? `${Math.round(totalDistKm * 1000)}m`
+        : `${totalDistKm.toFixed(1)} km`;
+    const newDuration = calculateDuration(totalDistKm, reorderedStops.length);
+
+    console.log(`🗺️ Route optimized: ${tour.title} — ${stops.length} stops, ${newDistance}, ~${newDuration}`);
+
+    return {
+        ...tour,
+        stops: reorderedStops,
+        distance: newDistance,
+        duration: newDuration
+    };
+};
+
 // ── Generación adaptada de tours por nivel de ciudad ─────────────────────
 export const generateToursForCity = async (
     city: string,
@@ -285,6 +587,10 @@ FORMAT RULES:
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide.
 You HATE boring Wikipedia-style descriptions.
 Your tone is witty, sophisticated, and slightly mocking of typical tourists.
+
+DAI STYLE REFERENCE (CRITICAL):
+"La Redonda es a Logroño lo que las perlas a un buen collar: el centro de todas las miradas. Se llama así porque se levantó sobre una iglesia románica circular, aunque de redonda ahora solo tiene el nombre y quizás las ganas de dar vueltas por su interior. Lo más espectacular son sus torres gemelas, un alarde de barroco que te hace sentir pequeño, como debe ser. Por dentro, el silencio es majestuoso. Busca el cuadro atribuido a Miguel Ángel; si es verdad o no, es irrelevante, lo que importa es la elegancia de la leyenda. Es un espacio que respira historia y donde la piedra parece haber absorbido los susurros de siglos de peregrinos. Un lugar idóneo para practicar la humildad o simplemente para admirar cómo se construía cuando no había prisa por terminar antes del próximo trimestre fiscal."
+
 You love sharing the dark secrets, mysteries, and curiosities of cities.
 You NEVER use citations, footnotes, or references.
 You are real, accurate, but never boring.
@@ -301,7 +607,12 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
             const stream = await ai.models.generateContentStream({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
-                config: { systemInstruction },
+                config: { 
+                    systemInstruction,
+                    temperature: 0.7,
+                    topP: 1,
+                    topK: 1
+                },
             });
 
             for await (const chunk of stream) {
@@ -314,6 +625,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                         let tour = parsed[toursEmitted];
                         if (tour && tour.stops && tour.stops.length > 0) {
                             tour = await processTourStops(tour, city, country);
+                            tour = optimizeStopOrder(tour);
                             onProgress(tour);
                             allTours.push(tour);
                         }
@@ -338,6 +650,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                     let tour = finalTours[toursEmitted];
                     if (tour && tour.stops && tour.stops.length > 0) {
                         tour = await processTourStops(tour, city, country);
+                        tour = optimizeStopOrder(tour);
                         onProgress(tour);
                         allTours.push(tour);
                     }
@@ -349,6 +662,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 for (let i = 0; i < finalTours.length; i++) {
                     if (finalTours[i] && finalTours[i].stops?.length > 0) {
                         finalTours[i] = await processTourStops(finalTours[i], city, country);
+                        finalTours[i] = optimizeStopOrder(finalTours[i]);
                     }
                 }
             }
@@ -360,7 +674,12 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
-                config: { systemInstruction },
+                config: { 
+                    systemInstruction,
+                    temperature: 0.7,
+                    topP: 1,
+                    topK: 1
+                },
             });
             const text = (response.text || '[]')
                 .replace(/\[\d+\]/g, '')
@@ -368,7 +687,8 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 .replace(/```json/g, '')
                 .replace(/```/g, '')
                 .trim();
-            const tours = tryExtractTours(text);
+            let tours = tryExtractTours(text);
+            tours = tours.map(t => t?.stops?.length > 0 ? optimizeStopOrder(t) : t);
             if (onProgress) tours.forEach(t => { if (t?.stops?.length > 0) onProgress(t); });
             return tours.filter(t => t && t.stops && t.stops.length > 0);
         }

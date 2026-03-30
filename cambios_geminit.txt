@@ -1,34 +1,3 @@
---mejoras sugeridas
-S8 - Sin RLS explícita en tours_cache (inferido) La tabla tours_cache se escribe con 
-upsert
- sin pasar el JWT del usuario. Esto implica que la RLS de la tabla debe estar configurada para aceptar escrituras anónimas. Conviene confirmar que la política de la tabla restringe DELETE y UPDATE a filas del propio usuario o a service_role.
-
-S9 - audio_cache almacena la URL pública pero no el tamaño del archivo No hay control del espacio consumido por usuario. Un usuario malintencionado podría forzar la generación de miles de clips de audio. Recomiendo añadir un rate-limit en la función 
-saveAudioToCache
- o una política de RLS que limite inserciones por IP/usuario.
-
-S10 - El campo rank en la tabla profiles es un string libre (línea 213) data.rank se lee y devuelve directamente como 
-TravelerRank
- sin validación, pero en la DB podría ser el string 'Turist' (con typo, línea 213), no un valor del enum 
-TravelerRank
-. Esto puede causar inconsistencias en el UI de rangos.
-
-S11 - 
-getGlobalRanking
- no tiene paginación Solo solicita los top 50 (.limit(50)) pero no hay paginación implementada ni en la función ni en el componente 
-Leaderboard
-. Cuando haya más de 50 usuarios activos, los demás no aparecerán.
-
-S12 - 
-getCommunityPosts
- / 
-addCommunityPost
- son stubs (ver S3) Las tablas de comunidad o no existen en Supabase o están sin implementar. Habría que crear la migración o eliminar los componentes CityCommunity y CommunityBoard hasta que estén implementados.
-
-
- envGEMINI_API_KEY=
-VITE_SUPABASE_URL=https://slldavgsoxunkphqeamx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTU2NjEsImV4cCI6MjA4MDEzMTY2MX0.MBOwOjdp4Lgo5i2X2LNvTEonm_CLg9KWo-WcLPDGqXo
 
 
 ejemplo de prompt para gemini
