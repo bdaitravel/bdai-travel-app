@@ -159,24 +159,47 @@ const verifyStopCoordinates = async (stop: Stop, city: string, country: string):
     try {
         const cleanName = stop.name.split('-')[0].split('(')[0].trim();
         const query = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+        
+        // Build a tight bounding box (~2km x 2km) around Gemini's original coordinate
+        // This prevents Nominatim from returning places in other cities
+        const viewbox = `${stop.longitude - 0.02},${stop.latitude + 0.02},${stop.longitude + 0.02},${stop.latitude - 0.02}`;
+        const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&viewbox=${viewbox}&bounded=1`;
+        
+        const res = await fetch(url, {
             headers: { 'Accept-Language': 'es', 'User-Agent': 'bdai-travel-app/GIS-Check' }
         });
+        
         if (res.ok) {
             const data = await res.json();
             if (data && data.length > 0) {
-                return {
-                    ...stop,
-                    latitude: parseFloat(data[0].lat),
-                    longitude: parseFloat(data[0].lon),
-                    coordinatesVerified: true
-                };
+                const nomLat = parseFloat(data[0].lat);
+                const nomLon = parseFloat(data[0].lon);
+                
+                // Extra safety check: Haversine distance (should be < 0.5km)
+                const R = 6371;
+                const dLat = (nomLat - stop.latitude) * Math.PI / 180;
+                const dLon = (nomLon - stop.longitude) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 +
+                    Math.cos(stop.latitude * Math.PI / 180) * Math.cos(nomLat * Math.PI / 180) *
+                    Math.sin(dLon / 2) ** 2;
+                const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                if (distKm <= 0.5) {
+                    return {
+                        ...stop,
+                        latitude: nomLat,
+                        longitude: nomLon,
+                        coordinatesVerified: true
+                    };
+                } else {
+                    console.warn(`GIS: Nominatim returned location too far (${distKm.toFixed(2)}km) for ${stop.name}. Falling back to Gemini.`);
+                }
             }
         }
     } catch (e) {
         console.warn(`GIS Check failed for ${stop.name}`);
     }
-    // Nominatim no encontró el lugar: se devuelven las coords de Gemini sin verificar
+    // Nominatim no encontró el lugar o fue rechazado: se mantienen las coords de Gemini
     return { ...stop, coordinatesVerified: false };
 };
 
