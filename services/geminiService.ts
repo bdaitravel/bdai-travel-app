@@ -537,40 +537,35 @@ export const generateToursForCity = async (
 
     // 1. Datos geográficos reales para anclar la generación
     const cityInfo = await getCityInfo(city, country);
-    const tier = getCityTier(cityInfo?.population ?? null);
-
+    // Eliminar el sistema de tiers basado en población. Usamos una directiva universal.
+    // getCityTier y population ya no limitan agresivamente a la IA
     const coordsAnchor = cityInfo
         ? `The exact center of ${city} is at latitude ${cityInfo.lat.toFixed(6)}, longitude ${cityInfo.lng.toFixed(6)}. ALL stops must be within 2km of this point.`
         : `All stops must be located within the urban area of ${city}, ${country}.`;
-
-    // 2. Reglas de calidad según nivel (la cantidad de tours la decide la IA según contenido)
-    const inventionRules = {
-        SMALL: `STOP RULES FOR SMALL TOWNS (CRITICAL):
-- Include ONLY real, documented, and verifiable places with a proper name.
-- DO NOT INVENT street names, bar names, shops, or local monuments.
-- If a place cannot be confirmed to exist today, DO NOT include it.
-- Quality always beats quantity: fewer real stops are better than more invented ones.`,
-        MEDIUM: `STOP RULES FOR MEDIUM CITIES:
-- Prioritize real, documented places. Avoid inventing niche bars or unofficial spots.
-- If a place name cannot be verified with certainty, replace it with a verified alternative.
-- Well-known local spots (markets, plazas, parks, famous bars) are acceptable if they are genuinely famous.`,
-        LARGE: `STOP RULES FOR LARGE CITIES:
-- You may include a wide range of well-documented points of interest.
-- DAI's wit and sarcasm are MANDATORY. But only after verifying the place exists today.
-- Even iconic cities have places that closed or changed — do not include them if uncertain.`
-    };
 
     const prompt = `You are generating tours for ${city}, ${country} in ${user.language}.
 
 GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
 
-DYNAMIC TOUR COUNT — CONTENT-BASED DECISION (CRITICAL):
-First, mentally assess how many truly verifiable, real, documented points of interest exist in ${city}.
-Then apply this rule strictly:
-- If fewer than 12 real stops exist: generate EXACTLY 1 tour with all of them.
-- If 12 to 23 real stops exist: generate EXACTLY 2 tours, splitting stops EQUALLY between them.
-- If 24 or more real stops exist: generate EXACTLY 3 tours, splitting stops EQUALLY between them.
-DO NOT repeat any stop across tours. DO NOT generate more tours than this rule allows.
+UNIVERSAL RIGOR & NO-INVENTION RULE:
+- ALL places MUST be 100% real, verifiable, documented, and existing today.
+- NEVER invent street names, bars, monuments, or hidden spots. 
+- Quality ALWAYS beats quantity. If you are not certain a place exists, DO NOT include it.
+
+DEEP RETRIEVAL FOR DYNAMIC TOUR COUNT (CRITICAL):
+Your PRIMARY GOAL is to generate exactly 3 thematic tours (24 stops total). 
+To achieve this, you MUST perform a DEEP RETRIEVAL of your knowledge base for ${city}. Search exhaustively for:
+- Historic civil & religious architecture
+- Traditional local markets and plazas
+- Real cultural, artistic, or gastronomic hot-spots
+- Iconic local viewpoints or parks
+- Verified hidden local gems and specific building numbers
+
+ONLY if the city genuinely lacks the real, verifiable heritage to reach 24 valid stops without inventing, you should gracefully degrade:
+- If fewer than 12 truly real stops exist: generate EXACTLY 1 tour.
+- If 12 to 23 truly real stops exist: generate EXACTLY 2 tours, splitting stops EQUALLY.
+- If 24 or more real stops exist: generate EXACTLY 3 tours, splitting stops EQUALLY.
+DO NOT repeat any stop across tours. DO NOT generate more tours than what you can fill entirely with VERIFIABLE places.
 
 THEMES TO USE (pick as many as needed based on stop count above):
 1. "Hidden Gems & Dark Secrets"
@@ -586,8 +581,6 @@ DAI'S ABSOLUTE COMMANDS:
 - Mock the "typical" tourist while revealing the true soul of the city.
 - NEVER use citations like [1] or (2). NEVER.
 - All facts MUST be 100% real. DO NOT INVENT.
-
-${inventionRules[tier]}
 
 STRICT CATEGORIZATION RULES (CRITICAL):
 - 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.

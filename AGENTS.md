@@ -75,9 +75,9 @@
 ## Decisiones Arquitectónicas (Historial)
 
 ### Generación de Tours (geminiService.ts)
-- **Sistema de niveles de ciudad:** La población se obtiene vía Nominatim y clasifica la ciudad en `SMALL` (<10.000 hab), `MEDIUM` (<200.000 hab) o `LARGE` (el resto). Las reglas de invención de POIs son más estrictas cuanto menor es el nivel.
-- **Generación por contenido:** El número de tours (1, 2 o 3) lo decide la IA dinámicamente según los POIs verificables disponibles — no por la población. Umbral: <12 paradas → 1 tour, 12–23 → 2 tours, ≥24 → 3 tours.
-- **Coordinadas verificadas:** El campo `coordinatesVerified?: boolean` en la interfaz `Stop` diferencia POIs confirmados por Nominatim de los generados por Gemini sin verificar.
+- **Sistema de Rigor Universal:** La regla de "No Inventar" y referenciar solo POIs 100% reales es absoluta e independiente del tamaño de la ciudad. No se usan reglas más permisivas para ciudades grandes.
+- **Deep Retrieval para Volumen de Tours:** La cantidad de tours (1, 2 o 3) no se basa en la población, sino en el patrimonio extraíble. Se instruye a la IA a realizar una búsqueda exhaustiva (Deep Retrieval) en su base de conocimiento con el objetivo de alcanzar 3 tours temáticos (24 paradas). Solo si carece genuinamente de patrimonio real comprobable, reducirá dinámicamente a 2 o 1 tour.
+- **Coordinadas verificadas:** El campo `coordinatesVerified?: boolean` en la interfaz `Stop` diferencia POIs confirmados geométricamente por Nominatim (solo si están a < 500m de la estimación base) de los generados por Gemini sin verificar.
 - **Radio máximo:** Todos los POIs deben estar a ≤2km del centro de la ciudad.
 - **Modelo IA:** Estandarizado en `gemini-2.5-flash` para texto y `gemini-2.0-flash-preview-image-generation` para imágenes.
 - **Regla de oro:** "Truth First, Style Second". El sarcasmo DAI solo se aplica tras confirmar la existencia real del lugar.
