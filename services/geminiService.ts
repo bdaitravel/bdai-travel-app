@@ -556,29 +556,29 @@ export const generateToursForCity = async (
 GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
 
 UNIVERSAL RIGOR & NO-INVENTION RULE:
+- Find the PERFECT BALANCE: Do not discard obscure but real places, but absolutely NEVER HALLUCINATE non-existent ones (e.g., if it can't be found on the internet, DO NOT invent it).
 - ALL places MUST be 100% real, verifiable, documented, and existing today.
 - NEVER invent street names, bars, monuments, or hidden spots. 
-- Quality ALWAYS beats quantity. If you are not certain a place exists, DO NOT include it.
 
 DEEP RETRIEVAL FOR DYNAMIC TOUR COUNT (CRITICAL):
-Your PRIMARY GOAL is to generate exactly 3 thematic tours (24 stops total). 
-To achieve this, you MUST perform a DEEP RETRIEVAL of your knowledge base for ${city}. Search exhaustively for:
+Your PRIMARY GOAL is to generate exactly 3 thematic tours (up to 36 stops total, max 12 stops per tour). 
+To achieve this, you MUST perform a DEEP RETRIEVAL of your knowledge base for ${city} and its specific regional heritage. Search exhaustively for:
 - Historic civil & religious architecture
 - Traditional local markets and plazas
-- Real cultural, artistic, or gastronomic hot-spots
+- Authentic cultural, artistic, or gastronomic hot-spots specific to this region
 - Iconic local viewpoints or parks
 - Verified hidden local gems and specific building numbers
 
-ONLY if the city genuinely lacks the real, verifiable heritage to reach 24 valid stops without inventing, you should gracefully degrade:
-- If fewer than 12 truly real stops exist: generate EXACTLY 1 tour.
-- If 12 to 23 truly real stops exist: generate EXACTLY 2 tours, splitting stops EQUALLY.
-- If 24 or more real stops exist: generate EXACTLY 3 tours, splitting stops EQUALLY.
+ONLY if the city genuinely lacks the real, verifiable heritage to reach 24-36 valid stops without inventing, you should gracefully degrade:
+- If fewer than 12 truly real stops exist: generate EXACTLY 1 tour (up to 12 stops).
+- If 12 to 23 truly real stops exist: generate EXACTLY 2 tours (up to 12 stops each).
+- If 24 or more real stops exist: generate EXACTLY 3 tours (up to 12 stops each).
 DO NOT repeat any stop across tours. DO NOT generate more tours than what you can fill entirely with VERIFIABLE places.
 
 THEMES TO USE (pick as many as needed based on stop count above):
 1. "Hidden Gems & Dark Secrets"
 2. "Historical & Architectural Marvels"
-3. "Local Culture, Art & Food"
+3. "Local Traditions, Art, Food & Authentic Culture" (Focus on the true regional heritage, gastronomy, and art that make this place unique worldwide).
 (If only 1 tour, use the most fitting theme or combine them in the title.)
 
 DAI'S ABSOLUTE COMMANDS:
