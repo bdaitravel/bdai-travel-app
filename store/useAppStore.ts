@@ -98,6 +98,7 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => getEnvAwareStorage()),
       // Don't persist ephemeral player state or location
       partialize: (state) => ({
+        currentView: state.currentView,
         userProfile: state.userProfile,
         activeTours: state.activeTours,
         currentTour: state.currentTour,
