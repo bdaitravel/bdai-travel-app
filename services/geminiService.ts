@@ -154,71 +154,79 @@ const getCityTier = (population: number | null): CityTier => {
     return 'LARGE';
 };
 
-// ── Valida coordenadas de una parada contra Nominatim ────────────────────
-const verifyStopCoordinates = async (stop: Stop, city: string, country: string): Promise<Stop> => {
+// ── Valida coordenadas de una parada contra Nominatim con Pipeline Híbrido ──
+const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null): Promise<Stop> => {
     try {
         const cleanName = stop.name.split('-')[0].split('(')[0].trim();
         const query = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
         
-        // Build a tight bounding box (~2km x 2km) around Gemini's original coordinate
-        // This prevents Nominatim from returning places in other cities
-        const viewbox = `${stop.longitude - 0.02},${stop.latitude + 0.02},${stop.longitude + 0.02},${stop.latitude - 0.02}`;
-        const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&viewbox=${viewbox}&bounded=1`;
-        
-        const res = await fetch(url, {
-            headers: { 'Accept-Language': 'es', 'User-Agent': 'bdai-travel-app/GIS-Check' }
-        });
-        
-        if (res.ok) {
-            const data = await res.json();
-            if (data && data.length > 0) {
-                const nomLat = parseFloat(data[0].lat);
-                const nomLon = parseFloat(data[0].lon);
-                
-                // Extra safety check: Haversine distance (should be < 0.5km)
-                const R = 6371;
-                const dLat = (nomLat - stop.latitude) * Math.PI / 180;
-                const dLon = (nomLon - stop.longitude) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 +
-                    Math.cos(stop.latitude * Math.PI / 180) * Math.cos(nomLat * Math.PI / 180) *
-                    Math.sin(dLon / 2) ** 2;
-                const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        // Fase 1: Anclaje al Centro Real. Búsqueda muy estricta a ~4km a la redonda del centro urbano.
+        let data: any[] = [];
+        if (cityCenter) {
+            const viewbox = `${cityCenter.lng - 0.04},${cityCenter.lat + 0.04},${cityCenter.lng + 0.04},${cityCenter.lat - 0.04}`;
+            const boundedUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&viewbox=${viewbox}&bounded=1`;
+            const boundedRes = await fetch(boundedUrl, { headers: { 'Accept-Language': 'es', 'User-Agent': 'bdai-travel-app/GIS-Check' } });
+            if (boundedRes.ok) data = await boundedRes.json();
+        }
 
-                if (distKm <= 0.5) {
-                    return {
-                        ...stop,
-                        latitude: nomLat,
-                        longitude: nomLon,
-                        coordinatesVerified: true
-                    };
-                } else {
-                    console.warn(`GIS: Nominatim returned location too far (${distKm.toFixed(2)}km) for ${stop.name}. Falling back to Gemini.`);
-                }
+        // Fase 2: Búsqueda Libre. Si no aparece en la caja estricta, probamos libremente en la ciudad.
+        if (data.length === 0) {
+            const freeUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
+            const freeRes = await fetch(freeUrl, { headers: { 'Accept-Language': 'es', 'User-Agent': 'bdai-travel-app/GIS-Check' } });
+            if (freeRes.ok) data = await freeRes.json();
+        }
+        
+        if (data && data.length > 0) {
+            const nomLat = parseFloat(data[0].lat);
+            const nomLon = parseFloat(data[0].lon);
+            
+            // Validación de control: Evita que Nominatim asigne París, Texas, si se buscó París, Francia.
+            let distToCenterKm = 0;
+            if (cityCenter) {
+                // Como `haversineDistance` se declara más abajo, usamos lógica in-line por hoisting seguro o lo llamamos si está disponible
+                const R = 6371;
+                const dLat = (nomLat - cityCenter.lat) * Math.PI / 180;
+                const dLon = (nomLon - cityCenter.lng) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(cityCenter.lat * Math.PI / 180) * Math.cos(nomLat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+                distToCenterKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             }
+            
+            // Si está a < 15km del centro de la ciudad, confiamos en Nominatim por encima de Gemini
+            if (!cityCenter || distToCenterKm <= 15) {
+                return {
+                    ...stop,
+                    latitude: nomLat,
+                    longitude: nomLon,
+                    coordinatesVerified: true
+                };
+            } else {
+                console.warn(`GIS: Nominatim encontró ${stop.name} pero a ${distToCenterKm.toFixed(1)}km del centro de ${city}. Desviación extrema.`);
+            }
+        } else {
+             console.warn(`GIS: Nominatim NO pudo encontrar ${stop.name} en OpenStreetMap. Posible alucinación o calle sin número.`);
         }
     } catch (e) {
         console.warn(`GIS Check failed for ${stop.name}`);
     }
-    // Nominatim no encontró el lugar o fue rechazado: se mantienen las coords de Gemini
+    // Fallback: Nos quedamos con las de Gemini sin verificar
     return { ...stop, coordinatesVerified: false };
 };
 
 // ── Geocodifica todas las paradas de un tour (concurrente, pool de 4) ────
-const processTourStops = async (tour: Tour, city: string, country: string): Promise<Tour> => {
+const processTourStops = async (tour: Tour, city: string, country: string, cityCenter: {lat: number, lng: number} | null): Promise<Tour> => {
     const stops = tour.stops;
     const CONCURRENCY = 4; // Máximo simultáneo para no saturar Nominatim
     const results: Stop[] = new Array(stops.length);
 
-    // Procesa en batches de CONCURRENCY con 250ms entre batches
+    // Procesa en batches de CONCURRENCY con 150ms entre batches
     for (let i = 0; i < stops.length; i += CONCURRENCY) {
         const batch = stops.slice(i, i + CONCURRENCY);
         const batchResults = await Promise.all(
-            batch.map(stop => verifyStopCoordinates(stop, city, country))
+            batch.map(stop => verifyStopCoordinates(stop, city, country, cityCenter))
         );
         batchResults.forEach((result, j) => { results[i + j] = result; });
-        // Pequeña pausa entre batches para respetar el rate limit de Nominatim
         if (i + CONCURRENCY < stops.length) {
-            await new Promise(r => setTimeout(r, 250));
+            await new Promise(r => setTimeout(r, 150));
         }
     }
 
@@ -576,11 +584,11 @@ THEMES TO USE (pick as many as needed based on stop count above):
 DAI'S ABSOLUTE COMMANDS:
 - You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
 - TRUTH FIRST, STYLE SECOND. Before adding any wit or sarcasm, verify the place actually exists and is open TODAY. Your humor is the cherry on top of undeniable truth — not a substitute for it.
+- NEVER INVENT A NAME OR A STOP. It is strictly forbidden to hallucinate buildings, bars, or castles. If Wikipedia or Google Maps doesn't know it, YOU MUST NOT INCLUDE IT.
 - Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
 - Tell the secrets, the mysteries, and the dark curiosities.
 - Mock the "typical" tourist while revealing the true soul of the city.
 - NEVER use citations like [1] or (2). NEVER.
-- All facts MUST be 100% real. DO NOT INVENT.
 
 STRICT CATEGORIZATION RULES (CRITICAL):
 - 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
@@ -595,9 +603,8 @@ FORMAT RULES:
 1. Return ONLY a valid JSON array.
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be within 2km of the city center. Use realistic offsets (streets, plazas, buildings). 
-   - CRITICAL RULE: NEVER use the center of a building (centroid). ALWAYS place the coordinate on the MAIN PEDESTRIAN ENTRANCE (FAÇADE) at street level.
-   - EXACT ADDRESS: If a specific building number is known (e.g. "Plaza San Agustín 23"), your coordinates MUST point to that specific doorway.
+4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be strictly within the boundaries of ${city}.
+   - CRITICAL RULE: NEVER use a random location. Your coordinates should map to the MAIN ENTRANCE.
 5. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide.
@@ -640,7 +647,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                     while (parsed.length > toursEmitted) {
                         let tour = parsed[toursEmitted];
                         if (tour && tour.stops && tour.stops.length > 0) {
-                            tour = await processTourStops(tour, city, country);
+                            tour = await processTourStops(tour, city, country, cityInfo);
                             tour = optimizeStopOrder(tour);
                             onProgress(tour);
                             allTours.push(tour);
@@ -665,7 +672,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 while (toursEmitted < finalTours.length) {
                     let tour = finalTours[toursEmitted];
                     if (tour && tour.stops && tour.stops.length > 0) {
-                        tour = await processTourStops(tour, city, country);
+                        tour = await processTourStops(tour, city, country, cityInfo);
                         tour = optimizeStopOrder(tour);
                         onProgress(tour);
                         allTours.push(tour);
@@ -677,7 +684,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
             if (allTours.length === 0) {
                 for (let i = 0; i < finalTours.length; i++) {
                     if (finalTours[i] && finalTours[i].stops?.length > 0) {
-                        finalTours[i] = await processTourStops(finalTours[i], city, country);
+                        finalTours[i] = await processTourStops(finalTours[i], city, country, cityInfo);
                         finalTours[i] = optimizeStopOrder(finalTours[i]);
                     }
                 }

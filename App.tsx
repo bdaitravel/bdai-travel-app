@@ -80,7 +80,8 @@ export default function App() {
     activeTours: tours, setActiveTours: setTours,
     currentTour: activeTour, setCurrentTour: setActiveTour,
     currentStopIndex, setCurrentStopIndex,
-    userLocation, setUserLocation
+    userLocation, setUserLocation,
+    selectedCityInfo, setSelectedCityInfo
   } = useAppStore();
   
   const navigateTo = useCallback((newView: AppView, pushState = true) => {
@@ -124,10 +125,6 @@ export default function App() {
   const [searchOptions, setSearchOptions] = useState<any[] | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [visaToShare, setVisaToShare] = useState<{ cityName: string, miles: number } | null>(null);
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [selectedCountryEn, setSelectedCountryEn] = useState<string | null>(null);
-  const [selectedCitySlug, setSelectedCitySlug] = useState<string | null>(null);
 
   const t = useCallback((key: string) => {
     const lang = user.language || 'es';
@@ -298,13 +295,15 @@ export default function App() {
     setSearchVal(''); 
 
     const cleanName = selection.name?.split(',')[0].trim() || selection.city;
-    setSelectedCity(cleanName); 
-    setSelectedCountry(selection.country);
-    setSelectedCountryEn(selection.countryEn || selection.country);
-    
     const slug = (selection.slug || normalizeKey(cleanName, selection.countryEn || selection.country))
       .replace(/-/g, '_').toLowerCase();
-    setSelectedCitySlug(slug);
+      
+    setSelectedCityInfo({
+      city: cleanName,
+      country: selection.country,
+      countryEn: selection.countryEn || selection.country,
+      slug: slug
+    });
 
     try {
       setTours([]);
@@ -580,9 +579,9 @@ export default function App() {
               <div className="pt-safe-iphone w-full max-w-lg md:max-w-4xl lg:max-w-7xl mx-auto px-4 sm:px-6 md:px-8 animate-fade-in">
                 <header className="flex items-center gap-4 mb-8 py-4 sticky top-0 bg-[#020617]/80 backdrop-blur-xl z-20">
                   <button onClick={() => navigateTo(AppView.HOME)} className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center active:scale-90"><i className="fas fa-arrow-left text-xs"></i></button>
-                  <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCity, user.language)}</h2>
+                  <h2 className="text-lg font-black uppercase tracking-tighter text-white truncate flex-1">{formatCityName(selectedCityInfo?.city || '', user.language)}</h2>
                   {(user.email === 'travelbdai@gmail.com' || user.isAdmin) && (
-                    <button onClick={() => processCitySelection({ city: selectedCity, country: selectedCountry, countryEn: selectedCountryEn, slug: selectedCitySlug }, user.language, true)} 
+                    <button onClick={() => selectedCityInfo && processCitySelection({ city: selectedCityInfo.city, country: selectedCityInfo.country, countryEn: selectedCityInfo.countryEn, slug: selectedCityInfo.slug }, user.language, true)} 
                       className="w-11 h-11 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400 flex items-center justify-center active:rotate-180 transition-transform">
                       <i className="fas fa-sync-alt text-xs"></i>
                     </button>
@@ -592,7 +591,7 @@ export default function App() {
                   {tours.map((tour, idx) => (
                     <TourCard key={`${tour.id}-${idx}`} tour={tour} onSelect={() => { setActiveTour(tour); navigateTo(AppView.TOUR_ACTIVE); setCurrentStopIndex(0); }} language={user.language} />
                   ))}
-                  {selectedCitySlug && <CityCommunity citySlug={selectedCitySlug} user={user} />}
+                  {selectedCityInfo?.slug && <CityCommunity citySlug={selectedCityInfo.slug} user={user} />}
                 </div>
               </div>
             )}

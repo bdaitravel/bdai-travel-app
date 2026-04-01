@@ -41,6 +41,9 @@ interface AppState {
   
   userLocation: { lat: number; lng: number } | null;
   setUserLocation: (loc: { lat: number; lng: number } | null) => void;
+
+  selectedCityInfo: { city: string; country: string; countryEn: string; slug: string } | null;
+  setSelectedCityInfo: (info: { city: string; country: string; countryEn: string; slug: string } | null) => void;
   
   clearSession: () => void;
 }
@@ -83,6 +86,9 @@ export const useAppStore = create<AppState>()(
       
       userLocation: null,
       setUserLocation: (loc) => set({ userLocation: loc }),
+
+      selectedCityInfo: null,
+      setSelectedCityInfo: (info) => set({ selectedCityInfo: info }),
       
       clearSession: () => set({
         currentView: AppView.LOGIN,
@@ -90,7 +96,8 @@ export const useAppStore = create<AppState>()(
         activeTours: [],
         currentTour: null,
         currentStopIndex: 0,
-        audioPlayer: { isPlaying: false, currentTrackId: null }
+        audioPlayer: { isPlaying: false, currentTrackId: null },
+        selectedCityInfo: null
       })
     }),
     {
@@ -103,6 +110,7 @@ export const useAppStore = create<AppState>()(
         activeTours: state.activeTours,
         currentTour: state.currentTour,
         currentStopIndex: state.currentStopIndex,
+        selectedCityInfo: state.selectedCityInfo,
       }),
     }
   )
