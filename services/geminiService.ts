@@ -157,23 +157,28 @@ const getCityTier = (population: number | null): CityTier => {
 // ── Valida coordenadas de una parada contra Nominatim con Pipeline Híbrido ──
 const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null): Promise<Stop> => {
     try {
-        const cleanName = stop.name.split('-')[0].split('(')[0].trim();
+        let cleanName = stop.name.split('-')[0].split('(')[0].split(/ y | e | \/ /i)[0].trim();
         const query = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
         
+        const headers = { 'Accept-Language': 'es', 'User-Agent': 'bdai-app-' + Math.floor(Math.random()*10000) };
+
         // Fase 1: Anclaje al Centro Real. Búsqueda muy estricta a ~4km a la redonda del centro urbano.
         let data: any[] = [];
         if (cityCenter) {
             const viewbox = `${cityCenter.lng - 0.04},${cityCenter.lat + 0.04},${cityCenter.lng + 0.04},${cityCenter.lat - 0.04}`;
             const boundedUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&viewbox=${viewbox}&bounded=1`;
-            const boundedRes = await fetch(boundedUrl, { headers: { 'Accept-Language': 'es', 'User-Agent': 'bdai-travel-app/GIS-Check' } });
+            const boundedRes = await fetch(boundedUrl, { headers });
             if (boundedRes.ok) data = await boundedRes.json();
+            else if (boundedRes.status === 429) console.error("!!! NOMINATIM BANNED (429) - Slow down !!!");
         }
 
         // Fase 2: Búsqueda Libre. Si no aparece en la caja estricta, probamos libremente en la ciudad.
         if (data.length === 0) {
+            await new Promise(r => setTimeout(r, 1100)); // Obligatorio esperar 1s antes de otro hit
             const freeUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
-            const freeRes = await fetch(freeUrl, { headers: { 'Accept-Language': 'es', 'User-Agent': 'bdai-travel-app/GIS-Check' } });
+            const freeRes = await fetch(freeUrl, { headers });
             if (freeRes.ok) data = await freeRes.json();
+            else if (freeRes.status === 429) console.error("!!! NOMINATIM BANNED (429) !!!");
         }
         
         if (data && data.length > 0) {
@@ -215,18 +220,31 @@ const verifyStopCoordinates = async (stop: Stop, city: string, country: string, 
 // ── Geocodifica todas las paradas de un tour (concurrente, pool de 4) ────
 const processTourStops = async (tour: Tour, city: string, country: string, cityCenter: {lat: number, lng: number} | null): Promise<Tour> => {
     const stops = tour.stops;
-    const CONCURRENCY = 4; // Máximo simultáneo para no saturar Nominatim
-    const results: Stop[] = new Array(stops.length);
+    const CONCURRENCY = 1; // Nominatim RESTRICTS to 1 request per second max. Violating this triggers 429 HTTP errors and IP bans.
+    const results: Stop[] = [];
 
-    // Procesa en batches de CONCURRENCY con 150ms entre batches
+    // Procesa secuencialmente para respetar Nominatim
     for (let i = 0; i < stops.length; i += CONCURRENCY) {
         const batch = stops.slice(i, i + CONCURRENCY);
         const batchResults = await Promise.all(
             batch.map(stop => verifyStopCoordinates(stop, city, country, cityCenter))
         );
-        batchResults.forEach((result, j) => { results[i + j] = result; });
+        for (const res of batchResults) {
+            if (cityCenter) {
+                const R = 6371;
+                const dLat = (res.latitude - cityCenter.lat) * Math.PI / 180;
+                const dLon = (res.longitude - cityCenter.lng) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(cityCenter.lat * Math.PI / 180) * Math.cos(res.latitude * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+                const distToCenterKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                if (distToCenterKm > 15) {
+                    console.warn(`GIS: Eliminando '${res.name}' por estar a ${distToCenterKm.toFixed(1)}km del centro de ${city}. Alucinación o desvío catastrófico de Nominatim.`);
+                    continue; // Skip
+                }
+            }
+            results.push(res);
+        }
         if (i + CONCURRENCY < stops.length) {
-            await new Promise(r => setTimeout(r, 150));
+            await new Promise(r => setTimeout(r, 1200)); // Esperar >1000ms
         }
     }
 
@@ -559,6 +577,7 @@ UNIVERSAL RIGOR & NO-INVENTION RULE:
 - Find the PERFECT BALANCE: Do not discard obscure but real places, but absolutely NEVER HALLUCINATE non-existent ones (e.g., if it can't be found on the internet, DO NOT invent it).
 - ALL places MUST be 100% real, verifiable, documented, and existing today.
 - NEVER invent street names, bars, monuments, or hidden spots. 
+- GEOGRAPHIC STRICTNESS: ALL places MUST realistically exist physically inside the borders of ${city}, ${country}. Do NOT borrow or import real places from other cities or distant towns under any circumstance. If you run out of real places in ${city}, simply stop. 
 
 DEEP RETRIEVAL FOR DYNAMIC TOUR COUNT (CRITICAL):
 Your PRIMARY GOAL is to generate exactly 3 thematic tours (up to 36 stops total, max 12 stops per tour). 
