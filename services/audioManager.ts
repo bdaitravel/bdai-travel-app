@@ -58,8 +58,10 @@ class AudioManager {
     this.notify();
   }
 
-  async play(audioData: Uint8Array, stopName: string): Promise<void> {
+  async play(audioUrl: string, stopName: string): Promise<void> {
     this.stop();
+
+    if (!audioUrl) return;
 
     if (!this.audioContext) {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -69,34 +71,28 @@ class AudioManager {
     }
 
     try {
-      // Intentar decodificar como audio estándar (WAV/MP3)
-      const audioBuffer = await this.audioContext.decodeAudioData(audioData.buffer.slice(0) as ArrayBuffer);
+      // 1. Obtener los bytes desde la URL (Bucket de Supabase)
+      const response = await fetch(audioUrl);
+      if (!response.ok) throw new Error("Failed to fetch audio from bucket");
+      const arrayBuffer = await response.arrayBuffer();
+
+      // 2. Intentar decodificar como audio estándar (MP3 del bucket)
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       const source = this.audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(this.audioContext.destination);
       source.onended = () => {
-        this.state.isPlaying = false;
-        this.state.stopName = '';
-        this.notify();
+        if (this.state.stopName === stopName) {
+          this.state.isPlaying = false;
+          this.state.stopName = '';
+          this.notify();
+        }
       };
       this.sourceNode = source;
       source.start(0);
-    } catch {
-      // Fallback PCM raw (Gemini TTS)
-      const dataInt16 = new Int16Array(audioData.buffer);
-      const buffer = this.audioContext.createBuffer(1, dataInt16.length, 24000);
-      const channelData = buffer.getChannelData(0);
-      for (let i = 0; i < dataInt16.length; i++) channelData[i] = dataInt16[i] / 32768.0;
-      const source = this.audioContext.createBufferSource();
-      source.buffer = buffer;
-      source.connect(this.audioContext.destination);
-      source.onended = () => {
-        this.state.isPlaying = false;
-        this.state.stopName = '';
-        this.notify();
-      };
-      this.sourceNode = source;
-      source.start(0);
+    } catch (e) {
+      console.error("AudioManager play error:", e);
+      this.stop();
     }
 
     this.state.isPlaying = true;

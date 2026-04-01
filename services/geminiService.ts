@@ -1,6 +1,6 @@
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
-import { getCachedAudio, saveAudioToCache, normalizeKey } from './supabaseClient';
+import { supabase, getCachedAudio, normalizeKey } from './supabaseClient';
 
 // ── Singleton: una sola instancia para todo el módulo ──────────────────────
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -742,86 +742,33 @@ const tryExtractTours = (text: string): Tour[] => {
     return tours;
 };
 
-// ── Mapa de voces por idioma para TTS ────────────────────────────────────
+// ── Mapa de voces por idioma para TTS (Inutilizado en cliente, movido a Edge Function) ─────
 const VOICE_MAP: Record<string, string> = {
-    es: 'Kore', en: 'Zephyr', fr: 'Charon', de: 'Fenrir', it: 'Puck',
-    pt: 'Charon', ja: 'Puck', zh: 'Puck', ro: 'Kore', ru: 'Charon',
-    ar: 'Kore', ko: 'Puck', tr: 'Fenrir', pl: 'Charon', nl: 'Zephyr',
+    es: 'Kore', en: 'Zephyr', fr: 'Charon', de: 'Fenrir', it: 'Puck'
 };
 
-// ── Mensaje de bienvenida de DAI al nuevo usuario ─────────────────────────
-export const generateDaiWelcome = async (user: UserProfile): Promise<string> => {
-    return handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `As DAI, welcome a new user named ${user.firstName || 'Traveler'} in ${user.language}.
-            Explain that they are currently rank "ZERO" (the bottom of the food chain) and they need to conquer the world by completing tours to reach "ZENITH".
-            Be sarcastic, witty, and elegant. Keep it under 100 words.`,
-        });
-        return response.text || "Welcome to bdai.";
-    });
-};
-
-// ── Generación de audio con caché y tono DAI ──────────────────────────────
-export const generateAudio = async (text: string, language: string, city: string): Promise<Uint8Array | null> => {
+// ── Generación de audio con caché y tono DAI (Proxy a Edge Function) ──
+export const generateAudio = async (text: string, language: string, city: string): Promise<string | null> => {
     const cleanText = (text || "").trim();
     if (!cleanText) return null;
 
-    // Verificar caché antes de llamar a la API
-    const cachedUrl = await getCachedAudio(cleanText, language);
-    if (cachedUrl) {
-        try {
-            const response = await fetch(cachedUrl);
-            if (response.ok) {
-                const buffer = await response.arrayBuffer();
-                if (buffer.byteLength > 0) return new Uint8Array(buffer);
-            }
-        } catch (e) {
-            console.error("Error loading cached audio:", e);
-        }
-    }
-
-    // Prompts de narración por idioma para preservar el tono DAI en cada lengua
-    const daiAudioPrompts: Record<string, string> = {
-        es: `Actúa como Dai, una guía de viajes elegante y sarcástica con acento de España. Di esto de forma natural y con personalidad: ${cleanText}`,
-        en: `Act as Dai, an elegant and sarcastic travel guide. Say this in a natural and engaging tone: ${cleanText}`,
-        fr: `Joue le rôle de Dai, un guide de voyage élégant et sarcastique. Dis ceci de façon naturelle et engageante : ${cleanText}`,
-        de: `Spiel die Rolle von Dai, einem eleganten und sarkastischen Reiseführer. Sag dies auf natürliche und einnehmende Weise: ${cleanText}`,
-        it: `Interpreta Dai, una guida turistica elegante e sarcastica. Di questo in modo naturale e coinvolgente: ${cleanText}`,
-        pt: `Atua como Dai, um guia de viagens elegante e sarcástico. Diz isto de forma natural e envolvente: ${cleanText}`,
-        ro: `Joacă rolul lui Dai, un ghid de călătorie elegant și sarcastic. Spune asta într-un mod natural și captivant: ${cleanText}`,
-        ja: `DaiというエレガントでサルカスティックなAI旅行ガイドとして、次の内容を自然に読み上げてください：${cleanText}`,
-        zh: `你是Dai，一位优雅而讽刺的旅行导游。请用自然而引人入胜的方式说出以下内容：${cleanText}`,
-        ko: `Dai라는 우아하고 풍자적인 여행 가이드로서 다음 내용을 자연스럽고 매력적으로 말해주세요: ${cleanText}`,
-    };
-
-    const daiPrompt = daiAudioPrompts[language] || `Act as Dai, an elegant and sarcastic travel guide. Say this in a natural and engaging tone: ${cleanText}`;
-    const voiceName = VOICE_MAP[language] || 'Kore';
-
-    const base64 = await handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: daiPrompt }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: {
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName } },
-                },
-            },
+    try {
+        // 1. Invocamos la Edge Function (Seguridad Nivel Experto)
+        // La función centraliza: Generación Gemini -> Compresión -> Storage -> DB Cache
+        const { data, error } = await supabase.functions.invoke('generate-audio-dai', {
+            body: { text, language, city }
         });
-        return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
-    });
 
-    if (base64) {
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-        // Guardar en caché en segundo plano — no bloquea la reproducción
-        saveAudioToCache(cleanText, language, bytes, city).catch(err => console.error("Cache save failed", err));
-        return bytes;
+        if (error || !data?.url) {
+            console.error("Edge Function error:", error);
+            return null;
+        }
+
+        return data.url;
+    } catch (e) {
+        console.error("Error calling generate-audio-dai:", e);
+        return null;
     }
-
-    return null;
 };
 
 // ── Traducción batch de tours completos ───────────────────────────────────

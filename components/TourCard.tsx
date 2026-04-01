@@ -240,9 +240,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         }
         audioManager.setLoading(stopName);
         try {
-            const audioResult = await generateAudio(text, user.language, tour.city);
-            if (!audioResult) { audioManager.stop(); return; }
-            await audioManager.play(audioResult, stopName);
+            const audioUrl = await generateAudio(text, user.language, tour.city);
+            if (!audioUrl) { audioManager.stop(); return; }
+            await audioManager.play(audioUrl, stopName);
         } catch (e) {
             console.error("Audio error:", e);
             audioManager.stop();

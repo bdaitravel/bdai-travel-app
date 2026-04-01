@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import lamejs from 'lamejs';
+
 import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
@@ -72,63 +72,6 @@ const generateHash = async (text: string): Promise<string> => {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
 
-// ✅ WAV encoder — sin dependencias externas, sin lamejs
-const encodeToWav = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
-    const numChannels = 1;
-    const bitsPerSample = 16;
-    const byteRate = sampleRate * numChannels * bitsPerSample / 8;
-    const blockAlign = numChannels * bitsPerSample / 8;
-    const dataSize = pcmData.byteLength;
-    const buffer = new ArrayBuffer(44 + dataSize);
-    const view = new DataView(buffer);
-
-    const writeStr = (offset: number, str: string) => {
-        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-    };
-
-    writeStr(0, 'RIFF');
-    view.setUint32(4, 36 + dataSize, true);
-    writeStr(8, 'WAVE');
-    writeStr(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true); // PCM
-    view.setUint16(22, numChannels, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, byteRate, true);
-    view.setUint16(32, blockAlign, true);
-    view.setUint16(34, bitsPerSample, true);
-    writeStr(36, 'data');
-    view.setUint32(40, dataSize, true);
-    new Uint8Array(buffer, 44).set(pcmData);
-
-    return new Uint8Array(buffer);
-};
-
-// ✅ MP3 encoder — optimiza tamaño y carga (requiere lamejs)
-const encodeToMp3 = (pcmData: Uint8Array, sampleRate: number = 24000): Uint8Array => {
-    // Gemini devuelve PCM 16-bit. lamejs necesita Int16Array
-    const dataInt16 = new Int16Array(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength / 2);
-    const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 64); // Mono, 24kHz, 64kbps
-    const mp3Data: any[] = [];
-
-    const sampleBlockSize = 1152; // múltiplo para lamejs
-    for (let i = 0; i < dataInt16.length; i += sampleBlockSize) {
-        const sampleChunk = dataInt16.subarray(i, i + sampleBlockSize);
-        const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
-        if (mp3buf.length > 0) mp3Data.push(mp3buf);
-    }
-    const mp3buf = mp3encoder.flush();
-    if (mp3buf.length > 0) mp3Data.push(mp3buf);
-
-    const totalLength = mp3Data.reduce((acc, curr) => acc + curr.length, 0);
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const chunk of mp3Data) {
-        result.set(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength), offset);
-        offset += chunk.length;
-    }
-    return result;
-};
 
 export const normalizeKey = (city: string | undefined | null, country?: string): string => {
   const clean = (text: string) => text
@@ -362,37 +305,6 @@ export const getCachedAudio = async (text: string, lang: string): Promise<string
     } catch (e) { return null; }
 };
 
-export const saveAudioToCache = async (text: string, lang: string, audioData: Uint8Array, city: string): Promise<string> => {
-    try {
-        const hash = await generateHash(text);
-        const sanitizedCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
-        // ✅ MP3 en vez de WAV — optimizado para carga móvil
-        const fileName = `${sanitizedCity}/${lang.toLowerCase()}/${Date.now()}.mp3`;
-        
-        const mp3Data = encodeToMp3(audioData);
-        const audioBlob = new Blob([mp3Data.buffer as ArrayBuffer], { type: 'audio/mpeg' });
-        
-        const { error: uploadError } = await supabase.storage.from('audios').upload(fileName, audioBlob, { 
-            contentType: 'audio/mpeg', 
-            cacheControl: '3600' 
-        });
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(fileName);
-        
-        await supabase.from('audio_cache').upsert({ 
-          text_hash: hash, 
-          language: lang.toLowerCase(), 
-          city: city, 
-          audio_url: publicUrl 
-        }, { onConflict: 'text_hash,language' });
-
-        return publicUrl;
-    } catch (e) { 
-        console.error("Audio cache error:", e);
-        return ""; 
-    }
-};
 
 export const validateEmailFormat = (email: string) => { 
   return String(email).toLowerCase().match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/); 
