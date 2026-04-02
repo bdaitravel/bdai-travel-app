@@ -165,7 +165,7 @@ const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): nu
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// ── Valida coordenadas de una parada contra Nominatim con Pipeline Híbrido ──
+// ── Valida coordenadas de una parada contra Nominatim y Photon con Pipeline Híbrido ──
 const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null, requestTs: { last: number }): Promise<Stop> => {
     const waitForRateLimit = async () => {
         const elapsed = Date.now() - requestTs.last;
@@ -173,60 +173,65 @@ const verifyStopCoordinates = async (stop: Stop, city: string, country: string, 
         requestTs.last = Date.now();
     };
 
+    const cleanName = stop.name
+        .split(/\s*[-–]\s*/)[0]
+        .split(/\s*\(/)[0]
+        .replace(/\b(y|e|o|and|or|et|und)\b.*/i, '')
+        .trim();
+
+    const queryNom = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
+    const queryPho = encodeURIComponent(`${cleanName} ${city}`);
+    const headers = { 'Accept-Language': 'en', 'User-Agent': 'bdai-app-' + Math.floor(Math.random()*10000) };
+
     try {
-        let cleanName = stop.name.split('-')[0].split('(')[0].split(/ y | e | \/ /i)[0].trim();
-        const query = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
+        // 1. Nominatim (Búsqueda estricta de fachadas y nomenclaturas oficiales)
+        await waitForRateLimit();
+        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${queryNom}&format=json&limit=1`;
+        const nomRes = await fetch(nomUrl, { headers, signal: AbortSignal.timeout(5000) }).catch(() => null);
         
-        const headers = { 'Accept-Language': 'en', 'User-Agent': 'bdai-app-' + Math.floor(Math.random()*10000) };
-
-        // Fase 1: Anclaje al Centro Real. Búsqueda estricta a ~4km a la redonda del centro urbano.
-        let data: any[] = [];
-        if (cityCenter) {
-            const viewbox = `${cityCenter.lng - 0.04},${cityCenter.lat + 0.04},${cityCenter.lng + 0.04},${cityCenter.lat - 0.04}`;
-            const boundedUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=3&viewbox=${viewbox}&bounded=1`;
-            await waitForRateLimit();
-            const boundedRes = await fetch(boundedUrl, { headers });
-            if (boundedRes.ok) data = await boundedRes.json();
-            else if (boundedRes.status === 429) console.error("!!! NOMINATIM BANNED (429) - Slow down !!!");
-        }
-
-        // Fase 2: Búsqueda Libre. Si no aparece en la caja estricta, probamos libremente en la ciudad.
-        if (data.length === 0) {
-            const freeQuery = encodeURIComponent(`${cleanName}, ${city}`);
-            const freeUrl = `https://nominatim.openstreetmap.org/search?q=${freeQuery}&format=json&limit=3`;
-            await waitForRateLimit();
-            const freeRes = await fetch(freeUrl, { headers });
-            if (freeRes.ok) data = await freeRes.json();
-            else if (freeRes.status === 429) console.error("!!! NOMINATIM BANNED (429) !!!");
-        }
-        
-        if (data && data.length > 0) {
-            const nomLat = parseFloat(data[0].lat);
-            const nomLon = parseFloat(data[0].lon);
-            const distToCenterKm = cityCenter ? haversineKm(nomLat, nomLon, cityCenter.lat, cityCenter.lng) : 0;
-            const distToGeminiKm = haversineKm(nomLat, nomLon, stop.latitude, stop.longitude);
-            
-            // Si ambas fuentes concuerdan (< 500m), muy alta confianza en Nominatim
-            if (distToGeminiKm <= 0.5) {
-                return { ...stop, latitude: nomLat, longitude: nomLon, coordinatesVerified: true };
+        if (nomRes?.ok) {
+            const data = await nomRes.json();
+            if (data && data.length > 0) {
+                const nomLat = parseFloat(data[0].lat);
+                const nomLon = parseFloat(data[0].lon);
+                const distToGeminiKm = haversineKm(nomLat, nomLon, stop.latitude, stop.longitude);
+                
+                // Si la fachada de Nominatim está a <= 100m de lo sugerido por Gemini, confiamos
+                if (distToGeminiKm <= 0.1) {
+                    console.log(`GIS ✅ ${stop.name}: Nominatim exacto (${distToGeminiKm.toFixed(2)}km dif)`);
+                    return { ...stop, latitude: nomLat, longitude: nomLon, coordinatesVerified: true };
+                }
+                console.warn(`GIS ⚠️ ${stop.name}: Nominatim diverge ${distToGeminiKm.toFixed(2)}km de Gemini. Probable homónimo.`);
             }
-            
-            // Si la distancia a Gemini es moderada (< 2km) y estamos dentro de la ciudad (< 5km del centro)
-            // asumimos que Nominatim tiene el lugar correcto (mejor precisión que Gemini).
-            if (distToGeminiKm <= 2.0 && (!cityCenter || distToCenterKm <= 5.0)) {
-                return { ...stop, latitude: nomLat, longitude: nomLon, coordinatesVerified: true };
-            }
-            
-            // Divergencia > 2km: Nominatim probablemente apuntó a un homónimo en otra parte
-            // de la ciudad o fuera de ella. Conservamos Gemini para evitar desplazar la parada.
-            console.warn(`GIS: Nominatim encontró ${stop.name} pero diverge ${distToGeminiKm.toFixed(1)}km de Gemini. Posible homónimo.`);
-        } else {
-             console.warn(`GIS: Nominatim NO pudo encontrar ${stop.name} en OpenStreetMap. Posible alucinación o calle sin número.`);
         }
+
+        // 2. Photon API (Búsqueda difusa de acrónimos, términos relajados o alternativos)
+        await waitForRateLimit();
+        const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=1`;
+        const phoRes = await fetch(phoUrl, { signal: AbortSignal.timeout(5000) }).catch(() => null);
+
+        if (phoRes?.ok) {
+            const data = await phoRes.json();
+            if (data && data.features && data.features.length > 0) {
+                const coords = data.features[0].geometry.coordinates; // Photon devuelve [lon, lat]
+                const phoLat = coords[1];
+                const phoLon = coords[0];
+                const distToGeminiKm = haversineKm(phoLat, phoLon, stop.latitude, stop.longitude);
+                
+                if (distToGeminiKm <= 0.1) {
+                    console.log(`GIS ✅ ${stop.name}: Photon acierto fuzzy (${distToGeminiKm.toFixed(2)}km dif)`);
+                    return { ...stop, latitude: phoLat, longitude: phoLon, coordinatesVerified: true };
+                }
+                console.warn(`GIS ⚠️ ${stop.name}: Photon diverge ${distToGeminiKm.toFixed(2)}km de Gemini. Probable homónimo.`);
+            }
+        }
+
     } catch (e) {
-        console.warn(`GIS Check failed for ${stop.name}`);
+        console.warn(`GIS Check error for '${stop.name}':`, e);
     }
-    // Fallback: Nos quedamos con las de Gemini sin verificar
+    
+    // 3. Fallback: Nos quedamos con las coordenadas generadas por Gemini (Ground Truth asuntivo)
+    console.log(`GIS ℹ️ ${stop.name}: Usando ground truth de Gemini.`);
     return { ...stop, coordinatesVerified: false };
 };
 
