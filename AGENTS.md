@@ -102,6 +102,13 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Zustand como fuente única de verdad:** Se eliminaron todas las escrituras directas a `localStorage.setItem('bdai_profile', ...)` de `App.tsx`. El perfil persiste vía `storageProvider` (localStorage en Capacitor, sessionStorage en web).
 - **Toast en vez de alert():** Todos los errores de UI usan `toast()` del componente `Toast.tsx`. Compatible con Capacitor.
 
-### Navegación & Rutas
-- **Caché de Rutas Geoespaciales (Obligatorio):** Para minimizar el consumo de cuotas de APIs de navegación (OSRM/OSM) e incrementar el rendimiento, las rutas entre paradas deben calcularse una sola vez y persistirse en el campo `routePolyline` de la tabla `tours_cache`.
-- **Estrategia Fallback:** Si un tour no tiene `routePolyline`, la app lo calculará en el cliente la primera vez e intentará persistirlo en el backend para futuros usuarios.
+### Navegación & Rutas (Opción B — Columna Dedicada)
+- **Arquitectura elegida:** Columna `route_polylines jsonb` separada en `tours_cache` (NO embebida en el objeto `data`). Permite actualizaciones quirúrgicas O(1) sin reescribir el blob completo de ~30KB por fila.
+- **Schema:** `tours_cache.route_polylines = { "[tour-id]": "encoded_polyline_string", ... }`. Clave = `tour.id`, valor = Google Encoded Polyline Format (OSRM).
+- **RPC `upsert_tour_polyline`:** Función SQL `SECURITY DEFINER` que usa `jsonb_set` para actualizar una sola clave del mapa sin leer ni reescribir el resto. Accesible por `anon` y `authenticated`.
+- **Flujo de escritura (tours nuevos):** `generateToursForCity` → `optimizeStopOrder` genera `routePolyline` via OSRM → `saveToursToCache` extrae automáticamente las polylines de los tours y las persiste en `route_polylines` por separado.
+- **Flujo de lectura (caché hit):** `select('data, route_polylines')` + rehidratación en cliente: `tour.routePolyline = savedPolylines[tour.id] ?? tour.routePolyline`.
+- **Estrategia Backfill Progresivo:** Si tours cargados desde caché carecen de polyline (los 1412 existentes), `backfillMissingPolylines()` lanza un proceso fire-and-forget en background: calcula con OSRM → llama a `updateRoutePolyline` (vía RPC) → silencioso, no bloquea UI. Los tours se enriquecen progresivamente con cada visita de usuario.
+- **Bug corregido:** `optimizeStopOrder` usaba `newDistance` y `newDuration` como variables no declaradas. Corregido: se derivan correctamente de `calculateRouteDistance` y `calculateDuration`.
+- **`fetchRoutePolyline` exportada:** Necesaria para el backfill desde `App.tsx`.
+- **`SchematicMap` sin cambios:** Ya consume `routePolyline` — ámbar si real, blanca si fallback.

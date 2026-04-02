@@ -288,12 +288,74 @@ export const saveToursToCache = async (city: string, country: string, language: 
   const slug = normalizeKey(city, country);
   if (!slug) return;
   try {
+    // Extraer polylines de los tours para guardarlas en la columna dedicada (Opción B)
+    // Esto evita tener que reescribir el blob 'data' completo (~30KB) en actualizaciones quirúrgicas
+    const routePolylines: Record<string, string> = {};
+    const cleanTours = tours.map(tour => {
+      if (tour.routePolyline && tour.id) {
+        routePolylines[tour.id] = tour.routePolyline;
+      }
+      // Guardamos la ruta también dentro del objeto tour para compatibilidad con lecturas directas
+      return tour;
+    });
+
     await supabase.from('tours_cache').upsert({ 
       city: slug, 
       language: language.toLowerCase(), 
-      data: tours 
+      data: cleanTours,
+      route_polylines: routePolylines
     }, { onConflict: 'city,language' });
+
+    const savedCount = Object.keys(routePolylines).length;
+    if (savedCount > 0) {
+      console.log(`🗺️ Cache saved: ${savedCount}/${tours.length} polylines persisted for ${slug}`);
+    }
   } catch (e) { console.error("❌ Error saving cache:", e); }
+};
+
+/**
+ * Lee solo las polylines guardadas para una ciudad/idioma.
+ * Operación qurúrgica: no lee el blob 'data' completo (~30KB).
+ */
+export const getRoutePolylines = async (citySlug: string, language: string): Promise<Record<string, string>> => {
+  try {
+    const { data, error } = await supabase
+      .from('tours_cache')
+      .select('route_polylines')
+      .eq('city', citySlug)
+      .eq('language', language.toLowerCase())
+      .maybeSingle();
+    if (error || !data?.route_polylines) return {};
+    return data.route_polylines as Record<string, string>;
+  } catch (e) {
+    return {};
+  }
+};
+
+/**
+ * Actualiza la polyline de un único tour sin reescribir el blob 'data'.
+ * Usar para persistir la polyline calculada en el cliente (estrategia fallback).
+ */
+export const updateRoutePolyline = async (
+  citySlug: string,
+  language: string,
+  tourId: string,
+  polyline: string
+): Promise<boolean> => {
+  try {
+    // jsonb_set permite actualizar una clave dentro del objeto JSONB sin leer ni reescribir el resto
+    const { error } = await supabase.rpc('upsert_tour_polyline', {
+      p_city: citySlug,
+      p_language: language.toLowerCase(),
+      p_tour_id: tourId,
+      p_polyline: polyline
+    });
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.warn('⚠️ Could not persist polyline to cache (non-critical):', e);
+    return false;
+  }
 };
 
 export const getCachedAudio = async (text: string, lang: string): Promise<string | null> => {

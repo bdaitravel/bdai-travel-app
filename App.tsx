@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppView, UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
-import { generateToursForCity, translateSearchQuery, QuotaError, normalizeCityWithAI } from './services/geminiService';
+import { generateToursForCity, translateSearchQuery, QuotaError, normalizeCityWithAI, fetchRoutePolyline } from './services/geminiService';
 import { TourCard, ActiveTourCard } from './components/TourCard';
 import { Leaderboard } from './components/Leaderboard';
 import { ProfileModal } from './components/ProfileModal';
@@ -36,7 +36,10 @@ import {
   calculateTravelerRank,
   checkBadges,
   searchCitiesInCache,
-  normalizeKey
+  normalizeKey,
+  saveToursToCache,
+  getRoutePolylines,
+  updateRoutePolyline
 } from './services/supabaseClient';
 
 const APP_DESC: Record<string, string> = {
@@ -297,6 +300,33 @@ export default function App() {
     const cleanName = selection.name?.split(',')[0].trim() || selection.city;
     const slug = (selection.slug || normalizeKey(cleanName, selection.countryEn || selection.country))
       .replace(/-/g, '_').toLowerCase();
+
+    /**
+     * Estrategia fallback de polylines (Opción B):
+     * Si tours vienen de caché sin polyline, las calculamos en background
+     * y las persistimos en Supabase para futuros usuarios. Fire-and-forget.
+     */
+    const backfillMissingPolylines = (tours: Tour[], citySlug: string, lang: string): void => {
+      const toursMissingPolyline = tours.filter(t => !t.routePolyline && t.stops?.length >= 2);
+      if (toursMissingPolyline.length === 0) return;
+
+      console.log(`🔄 Backfilling ${toursMissingPolyline.length} tour(s) without polyline for ${citySlug}...`);
+
+      // Sin await — corre silenciosamente en segundo plano
+      (async () => {
+        for (const tour of toursMissingPolyline) {
+          try {
+            const polyline = await fetchRoutePolyline(tour.stops);
+            if (polyline && tour.id) {
+              await updateRoutePolyline(citySlug, lang, tour.id, polyline);
+              console.log(`✅ Polyline backfilled for tour: ${tour.title}`);
+            }
+          } catch (e) {
+            console.warn(`⚠️ Backfill failed for ${tour.title} (non-critical):`, e);
+          }
+        }
+      })();
+    };
       
     setSelectedCityInfo({
       city: cleanName,
@@ -316,12 +346,20 @@ export default function App() {
       } else {
         // Búsqueda EXACTA únicamente — nunca mezclar ciudades distintas
         const { data: exact } = await supabase
-          .from('tours_cache').select('data')
+          .from('tours_cache').select('data, route_polylines')
           .eq('city', slug).eq('language', langCode.toLowerCase()).maybeSingle();
         if (exact?.data?.length > 0) {
-          setTours(exact.data);
+          // Rehidratar los tours con sus polylines guardadas (Opción B)
+          const savedPolylines: Record<string, string> = exact.route_polylines || {};
+          const toursWithPolylines = (exact.data as Tour[]).map(tour => ({
+            ...tour,
+            routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
+          }));
+          setTours(toursWithPolylines);
           navigateTo(AppView.CITY_DETAIL);
           setIsLoading(false);
+          // Backfill en background para tours sin polyline (rellena los 1412 existentes)
+          backfillMissingPolylines(toursWithPolylines, slug, langCode);
           return;
         }
       }
@@ -350,11 +388,15 @@ export default function App() {
       );
 
       if (generated.length > 0) {
-        await supabase.from('tours_cache').upsert({
-          city: slug,
-          language: langCode.toLowerCase(),
-          data: generated
-        }, { onConflict: 'city,language' });
+        // Usa saveToursToCache en vez del upsert directo.
+        // La función extrae automáticamente las routePolylines de los tours
+        // y las persiste en la columna dedicada (Opción B, fix del bug de persistencia).
+        await saveToursToCache(
+          cleanName,
+          selection.countryEn || selection.country,
+          langCode,
+          generated
+        );
 
         if (!firstTourReceived) {
           setTours(generated);

@@ -252,7 +252,7 @@ const processTourStops = async (tour: Tour, city: string, country: string, cityC
 };
 
 // ── Utilidades de navegación y enrutamiento ──────────────────────────────
-const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefined> => {
+export const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefined> => {
     if (!stops || stops.length < 2) return undefined;
     try {
         const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
@@ -555,12 +555,15 @@ const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
     // 4. Reordenar stops según el nuevo orden
     const reorderedStops = order.map(i => stops[i]);
 
-    // 5. Recalcular distance y duration
+    // 5. Recalcular distance y duration con las funciones de cálculo del módulo
     const totalDistKm = calculateRouteDistance(order, distMatrix);
-    // 6. Obtener la Polyline real para caché (NUEVO)
+    const newDistance = `${totalDistKm.toFixed(1)} km`;
+    const newDuration = calculateDuration(totalDistKm, reorderedStops.length);
+
+    // 6. Obtener la Polyline real desde OSRM para persistir en caché (Opción B)
     const routePolyline = await fetchRoutePolyline(reorderedStops);
 
-    console.log(`🗺️ Route optimized: ${tour.title} — ${reorderedStops.length} stops, ${newDistance}, ~${newDuration} (Polyline: ${routePolyline ? 'Yes' : 'No'})`);
+    console.log(`🗺️ Route optimized: ${tour.title} — ${reorderedStops.length} stops, ${newDistance}, ~${newDuration} (Polyline: ${routePolyline ? 'Yes ✅' : 'No ⚠️'})`);
 
     return {
         ...tour,
