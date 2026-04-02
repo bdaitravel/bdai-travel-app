@@ -1,0 +1,13 @@
+--SQL--
+DELETE FROM tours_cache WHERE city ILIKE '%logro%';
+DELETE FROM audio_cache WHERE city ILIKE '%logro%';
+
+
+--bucket--
+
+Ve a Storage en tu panel de Supabase.
+Entra en el bucket audios.
+Busca la carpeta logro o logrono.
+Haz clic en los tres puntos y selecciona Delete.
+
+https://slldavgsoxunkphqeamx.supabase.co/storage/v1/object/public/audio_cache/audio_cache/logro%C3%B1o/tour_logro%C3%B1o_es_es_1711930584161.mp3

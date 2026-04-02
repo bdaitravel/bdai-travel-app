@@ -101,3 +101,7 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Sin credenciales hardcoded:** `supabaseClient.ts` solo lee de variables de entorno. Si faltan, loga un error claro y no falla silenciosamente.
 - **Zustand como fuente única de verdad:** Se eliminaron todas las escrituras directas a `localStorage.setItem('bdai_profile', ...)` de `App.tsx`. El perfil persiste vía `storageProvider` (localStorage en Capacitor, sessionStorage en web).
 - **Toast en vez de alert():** Todos los errores de UI usan `toast()` del componente `Toast.tsx`. Compatible con Capacitor.
+
+### Navegación & Rutas
+- **Caché de Rutas Geoespaciales (Obligatorio):** Para minimizar el consumo de cuotas de APIs de navegación (OSRM/OSM) e incrementar el rendimiento, las rutas entre paradas deben calcularse una sola vez y persistirse en el campo `routePolyline` de la tabla `tours_cache`.
+- **Estrategia Fallback:** Si un tour no tiene `routePolyline`, la app lo calculará en el cliente la primera vez e intentará persistirlo en el backend para futuros usuarios.

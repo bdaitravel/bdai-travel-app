@@ -270,10 +270,10 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
         }
 
         fullPathRef.current = L.polyline(routePoints, {
-            color: 'white',
-            weight: 3,
-            opacity: 0.3,
-            dashArray: routePolyline ? undefined : '1, 10',
+            color: routePolyline ? '#fcd34d' : 'white', // Ámbar si es real, Blanco si es fallback
+            weight: routePolyline ? 4 : 2,
+            opacity: routePolyline ? 0.6 : 0.2,
+            dashArray: routePolyline ? undefined : '5, 10',
             lineJoin: 'round'
         }).addTo(map);
 

@@ -251,6 +251,25 @@ const processTourStops = async (tour: Tour, city: string, country: string, cityC
     return { ...tour, stops: results };
 };
 
+// ── Utilidades de navegación y enrutamiento ──────────────────────────────
+const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefined> => {
+    if (!stops || stops.length < 2) return undefined;
+    try {
+        const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
+        const url = `https://routing.openstreetmap.de/routed-foot/route/v1/driving/${coords}?overview=full&geometries=polyline`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
+                return data.routes[0].geometry;
+            }
+        }
+    } catch (e) {
+        console.warn("Global routing fetch failed:", e);
+    }
+    return undefined;
+};
+
 // ── Utilidades de optimización de ruta (9 reglas de pront-calcular-rutas) ─
 // Regla 1: Distancia Haversine entre dos puntos en km
 const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -518,7 +537,7 @@ const calculateDuration = (distanceKm: number, numStops: number): string => {
 };
 
 // Orquestador: aplica todo el pipeline de optimización a un tour (reglas 7, 8, 9)
-const optimizeStopOrder = (tour: Tour): Tour => {
+const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
     if (!tour.stops || tour.stops.length < 3) return tour;
 
     const stops = tour.stops;
@@ -538,18 +557,17 @@ const optimizeStopOrder = (tour: Tour): Tour => {
 
     // 5. Recalcular distance y duration
     const totalDistKm = calculateRouteDistance(order, distMatrix);
-    const newDistance = totalDistKm < 1
-        ? `${Math.round(totalDistKm * 1000)}m`
-        : `${totalDistKm.toFixed(1)} km`;
-    const newDuration = calculateDuration(totalDistKm, reorderedStops.length);
+    // 6. Obtener la Polyline real para caché (NUEVO)
+    const routePolyline = await fetchRoutePolyline(reorderedStops);
 
-    console.log(`🗺️ Route optimized: ${tour.title} — ${stops.length} stops, ${newDistance}, ~${newDuration}`);
+    console.log(`🗺️ Route optimized: ${tour.title} — ${reorderedStops.length} stops, ${newDistance}, ~${newDuration} (Polyline: ${routePolyline ? 'Yes' : 'No'})`);
 
     return {
         ...tour,
         stops: reorderedStops,
         distance: newDistance,
-        duration: newDuration
+        duration: newDuration,
+        routePolyline: routePolyline || tour.routePolyline
     };
 };
 
@@ -667,7 +685,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                         let tour = parsed[toursEmitted];
                         if (tour && tour.stops && tour.stops.length > 0) {
                             tour = await processTourStops(tour, city, country, cityInfo);
-                            tour = optimizeStopOrder(tour);
+                            tour = await optimizeStopOrder(tour);
                             onProgress(tour);
                             allTours.push(tour);
                         }
@@ -692,7 +710,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                     let tour = finalTours[toursEmitted];
                     if (tour && tour.stops && tour.stops.length > 0) {
                         tour = await processTourStops(tour, city, country, cityInfo);
-                        tour = optimizeStopOrder(tour);
+                        tour = await optimizeStopOrder(tour);
                         onProgress(tour);
                         allTours.push(tour);
                     }
@@ -704,7 +722,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 for (let i = 0; i < finalTours.length; i++) {
                     if (finalTours[i] && finalTours[i].stops?.length > 0) {
                         finalTours[i] = await processTourStops(finalTours[i], city, country, cityInfo);
-                        finalTours[i] = optimizeStopOrder(finalTours[i]);
+                        finalTours[i] = await optimizeStopOrder(finalTours[i]);
                     }
                 }
             }
@@ -730,7 +748,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 .replace(/```/g, '')
                 .trim();
             let tours = tryExtractTours(text);
-            tours = tours.map(t => t?.stops?.length > 0 ? optimizeStopOrder(t) : t);
+            tours = await Promise.all(tours.map(async t => t?.stops?.length > 0 ? await optimizeStopOrder(t) : t));
             if (onProgress) tours.forEach(t => { if (t?.stops?.length > 0) onProgress(t); });
             return tours.filter(t => t && t.stops && t.stops.length > 0);
         }
