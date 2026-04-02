@@ -154,19 +154,37 @@ const getCityTier = (population: number | null): CityTier => {
     return 'LARGE';
 };
 
+// ── Utilitario Haversine (hoistado para uso en toda la verificación GIS) ──
+const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 // ── Valida coordenadas de una parada contra Nominatim con Pipeline Híbrido ──
-const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null): Promise<Stop> => {
+const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null, requestTs: { last: number }): Promise<Stop> => {
+    const waitForRateLimit = async () => {
+        const elapsed = Date.now() - requestTs.last;
+        if (elapsed < 1100) await new Promise(r => setTimeout(r, 1100 - elapsed));
+        requestTs.last = Date.now();
+    };
+
     try {
         let cleanName = stop.name.split('-')[0].split('(')[0].split(/ y | e | \/ /i)[0].trim();
         const query = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
         
-        const headers = { 'Accept-Language': 'es', 'User-Agent': 'bdai-app-' + Math.floor(Math.random()*10000) };
+        const headers = { 'Accept-Language': 'en', 'User-Agent': 'bdai-app-' + Math.floor(Math.random()*10000) };
 
-        // Fase 1: Anclaje al Centro Real. Búsqueda muy estricta a ~4km a la redonda del centro urbano.
+        // Fase 1: Anclaje al Centro Real. Búsqueda estricta a ~4km a la redonda del centro urbano.
         let data: any[] = [];
         if (cityCenter) {
             const viewbox = `${cityCenter.lng - 0.04},${cityCenter.lat + 0.04},${cityCenter.lng + 0.04},${cityCenter.lat - 0.04}`;
-            const boundedUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&viewbox=${viewbox}&bounded=1`;
+            const boundedUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=3&viewbox=${viewbox}&bounded=1`;
+            await waitForRateLimit();
             const boundedRes = await fetch(boundedUrl, { headers });
             if (boundedRes.ok) data = await boundedRes.json();
             else if (boundedRes.status === 429) console.error("!!! NOMINATIM BANNED (429) - Slow down !!!");
@@ -174,8 +192,9 @@ const verifyStopCoordinates = async (stop: Stop, city: string, country: string, 
 
         // Fase 2: Búsqueda Libre. Si no aparece en la caja estricta, probamos libremente en la ciudad.
         if (data.length === 0) {
-            await new Promise(r => setTimeout(r, 1100)); // Obligatorio esperar 1s antes de otro hit
-            const freeUrl = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
+            const freeQuery = encodeURIComponent(`${cleanName}, ${city}`);
+            const freeUrl = `https://nominatim.openstreetmap.org/search?q=${freeQuery}&format=json&limit=3`;
+            await waitForRateLimit();
             const freeRes = await fetch(freeUrl, { headers });
             if (freeRes.ok) data = await freeRes.json();
             else if (freeRes.status === 429) console.error("!!! NOMINATIM BANNED (429) !!!");
@@ -184,29 +203,23 @@ const verifyStopCoordinates = async (stop: Stop, city: string, country: string, 
         if (data && data.length > 0) {
             const nomLat = parseFloat(data[0].lat);
             const nomLon = parseFloat(data[0].lon);
+            const distToCenterKm = cityCenter ? haversineKm(nomLat, nomLon, cityCenter.lat, cityCenter.lng) : 0;
+            const distToGeminiKm = haversineKm(nomLat, nomLon, stop.latitude, stop.longitude);
             
-            // Validación de control: Evita que Nominatim asigne París, Texas, si se buscó París, Francia.
-            let distToCenterKm = 0;
-            if (cityCenter) {
-                // Como `haversineDistance` se declara más abajo, usamos lógica in-line por hoisting seguro o lo llamamos si está disponible
-                const R = 6371;
-                const dLat = (nomLat - cityCenter.lat) * Math.PI / 180;
-                const dLon = (nomLon - cityCenter.lng) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(cityCenter.lat * Math.PI / 180) * Math.cos(nomLat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-                distToCenterKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            // Si ambas fuentes concuerdan (< 500m), muy alta confianza en Nominatim
+            if (distToGeminiKm <= 0.5) {
+                return { ...stop, latitude: nomLat, longitude: nomLon, coordinatesVerified: true };
             }
             
-            // Si está a < 15km del centro de la ciudad, confiamos en Nominatim por encima de Gemini
-            if (!cityCenter || distToCenterKm <= 15) {
-                return {
-                    ...stop,
-                    latitude: nomLat,
-                    longitude: nomLon,
-                    coordinatesVerified: true
-                };
-            } else {
-                console.warn(`GIS: Nominatim encontró ${stop.name} pero a ${distToCenterKm.toFixed(1)}km del centro de ${city}. Desviación extrema.`);
+            // Si la distancia a Gemini es moderada (< 2km) y estamos dentro de la ciudad (< 5km del centro)
+            // asumimos que Nominatim tiene el lugar correcto (mejor precisión que Gemini).
+            if (distToGeminiKm <= 2.0 && (!cityCenter || distToCenterKm <= 5.0)) {
+                return { ...stop, latitude: nomLat, longitude: nomLon, coordinatesVerified: true };
             }
+            
+            // Divergencia > 2km: Nominatim probablemente apuntó a un homónimo en otra parte
+            // de la ciudad o fuera de ella. Conservamos Gemini para evitar desplazar la parada.
+            console.warn(`GIS: Nominatim encontró ${stop.name} pero diverge ${distToGeminiKm.toFixed(1)}km de Gemini. Posible homónimo.`);
         } else {
              console.warn(`GIS: Nominatim NO pudo encontrar ${stop.name} en OpenStreetMap. Posible alucinación o calle sin número.`);
         }
@@ -217,35 +230,24 @@ const verifyStopCoordinates = async (stop: Stop, city: string, country: string, 
     return { ...stop, coordinatesVerified: false };
 };
 
-// ── Geocodifica todas las paradas de un tour (concurrente, pool de 4) ────
+// ── Geocodifica todas las paradas de un tour (secuencial) ────
 const processTourStops = async (tour: Tour, city: string, country: string, cityCenter: {lat: number, lng: number} | null): Promise<Tour> => {
     const stops = tour.stops;
-    const CONCURRENCY = 1; // Nominatim RESTRICTS to 1 request per second max. Violating this triggers 429 HTTP errors and IP bans.
     const results: Stop[] = [];
+    const requestTs = { last: 0 };
 
-    // Procesa secuencialmente para respetar Nominatim
-    for (let i = 0; i < stops.length; i += CONCURRENCY) {
-        const batch = stops.slice(i, i + CONCURRENCY);
-        const batchResults = await Promise.all(
-            batch.map(stop => verifyStopCoordinates(stop, city, country, cityCenter))
-        );
-        for (const res of batchResults) {
-            if (cityCenter) {
-                const R = 6371;
-                const dLat = (res.latitude - cityCenter.lat) * Math.PI / 180;
-                const dLon = (res.longitude - cityCenter.lng) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(cityCenter.lat * Math.PI / 180) * Math.cos(res.latitude * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-                const distToCenterKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                if (distToCenterKm > 15) {
-                    console.warn(`GIS: Eliminando '${res.name}' por estar a ${distToCenterKm.toFixed(1)}km del centro de ${city}. Alucinación o desvío catastrófico de Nominatim.`);
-                    continue; // Skip
-                }
+    for (const stop of stops) {
+        const verified = await verifyStopCoordinates(stop, city, country, cityCenter, requestTs);
+        
+        // Conservamos la parada a menos que sea una alucinación geográfica (> 10km)
+        if (cityCenter) {
+            const distToCenterKm = haversineKm(verified.latitude, verified.longitude, cityCenter.lat, cityCenter.lng);
+            if (distToCenterKm > 10) {
+                console.warn(`GIS: Eliminando '${verified.name}' por estar a ${distToCenterKm.toFixed(1)}km del centro de ${city}. Alucinación catastrófica.`);
+                continue;
             }
-            results.push(res);
         }
-        if (i + CONCURRENCY < stops.length) {
-            await new Promise(r => setTimeout(r, 1200)); // Esperar >1000ms
-        }
+        results.push(verified);
     }
 
     return { ...tour, stops: results };
@@ -254,10 +256,10 @@ const processTourStops = async (tour: Tour, city: string, country: string, cityC
 // ── Utilidades de navegación y enrutamiento ──────────────────────────────
 export const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefined> => {
     if (!stops || stops.length < 2) return undefined;
-    try {
-        const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
-        const url = `https://routing.openstreetmap.de/routed-foot/route/v1/driving/${coords}?overview=full&geometries=polyline`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        try {
+            const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
+            const url = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=polyline`;
+            const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (res.ok) {
             const data = await res.json();
             if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
@@ -587,7 +589,7 @@ export const generateToursForCity = async (
     // Eliminar el sistema de tiers basado en población. Usamos una directiva universal.
     // getCityTier y population ya no limitan agresivamente a la IA
     const coordsAnchor = cityInfo
-        ? `The exact center of ${city} is at latitude ${cityInfo.lat.toFixed(6)}, longitude ${cityInfo.lng.toFixed(6)}. ALL stops must be within 2km of this point.`
+        ? `The geographic anchor for ${city} is near latitude ${cityInfo.lat.toFixed(6)}, longitude ${cityInfo.lng.toFixed(6)}. NOTE: This may be the administrative center. Focus strictly on the Historical Center / Old Town, keeping stops within a 2km radius of each other.`
         : `All stops must be located within the urban area of ${city}, ${country}.`;
 
     const prompt = `You are generating tours for ${city}, ${country} in ${user.language}.
@@ -687,10 +689,8 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                     while (parsed.length > toursEmitted) {
                         let tour = parsed[toursEmitted];
                         if (tour && tour.stops && tour.stops.length > 0) {
-                            tour = await processTourStops(tour, city, country, cityInfo);
-                            tour = await optimizeStopOrder(tour);
-                            onProgress(tour);
-                            allTours.push(tour);
+                            // Emitir feedback inmediato sin bloquear la conexión de stream
+                            onProgress({ ...tour, title: tour.title + " (Validando...)" });
                         }
                         toursEmitted++;
                     }
@@ -707,30 +707,23 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 .trim();
 
             const finalTours = tryExtractTours(finalText);
+            const verifiedTours: Tour[] = [];
 
-            if (onProgress) {
-                while (toursEmitted < finalTours.length) {
-                    let tour = finalTours[toursEmitted];
-                    if (tour && tour.stops && tour.stops.length > 0) {
-                        tour = await processTourStops(tour, city, country, cityInfo);
-                        tour = await optimizeStopOrder(tour);
-                        onProgress(tour);
-                        allTours.push(tour);
-                    }
-                    toursEmitted++;
-                }
-            }
-
-            if (allTours.length === 0) {
-                for (let i = 0; i < finalTours.length; i++) {
-                    if (finalTours[i] && finalTours[i].stops?.length > 0) {
-                        finalTours[i] = await processTourStops(finalTours[i], city, country, cityInfo);
-                        finalTours[i] = await optimizeStopOrder(finalTours[i]);
+            // Verificación y optimización FUERA del bucle de stream para evitar timeouts
+            for (let tour of finalTours) {
+                if (tour && tour.stops && tour.stops.length > 0) {
+                    let processed = await processTourStops(tour, city, country, cityInfo);
+                    processed = await optimizeStopOrder(processed);
+                    
+                    // Solo conservar tours que mantengan al menos 2 paradas tras la limpieza GIS
+                    if (processed.stops.length >= 2) {
+                        verifiedTours.push(processed);
+                        if (onProgress) onProgress(processed); // Actualizar UI con tour verificado
                     }
                 }
             }
 
-            return allTours.length > 0 ? allTours : finalTours.filter(t => t && t.stops && t.stops.length > 0);
+            return verifiedTours;
 
         } catch (streamError) {
             console.warn("Streaming failed, falling back to non-streaming", streamError);
@@ -751,9 +744,18 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 .replace(/```/g, '')
                 .trim();
             let tours = tryExtractTours(text);
-            tours = await Promise.all(tours.map(async t => t?.stops?.length > 0 ? await optimizeStopOrder(t) : t));
-            if (onProgress) tours.forEach(t => { if (t?.stops?.length > 0) onProgress(t); });
-            return tours.filter(t => t && t.stops && t.stops.length > 0);
+            const verifiedTours: Tour[] = [];
+            for (let tour of tours) {
+                if (tour && tour.stops && tour.stops.length > 0) {
+                    let processed = await processTourStops(tour, city, country, cityInfo);
+                    processed = await optimizeStopOrder(processed);
+                    if (processed.stops.length >= 2) {
+                        verifiedTours.push(processed);
+                        if (onProgress) onProgress(processed);
+                    }
+                }
+            }
+            return verifiedTours;
         }
     });
 };

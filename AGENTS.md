@@ -89,7 +89,14 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Regla de oro:** "Truth First, Style Second". El sarcasmo DAI solo se aplica tras confirmar la existencia real del lugar.
 
 ### Rendimiento & Estabilidad
-- **Nominatim concurrente:** `processTourStops` usa un pool de 4 peticiones paralelas con 250ms entre batches (en vez de 600ms secuencial). Reduce el tiempo de ~14s a ~3-4s para 24 paradas.
+- **`haversineKm` hoistada:** Función Haversine disponible en todo el módulo desde la línea ~125 de `geminiService.ts`. Elimina los cálculos inline duplicados que había en `verifyStopCoordinates` y `processTourStops`.
+- **Pipeline de verificación GIS (Híbrido - 3 niveles de confianza):** `verifyStopCoordinates` acepta un `requestTs` compartido (rate limiter de 1 req/s) y devuelve siempre una parada (nunca la elimina):
+  1. **Nivel 1 (Validado O.S.M.):** Si la distancia entre lo que dice Nominatim y lo que dijo Gemini es <500m, o <2km pero dentro del área de tour (<5km del centro): `coordinatesVerified = true` con coords de Nominatim (más exactas, ej. fachada de edificio).
+  2. **Nivel 2 (Homónimo - conservando Gemini):** Si la distancia Gemini ↔ Nominatim diverge (>2km), asumimos que Nominatim ha encontrado un homónimo en el lugar equivocado, por tanto conservamos las coordenadas de Gemini intactas para no desplazar erróneamente el punto en el mapa (pero con `coordinatesVerified = false`).
+- **Viewbox Restituido:** Búsqueda acotada con viewbox de `±0.04°` (~4.4km radius), adecuado para cubrir sobradamente el radio de los tours que es de 2km del centro histórico, reduciendo resultados fuera de contexto desde un principio.
+- **Rate limiting inteligente y creación secuencial:** `requestTs` compartido entre todas las paradas del tour, se procesa de forma **secuencial**. Solo espera dinámicamente el tiempo necesario para completar el límite de 1100ms reales por petición desde la anterior llamada a la red (evitando `setTimeout(1200)` ciegos).
+- **Política de eliminación de Paradas:** Una parada NUNCA se elimina del tour, excepto si las coordenadas resultantes del proceso apuntan a un lugar que está a **>10km** de distancia del centro de la ciudad (alucinación fuera del contexto del casco histórico de 2km).
+- **`Accept-Language: en`** en todas las búsquedas de OSM, asegurando mejor respuesta internacional y menos fallos de geocoding.
 - **ErrorBoundary global:** `components/ErrorBoundary.tsx` envuelve toda la app en `index.tsx`. Captura errores de render no manejados y muestra una pantalla de fallback con el botón "Reportar Fallo" pre-relleno con el stack trace, URL, timestamp y user agent.
 - **`ReportBugModal`:** Acepta `prefillText?: string` para recibir datos del `ErrorBoundary` automáticamente.
 - **GPS validation:** Las coordenadas de `watchPosition` se validan (rango válido, no NaN, no 0,0) antes de actualizar el estado.
