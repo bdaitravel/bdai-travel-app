@@ -122,8 +122,8 @@ CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, Fre
     });
 };
 
-// ── Obtiene coords + población via Nominatim ──────────────────────────────
-const getCityInfo = async (city: string, country: string): Promise<CityInfo | null> => {
+// ── Obtiene metadatos geográficos reales de la ciudad (Ground Truth) ──
+export const getCityInfo = async (city: string, country: string): Promise<any> => {
     try {
         const query = encodeURIComponent(`${city}, ${country}`);
         const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&extratags=1`, {
@@ -166,7 +166,7 @@ const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): nu
 };
 
 // ── Valida coordenadas de una parada contra Nominatim y Photon con Pipeline Híbrido ──
-const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null, requestTs: { last: number }): Promise<Stop> => {
+export const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null, requestTs: { last: number }): Promise<Stop> => {
     const waitForRateLimit = async () => {
         const elapsed = Date.now() - requestTs.last;
         if (elapsed < 1100) await new Promise(r => setTimeout(r, 1100 - elapsed));
@@ -544,7 +544,7 @@ const calculateDuration = (distanceKm: number, numStops: number): string => {
 };
 
 // Orquestador: aplica todo el pipeline de optimización a un tour (reglas 7, 8, 9)
-const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
+export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
     if (!tour.stops || tour.stops.length < 3) return tour;
 
     const stops = tour.stops;
