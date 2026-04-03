@@ -1,43 +1,15 @@
-import { GoogleGenAI, Modality, Type } from "@google/genai";
-import { Tour, Stop, UserProfile, LANGUAGES } from '../types';
-import { supabase, getCachedAudio, normalizeKey } from './supabaseClient';
+import { Type } from "@google/genai";
+import { Tour, Stop, UserProfile, TourCache } from '../types';
+import { normalizeKey } from './supabaseClient';
+import { ai, handleAiCall, QuotaError } from './gemini/config';
+import { SYSTEM_INSTRUCTION, generateTourPrompt } from './gemini/prompts';
+import { getCityInfo, processTourStops } from '../lib/gisService';
+import { optimizeStopOrder } from '../lib/routingService';
 
-// ── Singleton: una sola instancia para todo el módulo ──────────────────────
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+export { QuotaError };
 
-// ── Tipos auxiliares ───────────────────────────────────────────────────────
+// ── Tipos auxiliares (se mantienen aquí por ahora) ─────────────────────────
 type CityTier = 'SMALL' | 'MEDIUM' | 'LARGE';
-
-interface CityInfo {
-    lat: number;
-    lng: number;
-    population: number | null;
-}
-
-// ── Clases de error propias ────────────────────────────────────────────────
-export class QuotaError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = "QuotaError";
-    }
-}
-
-// ── Wrapper con reintentos y backoff exponencial ───────────────────────────
-const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
-    try {
-        return await fn();
-    } catch (error: any) {
-        const errorMsg = typeof error === 'string' ? error : JSON.stringify(error);
-        if (errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED") || errorMsg.includes("quota")) {
-            if (retries > 0) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return handleAiCall(fn, retries - 1, delay * 2);
-            }
-            throw new QuotaError("Límite excedido. Por favor, usa tu clave API.");
-        }
-        throw error;
-    }
-};
 
 // ── Traduce o normaliza la búsqueda del usuario ───────────────────────────
 export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
@@ -72,24 +44,16 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
 RULES:
 - Correct any typos (e.g. "florensia" → Florence, "barcelon" → Barcelona, "madri" → Madrid).
 - Recognize city/town names in ANY language and translate to English internally.
-  Examples: "Londres"=London UK, "Florencia"=Florence Italy, "Londra"=London UK, "Nueva York"=New York USA, "倫敦"=London UK, "لندن"=London UK
 - CRITICAL: If the city name exists in multiple countries, return ALL of them.
-  Example: "Logrono" → Logroño Spain, Logroño Ecuador, Logroño Argentina (all 3!)
-  Example: "London" → London UK, London Ontario Canada, London Ohio USA
-  Example: "Florence" → Florence Italy, Florence Alabama USA, Florence South Carolina USA
-  Example: "Santiago" → Santiago Chile, Santiago de Compostela Spain
-  Example: "Victoria" → Victoria Canada, Victoria Australia, Victoria Seychelles
 - Return between 1 and 5 results, most famous/relevant first.
 - NEVER return only 1 result if the name exists in multiple places.
 
 For each result return:
-- "cityEn": Official city name in ENGLISH ONLY. Never use accents or local language names.
-- "cityLocal": City name translated to "${userLanguage}". If no translation exists, use English.
+- "cityEn": Official city name in ENGLISH ONLY.
+- "cityLocal": City name translated to "${userLanguage}".
 - "country": Country name in "${userLanguage}".
-- "countryEn": Country name in ENGLISH ONLY (e.g. "Italy", "United Kingdom", "United States").
-- "countryCode": 2-letter ISO country code in UPPERCASE (e.g. "IT", "GB", "US", "ES").
-
-CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, French, or any other language for these two fields.`,
+- "countryEn": Country name in ENGLISH ONLY.
+- "countryCode": 2-letter ISO country code in UPPERCASE.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -122,512 +86,13 @@ CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, Fre
     });
 };
 
-// ── Obtiene metadatos geográficos reales de la ciudad (Ground Truth) ──
-export const getCityInfo = async (city: string, country: string): Promise<any> => {
+// ── Helper para extracción de JSON acumulado ───────────────────────────────
+const tryExtractTours = (text: string): Tour[] => {
     try {
-        const query = encodeURIComponent(`${city}, ${country}`);
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&extratags=1`, {
-            headers: { 'Accept-Language': 'en', 'User-Agent': 'bdai-travel-app/1.0' }
-        });
-        const data = await res.json();
-        if (data && data.length > 0) {
-            const population = data[0].extratags?.population
-                ? parseInt(data[0].extratags.population, 10)
-                : null;
-            return {
-                lat: parseFloat(data[0].lat),
-                lng: parseFloat(data[0].lon),
-                population
-            };
-        }
-    } catch (e) {
-        console.warn('Nominatim city lookup failed:', e);
-    }
-    return null;
-};
-
-// ── Clasifica la localidad en 3 niveles ───────────────────────────────────
-const getCityTier = (population: number | null): CityTier => {
-    if (population === null) return 'MEDIUM'; // Sin datos → asumimos tamaño medio
-    if (population < 10_000) return 'SMALL';
-    if (population < 200_000) return 'MEDIUM';
-    return 'LARGE';
-};
-
-// ── Utilitario Haversine (hoistado para uso en toda la verificación GIS) ──
-const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
-// Helper para comparar nombres (sin tildes, minúsculas, trim)
-const normalizeForMatch = (s: string) => 
-    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-
-// ── Valida coordenadas de una parada contra Nominatim y Photon con umbral de 30m + Rescate por Nombre ──
-export const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: { lat: number, lng: number } | null, requestTs: { last: number }): Promise<Stop> => {
-    // 1. Limpieza de nombre para búsqueda (ej. "Catedral - Logroño" -> "Catedral")
-    const cleanName = stop.name
-        .split(/\s*[-–]\s*/)[0]
-        .split(/\s*\(/)[0]
-        .replace(/\b(y|e|o|and|or|et|und)\b.*/i, '')
-        .trim();
-
-    const queryNom = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
-    const queryPho = encodeURIComponent(`${cleanName} ${city}`);
-
-    const waitForRateLimit = async () => {
-        const elapsed = Date.now() - requestTs.last;
-        if (elapsed < 1100) await new Promise(r => setTimeout(r, 1100 - elapsed));
-        requestTs.last = Date.now();
-    };
-
-    try {
-        let bestAuthorityLat = 0;
-        let bestAuthorityLon = 0;
-        let foundMatch = false;
-
-        // A) Intento con Nominatim (Búsqueda estricta + Identidad)
-        await waitForRateLimit();
-        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${queryNom}&format=json&limit=1&addressdetails=1`;
-        const nomRes = await fetch(nomUrl, { signal: AbortSignal.timeout(4000) }).catch(() => null);
-
-        if (nomRes?.ok) {
-            const data = await nomRes.json();
-            if (data && data.length > 0) {
-                const res = data[0];
-                const nLat = parseFloat(res.lat);
-                const nLon = parseFloat(res.lon);
-                const dist = haversineKm(stop.latitude, stop.longitude, nLat, nLon);
-
-                // Match 100% de identidad (usamos la primera parte del display_name que suele ser el nombre del POI)
-                const osmName = res.display_name.split(',')[0].trim();
-                const isExactMatch = normalizeForMatch(cleanName) === normalizeForMatch(osmName);
-
-                if (isExactMatch || dist <= 0.03) { // Rescate Total o Imán 30m
-                    console.log(`GIS 🎯 ${isExactMatch ? 'RESCATE (Match 100%)' : 'SNAP (30m)'} para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
-                    bestAuthorityLat = nLat;
-                    bestAuthorityLon = nLon;
-                    foundMatch = true;
-                }
-            }
-        }
-
-        // B) Si Nominatim falló, probamos Photon (Búsqueda difusa)
-        if (!foundMatch) {
-            await waitForRateLimit();
-            const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=1`;
-            const phoRes = await fetch(phoUrl, { signal: AbortSignal.timeout(4000) }).catch(() => null);
-
-            if (phoRes?.ok) {
-                const data = await phoRes.json();
-                if (data && data.features && data.features.length > 0) {
-                    const feature = data.features[0];
-                    const coords = feature.geometry.coordinates; // [lon, lat]
-                    const pLat = coords[1];
-                    const pLon = coords[0];
-                    const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
-                    
-                    const photonName = feature.properties.name || "";
-                    const isExactMatch = normalizeForMatch(cleanName) === normalizeForMatch(photonName);
-
-                    if (isExactMatch || dist <= 0.03) {
-                        console.log(`GIS 🎯 ${isExactMatch ? 'RESCATE (Photon Match 100%)' : 'SNAP (Photon 30m)'} para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
-                        bestAuthorityLat = pLat;
-                        bestAuthorityLon = pLon;
-                        foundMatch = true;
-                    }
-                }
-            }
-        }
-
-        if (foundMatch) {
-            return { ...stop, latitude: bestAuthorityLat, longitude: bestAuthorityLon, coordinatesVerified: true };
-        }
-
-    } catch (e) {
-        console.warn(`GIS Refinement error for '${stop.name}':`, e);
-    }
-
-    // Si nada coincidió, confiamos en la lectura original de Gemini+GoogleSearch
-    console.log(`GIS 🔮 ${stop.name}: Manteniendo punto original de Google Search (Sin snap cercano < 30m ni match exacto).`);
-    return { ...stop, coordinatesVerified: false };
-};
-
-// ── Geocodifica todas las paradas de un tour (secuencial) ────
-const processTourStops = async (tour: Tour, city: string, country: string, cityCenter: { lat: number, lng: number } | null): Promise<Tour> => {
-    const stops = tour.stops;
-    const results: Stop[] = [];
-    const requestTs = { last: 0 };
-
-    for (const stop of stops) {
-        const verified = await verifyStopCoordinates(stop, city, country, cityCenter, requestTs);
-
-        // Conservamos la parada a menos que sea una alucinación geográfica (> 10km)
-        if (cityCenter) {
-            const distToCenterKm = haversineKm(verified.latitude, verified.longitude, cityCenter.lat, cityCenter.lng);
-            if (distToCenterKm > 10) {
-                console.warn(`GIS: Eliminando '${verified.name}' por estar a ${distToCenterKm.toFixed(1)}km del centro de ${city}. Alucinación catastrófica.`);
-                continue;
-            }
-        }
-        results.push(verified);
-    }
-
-    return { ...tour, stops: results };
-};
-
-// ── Utilidades de navegación y enrutamiento ──────────────────────────────
-export const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefined> => {
-    if (!stops || stops.length < 2) return undefined;
-    try {
-        const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
-        const url = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=polyline`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-        if (res.ok) {
-            const data = await res.json();
-            if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
-                return data.routes[0].geometry;
-            }
-        }
-    } catch (e) {
-        console.warn("Global routing fetch failed:", e);
-    }
-    return undefined;
-};
-
-// ── Utilidades de optimización de ruta (9 reglas de pront-calcular-rutas) ─
-// Regla 1: Distancia Haversine entre dos puntos en km
-const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Radio de la Tierra en km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
-
-// Regla 1: Construye la matriz NxN de distancias entre todas las paradas
-const buildDistanceMatrix = (stops: Stop[]): number[][] => {
-    const n = stops.length;
-    const matrix: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
-    for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-            const d = haversineDistance(stops[i].latitude, stops[i].longitude, stops[j].latitude, stops[j].longitude);
-            matrix[i][j] = d;
-            matrix[j][i] = d;
-        }
-    }
-    return matrix;
-};
-
-// Regla 5: Detecta paradas en el mismo edificio (<30m) que deben ir consecutivas
-const groupSameBuilding = (stops: Stop[], distMatrix: number[][]): Map<number, number[]> => {
-    const groups = new Map<number, number[]>();
-    const assigned = new Set<number>();
-    for (let i = 0; i < stops.length; i++) {
-        if (assigned.has(i)) continue;
-        const group = [i];
-        for (let j = i + 1; j < stops.length; j++) {
-            if (assigned.has(j)) continue;
-            if (distMatrix[i][j] < 0.030) { // < 30 metros
-                group.push(j);
-                assigned.add(j);
-            }
-        }
-        if (group.length > 1) {
-            for (const idx of group) {
-                groups.set(idx, group);
-                assigned.add(idx);
-            }
-        }
-    }
-    return groups;
-};
-
-// Regla 6: Agrupa paradas en clusters por proximidad (threshold en km)
-const clusterStops = (stops: Stop[], distMatrix: number[][], threshold = 0.150): number[][] => {
-    const n = stops.length;
-    const visited = new Set<number>();
-    const clusters: number[][] = [];
-
-    for (let i = 0; i < n; i++) {
-        if (visited.has(i)) continue;
-        const cluster = [i];
-        visited.add(i);
-        // BFS para encontrar paradas conectadas dentro del umbral
-        const queue = [i];
-        while (queue.length > 0) {
-            const current = queue.shift()!;
-            for (let j = 0; j < n; j++) {
-                if (!visited.has(j) && distMatrix[current][j] <= threshold) {
-                    cluster.push(j);
-                    visited.add(j);
-                    queue.push(j);
-                }
-            }
-        }
-        clusters.push(cluster);
-    }
-    return clusters;
-};
-
-// Regla 2: Nearest Neighbor TSP probando TODOS los puntos de inicio
-const nearestNeighborTSP = (stops: Stop[], distMatrix: number[][]): number[] => {
-    const n = stops.length;
-    if (n <= 2) return stops.map((_, i) => i);
-
-    // Regla 5 + 6: pre-calcular agrupaciones
-    const buildingGroups = groupSameBuilding(stops, distMatrix);
-    const clusters = clusterStops(stops, distMatrix);
-
-    let bestOrder: number[] = [];
-    let bestDist = Infinity;
-
-    // Probar cada parada como punto de inicio
-    for (let start = 0; start < n; start++) {
-        const visited = new Set<number>();
-        const order: number[] = [];
-        let current = start;
-
-        while (order.length < n) {
-            if (visited.has(current)) {
-                // Buscar siguiente no visitado más cercano
-                let minD = Infinity;
-                let next = -1;
-                for (let j = 0; j < n; j++) {
-                    if (!visited.has(j) && distMatrix[current][j] < minD) {
-                        minD = distMatrix[current][j];
-                        next = j;
-                    }
-                }
-                if (next === -1) break;
-                current = next;
-            }
-
-            order.push(current);
-            visited.add(current);
-
-            // Regla 5: si current tiene compañeros de edificio, añadirlos todos
-            const buildingGroup = buildingGroups.get(current);
-            if (buildingGroup) {
-                for (const buddy of buildingGroup) {
-                    if (!visited.has(buddy)) {
-                        order.push(buddy);
-                        visited.add(buddy);
-                    }
-                }
-            }
-
-            // Regla 6: si quedan paradas del mismo cluster, priorizarlas
-            const currentCluster = clusters.find(c => c.includes(current));
-            if (currentCluster) {
-                const remaining = currentCluster.filter(idx => !visited.has(idx));
-                // Ordenar remaining por distancia al current
-                remaining.sort((a, b) => distMatrix[current][a] - distMatrix[current][b]);
-                for (const idx of remaining) {
-                    if (!visited.has(idx)) {
-                        order.push(idx);
-                        visited.add(idx);
-                        // También respetar regla 5 para estos
-                        const bg = buildingGroups.get(idx);
-                        if (bg) {
-                            for (const buddy of bg) {
-                                if (!visited.has(buddy)) {
-                                    order.push(buddy);
-                                    visited.add(buddy);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Siguiente: vecino más cercano no visitado
-            let minD = Infinity;
-            let next = -1;
-            for (let j = 0; j < n; j++) {
-                if (!visited.has(j) && distMatrix[current][j] < minD) {
-                    minD = distMatrix[current][j];
-                    next = j;
-                }
-            }
-            if (next === -1) break;
-            current = next;
-        }
-
-        // Calcular distancia total de esta ruta
-        let totalDist = 0;
-        for (let i = 0; i < order.length - 1; i++) {
-            totalDist += distMatrix[order[i]][order[i + 1]];
-        }
-        if (totalDist < bestDist) {
-            bestDist = totalDist;
-            bestOrder = [...order];
-        }
-    }
-
-    return bestOrder;
-};
-
-// Regla 2 (complemento): 2-opt local search para deshacer cruces
-const twoOptImprove = (order: number[], distMatrix: number[][]): number[] => {
-    const n = order.length;
-    if (n < 4) return order;
-
-    let improved = true;
-    let route = [...order];
-
-    while (improved) {
-        improved = false;
-        for (let i = 0; i < n - 2; i++) {
-            for (let j = i + 2; j < n; j++) {
-                if (j === n - 1 && i === 0) continue; // Evitar invertir toda la ruta
-
-                const currentDist = distMatrix[route[i]][route[i + 1]] + distMatrix[route[j]][route[(j + 1) % n]];
-                const newDist = distMatrix[route[i]][route[j]] + distMatrix[route[i + 1]][route[(j + 1) % n]];
-
-                if (newDist < currentDist - 0.001) { // Umbral para evitar ruido flotante
-                    // Invertir el segmento entre i+1 y j
-                    const reversed = route.slice(i + 1, j + 1).reverse();
-                    route = [...route.slice(0, i + 1), ...reversed, ...route.slice(j + 1)];
-                    improved = true;
-                }
-            }
-        }
-    }
-    return route;
-};
-
-// Regla 3: Mueve la parada más famosa (mayor milesReward) al final si desvío ≤ 20%
-const applyFamousLastRule = (order: number[], stops: Stop[], distMatrix: number[][]): number[] => {
-    if (order.length < 3) return order;
-
-    // Encontrar la parada con mayor milesReward
-    let maxReward = 0;
-    let famousIdx = -1;
-    for (const idx of order) {
-        const reward = stops[idx].photoSpot?.milesReward || 0;
-        if (reward > maxReward) {
-            maxReward = reward;
-            famousIdx = idx;
-        }
-    }
-
-    if (famousIdx === -1 || order[order.length - 1] === famousIdx) return order;
-
-    // Calcular distancia actual
-    let currentTotal = 0;
-    for (let i = 0; i < order.length - 1; i++) {
-        currentTotal += distMatrix[order[i]][order[i + 1]];
-    }
-
-    // Construir ruta alternativa con famousIdx al final
-    const withoutFamous = order.filter(idx => idx !== famousIdx);
-    withoutFamous.push(famousIdx);
-
-    let newTotal = 0;
-    for (let i = 0; i < withoutFamous.length - 1; i++) {
-        newTotal += distMatrix[withoutFamous[i]][withoutFamous[i + 1]];
-    }
-
-    // Solo aplicar si el desvío no supera el 20%
-    if (newTotal <= currentTotal * 1.20) {
-        return withoutFamous;
-    }
-
-    return order;
-};
-
-// Regla 8: Calcula distancia total de la ruta en km
-const calculateRouteDistance = (order: number[], distMatrix: number[][]): number => {
-    let total = 0;
-    for (let i = 0; i < order.length - 1; i++) {
-        total += distMatrix[order[i]][order[i + 1]];
-    }
-    return total;
-};
-
-// Regla 8: Calcula duración estimada del tour
-const calculateDuration = (distanceKm: number, numStops: number): string => {
-    const walkingMinutes = distanceKm * 15;       // 15 min/km ritmo turístico
-    const stopMinutes = numStops * 7.5;            // 7.5 min promedio por parada
-    const photoMargin = 20;                        // 20 min margen para fotos
-    const totalMinutes = Math.round(walkingMinutes + stopMinutes + photoMargin);
-
-    if (totalMinutes < 60) return `${totalMinutes} min`;
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
-};
-
-// Orquestador: aplica todo el pipeline de optimización a un tour (reglas 7, 8, 9)
-export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
-    if (!tour.stops || tour.stops.length < 3) return tour;
-
-    const stops = tour.stops;
-    const distMatrix = buildDistanceMatrix(stops);
-
-    // 1. Nearest Neighbor TSP con clusters y agrupación de edificios
-    let order = nearestNeighborTSP(stops, distMatrix);
-
-    // 2. 2-opt para deshacer cruces
-    order = twoOptImprove(order, distMatrix);
-
-    // 3. Regla de oro: parada famosa al final (si coste ≤ 20%)
-    order = applyFamousLastRule(order, stops, distMatrix);
-
-    // 4. Reordenar stops según el nuevo orden (TSP)
-    let reorderedStops = order.map(i => stops[i]);
-
-    // Depuración en frío: Eliminar solapamientos visuales extremos (< 15 metros)
-    const mergedStops: Stop[] = [];
-
-    for (let i = 0; i < reorderedStops.length; i++) {
-        let current = reorderedStops[i];
-        let wasDropped = false;
-
-        for (let j = 0; j < mergedStops.length; j++) {
-            let existing = mergedStops[j];
-            const dist = haversineKm(current.latitude, current.longitude, existing.latitude, existing.longitude);
-
-            // Compuerta de Solapamiento Espacial Extremo (< 15m)
-            if (dist < 0.015) {
-                console.log(`🗺️ DROP: '${current.name}' solapado a ${dist.toFixed(3)}km de '${existing.name}'. Punto excluido del tour para evitar redundancia.`);
-                wasDropped = true;
-                break;
-            }
-        }
-
-        if (!wasDropped) {
-            mergedStops.push(current);
-        }
-    }
-    reorderedStops = mergedStops;
-
-    // 5. Recalcular distance y duration con las funciones de cálculo del módulo
-    const totalDistKm = calculateRouteDistance(order, distMatrix);
-    const newDistance = `${totalDistKm.toFixed(1)} km`;
-    const newDuration = calculateDuration(totalDistKm, reorderedStops.length);
-
-    // 6. Obtener la Polyline real desde OSRM para persistir en caché (Opción B)
-    const routePolyline = await fetchRoutePolyline(reorderedStops);
-
-    console.log(`🗺️ Route optimized: ${tour.title} — ${reorderedStops.length} stops, ${newDistance}, ~${newDuration} (Polyline: ${routePolyline ? 'Yes ✅' : 'No ⚠️'})`);
-
-    return {
-        ...tour,
-        stops: reorderedStops,
-        distance: newDistance,
-        duration: newDuration,
-        routePolyline: routePolyline || tour.routePolyline
-    };
+        const match = text.match(/\[[\s\S]*\]/);
+        if (match) return JSON.parse(match[0]);
+    } catch (e) {}
+    return [];
 };
 
 // ── Generación adaptada de tours por nivel de ciudad ─────────────────────
@@ -638,89 +103,16 @@ export const generateToursForCity = async (
     onProgress?: (tour: Tour) => void
 ): Promise<Tour[]> => {
 
-    // 1. Datos geográficos reales para anclar la generación
+    // 1. Datos geográficos reales para anclar la generación (desde GIS Service)
     const cityInfo = await getCityInfo(city, country);
-    // Eliminar el sistema de tiers basado en población. Usamos una directiva universal.
-    // getCityTier y population ya no limitan agresivamente a la IA
     const coordsAnchor = cityInfo
         ? `The geographic anchor for ${city} is near latitude ${cityInfo.lat.toFixed(6)}, longitude ${cityInfo.lng.toFixed(6)}. NOTE: This may be the administrative center. Focus strictly on the Historical Center / Old Town, keeping stops within a 2km radius of each other.`
         : `All stops must be located within the urban area of ${city}, ${country}.`;
 
-    const prompt = `You are generating tours for ${city}, ${country} in ${user.language}.
-
-GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
-
-UNIVERSAL RIGOR & NO-INVENTION RULE:
-- Find the PERFECT BALANCE: Do not discard obscure but real places, but absolutely NEVER HALLUCINATE non-existent ones (e.g., if it can't be found on the internet, DO NOT invent it).
-- ALL places MUST be 100% real, verifiable, documented, and existing today.
-- NEVER invent street names, bars, monuments, or hidden spots. 
-- GEOGRAPHIC STRICTNESS: ALL places MUST realistically exist physically inside the borders of ${city}, ${country}. Do NOT borrow or import real places from other cities or distant towns under any circumstance. If you run out of real places in ${city}, simply stop. 
-
-DEEP RETRIEVAL FOR DYNAMIC TOUR COUNT (CRITICAL):
-Your PRIMARY GOAL is to generate exactly 3 thematic tours (up to 36 stops total, max 12 stops per tour). 
-To achieve this, you MUST perform a DEEP RETRIEVAL of your knowledge base for ${city} and its specific regional heritage. Search exhaustively for:
-- Historic civil & religious architecture
-- Traditional local markets and plazas
-- Authentic cultural, artistic, or gastronomic hot-spots specific to this region
-- Iconic local viewpoints or parks
-- Verified hidden local gems and specific building numbers
-
-ONLY if the city genuinely lacks the real, verifiable heritage to reach 24-36 valid stops without inventing, you should gracefully degrade:
-- If fewer than 12 truly real stops exist: generate EXACTLY 1 tour (up to 12 stops).
-- If 12 to 23 truly real stops exist: generate EXACTLY 2 tours (up to 12 stops each).
-- If 24 or more real stops exist: generate EXACTLY 3 tours (up to 12 stops each).
-DO NOT repeat any stop across tours. DO NOT generate more tours than what you can fill entirely with VERIFIABLE places.
-
-DAI'S ABSOLUTE COMMANDS (PERSONA & STYLE):
-- TONE: You are DAI. You are SARCASTIC, WITTY, and SOPHISTICATED.
-- GENDER IDENTITY (CRITICAL): You are a **FEMALE** AI Guide. Whenever referring to yourself (DAI) or being referred to, ALWAYS use **third-person feminine singular** (e.g., "Ella", "La Guía").
-- INTERACTION (CULTURAL ADAPTABILITY): Address the tourist in the **second person**, using the most appropriate form for the target language and culture (e.g., in Spanish, use "tú" for Spain but consider "usted" if culturally more resonant or to create ironic distance). Adapt the form to maintain your sarcastic and sophisticated tone.
-- TRUTH FIRST, STYLE SECOND: Before adding any wit or sarcasm, verify the place actually exists and is open TODAY. Your humor is the cherry on top of undeniable truth — not a substitute for it.
-- NO HALLUCINATIONS: NEVER INVENT A NAME OR A STOP. It is strictly forbidden to hallucinate buildings, bars, or castles. If Wikipedia or Google Maps doesn't know it, YOU MUST NOT INCLUDE IT.
-- ANTI-WIKIPEDIA: Wikipedia is your enemy. If you sound like an encyclopedia, you fail. Tell the secrets, the mysteries, and the dark curiosities. Mock the "typical" tourist while revealing the true soul of the city.
-- NO CITATIONS: NEVER use citations, footnotes, or references like [1] or (2). NEVER.
-
-THEMES TO USE (pick as many as needed based on stop count above):
-1. "Hidden Gems & Dark Secrets"
-2. "Historical & Architectural Marvels"
-3. "Local Traditions, Art, Food & Authentic Culture" (Focus on the true regional heritage, gastronomy, and art that make this place unique worldwide).
-(If only 1 tour, use the most fitting theme or combine them in the title.)
-
-STRICT CATEGORIZATION RULES (CRITICAL):
-- 'architecture': MUST be used for ALL churches, cathedrals, bridges, iconic buildings, and skyscrapers.
-- 'historical': MUST be used for palaces, castles, ruins, and monuments.
-- 'culture': ONLY for theaters, music venues, festivals, or intangible traditions.
-- 'food': ONLY for places where you eat or buy food.
-- 'art': ONLY for museums, galleries, or street art.
-- 'nature': ONLY for parks, gardens, or viewpoints.
-- 'photo': ONLY for spots whose primary value is the view/photo.
-
-FORMAT RULES:
-1. Return ONLY a valid JSON array.
-2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
-3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
-4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be strictly within the boundaries of ${city}.
-   - CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. NEVER guess or estimate coordinates. Always search for the real location.
-5. Content in ${user.language}.`;
-
-    const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC **FEMALE** AI travel guide.
-You HATE boring Wikipedia-style descriptions.
-Your voice is female, so whenever you refer to yourself (DAI) or are described, you must use **third-person feminine singular** (e.g., "Ella", "La Guía DAI").
-However, you ALWAYS address the tourist in the **second person**, choosing the most culturally appropriate form (informal or formal) to maintain your sophisticated and sarcastic persona.
-Your tone is witty, sophisticated, and slightly mocking of typical tourists.
-
-DAI STYLE REFERENCE (CRITICAL):
-"La Redonda es a Logroño lo que las perlas a un buen collar: el centro de todas las miradas. Se llama así porque se levantó sobre una iglesia románica circular, aunque de redonda ahora solo tiene el nombre y quizás las ganas de dar vueltas por su interior. Lo más espectacular son sus torres gemelas, un alarde de barroco que te hace sentir pequeño, como debe ser. Por dentro, el silencio es majestuoso. Busca el cuadro atribuido a Miguel Ángel; si es verdad o no, es irrelevante, lo que importa es la elegancia de la leyenda. Ella, tu guía, te recomienda practicar la humildad o simplemente admirar cómo se construía cuando no había prisa por terminar antes del próximo trimestre fiscal. No te pierdas el detalle del pórtico, que tu guía DAI ha seleccionado especialmente para que sientas envidia de los canteros del siglo XVI."
-
-You love sharing the dark secrets, mysteries, and curiosities of cities.
-You NEVER use citations, footnotes, or references.
-You are real, accurate, but never boring.
-TRUTH BEFORE STYLE: Always confirm a place exists before describing it. Wit is meaningless without accuracy.
-CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
-GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. Place stops within 2km radius of the provided center. Never place stops in neighboring towns or wrong locations.`;
+    // 2. Construcción del Prompt dinámico (desde Prompts module)
+    const prompt = generateTourPrompt(city, country, user, coordsAnchor);
 
     return handleAiCall(async () => {
-        const allTours: Tour[] = [];
         let accumulated = '';
         let toursEmitted = 0;
 
@@ -729,7 +121,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 model: 'gemini-2.5-flash',
                 contents: prompt,
                 config: {
-                    systemInstruction,
+                    systemInstruction: SYSTEM_INSTRUCTION,
                     tools: [{ googleSearch: {} }],
                     temperature: 0.7,
                     topP: 1,
@@ -746,7 +138,6 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                     while (parsed.length > toursEmitted) {
                         let tour = parsed[toursEmitted];
                         if (tour && tour.stops && tour.stops.length > 0) {
-                            // Emitir feedback inmediato sin bloquear la conexión de stream
                             onProgress({ ...tour, title: tour.title + " (Validando...)" });
                         }
                         toursEmitted++;
@@ -766,16 +157,15 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
             const finalTours = tryExtractTours(finalText);
             const verifiedTours: Tour[] = [];
 
-            // Verificación y optimización FUERA del bucle de stream para evitar timeouts
             for (let tour of finalTours) {
                 if (tour && tour.stops && tour.stops.length > 0) {
+                    // Pipeline modular: GIS Verification -> Routing Optimization
                     let processed = await processTourStops(tour, city, country, cityInfo);
                     processed = await optimizeStopOrder(processed);
 
-                    // Solo conservar tours que mantengan al menos 2 paradas tras la limpieza GIS
                     if (processed.stops.length >= 2) {
                         verifiedTours.push(processed);
-                        if (onProgress) onProgress(processed); // Actualizar UI con tour verificado
+                        if (onProgress) onProgress(processed);
                     }
                 }
             }
@@ -788,7 +178,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 model: 'gemini-2.5-flash',
                 contents: prompt,
                 config: {
-                    systemInstruction,
+                    systemInstruction: SYSTEM_INSTRUCTION,
                     tools: [{ googleSearch: {} }],
                     temperature: 0.7,
                     topP: 1,
@@ -801,140 +191,18 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 .replace(/```json/g, '')
                 .replace(/```/g, '')
                 .trim();
-            let tours = tryExtractTours(text);
+
+            const finalTours = tryExtractTours(text);
             const verifiedTours: Tour[] = [];
-            for (let tour of tours) {
+
+            for (let tour of finalTours) {
                 if (tour && tour.stops && tour.stops.length > 0) {
                     let processed = await processTourStops(tour, city, country, cityInfo);
                     processed = await optimizeStopOrder(processed);
-                    if (processed.stops.length >= 2) {
-                        verifiedTours.push(processed);
-                        if (onProgress) onProgress(processed);
-                    }
+                    if (processed.stops.length >= 2) verifiedTours.push(processed);
                 }
             }
             return verifiedTours;
         }
-    });
-};
-
-// ── Extracción robusta de tours del JSON parcial/streaming ────────────────
-const tryExtractTours = (text: string): Tour[] => {
-    let cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
-    const firstBracket = cleanText.indexOf('[');
-    const lastBracket = cleanText.lastIndexOf(']');
-    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-        cleanText = cleanText.substring(firstBracket, lastBracket + 1);
-    }
-
-    try {
-        const parsed = JSON.parse(cleanText);
-        if (Array.isArray(parsed)) return parsed;
-    } catch (e) {
-        // Expected during streaming, silently fallback to regex extraction
-    }
-
-    const tours: Tour[] = [];
-    try {
-        const tourMatches = text.matchAll(/\{[^{}]*"stops"\s*:\s*\[[^\]]*(?:\{[^{}]*\}[^\]]*)*\][^{}]*\}/gs);
-        for (const match of tourMatches) {
-            try {
-                const tour = JSON.parse(match[0]);
-                if (tour && tour.stops) tours.push(tour);
-            } catch { }
-        }
-    } catch { }
-
-    return tours;
-};
-
-// ── Mapa de voces por idioma para TTS (Inutilizado en cliente, movido a Edge Function) ─────
-const VOICE_MAP: Record<string, string> = {
-    es: 'Kore', en: 'Zephyr', fr: 'Charon', de: 'Fenrir', it: 'Puck'
-};
-
-// ── Generación de audio con caché y tono DAI (Proxy a Edge Function) ──
-export const generateAudio = async (text: string, language: string, city: string): Promise<string | null> => {
-    const cleanText = (text || "").trim();
-    if (!cleanText) return null;
-
-    try {
-        // 1. Invocamos la Edge Function (Seguridad Nivel Experto)
-        // La función centraliza: Generación Gemini -> Compresión -> Storage -> DB Cache
-        const { data, error } = await supabase.functions.invoke('generate-audio-dai', {
-            body: { text, language, city }
-        });
-
-        if (error || !data?.url) {
-            console.error("Edge Function error:", error);
-            return null;
-        }
-
-        return data.url;
-    } catch (e) {
-        console.error("Error calling generate-audio-dai:", e);
-        return null;
-    }
-};
-
-// ── Traducción batch de tours completos ───────────────────────────────────
-export const translateToursBatch = async (tours: Tour[], targetLanguage: string): Promise<Tour[]> => {
-    return handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `Translate to ${targetLanguage}: ${JSON.stringify(tours)}. Keep technical photo advice.`,
-            config: { responseMimeType: "application/json" }
-        });
-        return JSON.parse(response.text || "[]");
-    });
-};
-
-// ── Moderación básica de contenido ────────────────────────────────────────
-export const moderateContent = async (text: string): Promise<boolean> => {
-    return handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `Is this text safe? "${text}"`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: { isSafe: { type: Type.BOOLEAN } }
-                }
-            }
-        });
-        return JSON.parse(response.text || '{"isSafe": false}').isSafe;
-    });
-};
-
-// ── Status de la API ──────────────────────────────────────────────────────
-export const checkApiStatus = async (): Promise<{ ok: boolean, message: string }> => {
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: "Say 'OK'",
-        });
-        if (response.text) return { ok: true, message: "API is responding" };
-        return { ok: false, message: "Empty response" };
-    } catch (e: any) {
-        return { ok: false, message: e.message || "Error connecting to API" };
-    }
-};
-
-// ── Generación de postal/imagen de ciudad ─────────────────────────────────
-export const generateCityPostcard = async (city: string, interests: string[]): Promise<string | null> => {
-    return handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-preview-image-generation',
-            contents: { parts: [{ text: `Postcard of ${city}` }] },
-            config: {
-                responseModalities: [Modality.IMAGE, Modality.TEXT],
-                imageConfig: { aspectRatio: "9:16" }
-            }
-        });
-        const parts = response.candidates?.[0]?.content?.parts;
-        const part = parts?.find((p: any) => p.inlineData);
-        return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
     });
 };
