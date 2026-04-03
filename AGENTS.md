@@ -83,7 +83,7 @@ Como arquitecto senior y consultor estratégico, **debes**:
 ### Generación de Tours (geminiService.ts)
 - **Sistema de Rigor Universal:** La regla de "No Inventar" y referenciar solo POIs 100% reales es absoluta e independiente del tamaño de la ciudad. No se usan reglas más permisivas para ciudades grandes.
 - **Deep Retrieval para Volumen de Tours:** La cantidad de tours (1, 2 o 3) no se basa en la población, sino en el patrimonio extraíble. Se instruye a la IA a realizar una búsqueda exhaustiva (Deep Retrieval) en su base de conocimiento con el objetivo de alcanzar 3 tours temáticos (24 paradas). Solo si carece genuinamente de patrimonio real comprobable, reducirá dinámicamente a 2 o 1 tour.
-- **Coordinadas verificadas:** El campo `coordinatesVerified?: boolean` en la interfaz `Stop` diferencia POIs confirmados geométricamente por Nominatim (solo si hay match 100% o punto cercano <= 35m) de los generados por Gemini sin verificar.
+- **Coordinadas verificadas:** El campo `coordinatesVerified?: boolean` en la interfaz `Stop` diferencia POIs confirmados geométricamente por Nominatim (solo si hay match 100% o punto cercano <= 30m) de los generados por Gemini sin verificar.
 - **Radio máximo:** Todos los POIs deben estar a ≤2km del centro de la ciudad.
 - **Modelo IA:** Estandarizado en `gemini-2.5-flash` para texto y `gemini-2.0-flash-preview-image-generation` para imágenes.
 - **Regla de oro:** "Truth First, Style Second". El sarcasmo DAI solo se aplica tras confirmar la existencia real del lugar.
@@ -104,6 +104,11 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Flujo de Audio Persistente:** `generateAudio` es secuencial e íntegro. Si el audio no está en caché, se genera con Gemini, se sube obligatoriamente a Supabase Storage y se devuelve la URL pública del bucket. El `AudioManager` consume siempre desde la URL del bucket, garantizando que el audio ya "vive" en la nube antes de sonar por primera vez.
 - **AudioContext lifecycle:** El `AudioManager` singleton suspende el `AudioContext` al ir a segundo plano (`visibilitychange`) y lo reanuda al volver. Reduce consumo de batería en iOS/Android.
 - **`useDebounce` hook:** `lib/useDebounce.ts` sustituye el patrón manual `setTimeout + useRef` en `handleCitySearch`.
+
+### Identidad y Voz de DAI
+- **Persona Femenina:** Dado que la voz de la IA es femenina, toda referencia a DAI (la guía) debe ser en **tercera persona femenino singular** (ej. "Ella", "La Guía", "DAI ha seleccionado...").
+- **Interacción Cultural Adaptativa:** DAI se dirige al usuario en **segunda persona**, pero adaptando la forma (tú/usted, informal/formal) según el idioma y el contexto cultural de la ciudad visitada. El objetivo es mantener el tono sofisticado y sarcástico sin perder la resonancia cultural.
+- **Coherencia Gramatical:** Esta regla es obligatoria para todos los idiomas soportados donde el género gramatical sea aplicable.
 
 ### Seguridad & Estado
 - **Sin credenciales hardcoded:** `supabaseClient.ts` solo lee de variables de entorno. Si faltan, loga un error claro y no falla silenciosamente.
