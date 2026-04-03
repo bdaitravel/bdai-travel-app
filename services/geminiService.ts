@@ -97,10 +97,10 @@ CRITICAL: cityEn and countryEn MUST always be in English. Never use Spanish, Fre
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            cityEn:      { type: Type.STRING },
-                            cityLocal:   { type: Type.STRING },
-                            country:     { type: Type.STRING },
-                            countryEn:   { type: Type.STRING },
+                            cityEn: { type: Type.STRING },
+                            cityLocal: { type: Type.STRING },
+                            country: { type: Type.STRING },
+                            countryEn: { type: Type.STRING },
                             countryCode: { type: Type.STRING },
                         },
                         required: ["cityEn", "cityLocal", "country", "countryEn", "countryCode"]
@@ -166,7 +166,7 @@ const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): nu
 };
 
 // ── Valida coordenadas de una parada contra Nominatim y Photon con umbral de 20m ──
-export const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null, requestTs: { last: number }): Promise<Stop> => {
+export const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: { lat: number, lng: number } | null, requestTs: { last: number }): Promise<Stop> => {
     // 1. Limpieza de nombre para búsqueda (ej. "Catedral - Logroño" -> "Catedral")
     const cleanName = stop.name
         .split(/\s*[-–]\s*/)[0]
@@ -192,7 +192,7 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
         await waitForRateLimit();
         const nomUrl = `https://nominatim.openstreetmap.org/search?q=${queryNom}&format=json&limit=1`;
         const nomRes = await fetch(nomUrl, { signal: AbortSignal.timeout(4000) }).catch(() => null);
-        
+
         if (nomRes?.ok) {
             const data = await nomRes.json();
             if (data && data.length > 0) {
@@ -200,8 +200,8 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
                 const nLon = parseFloat(data[0].lon);
                 // Si está a < 20m del punto original de Google Search, lo adoptamos (Snap)
                 const dist = haversineKm(stop.latitude, stop.longitude, nLat, nLon);
-                if (dist <= 0.02) { // 20 Metros
-                    console.log(`GIS 🎯 SNAP (Nominatim): '${stop.name}' mejorado en fachada (${(dist*1000).toFixed(1)}m de ajuste).`);
+                if (dist <= 0.03) { // 30 Metros
+                    console.log(`GIS 🎯 SNAP (Nominatim): '${stop.name}' mejorado en fachada (${(dist * 1000).toFixed(1)}m de ajuste).`);
                     bestAuthorityLat = nLat;
                     bestAuthorityLon = nLon;
                     foundMatch = true;
@@ -214,7 +214,7 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
             await waitForRateLimit();
             const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=1`;
             const phoRes = await fetch(phoUrl, { signal: AbortSignal.timeout(4000) }).catch(() => null);
-            
+
             if (phoRes?.ok) {
                 const data = await phoRes.json();
                 if (data && data.features && data.features.length > 0) {
@@ -223,7 +223,7 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
                     const pLon = coords[0];
                     const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
                     if (dist <= 0.02) {
-                        console.log(`GIS 🎯 SNAP (Photon): '${stop.name}' mejorado en fachada (${(dist*1000).toFixed(1)}m de ajuste).`);
+                        console.log(`GIS 🎯 SNAP (Photon): '${stop.name}' mejorado en fachada (${(dist * 1000).toFixed(1)}m de ajuste).`);
                         bestAuthorityLat = pLat;
                         bestAuthorityLon = pLon;
                         foundMatch = true;
@@ -239,21 +239,21 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
     } catch (e) {
         console.warn(`GIS Refinement error for '${stop.name}':`, e);
     }
-    
+
     // Si nada está a < 20m, confiamos en la lectura original de Gemini+GoogleSearch
     console.log(`GIS 🔮 ${stop.name}: Manteniendo punto original de Google Search (Sin snap cercano < 20m).`);
     return { ...stop, coordinatesVerified: false };
 };
 
 // ── Geocodifica todas las paradas de un tour (secuencial) ────
-const processTourStops = async (tour: Tour, city: string, country: string, cityCenter: {lat: number, lng: number} | null): Promise<Tour> => {
+const processTourStops = async (tour: Tour, city: string, country: string, cityCenter: { lat: number, lng: number } | null): Promise<Tour> => {
     const stops = tour.stops;
     const results: Stop[] = [];
     const requestTs = { last: 0 };
 
     for (const stop of stops) {
         const verified = await verifyStopCoordinates(stop, city, country, cityCenter, requestTs);
-        
+
         // Conservamos la parada a menos que sea una alucinación geográfica (> 10km)
         if (cityCenter) {
             const distToCenterKm = haversineKm(verified.latitude, verified.longitude, cityCenter.lat, cityCenter.lng);
@@ -271,10 +271,10 @@ const processTourStops = async (tour: Tour, city: string, country: string, cityC
 // ── Utilidades de navegación y enrutamiento ──────────────────────────────
 export const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefined> => {
     if (!stops || stops.length < 2) return undefined;
-        try {
-            const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
-            const url = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=polyline`;
-            const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    try {
+        const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
+        const url = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=polyline`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (res.ok) {
             const data = await res.json();
             if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
@@ -582,15 +582,15 @@ export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
         for (let j = 0; j < mergedStops.length; j++) {
             let existing = mergedStops[j];
             const dist = haversineKm(current.latitude, current.longitude, existing.latitude, existing.longitude);
-            
+
             // Compuerta de Solapamiento Espacial Extremo (< 15m)
-            if (dist < 0.015) { 
+            if (dist < 0.015) {
                 console.log(`🗺️ DROP: '${current.name}' solapado a ${dist.toFixed(3)}km de '${existing.name}'. Punto excluido del tour para evitar redundancia.`);
                 wasDropped = true;
                 break;
             }
         }
-        
+
         if (!wasDropped) {
             mergedStops.push(current);
         }
@@ -712,7 +712,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
             const stream = await ai.models.generateContentStream({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
-                config: { 
+                config: {
                     systemInstruction,
                     tools: [{ googleSearch: {} }],
                     temperature: 0.7,
@@ -755,7 +755,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 if (tour && tour.stops && tour.stops.length > 0) {
                     let processed = await processTourStops(tour, city, country, cityInfo);
                     processed = await optimizeStopOrder(processed);
-                    
+
                     // Solo conservar tours que mantengan al menos 2 paradas tras la limpieza GIS
                     if (processed.stops.length >= 2) {
                         verifiedTours.push(processed);
@@ -771,7 +771,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
-                config: { 
+                config: {
                     systemInstruction,
                     tools: [{ googleSearch: {} }],
                     temperature: 0.7,
@@ -826,9 +826,9 @@ const tryExtractTours = (text: string): Tour[] => {
             try {
                 const tour = JSON.parse(match[0]);
                 if (tour && tour.stops) tours.push(tour);
-            } catch {}
+            } catch { }
         }
-    } catch {}
+    } catch { }
 
     return tours;
 };
