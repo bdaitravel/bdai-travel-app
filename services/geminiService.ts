@@ -165,11 +165,83 @@ const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): nu
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// ── Valida coordenadas de una parada contra Nominatim y Photon con Pipeline Híbrido ──
+// ── Valida coordenadas de una parada contra Nominatim y Photon con umbral de 20m ──
 export const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null, requestTs: { last: number }): Promise<Stop> => {
-    // EL USUARIO HA SOLICITADO CONFIAR ÚNICA Y EXCLUSIVAMENTE EN GEMINI + GOOGLE SEARCH.
-    // Todas las peticiones a Nominatim y Photon quedan bypasseadas.
-    console.log(`GIS 🔮 ${stop.name}: Usando coordenadas directas de Gemini+GoogleSearch.`);
+    // 1. Limpieza de nombre para búsqueda (ej. "Catedral - Logroño" -> "Catedral")
+    const cleanName = stop.name
+        .split(/\s*[-–]\s*/)[0]
+        .split(/\s*\(/)[0]
+        .replace(/\b(y|e|o|and|or|et|und)\b.*/i, '')
+        .trim();
+
+    const queryNom = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
+    const queryPho = encodeURIComponent(`${cleanName} ${city}`);
+
+    const waitForRateLimit = async () => {
+        const elapsed = Date.now() - requestTs.last;
+        if (elapsed < 1100) await new Promise(r => setTimeout(r, 1100 - elapsed));
+        requestTs.last = Date.now();
+    };
+
+    try {
+        let bestAuthorityLat = 0;
+        let bestAuthorityLon = 0;
+        let foundMatch = false;
+
+        // A) Intento con Nominatim (Búsqueda estricta)
+        await waitForRateLimit();
+        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${queryNom}&format=json&limit=1`;
+        const nomRes = await fetch(nomUrl, { signal: AbortSignal.timeout(4000) }).catch(() => null);
+        
+        if (nomRes?.ok) {
+            const data = await nomRes.json();
+            if (data && data.length > 0) {
+                const nLat = parseFloat(data[0].lat);
+                const nLon = parseFloat(data[0].lon);
+                // Si está a < 20m del punto original de Google Search, lo adoptamos (Snap)
+                const dist = haversineKm(stop.latitude, stop.longitude, nLat, nLon);
+                if (dist <= 0.02) { // 20 Metros
+                    console.log(`GIS 🎯 SNAP (Nominatim): '${stop.name}' mejorado en fachada (${(dist*1000).toFixed(1)}m de ajuste).`);
+                    bestAuthorityLat = nLat;
+                    bestAuthorityLon = nLon;
+                    foundMatch = true;
+                }
+            }
+        }
+
+        // B) Si Nominatim no encontró nada a < 20m, probamos Photon (Búsqueda difusa)
+        if (!foundMatch) {
+            await waitForRateLimit();
+            const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=1`;
+            const phoRes = await fetch(phoUrl, { signal: AbortSignal.timeout(4000) }).catch(() => null);
+            
+            if (phoRes?.ok) {
+                const data = await phoRes.json();
+                if (data && data.features && data.features.length > 0) {
+                    const coords = data.features[0].geometry.coordinates; // [lon, lat]
+                    const pLat = coords[1];
+                    const pLon = coords[0];
+                    const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
+                    if (dist <= 0.02) {
+                        console.log(`GIS 🎯 SNAP (Photon): '${stop.name}' mejorado en fachada (${(dist*1000).toFixed(1)}m de ajuste).`);
+                        bestAuthorityLat = pLat;
+                        bestAuthorityLon = pLon;
+                        foundMatch = true;
+                    }
+                }
+            }
+        }
+
+        if (foundMatch) {
+            return { ...stop, latitude: bestAuthorityLat, longitude: bestAuthorityLon, coordinatesVerified: true };
+        }
+
+    } catch (e) {
+        console.warn(`GIS Refinement error for '${stop.name}':`, e);
+    }
+    
+    // Si nada está a < 20m, confiamos en la lectura original de Gemini+GoogleSearch
+    console.log(`GIS 🔮 ${stop.name}: Manteniendo punto original de Google Search (Sin snap cercano < 20m).`);
     return { ...stop, coordinatesVerified: false };
 };
 
