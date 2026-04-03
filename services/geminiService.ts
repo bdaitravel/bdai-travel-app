@@ -165,7 +165,11 @@ const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): nu
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// ── Valida coordenadas de una parada contra Nominatim y Photon con umbral de 20m ──
+// Helper para comparar nombres (sin tildes, minúsculas, trim)
+const normalizeForMatch = (s: string) => 
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+// ── Valida coordenadas de una parada contra Nominatim y Photon con umbral de 30m + Rescate por Nombre ──
 export const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: { lat: number, lng: number } | null, requestTs: { last: number }): Promise<Stop> => {
     // 1. Limpieza de nombre para búsqueda (ej. "Catedral - Logroño" -> "Catedral")
     const cleanName = stop.name
@@ -188,20 +192,25 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
         let bestAuthorityLon = 0;
         let foundMatch = false;
 
-        // A) Intento con Nominatim (Búsqueda estricta)
+        // A) Intento con Nominatim (Búsqueda estricta + Identidad)
         await waitForRateLimit();
-        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${queryNom}&format=json&limit=1`;
+        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${queryNom}&format=json&limit=1&addressdetails=1`;
         const nomRes = await fetch(nomUrl, { signal: AbortSignal.timeout(4000) }).catch(() => null);
 
         if (nomRes?.ok) {
             const data = await nomRes.json();
             if (data && data.length > 0) {
-                const nLat = parseFloat(data[0].lat);
-                const nLon = parseFloat(data[0].lon);
-                // Si está a < 20m del punto original de Google Search, lo adoptamos (Snap)
+                const res = data[0];
+                const nLat = parseFloat(res.lat);
+                const nLon = parseFloat(res.lon);
                 const dist = haversineKm(stop.latitude, stop.longitude, nLat, nLon);
-                if (dist <= 0.03) { // 30 Metros
-                    console.log(`GIS 🎯 SNAP (Nominatim): '${stop.name}' mejorado en fachada (${(dist * 1000).toFixed(1)}m de ajuste).`);
+
+                // Match 100% de identidad (usamos la primera parte del display_name que suele ser el nombre del POI)
+                const osmName = res.display_name.split(',')[0].trim();
+                const isExactMatch = normalizeForMatch(cleanName) === normalizeForMatch(osmName);
+
+                if (isExactMatch || dist <= 0.03) { // Rescate Total o Imán 30m
+                    console.log(`GIS 🎯 ${isExactMatch ? 'RESCATE (Match 100%)' : 'SNAP (30m)'} para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
                     bestAuthorityLat = nLat;
                     bestAuthorityLon = nLon;
                     foundMatch = true;
@@ -209,7 +218,7 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
             }
         }
 
-        // B) Si Nominatim no encontró nada a < 20m, probamos Photon (Búsqueda difusa)
+        // B) Si Nominatim falló, probamos Photon (Búsqueda difusa)
         if (!foundMatch) {
             await waitForRateLimit();
             const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=1`;
@@ -218,12 +227,17 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
             if (phoRes?.ok) {
                 const data = await phoRes.json();
                 if (data && data.features && data.features.length > 0) {
-                    const coords = data.features[0].geometry.coordinates; // [lon, lat]
+                    const feature = data.features[0];
+                    const coords = feature.geometry.coordinates; // [lon, lat]
                     const pLat = coords[1];
                     const pLon = coords[0];
                     const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
-                    if (dist <= 0.02) {
-                        console.log(`GIS 🎯 SNAP (Photon): '${stop.name}' mejorado en fachada (${(dist * 1000).toFixed(1)}m de ajuste).`);
+                    
+                    const photonName = feature.properties.name || "";
+                    const isExactMatch = normalizeForMatch(cleanName) === normalizeForMatch(photonName);
+
+                    if (isExactMatch || dist <= 0.03) {
+                        console.log(`GIS 🎯 ${isExactMatch ? 'RESCATE (Photon Match 100%)' : 'SNAP (Photon 30m)'} para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
                         bestAuthorityLat = pLat;
                         bestAuthorityLon = pLon;
                         foundMatch = true;
@@ -240,8 +254,8 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
         console.warn(`GIS Refinement error for '${stop.name}':`, e);
     }
 
-    // Si nada está a < 20m, confiamos en la lectura original de Gemini+GoogleSearch
-    console.log(`GIS 🔮 ${stop.name}: Manteniendo punto original de Google Search (Sin snap cercano < 20m).`);
+    // Si nada coincidió, confiamos en la lectura original de Gemini+GoogleSearch
+    console.log(`GIS 🔮 ${stop.name}: Manteniendo punto original de Google Search (Sin snap cercano < 30m ni match exacto).`);
     return { ...stop, coordinatesVerified: false };
 };
 

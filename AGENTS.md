@@ -83,17 +83,18 @@ Como arquitecto senior y consultor estratégico, **debes**:
 ### Generación de Tours (geminiService.ts)
 - **Sistema de Rigor Universal:** La regla de "No Inventar" y referenciar solo POIs 100% reales es absoluta e independiente del tamaño de la ciudad. No se usan reglas más permisivas para ciudades grandes.
 - **Deep Retrieval para Volumen de Tours:** La cantidad de tours (1, 2 o 3) no se basa en la población, sino en el patrimonio extraíble. Se instruye a la IA a realizar una búsqueda exhaustiva (Deep Retrieval) en su base de conocimiento con el objetivo de alcanzar 3 tours temáticos (24 paradas). Solo si carece genuinamente de patrimonio real comprobable, reducirá dinámicamente a 2 o 1 tour.
-- **Coordinadas verificadas:** El campo `coordinatesVerified?: boolean` en la interfaz `Stop` diferencia POIs confirmados geométricamente por Nominatim (solo si están a < 500m de la estimación base) de los generados por Gemini sin verificar.
+- **Coordinadas verificadas:** El campo `coordinatesVerified?: boolean` en la interfaz `Stop` diferencia POIs confirmados geométricamente por Nominatim (solo si hay match 100% o punto cercano <= 35m) de los generados por Gemini sin verificar.
 - **Radio máximo:** Todos los POIs deben estar a ≤2km del centro de la ciudad.
 - **Modelo IA:** Estandarizado en `gemini-2.5-flash` para texto y `gemini-2.0-flash-preview-image-generation` para imágenes.
 - **Regla de oro:** "Truth First, Style Second". El sarcasmo DAI solo se aplica tras confirmar la existencia real del lugar.
 
 ### Rendimiento & Estabilidad
-- **`haversineKm` hoistada:** Función Haversine disponible en todo el módulo desde la línea ~125 de `geminiService.ts`. Elimina los cálculos inline duplicados que había en `verifyStopCoordinates` y `processTourStops`.
-- **Pipeline de verificación GIS en Cascada:** Se asume a **Gemini como el Ground Truth** inicial para las coordenadas, y se busca refinar la precisión de la "fachada" usando otras API solo si concuerdan de cerca (para evitar secuestros geográficos de falsos homónimos):
-  1. **Nominatim (Estricto):** Se pide confirmación a OSM. Si lo encuentra y difiere en `<= 100m` de lo dicho por Gemini, se adopta su lectura exacta (`coordinatesVerified = true`).
-  2. **Photon (Fuzzy-Fallback):** Si Nominatim falla o difiere en >100m, se recurre a `photon.komoot.io` que maneja acrónimos (ej. ESDIR) mejor gracias a ElasticSearch. Si acierta a `<= 100m`, adopta la fachada.
-  3. **Gemini (Fallback Final):** Si ambos fallan o divergen severamente, se conserva la coordenada dictaminada por Gemini para no romper la geolocalización, asumiendo su alta probabilidad de ser correcta a pesar de fallar en OSM  (`coordinatesVerified = false`).
+- **`haversineKm` hoistada:** Función Haversine disponible en todo el módulo desde la línea ~160 de `geminiService.ts`. Elimina los cálculos inline duplicados que había en `verifyStopCoordinates` y `processTourStops`.
+- **Pipeline de verificación GIS en Cascada:** Se asume a **Gemini como el Ground Truth** inicial para las coordenadas, y se busca refinar la precisión usando un sistema de dos niveles:
+  1. **Nivel RESCATE (Match 100%):** Si el nombre de la parada (tras `normalizeForMatch`) coincide **exactamente** con el del mapa (Nominatim/Photon), se adopta la coordenada oficial **sin límite de distancia** (dentro del radio de la ciudad). Esto recupera monumentos alucinados por Google.
+  2. **Nivel MAGNETO (Fachada 35m):** Si el nombre NO coincide exactamente (ej. calles genéricas), solo se aplica la corrección si el punto oficial está a **<= 35m** del original. Esto evita saltos accidentales a calles paralelas.
+  3. **Motores:** Nominatim (Estricto con `addressdetails=1`) -> Photon (Fuzzy/ElasticSearch).
+  4. **Gemini (Fallback Final):** Si no hay match 100% ni punto cercano <= 35m, se conserva la coordenada dictaminada por Gemini (`coordinatesVerified = false`).
 - **Rate limiting inteligente (Secuencial):** `requestTs` compartido. Solo espera el retraso inter-request necesario para respetar 1 req/s sin bloqueos excesivos (`setTimeout` dinámico).
 - **Política de eliminación de Paradas:** Una parada NUNCA se elimina del tour, excepto si las coordenadas resultantes del proceso apuntan a un lugar que está a **>10km** de distancia del centro de la ciudad (alucinación fuera del contexto del casco histórico de 2km).
 - **`Accept-Language: en`** en todas las búsquedas de OSM, asegurando mejor respuesta internacional y menos fallos de geocoding.
