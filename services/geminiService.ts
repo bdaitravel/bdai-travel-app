@@ -181,7 +181,10 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
 
     const queryNom = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
     const queryPho = encodeURIComponent(`${cleanName} ${city}`);
-    const headers = { 'Accept-Language': 'en', 'User-Agent': 'bdai-app-' + Math.floor(Math.random()*10000) };
+    const headers = { 'User-Agent': 'bdai-app-' + Math.floor(Math.random()*10000) };
+
+    let nomData: { lat: number, lon: number, type: string, class: string, isFromCity: boolean } | null = null;
+    let phoData: { lat: number, lon: number } | null = null;
 
     try {
         // 1. Nominatim (Búsqueda estricta de fachadas y nomenclaturas oficiales)
@@ -194,18 +197,21 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
             if (data && data.length > 0) {
                 const nomLat = parseFloat(data[0].lat);
                 const nomLon = parseFloat(data[0].lon);
-                const distToGeminiKm = haversineKm(nomLat, nomLon, stop.latitude, stop.longitude);
+                const distToCenter = cityCenter ? haversineKm(nomLat, nomLon, cityCenter.lat, cityCenter.lng) : 0;
                 
-                // Si la fachada de Nominatim está a <= 100m de lo sugerido por Gemini, confiamos
-                if (distToGeminiKm <= 0.1) {
-                    console.log(`GIS ✅ ${stop.name}: Nominatim exacto (${distToGeminiKm.toFixed(2)}km dif)`);
-                    return { ...stop, latitude: nomLat, longitude: nomLon, coordinatesVerified: true };
-                }
-                console.warn(`GIS ⚠️ ${stop.name}: Nominatim diverge ${distToGeminiKm.toFixed(2)}km de Gemini. Probable homónimo.`);
+                const type = data[0].type || '';
+                const nomClass = data[0].class || '';
+                const isGenericCity = (nomClass === 'place' || nomClass === 'administrative' || nomClass === 'boundary');
+
+                nomData = {
+                    lat: nomLat, lon: nomLon,
+                    type, class: nomClass,
+                    isFromCity: (!cityCenter || distToCenter <= 4.0) && !isGenericCity
+                };
             }
         }
 
-        // 2. Photon API (Búsqueda difusa de acrónimos, términos relajados o alternativos)
+        // 2. Photon API (Búsqueda difusa)
         await waitForRateLimit();
         const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=1`;
         const phoRes = await fetch(phoUrl, { signal: AbortSignal.timeout(5000) }).catch(() => null);
@@ -214,15 +220,41 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
             const data = await phoRes.json();
             if (data && data.features && data.features.length > 0) {
                 const coords = data.features[0].geometry.coordinates; // Photon devuelve [lon, lat]
-                const phoLat = coords[1];
-                const phoLon = coords[0];
-                const distToGeminiKm = haversineKm(phoLat, phoLon, stop.latitude, stop.longitude);
-                
-                if (distToGeminiKm <= 0.1) {
-                    console.log(`GIS ✅ ${stop.name}: Photon acierto fuzzy (${distToGeminiKm.toFixed(2)}km dif)`);
-                    return { ...stop, latitude: phoLat, longitude: phoLon, coordinatesVerified: true };
-                }
-                console.warn(`GIS ⚠️ ${stop.name}: Photon diverge ${distToGeminiKm.toFixed(2)}km de Gemini. Probable homónimo.`);
+                phoData = { lat: coords[1], lon: coords[0] };
+            }
+        }
+
+        // --- TRIANGULACIÓN Y CONSENSO ---
+        
+        // A) Consenso Fuerte: Nominatim y Photon devuelven el mismo punto físico (< 100m de diferencia entre ellos)
+        if (nomData && phoData && nomData.isFromCity) {
+            const enginesDiff = haversineKm(nomData.lat, nomData.lon, phoData.lat, phoData.lon);
+            if (enginesDiff <= 0.1) {
+                console.log(`GIS ✅ ${stop.name}: Triangulación exitosa OSM+Photon en consenso puro (${enginesDiff.toFixed(3)}km dif)`);
+                return { ...stop, latitude: nomData.lat, longitude: nomData.lon, coordinatesVerified: true };
+            }
+        }
+        
+        // B) Nominatim Solitario: Fuerte pero con filtros
+        if (nomData && nomData.isFromCity) {
+            // Rechazamos cruces de calles aleatorias si no concuerdan nada con Gemini
+            const isStreet = nomData.class === 'highway';
+            const distToGemini = haversineKm(nomData.lat, nomData.lon, stop.latitude, stop.longitude);
+            
+            if (!isStreet || distToGemini <= 0.35) {
+                console.log(`GIS ✅ ${stop.name}: Nominatim validado por autoridad (Clase: ${nomData.class}/${nomData.type})`);
+                return { ...stop, latitude: nomData.lat, longitude: nomData.lon, coordinatesVerified: true };
+            } else {
+                console.warn(`GIS ⚠️ ${stop.name}: Nominatim devolvió una calle genérica ('${nomData.class}') lejana a Gemini. Ignorando falso positivo.`);
+            }
+        }
+
+        // C) Photon Solitario: Débil y propenso a inventos. Exigimos que confirme a Gemini.
+        if (phoData) {
+            const distToGemini = haversineKm(phoData.lat, phoData.lon, stop.latitude, stop.longitude);
+            if (distToGemini <= 0.35) {
+                console.log(`GIS ✅ ${stop.name}: Photon validado mediante proximidad estricta a Gemini (${distToGemini.toFixed(2)}km)`);
+                return { ...stop, latitude: phoData.lat, longitude: phoData.lon, coordinatesVerified: true };
             }
         }
 
@@ -230,8 +262,8 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
         console.warn(`GIS Check error for '${stop.name}':`, e);
     }
     
-    // 3. Fallback: Nos quedamos con las coordenadas generadas por Gemini (Ground Truth asuntivo)
-    console.log(`GIS ℹ️ ${stop.name}: Usando ground truth de Gemini.`);
+    // 3. Fallback: Nos quedamos con las coordenadas generadas por Gemini (Ground Truth Asuntivo)
+    console.log(`GIS ℹ️ ${stop.name}: Sin consenso. Usando asunción de Gemini.`);
     return { ...stop, coordinatesVerified: false };
 };
 
@@ -559,8 +591,33 @@ export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
     // 3. Regla de oro: parada famosa al final (si coste ≤ 20%)
     order = applyFamousLastRule(order, stops, distMatrix);
 
-    // 4. Reordenar stops según el nuevo orden
-    const reorderedStops = order.map(i => stops[i]);
+    // 4. Reordenar stops según el nuevo orden (TSP)
+    let reorderedStops = order.map(i => stops[i]);
+
+    // Depuración en frío: Eliminar solapamientos visuales extremos (< 15 metros)
+    const mergedStops: Stop[] = [];
+
+    for (let i = 0; i < reorderedStops.length; i++) {
+        let current = reorderedStops[i];
+        let wasDropped = false;
+
+        for (let j = 0; j < mergedStops.length; j++) {
+            let existing = mergedStops[j];
+            const dist = haversineKm(current.latitude, current.longitude, existing.latitude, existing.longitude);
+            
+            // Compuerta de Solapamiento Espacial Extremo (< 15m)
+            if (dist < 0.015) { 
+                console.log(`🗺️ DROP: '${current.name}' solapado a ${dist.toFixed(3)}km de '${existing.name}'. Punto excluido del tour para evitar redundancia.`);
+                wasDropped = true;
+                break;
+            }
+        }
+        
+        if (!wasDropped) {
+            mergedStops.push(current);
+        }
+    }
+    reorderedStops = mergedStops;
 
     // 5. Recalcular distance y duration con las funciones de cálculo del módulo
     const totalDistKm = calculateRouteDistance(order, distMatrix);
@@ -651,7 +708,7 @@ FORMAT RULES:
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be strictly within the boundaries of ${city}.
-   - CRITICAL RULE: NEVER use a random location. Your coordinates should map to the MAIN ENTRANCE.
+   - CRITICAL RULE: You MUST use the Google Search tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. NEVER guess or use a random location. Your coordinates should map to the MAIN ENTRANCE.
 5. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide.
@@ -679,6 +736,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 contents: prompt,
                 config: { 
                     systemInstruction,
+                    tools: [{ googleSearch: {} }],
                     temperature: 0.7,
                     topP: 1,
                     topK: 1
@@ -737,6 +795,7 @@ GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. 
                 contents: prompt,
                 config: { 
                     systemInstruction,
+                    tools: [{ googleSearch: {} }],
                     temperature: 0.7,
                     topP: 1,
                     topK: 1
