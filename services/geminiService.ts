@@ -167,103 +167,9 @@ const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): nu
 
 // ── Valida coordenadas de una parada contra Nominatim y Photon con Pipeline Híbrido ──
 export const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: {lat: number, lng: number} | null, requestTs: { last: number }): Promise<Stop> => {
-    const waitForRateLimit = async () => {
-        const elapsed = Date.now() - requestTs.last;
-        if (elapsed < 1100) await new Promise(r => setTimeout(r, 1100 - elapsed));
-        requestTs.last = Date.now();
-    };
-
-    const cleanName = stop.name
-        .split(/\s*[-–]\s*/)[0]
-        .split(/\s*\(/)[0]
-        .replace(/\b(y|e|o|and|or|et|und)\b.*/i, '')
-        .trim();
-
-    const queryNom = encodeURIComponent(`${cleanName}, ${city}, ${country}`);
-    const queryPho = encodeURIComponent(`${cleanName} ${city}`);
-    const headers = { 'User-Agent': 'bdai-app-' + Math.floor(Math.random()*10000) };
-
-    let nomData: { lat: number, lon: number, type: string, class: string, isFromCity: boolean } | null = null;
-    let phoData: { lat: number, lon: number } | null = null;
-
-    try {
-        // 1. Nominatim (Búsqueda estricta de fachadas y nomenclaturas oficiales)
-        await waitForRateLimit();
-        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${queryNom}&format=json&limit=1`;
-        const nomRes = await fetch(nomUrl, { headers, signal: AbortSignal.timeout(5000) }).catch(() => null);
-        
-        if (nomRes?.ok) {
-            const data = await nomRes.json();
-            if (data && data.length > 0) {
-                const nomLat = parseFloat(data[0].lat);
-                const nomLon = parseFloat(data[0].lon);
-                const distToCenter = cityCenter ? haversineKm(nomLat, nomLon, cityCenter.lat, cityCenter.lng) : 0;
-                
-                const type = data[0].type || '';
-                const nomClass = data[0].class || '';
-                const isGenericCity = (nomClass === 'place' || nomClass === 'administrative' || nomClass === 'boundary');
-
-                nomData = {
-                    lat: nomLat, lon: nomLon,
-                    type, class: nomClass,
-                    isFromCity: (!cityCenter || distToCenter <= 4.0) && !isGenericCity
-                };
-            }
-        }
-
-        // 2. Photon API (Búsqueda difusa)
-        await waitForRateLimit();
-        const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=1`;
-        const phoRes = await fetch(phoUrl, { signal: AbortSignal.timeout(5000) }).catch(() => null);
-
-        if (phoRes?.ok) {
-            const data = await phoRes.json();
-            if (data && data.features && data.features.length > 0) {
-                const coords = data.features[0].geometry.coordinates; // Photon devuelve [lon, lat]
-                phoData = { lat: coords[1], lon: coords[0] };
-            }
-        }
-
-        // --- TRIANGULACIÓN Y CONSENSO ---
-        
-        // A) Consenso Fuerte: Nominatim y Photon devuelven el mismo punto físico (< 100m de diferencia entre ellos)
-        if (nomData && phoData && nomData.isFromCity) {
-            const enginesDiff = haversineKm(nomData.lat, nomData.lon, phoData.lat, phoData.lon);
-            if (enginesDiff <= 0.1) {
-                console.log(`GIS ✅ ${stop.name}: Triangulación exitosa OSM+Photon en consenso puro (${enginesDiff.toFixed(3)}km dif)`);
-                return { ...stop, latitude: nomData.lat, longitude: nomData.lon, coordinatesVerified: true };
-            }
-        }
-        
-        // B) Nominatim Solitario: Fuerte pero con filtros
-        if (nomData && nomData.isFromCity) {
-            // Rechazamos cruces de calles aleatorias si no concuerdan nada con Gemini
-            const isStreet = nomData.class === 'highway';
-            const distToGemini = haversineKm(nomData.lat, nomData.lon, stop.latitude, stop.longitude);
-            
-            if (!isStreet || distToGemini <= 0.35) {
-                console.log(`GIS ✅ ${stop.name}: Nominatim validado por autoridad (Clase: ${nomData.class}/${nomData.type})`);
-                return { ...stop, latitude: nomData.lat, longitude: nomData.lon, coordinatesVerified: true };
-            } else {
-                console.warn(`GIS ⚠️ ${stop.name}: Nominatim devolvió una calle genérica ('${nomData.class}') lejana a Gemini. Ignorando falso positivo.`);
-            }
-        }
-
-        // C) Photon Solitario: Débil y propenso a inventos. Exigimos que confirme a Gemini.
-        if (phoData) {
-            const distToGemini = haversineKm(phoData.lat, phoData.lon, stop.latitude, stop.longitude);
-            if (distToGemini <= 0.35) {
-                console.log(`GIS ✅ ${stop.name}: Photon validado mediante proximidad estricta a Gemini (${distToGemini.toFixed(2)}km)`);
-                return { ...stop, latitude: phoData.lat, longitude: phoData.lon, coordinatesVerified: true };
-            }
-        }
-
-    } catch (e) {
-        console.warn(`GIS Check error for '${stop.name}':`, e);
-    }
-    
-    // 3. Fallback: Nos quedamos con las coordenadas generadas por Gemini (Ground Truth Asuntivo)
-    console.log(`GIS ℹ️ ${stop.name}: Sin consenso. Usando asunción de Gemini.`);
+    // EL USUARIO HA SOLICITADO CONFIAR ÚNICA Y EXCLUSIVAMENTE EN GEMINI + GOOGLE SEARCH.
+    // Todas las peticiones a Nominatim y Photon quedan bypasseadas.
+    console.log(`GIS 🔮 ${stop.name}: Usando coordenadas directas de Gemini+GoogleSearch.`);
     return { ...stop, coordinatesVerified: false };
 };
 
@@ -708,7 +614,7 @@ FORMAT RULES:
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be strictly within the boundaries of ${city}.
-   - CRITICAL RULE: You MUST use the Google Search tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. NEVER guess or use a random location. Your coordinates should map to the MAIN ENTRANCE.
+   - CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. NEVER guess or estimate coordinates. Always search for the real location.
 5. Content in ${user.language}.`;
 
     const systemInstruction = `You are DAI, a highly intelligent, elegant, and SARCASTIC AI travel guide.
