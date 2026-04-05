@@ -1,6 +1,6 @@
 import { Type } from "@google/genai";
 import { Tour, Stop, UserProfile, TourCache } from '../types';
-import { normalizeKey } from './supabaseClient';
+import { normalizeKey, supabase } from './supabaseClient';
 import { ai, handleAiCall, QuotaError } from './gemini/config';
 import { SYSTEM_INSTRUCTION, generateTourPrompt } from './gemini/prompts';
 import { getCityInfo, processTourStops } from '../lib/gisService';
@@ -205,4 +205,18 @@ export const generateToursForCity = async (
             return verifiedTours;
         }
     });
+};
+
+// ── Generación de Audio interactivo (Edge Function) ────────────────────────
+export const generateAudio = async (text: string, language: string, city: string): Promise<string | null> => {
+    try {
+        const { data, error } = await supabase.functions.invoke('generate-audio-dai', {
+            body: { text, language, city }
+        });
+        if (error) throw error;
+        return data?.url || null;
+    } catch (e) {
+        console.error("Error generating audio:", e);
+        return null;
+    }
 };

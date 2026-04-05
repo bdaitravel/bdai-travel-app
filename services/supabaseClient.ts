@@ -22,7 +22,7 @@ console.error = (...args) => {
     originalConsoleError(...args);
 };
 
-let supabase: any;
+export let supabase: any;
 try {
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 } catch (e) {

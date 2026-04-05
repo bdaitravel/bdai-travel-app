@@ -75,8 +75,9 @@ Como arquitecto senior y consultor estratégico, **debes**:
 ## Estructura de Archivos
 - `/components`: UI aislada y reutilizable.
 - `/services`: Integraciones API (Supabase, Gemini).
+- `/services/gemini`: Lógica específica de IA (config, prompts).
 - `/data`: Datos estáticos, fallbacks, config.
-- `/lib`: Utilidades y helpers globales.
+- `/lib`: Utilidades y helpers globales (GIS, Routing, Debounce).
 
 ## Decisiones Arquitectónicas (Historial)
 
@@ -103,10 +104,14 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **GPS validation:** Las coordenadas de `watchPosition` se validan (rango válido, no NaN, no 0,0) antes de actualizar el estado.
 - **Flujo de Audio Persistente:** `generateAudio` es secuencial e íntegro. Si el audio no está en caché, se genera con Gemini, se sube obligatoriamente a Supabase Storage y se devuelve la URL pública del bucket. El `AudioManager` consume siempre desde la URL del bucket, garantizando que el audio ya "vive" en la nube antes de sonar por primera vez.
 - **AudioContext lifecycle:** El `AudioManager` singleton suspende el `AudioContext` al ir a segundo plano (`visibilitychange`) y lo reanuda al volver. Reduce consumo de batería en iOS/Android.
+- **Optimización de Verificación On-the-fly**: El proceso de refinado geográfico (GIS) y optimización de rutas ya no espera al final del streaming. Se dispara una tarea en segundo plano en cuanto un tour alcanza las 10 paradas. Esto permite ver paradas "Reales" en el Tour 1 mientras el Tour 3 aún se está generando.
+- **Shared Rate Limiter (GisService)**: Implementado un limitador de frecuencia global en el módulo `lib/gisService.ts` que garantiza un espaciado de 1.1s entre peticiones a Nominatim, independientemente de cuántos tours se estén procesando en paralelo.
+- **Feedback de Precisión Progresivo**: La UI recibe primero la versión Gemini (`Validando...`) y luego se actualiza automáticamente a la versión OSM (`Real`) sin intervención del usuario.
 - **`useDebounce` hook:** `lib/useDebounce.ts` sustituye el patrón manual `setTimeout + useRef` en `handleCitySearch`.
 
 ### Identidad y Voz de DAI
 - **Persona Femenina:** Dado que la voz de la IA es femenina, toda referencia a DAI (la guía) debe ser en **tercera persona femenino singular** (ej. "Ella", "La Guía", "DAI ha seleccionado...").
+- **Voz Oficial "Kore":** Se utiliza exclusivamente la voz **"kore"** del modelo `gemini-2.5-flash-preview-tts` para todas las generaciones de audio. La configuración está centralizada en la Edge Function `generate-audio-dai`.
 - **Interacción Cultural Adaptativa:** DAI se dirige al usuario en **segunda persona**, pero adaptando la forma (tú/usted, informal/formal) según el idioma y el contexto cultural de la ciudad visitada. El objetivo es mantener el tono sofisticado y sarcástico sin perder la resonancia cultural.
 - **Coherencia Gramatical:** Esta regla es obligatoria para todos los idiomas soportados donde el género gramatical sea aplicable.
 
@@ -125,3 +130,17 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Bug corregido:** `optimizeStopOrder` usaba `newDistance` y `newDuration` como variables no declaradas. Corregido: se derivan correctamente de `calculateRouteDistance` y `calculateDuration`.
 - **`fetchRoutePolyline` exportada:** Necesaria para el backfill desde `App.tsx`.
 - **`SchematicMap` sin cambios:** Ya consume `routePolyline` — ámbar si real, blanca si fallback.
+
+### Arquitectura Modular Funcional
+- **Desacoplamiento de IA y GIS**: Se ha subdividido el antiguo `geminiService.ts` (Monolito) en capas especializadas:
+  - `lib/gisService.ts`: Lógica pura de mapas y geocoding (Nominatim/Photon).
+  - `lib/routingService.ts`: Algoritmos de optimización (TSP, 2-opt) y polilíneas.
+  - `services/gemini/config.ts`: Cliente de IA y gestión de cuotas/errores.
+  - `services/gemini/prompts.ts`: Definición de la Identidad de DAI y plantillas de prompts.
+  - `services/geminiService.ts`: Orquestador que coordina las capas anteriores.
+- **Razón**: Permite testear algoritmos de rutas sin llamadas a IA, facilita el cambio de modelo de LLM y mejora drásticamente la legibilidad.
+
+## Restricciones de Entorno y Despliegue (IMPORTANTE)
+- **Despliegue de Supabase:** El terminal del Agente NO tiene permisos de escritura/deploy en Supabase. Todos los cambios en Edge Functions, SQL o Storage deben ser proporcionados al usuario en forma de código e instrucciones para que él los ejecute manualmente (vía Web Dashboard o su terminal local).
+- **Pruebas de Backend:** Evitar el uso de herramientas de modificación directa de DB/Estructura desde el terminal del Agente. Las propuestas de cambio deben ser validadas por el usuario primero.
+- **Flujo de Trabajo:** Proporcionar comandos listos para copiar y pegar (ej. `supabase functions deploy ...`) para facilitar la tarea al usuario.
