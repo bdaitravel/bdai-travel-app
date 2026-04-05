@@ -154,6 +154,14 @@ export interface Tour {
   routePolyline?: string;
 }
 
+export interface TourCache {
+  city: string;
+  language: string;
+  data: Tour[];
+  route_polylines?: Record<string, string>;
+  updated_at?: string;
+}
+
 export enum AppView {
   LOGIN = 'LOGIN',
   HOME = 'HOME',

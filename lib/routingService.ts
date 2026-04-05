@@ -296,9 +296,17 @@ export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
     }
     reorderedStops = mergedStops;
 
-    const totalDistKm = calculateRouteDistance(order, distMatrix);
-    const newDistance = `${totalDistKm.toFixed(1)} km`;
-    const newDuration = calculateDuration(totalDistKm, reorderedStops.length);
+    // REGLA DE ORO: Recalcular distancia y duración sobre el array FINAL de paradas depuradas
+    let finalDistKm = 0;
+    for (let i = 0; i < reorderedStops.length - 1; i++) {
+        finalDistKm += haversineKm(
+            reorderedStops[i].latitude, reorderedStops[i].longitude, 
+            reorderedStops[i+1].latitude, reorderedStops[i+1].longitude
+        );
+    }
+    
+    const newDistance = `${finalDistKm.toFixed(1)} km`;
+    const newDuration = calculateDuration(finalDistKm, reorderedStops.length);
 
     const routePolyline = await fetchRoutePolyline(reorderedStops);
 

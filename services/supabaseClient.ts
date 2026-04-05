@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop } from '../types';
+import { Tour, UserProfile, LeaderboardEntry, TravelerRank, APP_BADGES, Badge, Stop, TourCache } from '../types';
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
@@ -59,7 +59,8 @@ try {
   };
 }
 
-export { supabase };
+
+// Exportación ya realizada en la línea 25
 
 const generateHash = async (text: string): Promise<string> => {
     const normalized = text.toLowerCase()
@@ -420,4 +421,16 @@ export const updateTourStopLocation = async (citySlug: string, language: string,
 };
 
 export const getCommunityPosts = async (city: string) => { return []; };
+export const getCityPosts = async (city: string) => { return []; };
 export const addCommunityPost = async (post: any) => { return { success: true }; };
+export const saveCityPostcard = async (city: string, country: string, imageUrl: string) => { return true; };
+export const getAllToursCache = async (): Promise<TourCache[]> => {
+  try {
+    const { data, error } = await supabase.from('tours_cache').select('*');
+    if (error) throw error;
+    return data || [];
+  } catch (e) {
+    console.error("Error fetching all tours cache:", e);
+    return [];
+  }
+};

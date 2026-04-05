@@ -375,7 +375,21 @@ export default function App() {
         (tour) => {
           if (tour && tour.stops && tour.stops.length > 0) {
             setTours(prev => {
-              if (prev.some(t => t.title === tour.title)) return prev;
+              // Lógica de reemplazo inteligente: "Validando..." -> "Real"
+              const cleanTitle = tour.title.replace(" (Validando...)", "");
+              const existingIdx = prev.findIndex(t => t.title.replace(" (Validando...)", "") === cleanTitle);
+              
+              if (existingIdx !== -1) {
+                const isNewReal = !tour.title.includes(" (Validando...)");
+                const isOldValidating = prev[existingIdx].title.includes(" (Validando...)");
+                
+                if (isNewReal && isOldValidating) {
+                  const updated = [...prev];
+                  updated[existingIdx] = tour;
+                  return updated;
+                }
+                return prev;
+              }
               return [...prev, tour];
             });
             if (!firstTourReceived) {
