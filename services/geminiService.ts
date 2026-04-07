@@ -139,7 +139,9 @@ export const generateToursForCity = async (
                     while (parsed.length > toursEmitted) {
                         let tour = parsed[toursEmitted];
                         if (tour && tour.stops && tour.stops.length > 0) {
-                            onProgress({ ...tour, title: tour.title + " (Validando...)" });
+                            // Asignar ID determinista para deduplicación robusta
+                            const tourId = `${normalizeKey(city, country)}_${user.language.toLowerCase()}_${toursEmitted}`;
+                            onProgress({ ...tour, id: tourId, title: tour.title + " (Validando...)" });
                         }
                         toursEmitted++;
                     }
@@ -158,11 +160,15 @@ export const generateToursForCity = async (
             const finalTours = tryExtractTours(finalText);
             const verifiedTours: Tour[] = [];
 
-            for (let tour of finalTours) {
+            for (let i = 0; i < finalTours.length; i++) {
+                let tour = finalTours[i];
                 if (tour && tour.stops && tour.stops.length > 0) {
+                    const tourId = `${normalizeKey(city, country)}_${user.language.toLowerCase()}_${i}`;
+                    
                     // Pipeline modular: GIS Verification -> Routing Optimization
                     let processed = await processTourStops(tour, city, country, cityInfo);
                     processed = await optimizeStopOrder(processed);
+                    processed.id = tourId; // Asegurar ID consistente
 
                     if (processed.stops.length >= 2) {
                         verifiedTours.push(processed);

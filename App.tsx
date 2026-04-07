@@ -39,7 +39,8 @@ import {
   normalizeKey,
   saveToursToCache,
   getRoutePolylines,
-  updateRoutePolyline
+  updateRoutePolyline,
+  tryLockCityForGeneration
 } from './services/supabaseClient';
 
 const APP_DESC: Record<string, string> = {
@@ -337,34 +338,62 @@ export default function App() {
 
     try {
       setTours([]);
-
+      
       if (forceRefresh) {
-        // Borrar SOLO el slug exacto — nunca borrar otras ciudades con nombre similar
         setLoadingMessage("PURGING OLD DATA...");
         await supabase.from('tours_cache').delete()
           .eq('city', slug).eq('language', langCode.toLowerCase());
-      } else {
-        // Búsqueda EXACTA únicamente — nunca mezclar ciudades distintas
-        const { data: exact } = await supabase
-          .from('tours_cache').select('data, route_polylines')
-          .eq('city', slug).eq('language', langCode.toLowerCase()).maybeSingle();
-        if (exact?.data?.length > 0) {
-          // Rehidratar los tours con sus polylines guardadas (Opción B)
-          const savedPolylines: Record<string, string> = exact.route_polylines || {};
-          const toursWithPolylines = (exact.data as Tour[]).map(tour => ({
-            ...tour,
-            routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
-          }));
-          setTours(toursWithPolylines);
-          navigateTo(AppView.CITY_DETAIL);
-          setIsLoading(false);
-          // Backfill en background para tours sin polyline (rellena los 1412 existentes)
-          backfillMissingPolylines(toursWithPolylines, slug, langCode);
-          return;
-        }
       }
 
-      // Generar con Gemini
+      // INTENTO DE BLOQUEO / CACHÉ
+      const lockStatus = await tryLockCityForGeneration(slug, langCode);
+
+      // CASO A: Caché listo (Lock Fallido o liberado)
+      if (!lockStatus.locked && lockStatus.data && lockStatus.data.length > 0) {
+        setTours(lockStatus.data);
+        navigateTo(AppView.CITY_DETAIL);
+        setIsLoading(false);
+        backfillMissingPolylines(lockStatus.data, slug, langCode);
+        return;
+      }
+
+      // CASO B: Ya se está generando (Lock Activo)
+      if (lockStatus.locked && !lockStatus.isNew) {
+        setLoadingMessage(t('generating')); // "DAI está explorando..."
+        
+        // Suscribirse a cambios en Realtime
+        const channel = supabase.channel(`tour_gen_${slug}`)
+          .on('postgres_changes', { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'tours_cache',
+            filter: `city=eq.${slug}`
+          }, (payload: any) => {
+            if (payload.new && payload.new.status === 'READY') {
+              console.log("🚀 Generation finished in another tab, loading data...");
+              setTours(payload.new.data || []);
+              navigateTo(AppView.CITY_DETAIL);
+              setIsLoading(false);
+              channel.unsubscribe();
+            }
+          })
+          .subscribe();
+
+        // Safety timeout (por si Realtime falla o nos perdemos el evento)
+        setTimeout(async () => {
+          const { data } = await supabase.from('tours_cache')
+            .select('data, status').eq('city', slug).eq('language', langCode.toLowerCase()).maybeSingle();
+          if (data?.status === 'READY') {
+            setTours(data.data || []);
+            navigateTo(AppView.CITY_DETAIL);
+            setIsLoading(false);
+            channel.unsubscribe();
+          }
+        }, 15000);
+        return;
+      }
+
+      // CASO C: Somos los responsables de generar (Nuevo Lock)
       setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
       let firstTourReceived = false;
 
@@ -375,9 +404,8 @@ export default function App() {
         (tour) => {
           if (tour && tour.stops && tour.stops.length > 0) {
             setTours(prev => {
-              // Lógica de reemplazo inteligente: "Validando..." -> "Real"
-              const cleanTitle = tour.title.replace(" (Validando...)", "");
-              const existingIdx = prev.findIndex(t => t.title.replace(" (Validando...)", "") === cleanTitle);
+              // Deduplicación ROBUSTA por tour.id
+              const existingIdx = prev.findIndex(t => t.id === tour.id);
               
               if (existingIdx !== -1) {
                 const isNewReal = !tour.title.includes(" (Validando...)");
@@ -402,9 +430,6 @@ export default function App() {
       );
 
       if (generated.length > 0) {
-        // Usa saveToursToCache en vez del upsert directo.
-        // La función extrae automáticamente las routePolylines de los tours
-        // y las persiste en la columna dedicada (Opción B, fix del bug de persistencia).
         await saveToursToCache(
           cleanName,
           selection.countryEn || selection.country,
@@ -417,6 +442,8 @@ export default function App() {
           if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
         }
       } else {
+        // Liberar bloqueo si falló la generación para que otros puedan intentar
+        await supabase.from('tours_cache').update({ status: 'ERROR', locked_until: null }).eq('city', slug).eq('language', langCode.toLowerCase());
         toast("No se encontró contenido para esta ciudad.", 'error');
       }
     } catch (e) {

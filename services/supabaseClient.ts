@@ -97,14 +97,16 @@ export const checkIfCityCached = async (city: string, slug: string): Promise<boo
   if (!slug) return false;
   try {
     const { data: d1 } = await supabase
-      .from('tours_cache').select('city').eq('city', slug).limit(1);
-    if (d1 && d1.length > 0) return true;
+      .from('tours_cache').select('city, status').eq('city', slug).limit(1);
+    
+    // Solo consideramos cacheado si está en estado READY
+    if (d1 && d1.length > 0 && d1[0].status === 'READY') return true;
 
     const cityOnly = slug.split('_')[0];
     if (!cityOnly) return false;
     const { data: d2 } = await supabase
-      .from('tours_cache').select('city')
-      .ilike('city', `${cityOnly}%`).limit(1);
+      .from('tours_cache').select('city, status')
+      .ilike('city', `${cityOnly}%`).eq('status', 'READY').limit(1);
     return !!(d2 && d2.length > 0);
   } catch (e) { return false; }
 };
@@ -289,14 +291,11 @@ export const saveToursToCache = async (city: string, country: string, language: 
   const slug = normalizeKey(city, country);
   if (!slug) return;
   try {
-    // Extraer polylines de los tours para guardarlas en la columna dedicada (Opción B)
-    // Esto evita tener que reescribir el blob 'data' completo (~30KB) en actualizaciones quirúrgicas
     const routePolylines: Record<string, string> = {};
     const cleanTours = tours.map(tour => {
       if (tour.routePolyline && tour.id) {
         routePolylines[tour.id] = tour.routePolyline;
       }
-      // Guardamos la ruta también dentro del objeto tour para compatibilidad con lecturas directas
       return tour;
     });
 
@@ -304,14 +303,86 @@ export const saveToursToCache = async (city: string, country: string, language: 
       city: slug, 
       language: language.toLowerCase(), 
       data: cleanTours,
-      route_polylines: routePolylines
+      route_polylines: routePolylines,
+      status: 'READY',
+      locked_until: null,
+      updated_at: new Date().toISOString()
     }, { onConflict: 'city,language' });
 
     const savedCount = Object.keys(routePolylines).length;
     if (savedCount > 0) {
-      console.log(`🗺️ Cache saved: ${savedCount}/${tours.length} polylines persisted for ${slug}`);
+      console.log(`🗺️ Cache saved: ${savedCount}/${tours.length} polylines persisted for ${slug} (Status: READY)`);
     }
   } catch (e) { console.error("❌ Error saving cache:", e); }
+};
+
+/**
+ * Intenta bloquear una ciudad para generación.
+ * Retorna: { locked: boolean, data?: Tour[], isNew?: boolean }
+ */
+export const tryLockCityForGeneration = async (slug: string, language: string): Promise<{ locked: boolean, data?: Tour[], isNew?: boolean }> => {
+  try {
+    const { data: existing, error: selectError } = await supabase
+      .from('tours_cache')
+      .select('status, data, locked_until, route_polylines')
+      .eq('city', slug)
+      .eq('language', language.toLowerCase())
+      .maybeSingle();
+
+    if (selectError) throw selectError;
+
+    const now = new Date();
+    const tenMinsFromNow = new Date(now.getTime() + 10 * 60000).toISOString();
+
+    if (existing) {
+      if (existing.status === 'READY') {
+        // Rehidratar polylines si existen
+        const savedPolylines: Record<string, string> = existing.route_polylines || {};
+        const toursWithPolylines = (existing.data as Tour[] || []).map(tour => ({
+          ...tour,
+          routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
+        }));
+        return { locked: false, data: toursWithPolylines };
+      }
+
+      // Si está en GENERATING, comprobamos el timeout
+      const lockedUntil = existing.locked_until ? new Date(existing.locked_until) : null;
+      if (lockedUntil && lockedUntil > now) {
+        // Sigue bloqueado por otro proceso activo
+        return { locked: true, isNew: false };
+      }
+      
+      // Bloqueo expirado o sin fecha: lo re-tomamos
+      await supabase.from('tours_cache').update({
+        status: 'GENERATING',
+        locked_until: tenMinsFromNow,
+        updated_at: now.toISOString()
+      }).eq('city', slug).eq('language', language.toLowerCase());
+      
+      return { locked: true, isNew: true };
+    }
+
+    // No existe: creamos el bloqueo
+    const { error: insertError } = await supabase.from('tours_cache').insert({
+      city: slug,
+      language: language.toLowerCase(),
+      status: 'GENERATING',
+      locked_until: tenMinsFromNow,
+      updated_at: now.toISOString(),
+      data: []
+    });
+
+    if (insertError) {
+      // Si falla por duplicado justo ahora, re-intentar una vez
+      if (insertError.code === '23505') return tryLockCityForGeneration(slug, language);
+      throw insertError;
+    }
+
+    return { locked: true, isNew: true };
+  } catch (e) {
+    console.error("Lock error:", e);
+    return { locked: false }; // Fallback a generar sin bloqueo si algo falla
+  }
 };
 
 /**
