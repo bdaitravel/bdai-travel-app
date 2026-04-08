@@ -345,107 +345,60 @@ export default function App() {
           .eq('city', slug).eq('language', langCode.toLowerCase());
       }
 
-      // INTENTO DE BLOQUEO / CACHÉ
-      const lockStatus = await tryLockCityForGeneration(slug, langCode);
+      // INTENTO DE CACHÉ DESDE DB
+      const { data: existing } = await supabase
+        .from('tours_cache')
+        .select('data, route_polylines')
+        .eq('city', slug)
+        .eq('language', langCode.toLowerCase())
+        .maybeSingle();
 
-      // CASO A: Caché listo (Lock Fallido o liberado)
-      if (!lockStatus.locked && lockStatus.data && lockStatus.data.length > 0) {
-        setTours(lockStatus.data);
+      if (existing && existing.data && existing.data.length > 0) {
+        const savedPolylines: Record<string, string> = existing.route_polylines || {};
+        const toursWithPolylines = (existing.data as Tour[]).map(tour => ({
+          ...tour,
+          routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
+        }));
+        
+        setTours(toursWithPolylines);
         navigateTo(AppView.CITY_DETAIL);
         setIsLoading(false);
-        backfillMissingPolylines(lockStatus.data, slug, langCode);
+        backfillMissingPolylines(toursWithPolylines, slug, langCode);
         return;
       }
 
-      // CASO B: Ya se está generando (Lock Activo)
-      if (lockStatus.locked && !lockStatus.isNew) {
-        setLoadingMessage(t('generating')); // "DAI está explorando..."
-        
-        // Suscribirse a cambios en Realtime
-        const channel = supabase.channel(`tour_gen_${slug}`)
-          .on('postgres_changes', { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'tours_cache',
-            filter: `city=eq.${slug}`
-          }, (payload: any) => {
-            if (payload.new && payload.new.status === 'READY') {
-              console.log("🚀 Generation finished in another tab, loading data...");
-              setTours(payload.new.data || []);
-              navigateTo(AppView.CITY_DETAIL);
-              setIsLoading(false);
-              channel.unsubscribe();
-            }
-          })
-          .subscribe();
-
-        // Safety timeout (por si Realtime falla o nos perdemos el evento)
-        setTimeout(async () => {
-          const { data } = await supabase.from('tours_cache')
-            .select('data, status').eq('city', slug).eq('language', langCode.toLowerCase()).maybeSingle();
-          if (data?.status === 'READY') {
-            setTours(data.data || []);
-            navigateTo(AppView.CITY_DETAIL);
-            setIsLoading(false);
-            channel.unsubscribe();
-          }
-        }, 15000);
-        return;
-      }
-
-      // CASO C: Somos los responsables de generar (Nuevo Lock)
+      // NO HAY CACHÉ -> Invocamos la Edge Function a través de geminiService
       setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : t('generating'));
-      let firstTourReceived = false;
 
       const generated = await generateToursForCity(
         cleanName,
         selection.countryEn || selection.country,
         { ...user, language: langCode } as UserProfile,
         (tour) => {
-          if (tour && tour.stops && tour.stops.length > 0) {
-            setTours(prev => {
-              // Deduplicación ROBUSTA por tour.id
-              const existingIdx = prev.findIndex(t => t.id === tour.id);
-              
-              if (existingIdx !== -1) {
-                const isNewReal = !tour.title.includes(" (Validando...)");
-                const isOldValidating = prev[existingIdx].title.includes(" (Validando...)");
-                
-                if (isNewReal && isOldValidating) {
-                  const updated = [...prev];
-                  updated[existingIdx] = tour;
-                  return updated;
-                }
-                return prev;
-              }
-              return [...prev, tour];
-            });
-            if (!firstTourReceived) {
-              firstTourReceived = true;
-              if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
-              setIsLoading(false);
+          // Ya no emitiremos updates progresivos desde backend de momento, 
+          // pero conservamos el handler por seguridad.
+          setTours(prev => {
+            const existingIdx = prev.findIndex(t => t.id === tour.id);
+            if (existingIdx !== -1) {
+              const updated = [...prev];
+              updated[existingIdx] = tour;
+              return updated;
             }
-          }
+            return [...prev, tour];
+          });
         }
       );
 
-      if (generated.length > 0) {
-        await saveToursToCache(
-          cleanName,
-          selection.countryEn || selection.country,
-          langCode,
-          generated
-        );
-
-        if (!firstTourReceived) {
-          setTours(generated);
-          if (view === AppView.HOME || forceRefresh) navigateTo(AppView.CITY_DETAIL);
-        }
+      if (generated && generated.length > 0) {
+        setTours(generated);
+        navigateTo(AppView.CITY_DETAIL);
+        setIsLoading(false);
       } else {
-        // Liberar bloqueo si falló la generación para que otros puedan intentar
-        await supabase.from('tours_cache').update({ status: 'ERROR', locked_until: null }).eq('city', slug).eq('language', langCode.toLowerCase());
-        toast("No se encontró contenido para esta ciudad.", 'error');
+        toast(t('noToursFound'), 'info');
+        navigateTo(AppView.HOME);
+        setIsLoading(false);
       }
+
     } catch (e) {
       console.error("Selection error:", e);
     } finally {

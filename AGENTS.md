@@ -97,7 +97,11 @@ Como arquitecto senior y consultor estratégico, **debes**:
   3. **Motores:** Nominatim (Estricto con `addressdetails=1`) -> Photon (Fuzzy/ElasticSearch).
   4. **Gemini (Fallback Final):** Si no hay match 100% ni punto cercano <= 35m, se conserva la coordenada dictaminada por Gemini (`coordinatesVerified = false`).
 - **Rate limiting inteligente (Secuencial):** `requestTs` compartido. Solo espera el retraso inter-request necesario para respetar 1 req/s sin bloqueos excesivos (`setTimeout` dinámico).
-- **Política de eliminación de Paradas:** Una parada NUNCA se elimina del tour, excepto si las coordenadas resultantes del proceso apuntan a un lugar que está a **>10km** de distancia del centro de la ciudad (alucinación fuera del contexto del casco histórico de 2km).
+- **Pipeline GIS en 3 pasos (Anti-Alucinación):**
+  1. **Existencia Global**: Antes de geocodificar, se busca el nombre de la parada en Nominatim sin ciudad. Si 0 resultados globales → alucinación confirmada → parada eliminada sin gastar más tokens.
+  2. **Geocodificación con validación de municipio**: Se busca en Nominatim con ciudad y se valida que el campo `address.city/town/village` coincida con el municipio objetivo. Los resultados de municipios vecinos se descartan.
+  3. **Filtro de radio dinámico**: El radio máximo permitido se calcula según la población: <20k → 3km, <200k → 5km, >200k → 10km.
+- **Política de eliminación de Paradas:** Una parada se elimina si: (1) no existe en OSM a nivel global, (2) sus coordenadas no pueden ser verificadas en el municipio correcto, o (3) las coordenadas verificadas superan el radio dinámico desde el centro de la ciudad. Si un tour queda con menos de 3 paradas verificadas, el tour completo se descarta.
 - **`Accept-Language: en`** en todas las búsquedas de OSM, asegurando mejor respuesta internacional y menos fallos de geocoding.
 - **ErrorBoundary global:** `components/ErrorBoundary.tsx` envuelve toda la app en `index.tsx`. Captura errores de render no manejados y muestra una pantalla de fallback con el botón "Reportar Fallo" pre-relleno con el stack trace, URL, timestamp y user agent.
 - **`ReportBugModal`:** Acepta `prefillText?: string` para recibir datos del `ErrorBoundary` automáticamente.
@@ -112,13 +116,18 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **`useDebounce` hook:** `lib/useDebounce.ts` sustituye el patrón manual `setTimeout + useRef` en `handleCitySearch`.
 
 ### Identidad y Voz de DAI
-- **Persona Femenina:** Dado que la voz de la IA es femenina, toda referencia a DAI (la guía) debe ser en **tercera persona femenino singular** (ej. "Ella", "La Guía", "DAI ha seleccionado...").
+- **Persona Femenina y Primera Persona:** DAI es femenina y habla estrictamente en **primera persona del singular** ("yo", "me he dado cuenta", "te recomiendo"). Toda la concordancia gramatical debe usar adjetivos femeninos ("estoy convencida").
+- **Prohibición de "Guía":** Está **estrictamente prohibido** que la IA utilice la palabra "guía" o "guide" para referirse a sí misma. Nunca se menciona a sí misma ni en tercera persona ni por nombre ('DAI', 'La Guía', 'tu guía'). Ella interactúa simplemente compartiendo sus vivencias de forma humana y cínica, asumiendo su rol sin etiquetarlo.
 - **Voz Oficial "Kore":** Se utiliza exclusivamente la voz **"kore"** del modelo `gemini-2.5-flash-preview-tts` para todas las generaciones de audio. La configuración está centralizada en la Edge Function `generate-audio-dai`.
 - **Interacción Cultural Adaptativa:** DAI se dirige al usuario en **segunda persona**, pero adaptando la forma (tú/usted, informal/formal) según el idioma y el contexto cultural de la ciudad visitada. El objetivo es mantener el tono sofisticado y sarcástico sin perder la resonancia cultural.
 - **Coherencia Gramatical:** Esta regla es obligatoria para todos los idiomas soportados donde el género gramatical sea aplicable.
 
 ### Seguridad & Estado
 - **Sin credenciales hardcoded:** `supabaseClient.ts` solo lee de variables de entorno. Si faltan, loga un error claro y no falla silenciosamente.
+- **Row-Level Security (RLS) Estricto:** 
+   - Las tablas de configuración y contraseñas (`secrets`) son innacesibles para el cliente.
+   - **Objetivo Arquitectónico Restrictivo:** Los perfiles (`profiles`) están securizados para lectura/escritura de forma exclusiva para su el usuario propietario (`auth.uid() = id`).
+   - Los tours (`tours_cache`) son de Solo Lectura (`SELECT`) para el cliente de cara a evitar inyecciones maliciosas de datos falsos. **Nota de Migración Pendiente**: Dado que esta seguridad impide que el cliente guarde sus propios tours generados localmente, la generación mediante Gemini (`geminiService.ts`) debe transicionarse a una **Edge Function** (al igual que el generador de Audio). Así, la BD se actualizará de forma segura a nivel servidor usando el `service_role`.
 - **Zustand como fuente única de verdad:** Se eliminaron todas las escrituras directas a `localStorage.setItem('bdai_profile', ...)` de `App.tsx`. El perfil persiste vía `storageProvider` (localStorage en Capacitor, sessionStorage en web).
 - **Toast en vez de alert():** Todos los errores de UI usan `toast()` del componente `Toast.tsx`. Compatible con Capacitor.
 

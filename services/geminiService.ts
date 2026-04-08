@@ -103,115 +103,40 @@ export const generateToursForCity = async (
     user: UserProfile,
     onProgress?: (tour: Tour) => void
 ): Promise<Tour[]> => {
-
-    // 1. Datos geográficos reales para anclar la generación (desde GIS Service)
-    const cityInfo = await getCityInfo(city, country);
-    const coordsAnchor = cityInfo
-        ? `The geographic anchor for ${city} is near latitude ${cityInfo.lat.toFixed(6)}, longitude ${cityInfo.lng.toFixed(6)}. NOTE: This may be the administrative center. Focus strictly on the Historical Center / Old Town, keeping stops within a 2km radius of each other.`
-        : `All stops must be located within the urban area of ${city}, ${country}.`;
-
-    // 2. Construcción del Prompt dinámico (desde Prompts module)
-    const prompt = generateTourPrompt(city, country, user, coordsAnchor);
-
-    return handleAiCall(async () => {
-        let accumulated = '';
-        let toursEmitted = 0;
-
-        try {
-            const stream = await ai.models.generateContentStream({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    systemInstruction: SYSTEM_INSTRUCTION,
-                    tools: [{ googleSearch: {} }],
-                    temperature: 0.7,
-                    topP: 1,
-                    topK: 1
-                },
-            });
-
-            for await (const chunk of stream) {
-                const chunkText = chunk.text || '';
-                accumulated += chunkText;
-
-                if (onProgress && toursEmitted < 3) {
-                    const parsed = tryExtractTours(accumulated);
-                    while (parsed.length > toursEmitted) {
-                        let tour = parsed[toursEmitted];
-                        if (tour && tour.stops && tour.stops.length > 0) {
-                            // Asignar ID determinista para deduplicación robusta
-                            const tourId = `${normalizeKey(city, country)}_${user.language.toLowerCase()}_${toursEmitted}`;
-                            onProgress({ ...tour, id: tourId, title: tour.title + " (Validando...)" });
-                        }
-                        toursEmitted++;
-                    }
-                }
+    
+    // Nueva Arquitectura Serverless (Edge Function)
+    // El frontend ya no computa el ruteo, ni llama a google, ni guarda en BD.
+    try {
+        console.log(`Pidiendo la generación del tour a Edge Function para ${city}, ${country}...`);
+        
+        // Timeout alto porque la API y las docenas de llamadas GIS pueden tardar
+        const { data, error } = await supabase.functions.invoke('generate-tours-dai', {
+            body: { 
+                city, 
+                country, 
+                language: user.language || 'es'
             }
+        });
 
-            const finalText = accumulated
-                .replace(/\[\d+\]/g, '')
-                .replace(/\(\d+\)/g, '')
-                .replace(/【\d+†source】/g, '')
-                .replace(/\[source\]/g, '')
-                .replace(/```json/g, '')
-                .replace(/```/g, '')
-                .trim();
-
-            const finalTours = tryExtractTours(finalText);
-            const verifiedTours: Tour[] = [];
-
-            for (let i = 0; i < finalTours.length; i++) {
-                let tour = finalTours[i];
-                if (tour && tour.stops && tour.stops.length > 0) {
-                    const tourId = `${normalizeKey(city, country)}_${user.language.toLowerCase()}_${i}`;
-                    
-                    // Pipeline modular: GIS Verification -> Routing Optimization
-                    let processed = await processTourStops(tour, city, country, cityInfo);
-                    processed = await optimizeStopOrder(processed);
-                    processed.id = tourId; // Asegurar ID consistente
-
-                    if (processed.stops.length >= 2) {
-                        verifiedTours.push(processed);
-                        if (onProgress) onProgress(processed);
-                    }
-                }
-            }
-
-            return verifiedTours;
-
-        } catch (streamError) {
-            console.warn("Streaming failed, falling back to non-streaming", streamError);
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    systemInstruction: SYSTEM_INSTRUCTION,
-                    tools: [{ googleSearch: {} }],
-                    temperature: 0.7,
-                    topP: 1,
-                    topK: 1
-                },
-            });
-            const text = (response.text || '[]')
-                .replace(/\[\d+\]/g, '')
-                .replace(/\(\d+\)/g, '')
-                .replace(/```json/g, '')
-                .replace(/```/g, '')
-                .trim();
-
-            const finalTours = tryExtractTours(text);
-            const verifiedTours: Tour[] = [];
-
-            for (let tour of finalTours) {
-                if (tour && tour.stops && tour.stops.length > 0) {
-                    let processed = await processTourStops(tour, city, country, cityInfo);
-                    processed = await optimizeStopOrder(processed);
-                    if (processed.stops.length >= 2) verifiedTours.push(processed);
-                }
-            }
-            return verifiedTours;
+        if (error) {
+            console.error("Error desde la Edge Function de Tours:", error);
+            throw new Error(error.message || "Fallo en la generación serverless");
         }
-    });
+
+        if (data && data.tours) {
+            console.log(`Se recibieron ${data.tours.length} tours desde el servidor.`);
+            // Simulamos el pintado progresivo para la UI (opcional)
+            if (onProgress) {
+                data.tours.forEach((t: Tour) => onProgress(t));
+            }
+            return data.tours;
+        }
+
+        return [];
+    } catch (e) {
+        console.error("Excepción invocando a generate-tours-dai:", e);
+        return [];
+    }
 };
 
 // ── Generación de Audio interactivo (Edge Function) ────────────────────────

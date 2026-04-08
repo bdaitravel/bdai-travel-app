@@ -15,6 +15,14 @@ export const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: numb
 export const normalizeForMatch = (s: string) => 
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
+// ── Calcula el radio de alucinación según la población de la ciudad ──
+const getHallucinationRadiusKm = (population: number | null): number => {
+    if (!population) return 7;       // Sin datos: radio moderado
+    if (population < 20_000) return 3;  // Ciudad pequeña: 3km
+    if (population < 200_000) return 5; // Ciudad media: 5km
+    return 10;                          // Ciudad grande: 10km
+};
+
 // ── Obtiene metadatos geográficos reales de la ciudad (Ground Truth) ──
 export const getCityInfo = async (city: string, country: string): Promise<any> => {
     try {
@@ -39,7 +47,47 @@ export const getCityInfo = async (city: string, country: string): Promise<any> =
     return null;
 };
 
-// ── Valida coordenadas de una parada contra Nominatim y Photon con umbral de 30m + Rescate por Nombre ──
+// ── PASO 1: Verifica si una parada existe en OSM a nivel global ──
+// Si no hay ningún resultado global, la parada es una alucinación y debe eliminarse.
+const verifyStopExists = async (stopName: string, requestTs: { last: number }): Promise<boolean> => {
+    const waitForRateLimit = async () => {
+        const elapsed = Date.now() - requestTs.last;
+        if (elapsed < 1100) await new Promise(r => setTimeout(r, 1100 - elapsed));
+        requestTs.last = Date.now();
+    };
+
+    try {
+        await waitForRateLimit();
+
+        // Variantes: nombre completo y prefijo antes de paréntesis
+        const prefixPart = stopName.split(/\s*[-–(]\s*/)[0].trim();
+        const queries = [...new Set([stopName, prefixPart])].filter(q => q.length > 2);
+
+        for (const q of queries) {
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=0`;
+            const res = await fetch(url, {
+                headers: { 'User-Agent': 'bdai-travel-app/1.0' },
+                signal: (AbortSignal as any).timeout?.(4000)
+            }).catch(() => null);
+
+            if (!res?.ok) return true; // Si la API falla, no penalizar — ser conservador
+
+            const data = await res.json();
+            if (data && data.length > 0) {
+                console.log(`GIS ✅ EXISTE globalmente: '${q}'`);
+                return true;
+            }
+        }
+
+        console.warn(`GIS 🚫 ALUCINACIÓN DETECTADA: '${stopName}' no existe en OSM global. Eliminando.`);
+        return false;
+    } catch (e) {
+        console.warn(`GIS existence check error for '${stopName}':`, e);
+        return true; // Conservador: no eliminar si hay error de red
+    }
+};
+
+// ── PASO 2: Valida y corrige las coordenadas dentro del municipio correcto ──
 export const verifyStopCoordinates = async (stop: Stop, city: string, country: string, cityCenter: { lat: number, lng: number } | null, requestTs: { last: number }): Promise<Stop> => {
     // 1. Preparar variantes de nombre para la búsqueda
     const fullName = stop.name;
@@ -47,17 +95,24 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
     const parentheticalPart = parentheticalMatch ? parentheticalMatch[1].trim() : null;
     const prefixPart = fullName.split(/\s*[-–(]\s*/)[0].trim();
 
-    // Filtro de palabras irrelevantes para búsquedas más limpias
     const queries = [
-        fullName, // Capa 1: Intento completo
-        parentheticalPart, // Capa 2: Contenido entre paréntesis (Suele ser el nombre real en OSM)
-        prefixPart // Capa 3: Prefijo antes del paréntesis
+        fullName,
+        parentheticalPart,
+        prefixPart
     ].filter((q): q is string => !!q && q.length > 2);
 
     const waitForRateLimit = async () => {
         const elapsed = Date.now() - requestTs.last;
         if (elapsed < 1100) await new Promise(r => setTimeout(r, 1100 - elapsed));
         requestTs.last = Date.now();
+    };
+
+    const normalizedCity = normalizeForMatch(city);
+
+    // Extrae el nombre de municipio de la respuesta address de Nominatim
+    const extractMunicipalityFromAddress = (address: any): string => {
+        const raw = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
+        return normalizeForMatch(raw);
     };
 
     try {
@@ -71,28 +126,46 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
             const encodedQuery = encodeURIComponent(`${query}, ${city}, ${country}`);
             const queryPho = encodeURIComponent(`${query} ${city}`);
 
-            // A) Nominatim (Prioridad Alta)
+            // A) Nominatim (Prioridad Alta) con validación de municipio
             await waitForRateLimit();
-            const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=1&addressdetails=1`;
-            const nomRes = await fetch(nomUrl, { signal: (AbortSignal as any).timeout?.(4000) }).catch(() => null);
+            const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=3&addressdetails=1`;
+            const nomRes = await fetch(nomUrl, {
+                headers: { 'User-Agent': 'bdai-travel-app/1.0' },
+                signal: (AbortSignal as any).timeout?.(4000)
+            }).catch(() => null);
 
             if (nomRes?.ok) {
                 const data = await nomRes.json();
                 if (data && data.length > 0) {
-                    const res = data[0];
-                    const nLat = parseFloat(res.lat);
-                    const nLon = parseFloat(res.lon);
-                    const dist = haversineKm(stop.latitude, stop.longitude, nLat, nLon);
+                    // Iterar resultados para encontrar uno que pertenezca al municipio correcto
+                    for (const res of data) {
+                        const nLat = parseFloat(res.lat);
+                        const nLon = parseFloat(res.lon);
+                        const dist = haversineKm(stop.latitude, stop.longitude, nLat, nLon);
 
-                    const osmName = res.display_name.split(',')[0].trim();
-                    const isExactMatch = normalizeForMatch(query) === normalizeForMatch(osmName);
+                        const osmName = res.display_name.split(',')[0].trim();
+                        const isExactNameMatch = normalizeForMatch(query) === normalizeForMatch(osmName);
+                        const isFuzzyNameMatch = normalizeForMatch(osmName).includes(normalizeForMatch(query)) || normalizeForMatch(query).includes(normalizeForMatch(osmName));
 
-                    if (isExactMatch || dist <= 0.04) { // Umbral 40m para rescate
-                        console.log(`GIS 🎯 RESCATE via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
-                        bestAuthorityLat = nLat;
-                        bestAuthorityLon = nLon;
-                        foundMatch = true;
-                        continue;
+                        // Validación clave: ¿pertenece al municipio correcto?
+                        const resultMunicipality = extractMunicipalityFromAddress(res.address);
+                        const isCorrectMunicipality = resultMunicipality.includes(normalizedCity) || 
+                                                       normalizedCity.includes(resultMunicipality) ||
+                                                       resultMunicipality === '';
+
+                        if (!isCorrectMunicipality) {
+                            console.warn(`GIS ⚠️ '${query}' encontrado en '${res.address?.city || res.address?.town}' ≠ ${city}. Descartando resultado.`);
+                            continue; // Probar siguiente resultado
+                        }
+
+                        // Si está en el municipio correcto y el nombre coincide exacta o parcialmente, o está cerca (hasta 2.5km)
+                        if (isExactNameMatch || isFuzzyNameMatch || dist <= 2.5) {
+                            console.log(`GIS 🎯 RESCATE via '${query}' para '${stop.name}' en ${city}: ${(dist * 1000).toFixed(1)}m de ajuste.`);
+                            bestAuthorityLat = nLat;
+                            bestAuthorityLon = nLon;
+                            foundMatch = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -100,26 +173,42 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
             // B) Photon (Fallback Difuso)
             if (!foundMatch) {
                 await waitForRateLimit();
-                const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=1`;
-                const phoRes = await fetch(phoUrl, { signal: (AbortSignal as any).timeout?.(4000) }).catch(() => null);
+                const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=3`;
+                const phoRes = await fetch(phoUrl, {
+                    signal: (AbortSignal as any).timeout?.(4000)
+                }).catch(() => null);
 
                 if (phoRes?.ok) {
                     const data = await phoRes.json();
                     if (data && data.features && data.features.length > 0) {
-                        const feature = data.features[0];
-                        const coords = feature.geometry.coordinates; // [lon, lat]
-                        const pLat = coords[1];
-                        const pLon = coords[0];
-                        const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
-                        
-                        const photonName = feature.properties.name || "";
-                        const isExactMatch = normalizeForMatch(query) === normalizeForMatch(photonName);
+                        for (const feature of data.features) {
+                            const coords = feature.geometry.coordinates; // [lon, lat]
+                            const pLat = coords[1];
+                            const pLon = coords[0];
+                            const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
+                            
+                            const photonName = feature.properties.name || "";
+                            const isExactMatch = normalizeForMatch(query) === normalizeForMatch(photonName);
+                            const isFuzzyNameMatch = normalizeForMatch(photonName).includes(normalizeForMatch(query)) || normalizeForMatch(query).includes(normalizeForMatch(photonName));
 
-                        if (isExactMatch || dist <= 0.04) {
-                            console.log(`GIS 🔮 RESCATE (Photon) via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
-                            bestAuthorityLat = pLat;
-                            bestAuthorityLon = pLon;
-                            foundMatch = true;
+                            // Validación de municipio en Photon
+                            const photonCity = normalizeForMatch(feature.properties.city || feature.properties.county || '');
+                            const isCorrectMunicipality = photonCity.includes(normalizedCity) || 
+                                                           normalizedCity.includes(photonCity) ||
+                                                           photonCity === '';
+
+                            if (!isCorrectMunicipality) {
+                                console.warn(`GIS ⚠️ Photon: '${photonName}' encontrado en municipio incorrecto. Descartando.`);
+                                continue;
+                            }
+
+                            if (isExactMatch || isFuzzyNameMatch || dist <= 2.5) {
+                                console.log(`GIS 🔮 RESCATE (Photon) via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
+                                bestAuthorityLat = pLat;
+                                bestAuthorityLon = pLon;
+                                foundMatch = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -134,28 +223,43 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
         console.warn(`GIS Refinement error for '${stop.name}':`, e);
     }
 
-    console.log(`GIS ⚠️ ${stop.name}: No se encontró mejor ubicación en OSM. Manteniendo original.`);
+    console.log(`GIS ⚠️ ${stop.name}: No se encontró mejor ubicación en OSM para ${city}. Manteniendo original con baja confianza.`);
     return { ...stop, coordinatesVerified: false };
 };
 
-// ── Geocodifica todas las paradas de un tour (secuencial) ────
-export const processTourStops = async (tour: Tour, city: string, country: string, cityCenter: { lat: number, lng: number } | null): Promise<Tour> => {
+// ── Pipeline completo: Existencia → Geocodificación → Filtro de radio ────
+export const processTourStops = async (tour: Tour, city: string, country: string, cityCenter: { lat: number, lng: number, population?: number | null } | null): Promise<Tour> => {
     const stops = tour.stops;
     const results: Stop[] = [];
     const requestTs = { last: 0 };
+    const radiusKm = getHallucinationRadiusKm(cityCenter?.population ?? null);
 
     for (const stop of stops) {
+        // PASO 1: ¿El lugar existe en OSM globalmente? Si no → alucinación → saltar.
+        const exists = await verifyStopExists(stop.name, requestTs);
+        if (!exists) {
+            console.warn(`GIS 🚫 '${stop.name}' eliminada: no encontrada en OSM global.`);
+            continue;
+        }
+
+        // PASO 2: Corregir coordenadas dentro del municipio correcto.
         const verified = await verifyStopCoordinates(stop, city, country, cityCenter, requestTs);
 
-        // Conservamos la parada a menos que sea una alucinación geográfica (> 10km)
+        // PASO 3: Filtro de radio dinámico — eliminar alucinaciones geográficas.
         if (cityCenter) {
             const distToCenterKm = haversineKm(verified.latitude, verified.longitude, cityCenter.lat, cityCenter.lng);
-            if (distToCenterKm > 10) {
-                console.warn(`GIS: Eliminando '${verified.name}' por estar a ${distToCenterKm.toFixed(1)}km del centro de ${city}. Alucinación catastrófica.`);
+            if (distToCenterKm > radiusKm) {
+                console.warn(`GIS 📍 Eliminando '${verified.name}': está a ${distToCenterKm.toFixed(1)}km del centro (máx. ${radiusKm}km para esta ciudad).`);
                 continue;
             }
         }
-        results.push(verified);
+
+        // Solo se conservan paradas con coordenadas verificadas
+        if (verified.coordinatesVerified) {
+            results.push(verified);
+        } else {
+            console.warn(`GIS ⚠️ '${verified.name}': coordenadas no verificadas en ${city}. Descartada.`);
+        }
     }
 
     return { ...tour, stops: results };

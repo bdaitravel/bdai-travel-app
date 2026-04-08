@@ -43,7 +43,8 @@ export const translations: Record<string, any> = {
     badge_photo_desc: "Visit 10 photo spots",
     badge_zero_desc: "Initial level reached", badge_scout_desc: "Junior explorer status",
     badge_rover_desc: "Frequent traveler status", badge_titan_desc: "Master of the terrain",
-    badge_zenith_desc: "Legend of bdai"
+    badge_zenith_desc: "Legend of bdai",
+    noToursFound: "Unfortunately, this destination does not have enough verified stops to build a tour."
   },
   es: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "tu@email.com", 
@@ -74,7 +75,8 @@ export const translations: Record<string, any> = {
     badge_photo_desc: "Visita 10 puntos fotográficos",
     badge_zero_desc: "Nivel inicial alcanzado", badge_scout_desc: "Estatus de explorador junior",
     badge_rover_desc: "Estatus de viajero frecuente", badge_titan_desc: "Maestro del terreno",
-    badge_zenith_desc: "Leyenda de bdai"
+    badge_zenith_desc: "Leyenda de bdai",
+    noToursFound: "Por desgracia, este destino no cuenta con suficientes paradas verificadas para crear un tour."
   },
   fr: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "votre@email.com", 
@@ -96,6 +98,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Remplissez votre passeport numérique avec des visas uniques pour chaque visite terminée et partagez vos aventures.",
     onboardingGotIt: "COMPRIS ! COMMENÇONS À EXPLORER",
     badge_pioneer_desc: "Terminez votre premier arrêt", badge_streak_desc: "Série d'activités de 3 jours",
+    noToursFound: "Malheureusement, cette destination ne dispose pas de suffisamment d'arrêts vérifiés pour créer un circuit."
   },
   de: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "deine@email.com", 
@@ -117,6 +120,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Füllen Sie Ihren digitalen Reisepass mit einzigartigen Visa für jede abgeschlossene Tour und teilen Sie Ihre Abenteuer.",
     onboardingGotIt: "VERSTANDEN! LASS UNS ERKUNDEN",
     badge_pioneer_desc: "Schließe deinen ersten Halt ab", badge_streak_desc: "3-Tage-Aktivitätsserie",
+    noToursFound: "Leider hat dieses Ziel nicht genügend verifizierte Stopps, um eine Tour zu erstellen."
   },
   it: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "tua@email.com", 
@@ -138,6 +142,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Riempi il tuo passaporto digitale con visti unici per ogni tour completato e condividi le tue avventure.",
     onboardingGotIt: "CAPITO! INIZIAMO AD ESPLORARE",
     badge_pioneer_desc: "Completa la tua prima tappa", badge_streak_desc: "Serie di attività di 3 giorni",
+    noToursFound: "Purtroppo, questa destinazione non ha abbastanza tappe verificate per creare un tour."
   },
   pt: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "seu@email.com", 
@@ -159,6 +164,7 @@ export const translations: Record<string, any> = {
     onboardingPassportDesc: "Preencha seu passaporte digital com vistos únicos para cada passeio concluído e compartilhe suas aventuras.",
     onboardingGotIt: "ENTENDIDO! VAMOS COMEÇAR A EXPLORAR",
     badge_pioneer_desc: "Complete sua primeira parada", badge_streak_desc: "Sequência de atividade de 3 dias",
+    noToursFound: "Infelizmente, este destino não possui paradas verificadas suficientes para criar um passeio."
   },
   nl: { 
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "uw@email.com", 

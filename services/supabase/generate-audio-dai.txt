@@ -1,0 +1,155 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+const jsonHeaders = {
+  ...corsHeaders,
+  'Content-Type': 'application/json',
+};
+
+function addWavHeader(pcmData: Uint8Array): Uint8Array {
+  const numChannels = 1;
+  const sampleRate = 24000;
+  const bitsPerSample = 16;
+  const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
+  const blockAlign = (numChannels * bitsPerSample) / 8;
+  const dataSize = pcmData.length;
+  const chunkSize = 36 + dataSize;
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
+  view.setUint32(0, 0x52494646, false); view.setUint32(4, chunkSize, true);
+  view.setUint32(8, 0x57415645, false); view.setUint32(12, 0x666d7420, false);
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true); view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true); view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true); view.setUint32(36, 0x64617461, false);
+  view.setUint32(40, dataSize, true);
+  const result = new Uint8Array(44 + dataSize);
+  result.set(new Uint8Array(header), 0);
+  result.set(pcmData, 44);
+  return result;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  console.log("--- NUEVA PETICIÓN RECIBIDA ---");
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') || '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
+      { auth: { persistSession: false } }
+    );
+
+    const body = await req.json();
+    const { text, language, city } = body;
+    console.log("Parámetros:", { city, language, textLength: text?.length });
+
+    if (!text || !language || !city) throw new Error('Parámetros incompletos');
+
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    const cleanText = text.replace(/[*_~`]/g, '');
+    const lang = language.toLowerCase();
+    const textHash = btoa(encodeURIComponent(cleanText)).substring(0, 32);
+
+    // 1. INTENTO CACHÉ
+    console.log("Buscando en caché...");
+    const { data: cached } = await supabaseClient
+      .from('audio_cache')
+      .select('url')
+      .eq('text_hash', textHash)
+      .eq('language', lang)
+      .maybeSingle();
+
+    if (cached?.url) {
+      console.log("ÉXITO: Audio encontrado en caché.");
+      return new Response(JSON.stringify({ url: cached.url }), { headers: jsonHeaders });
+    }
+
+    // 2. GENERACIÓN GOOGLE
+    console.log("No está en caché. Llamando a Google Gemini...");
+    const modelName = "gemini-2.5-flash-preview-tts"; 
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+    const googleReq = {
+      contents: [{ role: "user", parts: [{ text: cleanText }] }],
+      generationConfig: {
+         responseModalities: ["AUDIO"],
+         speechConfig: { 
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+            languageCode: "es-ES" 
+         }
+      }
+    };
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Referer': 'https://www.bdai.travel/' 
+      },
+      body: JSON.stringify(googleReq)
+    });
+
+    if (!response.ok) {
+        const errTxt = await response.text();
+        console.error("Error Google API:", response.status, errTxt);
+        throw new Error(`Google API respondió con status ${response.status}`);
+    }
+
+    const resJson = await response.json();
+    const audioBase64 = resJson.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)?.inlineData?.data;
+    
+    if (!audioBase64) {
+        console.error("Respuesta Google sin audio:", JSON.stringify(resJson));
+        throw new Error('No se recibió audio de Google');
+    }
+
+    console.log("Audio recibido. Procesando WAV...");
+    const rawPcm = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
+    const wavBuffer = addWavHeader(rawPcm);
+
+    // 3. STORAGE
+    const safeCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const fileName = `${safeCity}/${lang}/${Date.now()}.wav`;
+    console.log(`Subiendo a Storage: ${fileName}...`);
+
+    const { error: uploadError } = await supabaseClient.storage
+      .from('audios')
+      .upload(fileName, wavBuffer, {
+        contentType: 'audio/wav',
+        upsert: true
+      });
+
+    if (uploadError) {
+        console.error("Error subiendo a Storage:", uploadError);
+        throw new Error('Fallo al guardar archivo en Storage');
+    }
+
+    const { data: pUrl } = supabaseClient.storage.from('audios').getPublicUrl(fileName);
+    console.log("Archivo guardado. URL pública generada.");
+
+    // 4. ACTUALIZAR CACHÉ DB
+    await supabaseClient.from('audio_cache').upsert({
+      text_hash: textHash,
+      language: lang,
+      url: pUrl.publicUrl,
+      city: safeCity,
+      text_fragment: cleanText.substring(0, 100)
+    });
+
+    console.log("Proceso completado con éxito.");
+    return new Response(JSON.stringify({ url: pUrl.publicUrl }), { headers: jsonHeaders });
+
+  } catch (error: any) {
+    console.error("ERROR FINAL:", error.message);
+    return new Response(JSON.stringify({ error: error.message }), { 
+      headers: jsonHeaders, 
+      status: 500 
+    });
+  }
+});
