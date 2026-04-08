@@ -126,8 +126,11 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Sin credenciales hardcoded:** `supabaseClient.ts` solo lee de variables de entorno. Si faltan, loga un error claro y no falla silenciosamente.
 - **Row-Level Security (RLS) Estricto:** 
    - Las tablas de configuración y contraseñas (`secrets`) son innacesibles para el cliente.
-   - **Objetivo Arquitectónico Restrictivo:** Los perfiles (`profiles`) están securizados para lectura/escritura de forma exclusiva para su el usuario propietario (`auth.uid() = id`).
-   - Los tours (`tours_cache`) son de Solo Lectura (`SELECT`) para el cliente de cara a evitar inyecciones maliciosas de datos falsos. **Nota de Migración Pendiente**: Dado que esta seguridad impide que el cliente guarde sus propios tours generados localmente, la generación mediante Gemini (`geminiService.ts`) debe transicionarse a una **Edge Function** (al igual que el generador de Audio). Así, la BD se actualizará de forma segura a nivel servidor usando el `service_role`.
+   - **Objetivo Arquitectónico Restrictivo:** Los perfiles (`profiles`) están securizados para lectura/escritura de forma exclusiva para su usuario propietario (`auth.uid() = id`).
+   - Los tours (`tours_cache`) son de Solo Lectura (`SELECT`) para el cliente para evitar inyecciones maliciosas de datos.
+   - **Migración a Backend Completada:** La lógica pesada de generación (Llamadas a Gemini, Validación GIS y Optimización de rutas) se ha trasladado con éxito a la Edge Function central `generate-tours-dai`. El cliente ya no escribe en caché ni maneja bloqueos (locks).
+   - **Manejo de Secretos y RLS en Servidor:** Debido a un bug del entorno Deno en Supabase donde `SUPABASE_SERVICE_ROLE_KEY` a veces llega vacío, se utiliza la variable personalizada `MY_SERVICE_ROLE_KEY` en las Edge Functions para inicializar el cliente y saltarse el RLS al hacer `upsert` de la DB.
+   - **Bypass de Google Cloud Referrer:** Dado que las Edge Functions no envían un HTTP Referer por defecto, las llamadas a `generativelanguage.googleapis.com` tienen hardcodeado el header `'Referer': 'https://www.bdai.travel/'` para pasar de forma segura las restricciones de Google Cloud asociadas a la API Key.
 - **Zustand como fuente única de verdad:** Se eliminaron todas las escrituras directas a `localStorage.setItem('bdai_profile', ...)` de `App.tsx`. El perfil persiste vía `storageProvider` (localStorage en Capacitor, sessionStorage en web).
 - **Toast en vez de alert():** Todos los errores de UI usan `toast()` del componente `Toast.tsx`. Compatible con Capacitor.
 

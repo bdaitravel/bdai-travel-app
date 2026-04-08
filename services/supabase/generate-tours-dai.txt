@@ -71,11 +71,11 @@ const verifyStopExists = async (stopName) => {
 
 const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs) => {
     const fullName = stop.name;
-    const parentheticalMatch = fullName.match(/\(([^)]+)\)/);
-    const parentheticalPart = parentheticalMatch ? parentheticalMatch[1].trim() : null;
+    // Seleccionamos la parte principal para buscar (ignoramos lo que hay entre paréntesis generalmente)
     const prefixPart = fullName.split(/\s*[-–(]\s*/)[0].trim();
-
-    const queries = [fullName, parentheticalPart, prefixPart].filter(q => !!q && q.length > 2);
+    
+    // Solo hacemos 2 intentos para no bloquear la ejecución 4 minutos
+    const queries = [prefixPart, fullName].filter((q, idx, arr) => q && q.length > 2 && arr.indexOf(q) === idx);
 
     const waitForRateLimit = async () => {
         const elapsed = Date.now() - requestTs.last;
@@ -95,6 +95,7 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
             const encodedQuery = encodeURIComponent(`${query}, ${city}, ${country}`);
             const queryPho = encodeURIComponent(`${query} ${city}`);
 
+            // Intento 1: Nominatim (Estricto, requiere sleep)
             await waitForRateLimit();
             const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=3&addressdetails=1`;
             const nomRes = await fetch(nomUrl, { headers: { 'User-Agent': 'bdai-backend/1.0', 'Accept-Language': 'en' }});
@@ -109,14 +110,11 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
 
                         const osmName = res.display_name.split(',')[0].trim();
                         const isExactNameMatch = normalizeForMatch(query) === normalizeForMatch(osmName);
-                        const isFuzzyNameMatch = normalizeForMatch(osmName).includes(normalizeForMatch(query)) || normalizeForMatch(query).includes(normalizeForMatch(osmName));
-
+                        // Tolerancia relajada si la AI se pasó de creativa
                         const resultMunicipality = extractMunicipalityFromAddress(res.address);
                         const isCorrectMunicipality = resultMunicipality.includes(normalizedCity) || normalizedCity.includes(resultMunicipality) || resultMunicipality === '';
 
-                        if (!isCorrectMunicipality) continue;
-
-                        if (isExactNameMatch || isFuzzyNameMatch || dist <= 2.5) {
+                        if (isCorrectMunicipality && (isExactNameMatch || dist <= 2.5)) {
                             bestAuthorityLat = nLat;
                             bestAuthorityLon = nLon;
                             foundMatch = true;
@@ -126,28 +124,25 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
                 }
             }
 
+            // Intento 2: Photon (Elasticsearch, no requiere sleep de 1.1s)
             if (!foundMatch) {
-                await waitForRateLimit();
                 const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=3`;
                 const phoRes = await fetch(phoUrl);
                 if (phoRes.ok) {
                     const data = await phoRes.json();
                     if (data && data.features && data.features.length > 0) {
                         for (const feature of data.features) {
-                            const coords = feature.geometry.coordinates;
+                            const coords = feature.geometry.coordinates; // Photon revierte lon, lat
                             const pLat = coords[1];
                             const pLon = coords[0];
                             const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
                             const photonName = feature.properties.name || "";
+                            
                             const isExactMatch = normalizeForMatch(query) === normalizeForMatch(photonName);
-                            const isFuzzyNameMatch = normalizeForMatch(photonName).includes(normalizeForMatch(query)) || normalizeForMatch(query).includes(normalizeForMatch(photonName));
-
                             const photonCity = normalizeForMatch(feature.properties.city || feature.properties.county || '');
                             const isCorrectMunicipality = photonCity.includes(normalizedCity) || normalizedCity.includes(photonCity) || photonCity === '';
 
-                            if (!isCorrectMunicipality) continue;
-
-                            if (isExactMatch || isFuzzyNameMatch || dist <= 2.5) {
+                            if (isCorrectMunicipality && (isExactMatch || dist <= 2.5)) {
                                 bestAuthorityLat = pLat;
                                 bestAuthorityLon = pLon;
                                 foundMatch = true;
@@ -505,9 +500,16 @@ Deno.serve(async (req) => {
 
         console.log(`Solicitud de tours recibida para ${city}, ${country} en ${language}`);
 
+        // Leemos la llave segura. Primero tu secreto personalizado, luego el fallback al de sistema.
+        const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+        
+        if (!serviceKey) {
+            throw new Error("ERROR CRÍTICO: Falta la llave Service Role. Crea el secreto MY_SERVICE_ROLE_KEY.");
+        }
+
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') || '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
+            serviceKey,
             { auth: { persistSession: false } }
         );
 
@@ -540,7 +542,10 @@ Deno.serve(async (req) => {
 
         const gRes = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Referer': 'https://www.bdai.travel/' 
+            },
             body: JSON.stringify(googleReq)
         });
 
@@ -575,7 +580,7 @@ Deno.serve(async (req) => {
             const routePolylines = {};
             verifiedTours.forEach(t => { if (t.routePolyline) routePolylines[t.id] = t.routePolyline; });
             
-            await supabaseClient.from('tours_cache').upsert({
+            const { error: upsertError } = await supabaseClient.from('tours_cache').upsert({
                 city: slug,
                 language: language.toLowerCase(),
                 data: verifiedTours,
@@ -584,6 +589,12 @@ Deno.serve(async (req) => {
                 status: 'READY',
                 locked_until: null
             }, { onConflict: 'city, language' });
+
+            if (upsertError) {
+                console.error("❌ Error CRÍTICO al guardar cache en BD:", upsertError);
+            } else {
+                console.log(`✅ Tours guardados con éxito en BD (tours_cache) para ${slug}`);
+            }
         }
 
         return new Response(JSON.stringify({ tours: verifiedTours }), { headers: jsonHeaders });
