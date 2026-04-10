@@ -92,10 +92,10 @@ Como arquitecto senior y consultor estratégico, **debes**:
 ### Rendimiento & Estabilidad
 - **`haversineKm` hoistada:** Función Haversine disponible en todo el módulo desde la línea ~160 de `geminiService.ts`. Elimina los cálculos inline duplicados que había en `verifyStopCoordinates` y `processTourStops`.
 - **Pipeline de verificación GIS en Cascada:** Se asume a **Gemini como el Ground Truth** inicial para las coordenadas, y se busca refinar la precisión usando un sistema de dos niveles:
-  1. **Nivel RESCATE (Match 100%):** Si el nombre de la parada (tras `normalizeForMatch`) coincide **exactamente** con el del mapa (Nominatim/Photon), se adopta la coordenada oficial **sin límite de distancia** (dentro del radio de la ciudad). Esto recupera monumentos alucinados por Google.
-  2. **Nivel MAGNETO (Fachada 35m):** Si el nombre NO coincide exactamente (ej. calles genéricas), solo se aplica la corrección si el punto oficial está a **<= 35m** del original. Esto evita saltos accidentales a calles paralelas.
+  1. **Nivel RESCATE (Match exacto/fuzzy por nombre):** Si el nombre de la parada (tras `normalizeForMatch`) coincide **exacta o parcialmente** con el del mapa (Nominatim/Photon), se adopta la coordenada oficial **sin límite de distancia** (dentro del radio de la ciudad). Esto recupera monumentos alucinados por Google.
+  2. **Nivel MAGNETO (1km):** Si el nombre NO coincide (ej. calles genéricas), solo se aplica la corrección si el punto oficial está a **<= 1km** del original. Reducido desde 2.5km para evitar adoptar coordenadas de POIs incorrectos.
   3. **Motores:** Nominatim (Estricto con `addressdetails=1`) -> Photon (Fuzzy/ElasticSearch).
-  4. **Gemini (Fallback Final):** Si no hay match 100% ni punto cercano <= 35m, se conserva la coordenada dictaminada por Gemini (`coordinatesVerified = false`).
+  4. **Eliminación (Política Estricta):** Si no hay match por nombre ni punto cercano <= 1km, la parada se **elimina** del tour (antes se conservaba con `coordinatesVerified = false`).
 - **Rate limiting inteligente (Secuencial):** `requestTs` compartido. Solo espera el retraso inter-request necesario para respetar 1 req/s sin bloqueos excesivos (`setTimeout` dinámico).
 - **Pipeline GIS en 3 pasos (Anti-Alucinación):**
   1. **Existencia Global**: Antes de geocodificar, se busca el nombre de la parada en Nominatim sin ciudad. Si 0 resultados globales → alucinación confirmada → parada eliminada sin gastar más tokens.
@@ -114,6 +114,17 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Shared Rate Limiter (GisService)**: Implementado un limitador de frecuencia global en el módulo `lib/gisService.ts` que garantiza un espaciado de 1.1s entre peticiones a Nominatim, independientemente de cuántos tours se estén procesando en paralelo.
 - **Feedback de Precisión Progresivo**: La UI recibe primero la versión Gemini (`Validando...`) y luego se actualiza automáticamente a la versión OSM (`Real`) sin intervención del usuario.
 - **`useDebounce` hook:** `lib/useDebounce.ts` sustituye el patrón manual `setTimeout + useRef` en `handleCitySearch`.
+
+### Anti-Alucinación v2 (Estrategia de 3 Capas)
+- **Capa 1 — Grounding con Google Search:** La llamada REST a Gemini 2.5 Flash incluye `"tools": [{"google_search": {}}]`, permitiendo a la IA buscar en Google en tiempo real para verificar nombres y coordenadas antes de generar cada parada.
+  - **Límite Capa Gratuita:** 1.500 requests/día gratis. El sistema bloquea el grounding a 1.400 req/día (margen de seguridad de 100). Si se alcanza el límite, la generación continúa **SIN grounding** (degradación graciosa) y se envía un email de alerta.
+  - **Coste Fuera de Capa Gratuita:** $35 por cada 1.000 requests adicionales. El bloqueo automático impide que se incurra en costes no autorizados.
+  - **Alerta Automática:** Al alcanzar el límite, se intenta notificar vía el secreto `SUPPORT_EMAIL` (y opcionalmente `ALERT_WEBHOOK_URL`). Se persiste un registro en `tours_cache` con `city='__system_alert__'` para auditoría.
+  - **Configuración Requerida:** Crear el secreto `SUPPORT_EMAIL` en Supabase con la dirección de soporte de la aplicación. Opcionalmente, crear `ALERT_WEBHOOK_URL` para integración con servicios de notificación (Slack, Discord, etc.).
+- **Capa 2 — Pre-catálogo Overpass API:** Antes de llamar a Gemini, la Edge Function consulta la Overpass API de OpenStreetMap con el bounding box de la ciudad. Obtiene un catálogo de POIs reales (monumentos, iglesias, atracciones turísticas) con coordenadas verificadas. Este catálogo se inyecta en el prompt como sección `VERIFIED POI CATALOG` para que Gemini priorice POIs reales sobre su conocimiento interno.
+- **Capa 3 — GIS Endurecido:** Tolerancia de distancia reducida de 2.5km a 1km para matches sin coincidencia de nombre (MAGNETO). Política estricta: toda parada sin verificación GIS se elimina. Cross-reference contra catálogo Overpass como último recurso antes de eliminar.
+- **getCityInfo con población real:** La Edge Function ahora extrae la población de `extratags.population` de Nominatim (igual que el cliente) en vez de usar un valor hardcodeado de 100.000. Esto corrige el cálculo del radio dinámico de permisividad.
+- **Grounding Metadata Logging:** Se loguean las búsquedas de Google Search realizadas por Gemini (`groundingMetadata.webSearchQueries`) para auditar la calidad del grounding.
 
 ### Identidad y Voz de DAI
 - **Persona Femenina y Primera Persona:** DAI es femenina y habla estrictamente en **primera persona del singular** ("yo", "me he dado cuenta", "te recomiendo"). Toda la concordancia gramatical debe usar adjetivos femeninos ("estoy convencida").

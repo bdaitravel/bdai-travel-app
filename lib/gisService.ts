@@ -158,9 +158,16 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
                             continue; // Probar siguiente resultado
                         }
 
-                        // Si está en el municipio correcto y el nombre coincide exacta o parcialmente, o está cerca (hasta 2.5km)
-                        if (isExactNameMatch || isFuzzyNameMatch || dist <= 2.5) {
+                        // ENDURECIDO: Exact/Fuzzy name match → RESCATE sin límite de distancia
+                        //             Sin match de nombre → máximo 500m (antes era 2.5km)
+                        if (isExactNameMatch || isFuzzyNameMatch) {
                             console.log(`GIS 🎯 RESCATE via '${query}' para '${stop.name}' en ${city}: ${(dist * 1000).toFixed(1)}m de ajuste.`);
+                            bestAuthorityLat = nLat;
+                            bestAuthorityLon = nLon;
+                            foundMatch = true;
+                            break;
+                        } else if (dist <= 1.0) {
+                            console.log(`GIS 🧲 MAGNETO 1km via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
                             bestAuthorityLat = nLat;
                             bestAuthorityLon = nLon;
                             foundMatch = true;
@@ -202,8 +209,15 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
                                 continue;
                             }
 
-                            if (isExactMatch || isFuzzyNameMatch || dist <= 2.5) {
+                            // ENDURECIDO: misma lógica que Nominatim
+                            if (isExactMatch || isFuzzyNameMatch) {
                                 console.log(`GIS 🔮 RESCATE (Photon) via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
+                                bestAuthorityLat = pLat;
+                                bestAuthorityLon = pLon;
+                                foundMatch = true;
+                                break;
+                            } else if (dist <= 1.0) {
+                                console.log(`GIS 🧲 MAGNETO 1km (Photon) via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
                                 bestAuthorityLat = pLat;
                                 bestAuthorityLon = pLon;
                                 foundMatch = true;

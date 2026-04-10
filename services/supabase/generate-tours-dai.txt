@@ -11,6 +11,83 @@ const jsonHeaders = {
   'Content-Type': 'application/json',
 };
 
+// ── PROTECCIÓN CAPA GRATUITA GROUNDING (1.500 req/día, margen a 1.400) ──────
+const GROUNDING_DAILY_LIMIT = 1400; // Margen de seguridad: 100 req bajo el límite real de 1.500
+
+const checkGroundingQuota = async (supabaseClient) => {
+    try {
+        // Contar generaciones de hoy (cada generación = 1 grounding request)
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        
+        const { count, error } = await supabaseClient
+            .from('tours_cache')
+            .select('*', { count: 'exact', head: true })
+            .gte('updated_at', todayStart.toISOString());
+        
+        if (error) {
+            console.warn('⚠️ Error checking grounding quota, enabling grounding by default:', error);
+            return { allowed: true, used: 0 };
+        }
+        
+        const used = count || 0;
+        const allowed = used < GROUNDING_DAILY_LIMIT;
+        
+        if (!allowed) {
+            console.warn(`🚫 GROUNDING BLOQUEADO: ${used}/${GROUNDING_DAILY_LIMIT} requests diarios alcanzados.`);
+        } else {
+            console.log(`📊 Grounding quota: ${used}/${GROUNDING_DAILY_LIMIT} (${GROUNDING_DAILY_LIMIT - used} restantes)`);
+        }
+        
+        return { allowed, used };
+    } catch (e) {
+        console.warn('Grounding quota check failed:', e);
+        return { allowed: true, used: 0 };
+    }
+};
+
+const sendGroundingLimitAlert = async (supabaseClient, used) => {
+    const supportEmail = Deno.env.get('SUPPORT_EMAIL') || '';
+    if (!supportEmail) {
+        console.error('🚨 GROUNDING LIMIT REACHED pero no hay SUPPORT_EMAIL configurado. Configura el secret SUPPORT_EMAIL.');
+        return;
+    }
+    
+    try {
+        // Intentar enviar email vía Supabase Auth Admin (invitación como workaround)
+        // o vía webhook externo si está configurado
+        const webhookUrl = Deno.env.get('ALERT_WEBHOOK_URL');
+        
+        const alertPayload = {
+            type: 'GROUNDING_LIMIT_REACHED',
+            message: `⚠️ BDAI Alerta: Se ha alcanzado el límite diario de Google Search Grounding (${used}/${GROUNDING_DAILY_LIMIT}). Las generaciones de tours continuarán SIN grounding hasta mañana. Coste de superar el límite: $35/1.000 requests adicionales.`,
+            timestamp: new Date().toISOString(),
+            to: supportEmail
+        };
+        
+        if (webhookUrl) {
+            await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(alertPayload)
+            }).catch(e => console.warn('Webhook alert failed:', e));
+        }
+        
+        // Log persistente en la BD para auditoría
+        await supabaseClient.from('tours_cache').upsert({
+            city: '__system_alert__',
+            language: 'grounding_limit',
+            data: [alertPayload],
+            updated_at: new Date().toISOString(),
+            status: 'READY'
+        }, { onConflict: 'city, language' }).catch(e => console.warn('Alert DB log failed:', e));
+        
+        console.error(`🚨 ALERTA ENVIADA a ${supportEmail}: Límite de grounding alcanzado.`);
+    } catch (e) {
+        console.error('Failed to send grounding limit alert:', e);
+    }
+};
+
 // ── UTILIDADES GIS ──────────────────────────────────────────────────────────
 const haversineKm = (lat1, lon1, lat2, lon2) => {
     const R = 6371; 
@@ -39,24 +116,110 @@ const extractMunicipalityFromAddress = (address) => {
     return normalizeForMatch(raw);
 };
 
+// ── Obtener info de la ciudad CON POBLACIÓN REAL ────────────────────────────
 const getCityInfo = async (city, country) => {
     try {
         const query = encodeURIComponent(`${city}, ${country}`);
-        const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
+        const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&extratags=1`;
         const res = await fetch(url, { headers: { 'User-Agent': 'bdai-backend/1.0', 'Accept-Language': 'en' }});
         if (res.ok) {
             const data = await res.json();
             if (data && data.length > 0) {
-                const pop = 100000;
+                // Extraer población REAL de extratags (no hardcodeada)
+                const population = data[0].extratags?.population
+                    ? parseInt(data[0].extratags.population, 10)
+                    : null;
                 let radiusKm = 5;
-                if (pop < 20000) radiusKm = 3; else if (pop > 200000) radiusKm = 10;
-                return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), radiusKm, population: pop };
+                if (population) {
+                    if (population < 20000) radiusKm = 3;
+                    else if (population > 200000) radiusKm = 10;
+                } else {
+                    radiusKm = 7; // Sin datos: radio moderado conservador
+                }
+                return { 
+                    lat: parseFloat(data[0].lat), 
+                    lng: parseFloat(data[0].lon), 
+                    radiusKm, 
+                    population,
+                    // Bounding box para Overpass (aproximado: ±0.025° ≈ ±2.5km)
+                    bbox: {
+                        south: parseFloat(data[0].lat) - 0.025,
+                        west: parseFloat(data[0].lon) - 0.035,
+                        north: parseFloat(data[0].lat) + 0.025,
+                        east: parseFloat(data[0].lon) + 0.035,
+                    }
+                };
             }
         }
-    } catch(e) {}
+    } catch(e) {
+        console.warn('getCityInfo failed:', e);
+    }
     return null;
 };
 
+// ── CAPA 2: Pre-catálogo de POIs reales vía Overpass API ────────────────────
+const fetchOverpassCatalog = async (cityInfo) => {
+    if (!cityInfo?.bbox) return [];
+    
+    const { south, west, north, east } = cityInfo.bbox;
+    const bboxStr = `${south},${west},${north},${east}`;
+    
+    const query = `[out:json][timeout:15];(nwr["historic"](${bboxStr});nwr["tourism"~"attraction|museum|gallery"](${bboxStr});nwr["amenity"="place_of_worship"](${bboxStr}););out center tags;`;
+    
+    try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: `data=${encodeURIComponent(query)}`,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        
+        if (!res.ok) {
+            console.warn(`Overpass API returned ${res.status}, skipping catalog.`);
+            return [];
+        }
+        
+        const data = await res.json();
+        if (!data?.elements) return [];
+        
+        const catalog = [];
+        for (const el of data.elements) {
+            const name = el.tags?.name;
+            if (!name || name.length < 3) continue;
+            
+            const lat = el.lat || el.center?.lat;
+            const lon = el.lon || el.center?.lon;
+            if (!lat || !lon) continue;
+            
+            const type = el.tags?.historic || el.tags?.tourism || el.tags?.amenity || 'unknown';
+            catalog.push({ name, lat, lon, type });
+        }
+        
+        console.log(`📍 Overpass catalog: ${catalog.length} POIs encontrados en la zona.`);
+        return catalog;
+    } catch (e) {
+        console.warn('Overpass catalog fetch failed (non-blocking):', e);
+        return [];
+    }
+};
+
+// ── Formatear catálogo para inyección en prompt ─────────────────────────────
+const formatCatalogForPrompt = (catalog) => {
+    if (!catalog || catalog.length === 0) return '';
+    
+    const entries = catalog
+        .slice(0, 60) // Máximo 60 POIs para no sobrecargar el prompt
+        .map(poi => `- "${poi.name}" (${poi.lat.toFixed(6)}, ${poi.lon.toFixed(6)}) [${poi.type}]`)
+        .join('\n');
+    
+    return `\n\nVERIFIED POI CATALOG (CRITICAL — USE THESE FIRST):
+The following ${catalog.length} places are CONFIRMED to exist in this city with verified coordinates from OpenStreetMap.
+You MUST prioritize these over your own knowledge. Use the EXACT names and coordinates provided.
+If you want to include a place NOT in this catalog, you MUST be 100% certain it exists TODAY — and you MUST use Google Search to verify it before including it.
+
+${entries}`;
+};
+
+// ── Verificación de existencia global ────────────────────────────────────────
 const verifyStopExists = async (stopName) => {
     try {
         const cleanName = stopName.replace(/\(([^)]+)\)/g, '').split(/[-,—]/)[0].trim();
@@ -69,12 +232,58 @@ const verifyStopExists = async (stopName) => {
     } catch(e) { return true; }
 };
 
-const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs) => {
-    const fullName = stop.name;
-    // Seleccionamos la parte principal para buscar (ignoramos lo que hay entre paréntesis generalmente)
-    const prefixPart = fullName.split(/\s*[-–(]\s*/)[0].trim();
+// ── Cross-reference contra catálogo Overpass ─────────────────────────────────
+const crossReferenceWithCatalog = (stop, catalog) => {
+    if (!catalog || catalog.length === 0) return null;
     
-    // Solo hacemos 2 intentos para no bloquear la ejecución 4 minutos
+    const normalizedStopName = normalizeForMatch(stop.name);
+    
+    // Buscar match exacto
+    for (const poi of catalog) {
+        if (normalizeForMatch(poi.name) === normalizedStopName) {
+            return { ...poi, matchType: 'exact' };
+        }
+    }
+    
+    // Buscar match parcial (contiene o está contenido)
+    for (const poi of catalog) {
+        const normalizedPoi = normalizeForMatch(poi.name);
+        if (normalizedPoi.includes(normalizedStopName) || normalizedStopName.includes(normalizedPoi)) {
+            return { ...poi, matchType: 'partial' };
+        }
+    }
+    
+    // Buscar match por palabras clave significativas (>4 chars, ignorando artículos)
+    const stopWords = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'y', 'e', 'en', 'a', 'the', 'of', 'and']);
+    const stopKeywords = normalizedStopName.split(/\s+/).filter(w => w.length > 4 && !stopWords.has(w));
+    
+    if (stopKeywords.length > 0) {
+        let bestMatch = null;
+        let bestScore = 0;
+        
+        for (const poi of catalog) {
+            const poiNorm = normalizeForMatch(poi.name);
+            let matchCount = 0;
+            for (const kw of stopKeywords) {
+                if (poiNorm.includes(kw)) matchCount++;
+            }
+            const score = matchCount / stopKeywords.length;
+            if (score > bestScore && score >= 0.5) {
+                bestScore = score;
+                bestMatch = { ...poi, matchType: 'keyword', score };
+            }
+        }
+        
+        if (bestMatch) return bestMatch;
+    }
+    
+    return null;
+};
+
+// ── Verificación y corrección de coordenadas (ENDURECIDA) ───────────────────
+const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs, catalog) => {
+    const fullName = stop.name;
+    const prefixPart = fullName.split(/\s*[-–(]\s*/)[0].trim();
     const queries = [prefixPart, fullName].filter((q, idx, arr) => q && q.length > 2 && arr.indexOf(q) === idx);
 
     const waitForRateLimit = async () => {
@@ -84,6 +293,13 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
     };
 
     const normalizedCity = normalizeForMatch(city);
+
+    // ── PASO PREVIO: Cross-reference con catálogo Overpass ──
+    const catalogMatch = crossReferenceWithCatalog(stop, catalog);
+    if (catalogMatch && catalogMatch.matchType === 'exact') {
+        console.log(`GIS 🗺️ CATÁLOGO EXACT: '${stop.name}' → '${catalogMatch.name}' (${catalogMatch.lat}, ${catalogMatch.lon})`);
+        return { ...stop, name: catalogMatch.name, latitude: catalogMatch.lat, longitude: catalogMatch.lon, coordinatesVerified: true };
+    }
 
     try {
         let bestAuthorityLat = 0;
@@ -95,7 +311,7 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
             const encodedQuery = encodeURIComponent(`${query}, ${city}, ${country}`);
             const queryPho = encodeURIComponent(`${query} ${city}`);
 
-            // Intento 1: Nominatim (Estricto, requiere sleep)
+            // Intento 1: Nominatim (Estricto)
             await waitForRateLimit();
             const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=3&addressdetails=1`;
             const nomRes = await fetch(nomUrl, { headers: { 'User-Agent': 'bdai-backend/1.0', 'Accept-Language': 'en' }});
@@ -110,11 +326,24 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
 
                         const osmName = res.display_name.split(',')[0].trim();
                         const isExactNameMatch = normalizeForMatch(query) === normalizeForMatch(osmName);
-                        // Tolerancia relajada si la AI se pasó de creativa
                         const resultMunicipality = extractMunicipalityFromAddress(res.address);
                         const isCorrectMunicipality = resultMunicipality.includes(normalizedCity) || normalizedCity.includes(resultMunicipality) || resultMunicipality === '';
 
-                        if (isCorrectMunicipality && (isExactNameMatch || dist <= 2.5)) {
+                        if (!isCorrectMunicipality) {
+                            console.warn(`GIS ⚠️ '${query}' en '${res.address?.city || res.address?.town}' ≠ ${city}. Descartando.`);
+                            continue;
+                        }
+
+                        // RESCATE: Exact name match → sin límite de distancia (el filtro de radio de ciudad lo acota)
+                        // MAGNETO: Non-exact match → máximo 1km
+                        if (isExactNameMatch) {
+                            console.log(`GIS 🎯 RESCATE EXACTO: '${query}' → (${nLat}, ${nLon}), ajuste=${(dist * 1000).toFixed(0)}m`);
+                            bestAuthorityLat = nLat;
+                            bestAuthorityLon = nLon;
+                            foundMatch = true;
+                            break;
+                        } else if (dist <= 1.0) {
+                            console.log(`GIS 🧲 MAGNETO 1km: '${query}' → (${nLat}, ${nLon}), ajuste=${(dist * 1000).toFixed(0)}m`);
                             bestAuthorityLat = nLat;
                             bestAuthorityLon = nLon;
                             foundMatch = true;
@@ -124,7 +353,7 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
                 }
             }
 
-            // Intento 2: Photon (Elasticsearch, no requiere sleep de 1.1s)
+            // Intento 2: Photon (Elasticsearch fuzzy)
             if (!foundMatch) {
                 const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=3`;
                 const phoRes = await fetch(phoUrl);
@@ -132,7 +361,7 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
                     const data = await phoRes.json();
                     if (data && data.features && data.features.length > 0) {
                         for (const feature of data.features) {
-                            const coords = feature.geometry.coordinates; // Photon revierte lon, lat
+                            const coords = feature.geometry.coordinates;
                             const pLat = coords[1];
                             const pLon = coords[0];
                             const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
@@ -142,7 +371,17 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
                             const photonCity = normalizeForMatch(feature.properties.city || feature.properties.county || '');
                             const isCorrectMunicipality = photonCity.includes(normalizedCity) || normalizedCity.includes(photonCity) || photonCity === '';
 
-                            if (isCorrectMunicipality && (isExactMatch || dist <= 2.5)) {
+                            if (!isCorrectMunicipality) continue;
+
+                            // RESCATE: exact → sin límite. MAGNETO: non-exact → máx 1km
+                            if (isExactMatch) {
+                                console.log(`GIS 🔮 RESCATE EXACTO (Photon): '${query}' → (${pLat}, ${pLon}), ajuste=${(dist * 1000).toFixed(0)}m`);
+                                bestAuthorityLat = pLat;
+                                bestAuthorityLon = pLon;
+                                foundMatch = true;
+                                break;
+                            } else if (dist <= 1.0) {
+                                console.log(`GIS 🧲 MAGNETO 1km (Photon): '${query}' → (${pLat}, ${pLon}), ajuste=${(dist * 1000).toFixed(0)}m`);
                                 bestAuthorityLat = pLat;
                                 bestAuthorityLon = pLon;
                                 foundMatch = true;
@@ -157,29 +396,59 @@ const verifyStopCoordinates = async (stop, city, country, cityCenter, requestTs)
         if (foundMatch) {
             return { ...stop, latitude: bestAuthorityLat, longitude: bestAuthorityLon, coordinatesVerified: true };
         }
+
+        // Último recurso: si hay match parcial en el catálogo, usar sus coordenadas
+        if (catalogMatch) {
+            console.log(`GIS 🗺️ CATÁLOGO PARCIAL: '${stop.name}' → '${catalogMatch.name}' (${catalogMatch.matchType})`);
+            return { ...stop, latitude: catalogMatch.lat, longitude: catalogMatch.lon, coordinatesVerified: true };
+        }
+
+        // POLÍTICA ESTRICTA: Sin verificación → marcar como no verificada (se eliminará después)
+        console.warn(`GIS ❌ '${stop.name}': no verificada en ${city}. Será eliminada.`);
         return { ...stop, coordinatesVerified: false };
     } catch (e) {
+        console.warn(`GIS error for '${stop.name}':`, e);
         return { ...stop, coordinatesVerified: false };
     }
 };
 
-const processTourStops = async (unverifiedTour, city, country, cityInfo) => {
+// ── Pipeline de procesamiento de paradas ─────────────────────────────────────
+const processTourStops = async (unverifiedTour, city, country, cityInfo, catalog) => {
     const verifiedStops = [];
     const requestTs = { last: 0 };
+    
     for (const stop of unverifiedTour.stops) {
+        // PASO 1: Existencia global
         const exists = await verifyStopExists(stop.name);
-        if (!exists) continue;
+        if (!exists) {
+            // Excepción: si está en el catálogo Overpass, existe seguro
+            const inCatalog = crossReferenceWithCatalog(stop, catalog);
+            if (!inCatalog) {
+                console.warn(`GIS 🚫 ALUCINACIÓN: '${stop.name}' no existe en OSM global ni en catálogo. Eliminando.`);
+                continue;
+            }
+            console.log(`GIS ♻️ '${stop.name}' no en Nominatim global pero SÍ en catálogo Overpass. Recuperando.`);
+        }
 
-        const processed = await verifyStopCoordinates(stop, city, country, cityInfo, requestTs);
+        // PASO 2: Verificar/corregir coordenadas (con cross-reference de catálogo)
+        const processed = await verifyStopCoordinates(stop, city, country, cityInfo, requestTs, catalog);
         
+        // PASO 3: Filtro de radio
         let shouldKeep = true;
         if (cityInfo) {
             const distToCenter = haversineKm(cityInfo.lat, cityInfo.lng, processed.latitude, processed.longitude);
             if (distToCenter > cityInfo.radiusKm) {
+                console.warn(`GIS 📍 '${processed.name}' a ${distToCenter.toFixed(1)}km del centro (máx ${cityInfo.radiusKm}km). Eliminando.`);
                 shouldKeep = false;
             }
         }
-        if (shouldKeep) verifiedStops.push(processed);
+
+        // PASO 4: POLÍTICA ESTRICTA — solo paradas verificadas
+        if (shouldKeep && processed.coordinatesVerified) {
+            verifiedStops.push(processed);
+        } else if (shouldKeep && !processed.coordinatesVerified) {
+            console.warn(`GIS ❌ '${processed.name}': coordenadas NO verificadas → eliminada del tour.`);
+        }
     }
     return { ...unverifiedTour, stops: verifiedStops };
 };
@@ -424,9 +693,10 @@ TRUTH BEFORE STYLE: Always confirm a place exists before describing it. Wit is m
 CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
 GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. Place stops within 2km radius of the provided center. Never place stops in neighboring towns or wrong locations.`;
 
-const generateTourPrompt = (city, country, language, coordsAnchor) => `You are generating tours for ${city}, ${country} in ${language}.
+const generateTourPrompt = (city, country, language, coordsAnchor, catalogText) => `You are generating tours for ${city}, ${country} in ${language}.
 
 GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
+${catalogText}
 
 UNIVERSAL RIGOR & NO-INVENTION RULE:
 - Find the PERFECT BALANCE: Do not discard obscure but real places, but absolutely NEVER HALLUCINATE non-existent ones (e.g., if it can't be found on the internet, DO NOT invent it).
@@ -478,7 +748,8 @@ FORMAT RULES:
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER, e.g. 40.4168), "longitude" (NUMBER, e.g. -3.7038), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be strictly within the boundaries of ${city}.
-   - CRITICAL: You MUST use the Google Search tool to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. NEVER guess or estimate coordinates. Always search for the real location.
+   - CRITICAL: You MUST use Google Search to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. NEVER guess or estimate coordinates. Always search for the real location.
+   - If a VERIFIED POI CATALOG was provided above, use THOSE coordinates directly — they come from OpenStreetMap and are authoritative.
 5. Content in ${language}.`;
 
 const tryExtractTours = (text) => {
@@ -498,9 +769,8 @@ Deno.serve(async (req) => {
         
         if (!city || !country || !language) throw new Error('Parámetros incompletos (city, country, language)');
 
-        console.log(`Solicitud de tours recibida para ${city}, ${country} en ${language}`);
+        console.log(`🚀 Solicitud de tours recibida para ${city}, ${country} en ${language}`);
 
-        // Leemos la llave segura. Primero tu secreto personalizado, luego el fallback al de sistema.
         const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
         
         if (!serviceKey) {
@@ -521,24 +791,43 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
         if (cached && cached.data && cached.data.length > 0) {
-            console.log(`Devolviendo tours cacheados para ${slug}`);
+            console.log(`✅ Devolviendo tours cacheados para ${slug}`);
             return new Response(JSON.stringify({ tours: cached.data }), { headers: jsonHeaders });
         }
 
+        // ── Obtener info geográfica de la ciudad ──
         const cityInfo = await getCityInfo(city, country);
         const coordsAnchor = cityInfo
             ? `The geographic anchor for ${city} is near latitude ${cityInfo.lat.toFixed(6)}, longitude ${cityInfo.lng.toFixed(6)}. Focus strictly on the Historical Center / Old Town, keeping stops within a 2km radius of each other.`
             : `All stops must be located within the urban area of ${city}, ${country}.`;
 
-        const prompt = generateTourPrompt(city, country, language, coordsAnchor);
+        // ── CAPA 2: Obtener catálogo de POIs reales de Overpass ──
+        console.log(`📍 Consultando catálogo Overpass para ${city}...`);
+        const catalog = await fetchOverpassCatalog(cityInfo);
+        const catalogText = formatCatalogForPrompt(catalog);
+
+        // ── PROTECCIÓN GROUNDING: Verificar cuota diaria ──
+        const groundingQuota = await checkGroundingQuota(supabaseClient);
+        const useGrounding = groundingQuota.allowed;
+        
+        if (!useGrounding) {
+            await sendGroundingLimitAlert(supabaseClient, groundingQuota.used);
+        }
+
+        // ── Generar prompt con catálogo inyectado ──
+        const prompt = generateTourPrompt(city, country, language, coordsAnchor, catalogText);
         const apiKey = Deno.env.get('GEMINI_API_KEY');
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
         const googleReq = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+            // CAPA 1: Grounding con Google Search (solo si dentro de cuota gratuita)
+            ...(useGrounding ? { tools: [{ google_search: {} }] } : {}),
             generationConfig: { temperature: 0.7, topP: 1, topK: 1 }
         };
+
+        console.log(`🤖 Llamando a Gemini ${useGrounding ? 'CON' : 'SIN'} Grounding + Catálogo (${catalog.length} POIs)...`);
 
         const gRes = await fetch(apiUrl, {
             method: 'POST',
@@ -557,6 +846,12 @@ Deno.serve(async (req) => {
         const resJson = await gRes.json();
         const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
         
+        // Log de grounding metadata si existe
+        const groundingMeta = resJson.candidates?.[0]?.groundingMetadata;
+        if (groundingMeta?.webSearchQueries) {
+            console.log(`🔍 Grounding searches: ${groundingMeta.webSearchQueries.join(', ')}`);
+        }
+        
         const cleanText = text.replace(/\[\d+\]/g, '').replace(/\(\d+\)/g, '').replace(/```json/g, '').replace(/```/g, '').trim();
         const finalTours = tryExtractTours(cleanText);
         const verifiedTours = [];
@@ -564,14 +859,16 @@ Deno.serve(async (req) => {
         for (let i = 0; i < finalTours.length; i++) {
             const tour = finalTours[i];
             if (tour && tour.stops && tour.stops.length > 0) {
-                let processed = await processTourStops(tour, city, country, cityInfo);
+                // CAPA 3: Verificación GIS endurecida + cross-reference catálogo
+                let processed = await processTourStops(tour, city, country, cityInfo, catalog);
                 processed = await optimizeStopOrder(processed);
                 processed.id = `${slug}_${language.toLowerCase()}_${i}`;
                 
                 if (processed.stops.length >= 3) {
                     verifiedTours.push(processed);
+                    console.log(`✅ Tour '${tour.title}': ${processed.stops.length} paradas verificadas.`);
                 } else {
-                    console.log(`Tour ${tour.title} descartado, < 3 paradas válidas`);
+                    console.log(`❌ Tour '${tour.title}' descartado: solo ${processed.stops.length} paradas válidas (mín. 3).`);
                 }
             }
         }
@@ -593,7 +890,7 @@ Deno.serve(async (req) => {
             if (upsertError) {
                 console.error("❌ Error CRÍTICO al guardar cache en BD:", upsertError);
             } else {
-                console.log(`✅ Tours guardados con éxito en BD (tours_cache) para ${slug}`);
+                console.log(`✅ ${verifiedTours.length} tours guardados en BD para ${slug}`);
             }
         }
 
