@@ -12,7 +12,7 @@ export const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: numb
 };
 
 // Helper para comparar nombres (sin tildes, minúsculas, trim)
-export const normalizeForMatch = (s: string) => 
+export const normalizeForMatch = (s: string) =>
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 // ── Calcula el radio de alucinación según la población de la ciudad ──
@@ -122,7 +122,7 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
 
         for (const query of queries) {
             if (foundMatch) break;
-            
+
             const encodedQuery = encodeURIComponent(`${query}, ${city}, ${country}`);
             const queryPho = encodeURIComponent(`${query} ${city}`);
 
@@ -149,9 +149,9 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
 
                         // Validación clave: ¿pertenece al municipio correcto?
                         const resultMunicipality = extractMunicipalityFromAddress(res.address);
-                        const isCorrectMunicipality = resultMunicipality.includes(normalizedCity) || 
-                                                       normalizedCity.includes(resultMunicipality) ||
-                                                       resultMunicipality === '';
+                        const isCorrectMunicipality = resultMunicipality.includes(normalizedCity) ||
+                            normalizedCity.includes(resultMunicipality) ||
+                            resultMunicipality === '';
 
                         if (!isCorrectMunicipality) {
                             console.warn(`GIS ⚠️ '${query}' encontrado en '${res.address?.city || res.address?.town}' ≠ ${city}. Descartando resultado.`);
@@ -193,16 +193,16 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
                             const pLat = coords[1];
                             const pLon = coords[0];
                             const dist = haversineKm(stop.latitude, stop.longitude, pLat, pLon);
-                            
+
                             const photonName = feature.properties.name || "";
                             const isExactMatch = normalizeForMatch(query) === normalizeForMatch(photonName);
                             const isFuzzyNameMatch = normalizeForMatch(photonName).includes(normalizeForMatch(query)) || normalizeForMatch(query).includes(normalizeForMatch(photonName));
 
                             // Validación de municipio en Photon
                             const photonCity = normalizeForMatch(feature.properties.city || feature.properties.county || '');
-                            const isCorrectMunicipality = photonCity.includes(normalizedCity) || 
-                                                           normalizedCity.includes(photonCity) ||
-                                                           photonCity === '';
+                            const isCorrectMunicipality = photonCity.includes(normalizedCity) ||
+                                normalizedCity.includes(photonCity) ||
+                                photonCity === '';
 
                             if (!isCorrectMunicipality) {
                                 console.warn(`GIS ⚠️ Photon: '${photonName}' encontrado en municipio incorrecto. Descartando.`);

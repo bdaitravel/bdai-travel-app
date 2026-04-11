@@ -1,0 +1,47 @@
+**MANDATO DE ARQUITECTURA: MIGRACIÓN A REACT ROUTER DOM (CAPACITOR-SAFE)**
+
+**OBJETIVO PRINCIPAL:**
+Refactorizar completamente la arquitectura de navegación de la aplicación BDAI, eliminando el State-Routing manual basado en Zustand (`AppView`) y migrando todo el sistema al estándar de la industria `react-router-dom`. El objetivo es solucionar de forma definitiva la pérdida de estado al suspender la app, permitir Deep Linking y preparar la app para escalabilidad brutal, asegurando 100% de compatibilidad con la webview de Capacitor (Mobile).
+
+**INSTRUCCIONES DE EJECUCIÓN (MUY MINUCIOSAS Y ESTRICTAS):**
+
+1. **Instalación:**
+   Instala `react-router-dom` a través de npm (`npm install react-router-dom`).
+
+2. **Configuración de Enrutador Raíz (`index.tsx` o `App.tsx` wrapper):**
+   - Importa y envuelve la aplicación principal en un `<HashRouter>`. *Es estrictamente obligatorio usar HashRouter y no BrowserRouter debido a las restricciones de recarga de archivos locales (file://) en Capacitor para iOS/Android.*
+
+3. **Purgado del Store de Zustand (`store/useAppStore.ts`):**
+   - Elimina POR COMPLETO el enum `AppView` y todas las referencias a `currentView` y `setCurrentView`. 
+   - Asegúrate de eliminar `currentView` del middleware `partialize` de Zustand. El router será ahora la Única Fuente de Verdad (Single Source of Truth).
+
+4. **Refactorización de `App.tsx` (El Core):**
+   - Destruye todos los condicionales estilo `{view === AppView.HOME && (...)}` y conviértelos en una estructura jerárquica limpia con `<Routes>` y `<Route>`.
+   - Crea rutas lógicas, por ejemplo:
+     - `path="/login"` -> Auth UI
+     - `path="/home"` o `path="/"` -> Home + TravelServices
+     - `path="/city/:citySlug"` -> City Detail
+     - `path="/tour/:tourId/stop/:stopIdx"` -> ActiveTourCard
+     - `path="/passport"`, `path="/shop"`, `path="/leaderboard"`, `path="/admin"`
+   - **Cuidado Máximo con el Auth:** Corrige la "Trampa de Closure" en `checkAuth()`. Al recibir sesión, si el app evalúa que el usuario estaba originalmente cargando, no lo desvíes a `/home` obligatoriamente machacando la ruta persistida. En React Router esto se soluciona haciendo que el Login devuelva automáticamente a la última ruta deseada, o simplemente redirigiendo a `/home` SOLO si la URL actual explícitamente era `/login`.
+
+5. **Erradicación de `navigateTo` (Búsqueda Exhaustiva):**
+   Busca de forma implacable (usando la búsqueda global de tu entorno) TODOS los componentes donde aparezcan las palabras: `navigateTo`, `AppView`, `currentView` o `setView`. Debes buscar en:
+   - `App.tsx` (Bottom Nav, Auth callbacks, selección de ciudades).
+   - `components/TourCard.tsx` (y `<ActiveTourCard>`).
+   - `components/ProfileModal.tsx`.
+   - `components/AdminPanel.tsx`.
+   - `components/Shop.tsx` y otros componentes de UI.
+   *Acción:* Reemplaza absolutamente todos por el hook `const navigate = useNavigate();` y los correspondientes paths reales (`navigate('/home')`).
+
+6. **Refactorización del Bottom Navigation Bar:**
+   - La barra de navegación inferior actual que usa `isActive={view === AppView.SHOP}` deberá suscribirse a los cambios de la URL leyendo el hook `const location = useLocation();` y deduciendo qué icono iluminar comparando `location.pathname`.
+
+7. **Asegurar Parámetros Dinámicos y Vuelta Atrás:**
+   - En `<ActiveTourCard>`, en lugar de manejar `currentStopIndex` como estado global aislado sin historia, asegúrate de que avanzar o retroceder de parada mueva al usuario a la ruta correcta (ej: `/tour/uuid/stop/1` -> `/tour/uuid/stop/2`). Así la URL atrapará al milímetro el estado.
+
+8. **DOCUMENTACIÓN OBLIGATORIA DEL ARQUITECTO (`AGENTS.md`):**
+   Una vez que hayas completado el refactor, que no queden errores de Typescript y la app compile y navegue correctamente, **DEBES ABRIR el archivo `AGENTS.md`** y añadir un registro explícito en la sección "Decisiones Arquitectónicas (Historial)". 
+   - *Texto requerido (ejemplo):* "Migración completa a `react-router-dom` con `HashRouter`. Se abandonó el enrutamiento manual por estado (`AppView`) para resolver los problemas de 'Closure Trap' tras resuspend y garantizar ruteo inmutable en Capacitor y Mobile Web. URL Hash dictaminada como Single Source of Truth para la UI general."
+
+**ADVERTENCIA FINAL AL AGENTE:** No pares a medias. Debes recorrer todo el árbol de componentes. Cualquier rastro superviviente de `AppView` romperá los subcomponentes. Entrégalo testable.

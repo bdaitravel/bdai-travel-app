@@ -75,13 +75,32 @@ Deno.serve(async (req) => {
     const modelName = "gemini-2.5-flash-preview-tts"; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    const googleReq = {
+    let googleLangCode = "es-ES";
+    let targetVoice = "Kore"; // Default voice para DAI
+
+    if (lang === 'es') {
+        googleLangCode = "es-ES";
+    } else if (lang === 'en') {
+        googleLangCode = "en-US";
+    } else if (lang === 'fr') {
+        googleLangCode = "fr-FR";
+    } else if (lang === 'de') {
+        googleLangCode = "de-DE";
+    } else if (lang === 'it') {
+        googleLangCode = "it-IT";
+    } else if (lang === 'pt') {
+        googleLangCode = "pt-PT";
+    } else {
+        googleLangCode = lang;
+    }
+
+    const googleReq: any = {
       contents: [{ role: "user", parts: [{ text: cleanText }] }],
       generationConfig: {
          responseModalities: ["AUDIO"],
          speechConfig: { 
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
-            languageCode: "es-ES" 
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: targetVoice } },
+            languageCode: googleLangCode
          }
       }
     };

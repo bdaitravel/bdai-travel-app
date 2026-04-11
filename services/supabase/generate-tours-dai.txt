@@ -232,6 +232,29 @@ const verifyStopExists = async (stopName) => {
     } catch(e) { return true; }
 };
 
+// ── PASO 1.5: Verificación de existencia nominal en la ciudad ─────────────────
+const verifyStopExistsInCity = async (stop, city, requestTs, catalog) => {
+    // Si está en el catálogo Overpass (exacto, parcial o keyword), existe indudablemente
+    if (crossReferenceWithCatalog(stop, catalog)) return true;
+
+    try {
+        const cleanName = stop.name.replace(/\(([^)]+)\)/g, '').split(/[-,—]/)[0].trim();
+        if (cleanName.length < 3) return true;
+        
+        const elapsed = Date.now() - requestTs.last;
+        if (elapsed < 1100) await new Promise(r => setTimeout(r, 1100 - elapsed));
+        requestTs.last = Date.now();
+
+        // Búsqueda estricta en la ciudad
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanName + ", " + city)}&format=json&limit=1`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'bdai-backend/1.0', 'Accept-Language': 'en' }});
+        if (!res.ok) return true;
+        
+        const data = await res.json();
+        return (data && data.length > 0);
+    } catch(e) { return true; } // Si falla la red, perdonamos
+};
+
 // ── Cross-reference contra catálogo Overpass ─────────────────────────────────
 const crossReferenceWithCatalog = (stop, catalog) => {
     if (!catalog || catalog.length === 0) return null;
@@ -428,6 +451,13 @@ const processTourStops = async (unverifiedTour, city, country, cityInfo, catalog
                 continue;
             }
             console.log(`GIS ♻️ '${stop.name}' no en Nominatim global pero SÍ en catálogo Overpass. Recuperando.`);
+        }
+
+        // PASO 1.5: Existencia nominal en la ciudad (Bloquea alucinaciones desplazadas)
+        const existsInCity = await verifyStopExistsInCity(stop, city, requestTs, catalog);
+        if (!existsInCity) {
+            console.warn(`GIS 🚫 ALUCINACIÓN DESPLAZADA: '${stop.name}' existe globalmente, pero NO en ${city} ni en catálogo. Eliminando.`);
+            continue;
         }
 
         // PASO 2: Verificar/corregir coordenadas (con cross-reference de catálogo)
@@ -693,7 +723,15 @@ TRUTH BEFORE STYLE: Always confirm a place exists before describing it. Wit is m
 CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
 GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. Place stops within 2km radius of the provided center. Never place stops in neighboring towns or wrong locations.`;
 
-const generateTourPrompt = (city, country, language, coordsAnchor, catalogText) => `You are generating tours for ${city}, ${country} in ${language}.
+const generateTourPrompt = (city, country, language, coordsAnchor, catalogText) => {
+const languageRules = language.toLowerCase().startsWith('es') 
+? `- LEXICON & DIALECT (CRITICAL): You MUST write using STRICT Castilian Spanish (España peninsular). 
+  * Use "vosotros" instead of "ustedes" (e.g., "fijaos", "mirad", "venid", "os recomiendo").
+  * Use local Spain colloquialisms naturally ("chulo", "guay", "vale", "flipante", "una pasada").
+  * This is CRITICAL for our text-to-speech model to correctly adopt a Spain-Spanish accent. NEVER write in neutral or Latin American Spanish.` 
+: ``;
+
+return `You are generating tours for ${city}, ${country} in ${language}.
 
 GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
 ${catalogText}
@@ -727,6 +765,7 @@ DAI'S ABSOLUTE COMMANDS (PERSONA & STYLE):
 - NO HALLUCINATIONS: NEVER INVENT A NAME OR A STOP. It is strictly forbidden to hallucinate buildings, bars, or castles. If Wikipedia or Google Maps doesn't know it, YOU MUST NOT INCLUDE IT.
 - ANTI-WIKIPEDIA: Wikipedia is your enemy. If you sound like an encyclopedia, you fail. Tell the secrets, the mysteries, and the dark curiosities. Mock the "typical" tourist while revealing the true soul of the city.
 - NO CITATIONS: NEVER use citations, footnotes, or references like [1] or (2). NEVER.
+${languageRules}
 
 THEMES TO USE (pick as many as needed based on stop count above):
 1. "Hidden Gems & Dark Secrets"
@@ -751,6 +790,7 @@ FORMAT RULES:
    - CRITICAL: You MUST use Google Search to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. NEVER guess or estimate coordinates. Always search for the real location.
    - If a VERIFIED POI CATALOG was provided above, use THOSE coordinates directly — they come from OpenStreetMap and are authoritative.
 5. Content in ${language}.`;
+};
 
 const tryExtractTours = (text) => {
     try {
