@@ -72,6 +72,7 @@ export interface UserProfile {
   country?: string; 
   capturedMoments: CapturedMoment[];
   isAdmin?: boolean;
+  audioSpeed?: number;
 }
 
 export interface HubIntel {

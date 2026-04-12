@@ -242,7 +242,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         try {
             const audioUrl = await generateAudio(text, user.language, tour.city);
             if (!audioUrl) { audioManager.stop(); return; }
-            await audioManager.play(audioUrl, stopName);
+            await audioManager.play(audioUrl, stopName, user.audioSpeed || 1.0);
         } catch (e) {
             console.error("Audio error:", e);
             audioManager.stop();

@@ -10,7 +10,7 @@ export const GUEST_PROFILE: UserProfile = {
   culturePoints: 0, foodPoints: 0, photoPoints: 0, historyPoints: 0, naturePoints: 0, artPoints: 0, archPoints: 0,
   interests: [], accessibility: 'standard', isPublic: false, bio: '', age: 25, 
   stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }, 
-  visitedCities: [], completedTours: [], badges: [], stamps: [], capturedMoments: []
+  visitedCities: [], completedTours: [], badges: [], stamps: [], capturedMoments: [], audioSpeed: 1.0
 };
 
 interface AppState {

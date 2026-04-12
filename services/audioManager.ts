@@ -5,26 +5,23 @@ type AudioState = {
   isPlaying: boolean;
   isLoading: boolean;
   stopName: string;
+  playbackRate: number;
   onStateChange?: (state: AudioState) => void;
 };
 
 class AudioManager {
-  private audioContext: AudioContext | null = null;
-  private sourceNode: AudioBufferSourceNode | null = null;
+  private audioElement: HTMLAudioElement | null = null;
   private state: AudioState = {
     isPlaying: false,
     isLoading: false,
     stopName: '',
+    playbackRate: 1.0,
   };
 
   constructor() {
-    // A5: Suspender AudioContext cuando la app va a segundo plano (ahorra batería en móvil)
+    // A5: Manejar visibilidad si fuera necesario (HTMLAudioElement lo hace bien nativamente)
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        this.audioContext?.suspend();
-      } else {
-        this.audioContext?.resume();
-      }
+      // Opcional: pausar si es necesario, aunque en tours suele preferirse que siga
     });
   }
 
@@ -40,10 +37,18 @@ class AudioManager {
     return { ...this.state };
   }
 
+  setSpeed(rate: number) {
+    this.state.playbackRate = rate;
+    if (this.audioElement) {
+      this.audioElement.playbackRate = rate;
+    }
+    this.notify();
+  }
+
   stop() {
-    if (this.sourceNode) {
-      try { this.sourceNode.stop(); } catch {}
-      this.sourceNode = null;
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement = null;
     }
     this.state.isPlaying = false;
     this.state.isLoading = false;
@@ -58,47 +63,49 @@ class AudioManager {
     this.notify();
   }
 
-  async play(audioUrl: string, stopName: string): Promise<void> {
+  async play(audioUrl: string, stopName: string, initialSpeed: number = 1.0): Promise<void> {
     this.stop();
 
     if (!audioUrl) return;
 
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
-    }
+    this.state.isLoading = true;
+    this.state.stopName = stopName;
+    this.state.playbackRate = initialSpeed;
+    this.notify();
 
     try {
-      // 1. Obtener los bytes desde la URL (Bucket de Supabase)
-      const response = await fetch(audioUrl);
-      if (!response.ok) throw new Error("Failed to fetch audio from bucket");
-      const arrayBuffer = await response.arrayBuffer();
-
-      // 2. Intentar decodificar como audio estándar (MP3 del bucket)
-      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-      const source = this.audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(this.audioContext.destination);
-      source.onended = () => {
-        if (this.state.stopName === stopName) {
-          this.state.isPlaying = false;
-          this.state.stopName = '';
+      const audio = new Audio(audioUrl);
+      this.audioElement = audio;
+      
+      // Configurar velocidad
+      audio.playbackRate = this.state.playbackRate;
+      
+      audio.oncanplaythrough = () => {
+        if (this.audioElement === audio) {
+          this.state.isLoading = false;
+          this.state.isPlaying = true;
           this.notify();
+          audio.play().catch(e => console.error("Playback failed:", e));
         }
       };
-      this.sourceNode = source;
-      source.start(0);
+
+      audio.onended = () => {
+        if (this.audioElement === audio) {
+          this.stop();
+        }
+      };
+
+      audio.onerror = () => {
+        if (this.audioElement === audio) {
+          console.error("Audio element error");
+          this.stop();
+        }
+      };
+
     } catch (e) {
       console.error("AudioManager play error:", e);
       this.stop();
     }
-
-    this.state.isPlaying = true;
-    this.state.isLoading = false;
-    this.state.stopName = stopName;
-    this.notify();
   }
 }
 

@@ -167,7 +167,8 @@ export const getUserProfileByEmail = async (email: string): Promise<UserProfile 
       city: data.city || '', country: data.country || '',
       stats: data.stats || { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 },
       visitedCities: data.visited_cities || [], completedTours: data.completed_tours || [],
-      badges: data.badges || [], stamps: data.stamps || [], capturedMoments: data.captured_moments || []
+      badges: data.badges || [], stamps: data.stamps || [], capturedMoments: data.captured_moments || [],
+      audioSpeed: data.audio_speed || 1.0
     };
   } catch (e) { 
     console.error("Critical error in getUserProfileByEmail:", e);
@@ -263,6 +264,7 @@ export const syncUserProfile = async (profile: UserProfile) => {
       city: profile.city, country: profile.country, stats: profile.stats,
       visited_cities: profile.visitedCities, completed_tours: profile.completedTours,
       badges: profile.badges, stamps: profile.stamps, captured_moments: profile.capturedMoments,
+      audio_speed: profile.audioSpeed || 1.0,
       updated_at: new Date().toISOString()
     };
     await supabase.from('profiles').upsert(payload, { onConflict: 'email' });
