@@ -173,9 +173,16 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Pruebas de Backend:** Evitar el uso de herramientas de modificación directa de DB/Estructura desde el terminal del Agente. Las propuestas de cambio deben ser validadas por el usuario primero.
 - **Flujo de Trabajo:** Proporcionar comandos listos para copiar y pegar (ej. `supabase functions deploy ...`) para facilitar la tarea al usuario.
 
+### Protocolo Obligatorio de Verificación (BUILD CHECK)
+- **Mandato:** Antes de dar por finalizada cualquier tarea que modifique la estructura del código (`App.tsx`, `store/`, `types.ts`, `routing`), el AGENTE **DEBE** ejecutar localmente el comando `npm run build`.
+- **Objetivo:** Detectar errores de TypeScript, importaciones faltantes o cierres de etiquetas JSX inválidos que el linter del IDE pueda pasar por alto pero que rompan el despliegue en Vercel.
+- **Criterio de Éxito:** Una respuesta "TODO OK" del Agente solo es válida si el `Exit code` de `npm run build` ha sido `0` en la última ejecución.
+
 ### Migración a React Router DOM
 - **Motivo:** Sustitución del sistema manual basado en estados (`AppView`) por un sistema de enrutamiento estándar de la industria.
 - **Estrategia:** Uso de `HashRouter` para asegurar compatibilidad total con el sistema de archivos de Capacitor en iOS/Android.
 - **Beneficios:** Soporte nativo para el botón "atrás", deep-linking a paradas específicas de tours (`/tour/:id/stop/:idx`) y mejor gestión del ciclo de vida de los componentes.
 - **Estado:** `AppView` y `currentView` eliminados de Zustand; navegación centralizada en `App.tsx` con hooks `useNavigate` y `useLocation`.
+- **⚠️ PITFALL DETECTADO:** Al refactorizar vistas dentro de `App.tsx`, evitar anidar declaraciones de funciones (`const View = () => ...`) dentro de bloques de `return (...)` de JSX. Esto causa fallos críticos de compilación en producción (Vercel) aunque el hot-reload local pueda parecer funcionar.
+- **⚠️ IMPORTANTE:** Siempre verificar que `React, { useState, useEffect, useCallback }` estén importados si se usan en el archivo principal tras una limpieza de código o refactorización.
 

@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useCallback } from 'react';
 import { UserProfile, Tour, LeaderboardEntry, LANGUAGES } from './types';
 import { Routes, Route, useNavigate, useLocation, Navigate, useParams } from 'react-router-dom';
 import { generateToursForCity, translateSearchQuery, QuotaError, normalizeCityWithAI, fetchRoutePolyline } from './services/geminiService';
@@ -462,18 +463,8 @@ export default function App() {
     );
   }
 
-  return (
-    <div className="flex-1 bg-transparent flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
-      {(isLoading || isSyncingLang) && (
-        <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 animate-fade-in">
-          <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center animate-pulse">
-            {isSyncingLang ? "translating interface..." : (loadingMessage || "syncing...")}
-          </p>
-        </div>
-      )}
 
-  // Subcomponents for Routes
+  // Subcomponents for Routes (Defined within App to access hooks easily)
   const LoginView = () => (
     <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617]">
       <div className="text-center flex flex-col items-center mb-10 mt-[-15dvh] animate-fade-in">
