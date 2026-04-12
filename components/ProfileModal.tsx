@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, AVATARS, APP_BADGES } from '../types';
+import { useParams, useNavigate } from 'react-router-dom';
 import { syncUserProfile, supabase } from '../services/supabaseClient';
 import { translations } from '../data/translations';
 import { LegalModal } from './LegalModal';
@@ -95,6 +96,8 @@ const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => strin
 export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin, language, onLangChange }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const { cityName, badgeId } = useParams();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -119,6 +122,37 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showReportBug, setShowReportBug] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // ✅ Sincronizar sub-rutas (visa/badge) con el estado interno
+  useEffect(() => {
+    if (cityName) {
+      const stamp = user.stamps.find(s => s.city.toLowerCase() === cityName.toLowerCase());
+      if (stamp) setSelectedVisa(stamp);
+      else navigate('/profile', { replace: true });
+    } else {
+      setSelectedVisa(null);
+    }
+  }, [cityName, user.stamps, navigate]);
+
+  useEffect(() => {
+    if (badgeId) {
+      const b = APP_BADGES.find(ab => ab.id === badgeId);
+      if (b) {
+        const isEarned = user.badges?.some(ub => ub.id === b.id);
+        setSelectedBadge({ badge: b, isEarned: !!isEarned });
+      } else {
+        navigate('/profile', { replace: true });
+      }
+    } else {
+      setSelectedBadge(null);
+    }
+  }, [badgeId, user.badges, navigate]);
+
+  // Manejadores mejorados para navegación
+  const closeVisa = () => navigate('/profile');
+  const closeBadge = () => navigate('/profile');
+  const openVisa = (s: VisaStamp) => navigate(`/profile/visa/${s.city.toLowerCase()}`);
+  const openBadge = (bId: string) => navigate(`/profile/badge/${bId}`);
 
   const pt = (key: string) => {
     const lang = user.language || 'es';
@@ -294,7 +328,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                                 }
                             }
                             return (
-                            <div key={i} onClick={() => setSelectedVisa(s)} className="aspect-square bg-white border-2 border-slate-300 rounded-2xl flex flex-col items-center justify-center p-1.5 shadow-sm transform rotate-[-4deg] hover:rotate-0 transition-transform cursor-pointer">
+                            <div key={i} onClick={() => openVisa(s)} className="aspect-square bg-white border-2 border-slate-300 rounded-2xl flex flex-col items-center justify-center p-1.5 shadow-sm transform rotate-[-4deg] hover:rotate-0 transition-transform cursor-pointer">
                                 <i className="fas fa-stamp text-lg mb-1" style={{ color: s.color }}></i>
                                 <span className="text-[6px] font-black text-slate-900 uppercase truncate w-full text-center">{s.city}</span>
                                 <span className="text-[5px] font-bold text-slate-600 uppercase truncate w-full text-center">{s.country}</span>
@@ -310,7 +344,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         {APP_BADGES.filter(b => b.category === 'rank').map((b) => {
                             const isEarned = user.badges?.some(ub => ub.id === b.id);
                             return (
-                                <div key={b.id} onClick={() => setSelectedBadge({badge: b, isEarned})} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105 cursor-pointer' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale cursor-pointer hover:opacity-50'}`}>
+                                <div key={b.id} onClick={() => openBadge(b.id)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105 cursor-pointer' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale cursor-pointer hover:opacity-50'}`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
                                         <i className={`fas ${b.icon} text-sm`}></i>
                                     </div>
@@ -330,7 +364,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         {APP_BADGES.filter(b => b.category !== 'rank').map((b) => {
                             const isEarned = user.badges?.some(ub => ub.id === b.id);
                             return (
-                                <div key={b.id} onClick={() => setSelectedBadge({badge: b, isEarned})} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105 cursor-pointer' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale cursor-pointer hover:opacity-50'}`}>
+                                <div key={b.id} onClick={() => openBadge(b.id)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-2 border transition-all ${isEarned ? 'bg-purple-600/20 border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)] scale-105 cursor-pointer' : 'bg-slate-900/50 border-slate-800 opacity-30 grayscale cursor-pointer hover:opacity-50'}`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-1.5 ${isEarned ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/40' : 'bg-slate-800 text-slate-600'}`}>
                                         <i className={`fas ${b.icon} text-sm`}></i>
                                     </div>
@@ -392,7 +426,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
           badge={selectedBadge.badge}
           isEarned={selectedBadge.isEarned}
           badgeDescription={pt(selectedBadge.badge.description)}
-          onClose={() => setSelectedBadge(null)} 
+          onClose={closeBadge} 
           pt={pt}
           miles={user.miles}
         />,
@@ -405,7 +439,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
           milesEarned={0} // We don't have this in the stamp directly, could fetch if needed
           stampDate={selectedVisa.date ? new Date(selectedVisa.date).toLocaleDateString() : ''}
           rank={user.rank}
-          onClose={() => setSelectedVisa(null)} 
+          onClose={closeVisa} 
           pt={pt}
         />,
         document.body
