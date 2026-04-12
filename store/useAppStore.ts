@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { UserProfile, Tour, AppView } from '../types';
+import { UserProfile, Tour } from '../types';
 import { getEnvAwareStorage } from '../services/storageProvider';
 
 export const GUEST_PROFILE: UserProfile = { 
@@ -14,9 +14,6 @@ export const GUEST_PROFILE: UserProfile = {
 };
 
 interface AppState {
-  // Navigation & UI
-  currentView: AppView;
-  setCurrentView: (view: AppView) => void;
   
   // Audio Player State (Kept in memory, not persisted to disk)
   audioPlayer: {
@@ -51,8 +48,6 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      currentView: AppView.LOGIN,
-      setCurrentView: (view) => set({ currentView: view }),
       
       audioPlayer: { isPlaying: false, currentTrackId: null },
       setAudioPlaying: (isPlaying, trackId) => set((state) => ({ 
@@ -91,7 +86,6 @@ export const useAppStore = create<AppState>()(
       setSelectedCityInfo: (info) => set({ selectedCityInfo: info }),
       
       clearSession: () => set({
-        currentView: AppView.LOGIN,
         userProfile: GUEST_PROFILE,
         activeTours: [],
         currentTour: null,
@@ -105,7 +99,6 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => getEnvAwareStorage()),
       // Don't persist ephemeral player state or location
       partialize: (state) => ({
-        currentView: state.currentView,
         userProfile: state.userProfile,
         activeTours: state.activeTours,
         currentTour: state.currentTour,

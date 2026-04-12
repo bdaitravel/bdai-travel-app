@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { HashRouter } from 'react-router-dom';
 
 console.log("bdai: index.tsx loaded");
 
@@ -13,8 +14,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ErrorBoundary language="es">
-      <App />
-    </ErrorBoundary>
+    <HashRouter>
+      <ErrorBoundary language="es">
+        <App />
+      </ErrorBoundary>
+    </HashRouter>
   </React.StrictMode>
 );

@@ -162,17 +162,6 @@ export interface TourCache {
   updated_at?: string;
 }
 
-export enum AppView {
-  LOGIN = 'LOGIN',
-  HOME = 'HOME',
-  CITY_DETAIL = 'CITY_DETAIL',
-  TOUR_ACTIVE = 'TOUR_ACTIVE',
-  PROFILE = 'PROFILE',
-  SHOP = 'SHOP',
-  LEADERBOARD = 'LEADERBOARD',
-  TOOLS = 'TOOLS',
-  ADMIN = 'ADMIN'
-}
 
 export const LANGUAGES = [
   { code: 'es', name: 'ES' }, { code: 'en', name: 'EN' }, { code: 'fr', name: 'FR' },
