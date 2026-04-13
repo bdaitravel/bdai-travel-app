@@ -155,6 +155,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [showCompletion, setShowCompletion] = useState(false);
     const [showSocialVisa, setShowSocialVisa] = useState(false);
     const [isFixing, setIsFixing] = useState(false);
+    const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
     const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
 
     const handleFixLocation = async () => {
@@ -202,6 +205,31 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
             window.removeEventListener('bdai-stop-audio', handleGlobalStop);
         };
     }, []);
+
+    // Cerrar menú de velocidad al hacer click fuera
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowSpeedMenu(false);
+            }
+        };
+        if (showSpeedMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showSpeedMenu]);
+
+    const handleSpeedChange = (speed: number) => {
+        audioManager.setSpeed(speed);
+        const updatedUser = { ...user, audioSpeed: speed };
+        onUpdateUser(updatedUser);
+        if (user.isLoggedIn) {
+            syncUserProfile(updatedUser);
+        }
+        setShowSpeedMenu(false);
+    };
+
+    const speeds = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
     const handleFinishTour = async () => {
         const newStamp: VisaStamp = {
@@ -353,6 +381,42 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
                     </div>
                     <i className="fas fa-list-ul text-[10px] text-slate-400 ml-2 shrink-0"></i>
                 </button>
+
+                <div className="relative">
+                    <button 
+                        onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                        className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center border transition-all active:scale-95 text-[9px] font-black ${
+                            showSpeedMenu ? 'bg-purple-600 border-purple-500 text-white shadow-lg' : 'bg-slate-50 border-slate-200 text-slate-400'
+                        }`}
+                    >
+                        {(audioState.playbackRate || 1).toFixed(2)}x
+                    </button>
+
+                    {showSpeedMenu && (
+                        <div 
+                            ref={menuRef}
+                            className="absolute top-full right-0 mt-3 bg-slate-900 border border-white/10 rounded-[1.5rem] overflow-hidden shadow-2xl p-2 z-[9000] min-w-[120px] animate-fade-in"
+                        >
+                            <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-2 px-2 pt-1 text-center">Speed</p>
+                            <div className="grid grid-cols-2 gap-1">
+                                {speeds.map((s) => (
+                                    <button
+                                        key={s}
+                                        onClick={() => handleSpeedChange(s)}
+                                        className={`py-2 rounded-xl text-[9px] font-black transition-all ${
+                                            audioState.playbackRate === s 
+                                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' 
+                                                : 'text-slate-400 hover:bg-white/5'
+                                        }`}
+                                    >
+                                        {s.toFixed(2)}x
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 <button 
                     onClick={() => handlePlayAudio(currentStop.name, (currentStop.description || ""))} 
                     disabled={isAudioLoading}

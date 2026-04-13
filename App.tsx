@@ -11,7 +11,6 @@ import { BdaiLogo } from './components/BdaiLogo';
 import { AdminPanel } from './components/AdminPanel';
 import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
-import { FloatingAudioPlayer } from './components/FloatingAudioPlayer';
 import { translations } from './data/translations';
 import { CityCommunity } from './components/CityCommunity';
 import { toast } from './components/Toast';
@@ -512,7 +511,6 @@ export default function App() {
 
           {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
           {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
-          <FloatingAudioPlayer />
         </div>
 
         {showNav && (
