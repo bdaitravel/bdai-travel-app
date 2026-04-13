@@ -179,8 +179,8 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     const [audioState, setAudioState] = useState(audioManager.getState());
 
     useEffect(() => {
-        audioManager.setOnStateChange(setAudioState);
-        return () => audioManager.setOnStateChange(() => {});
+        const unsubscribe = audioManager.subscribe(setAudioState);
+        return unsubscribe;
     }, []);
 
     const isAudioLoading = audioState.isLoading && audioState.stopName === currentStop?.name;
@@ -233,8 +233,9 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
     };
 
     const handlePlayAudio = async (stopName: string, text: string) => {
-        if (audioState.isLoading) return;
-        if (audioState.isPlaying && audioState.stopName === stopName) {
+        const currentState = audioManager.getState();
+        if (currentState.isLoading) return;
+        if (currentState.isPlaying && currentState.stopName === stopName) {
             audioManager.stop();
             return;
         }

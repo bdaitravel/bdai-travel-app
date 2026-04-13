@@ -9,6 +9,8 @@ type AudioState = {
   onStateChange?: (state: AudioState) => void;
 };
 
+type Listener = (state: AudioState) => void;
+
 class AudioManager {
   private audioElement: HTMLAudioElement | null = null;
   private state: AudioState = {
@@ -17,20 +19,21 @@ class AudioManager {
     stopName: '',
     playbackRate: 1.0,
   };
+  private listeners: Set<Listener> = new Set();
 
   constructor() {
-    // A5: Manejar visibilidad si fuera necesario (HTMLAudioElement lo hace bien nativamente)
-    document.addEventListener('visibilitychange', () => {
-      // Opcional: pausar si es necesario, aunque en tours suele preferirse que siga
-    });
+    document.addEventListener('visibilitychange', () => {});
   }
 
   private notify() {
-    this.state.onStateChange?.({ ...this.state });
+    this.listeners.forEach((cb) => cb({ ...this.state }));
   }
 
-  setOnStateChange(cb: (state: AudioState) => void) {
-    this.state.onStateChange = cb;
+  subscribe(cb: Listener) {
+    this.listeners.add(cb);
+    return () => {
+      this.listeners.delete(cb);
+    };
   }
 
   getState(): AudioState {
@@ -76,18 +79,21 @@ class AudioManager {
     try {
       const audio = new Audio(audioUrl);
       this.audioElement = audio;
-      
-      // Configurar velocidad
       audio.playbackRate = this.state.playbackRate;
       
-      audio.oncanplaythrough = () => {
+      // Manejo programático de promesa (arregla el bug de la caché y oncanplaythrough)
+      audio.play().then(() => {
         if (this.audioElement === audio) {
           this.state.isLoading = false;
           this.state.isPlaying = true;
           this.notify();
-          audio.play().catch(e => console.error("Playback failed:", e));
         }
-      };
+      }).catch(e => {
+        console.error("Playback failed:", e);
+        if (this.audioElement === audio) {
+          this.stop();
+        }
+      });
 
       audio.onended = () => {
         if (this.audioElement === audio) {

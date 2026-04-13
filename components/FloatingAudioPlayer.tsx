@@ -10,12 +10,10 @@ export const FloatingAudioPlayer: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    audioManager.setOnStateChange((state) => {
+    const unsubscribe = audioManager.subscribe((state) => {
       setAudioState({ ...state });
     });
-    return () => {
-      audioManager.setOnStateChange(() => {});
-    };
+    return unsubscribe;
   }, []);
 
   // Cerrar menú al hacer click fuera
