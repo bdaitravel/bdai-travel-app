@@ -141,7 +141,11 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Row-Level Security (RLS) Estricto:** 
    - Las tablas de configuración y contraseñas (`secrets`) son innacesibles para el cliente.
    - **Objetivo Arquitectónico Restrictivo:** Los perfiles (`profiles`) están securizados para lectura/escritura de forma exclusiva para su usuario propietario (`auth.uid() = id`).
-   - Los tours (`tours_cache`) son de Solo Lectura (`SELECT`) para el cliente para evitar inyecciones maliciosas de datos.
+   - **Acceso Público Controlado:** Se utiliza la vista `public_profiles` para exponer únicamente datos no sensibles (`username`, `miles`, `rank`, `avatar`) en rankings y comunidad, protegiendo PII como el email o flags de admin.
+   - **Caché Protegida:** 
+       - Los tours (`tours_cache`) son de **Solo Lectura** (`SELECT`) para el cliente. La escritura es exclusiva de las Edge Functions vía `service_role`.
+       - La tabla `audio_cache` tiene RLS activado: lectura pública e inserción restringida a usuarios autenticados.
+   - **Logs de Error:** `error_logs` permite `INSERT` público (anónimo) para telemetría de fallos, pero solo los administradores tienen permisos de `SELECT`.
    - **Migración a Backend Completada:** La lógica pesada de generación (Llamadas a Gemini, Validación GIS y Optimización de rutas) se ha trasladado con éxito a la Edge Function central `generate-tours-dai`. El cliente ya no escribe en caché ni maneja bloqueos (locks).
    - **Manejo de Secretos y RLS en Servidor:** Debido a un bug del entorno Deno en Supabase donde `SUPABASE_SERVICE_ROLE_KEY` a veces llega vacío, se utiliza la variable personalizada `MY_SERVICE_ROLE_KEY` en las Edge Functions para inicializar el cliente y saltarse el RLS al hacer `upsert` de la DB.
    - **Bypass de Google Cloud Referrer:** Dado que las Edge Functions no envían un HTTP Referer por defecto, las llamadas a `generativelanguage.googleapis.com` tienen hardcodeado el header `'Referer': 'https://www.bdai.travel/'` para pasar de forma segura las restricciones de Google Cloud asociadas a la API Key.
