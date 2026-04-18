@@ -55,6 +55,9 @@ interface AppState {
   visaToShare: { cityName: string; miles: number } | null;
   setVisaToShare: (val: { cityName: string; miles: number } | null) => void;
 
+  hasHydrated: boolean;
+  setHasHydrated: (val: boolean) => void;
+
   clearSession: () => void;
 }
 
@@ -110,6 +113,9 @@ export const useAppStore = create<AppState>()(
       visaToShare: null,
       setVisaToShare: (val) => set({ visaToShare: val }),
 
+      hasHydrated: false,
+      setHasHydrated: (val) => set({ hasHydrated: val }),
+
       clearSession: () => set({
         userProfile: GUEST_PROFILE,
         activeTours: [],
@@ -134,6 +140,9 @@ export const useAppStore = create<AppState>()(
         currentStopIndex: state.currentStopIndex,
         selectedCityInfo: state.selectedCityInfo,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

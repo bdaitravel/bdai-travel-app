@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { ActiveTourCard } from '../components/TourCard';
 import { useAppStore } from '../store/useAppStore';
 import { syncUserProfile } from '../services/supabaseClient';
+import { BdaiLogo } from '../components/BdaiLogo';
 
 export const TourActiveView: React.FC = () => {
   const { 
@@ -13,7 +14,8 @@ export const TourActiveView: React.FC = () => {
     setUserProfile,
     setVisaToShare,
     userLocation,
-    selectedCityInfo
+    selectedCityInfo,
+    hasHydrated
   } = useAppStore();
 
   const navigate = useNavigate();
@@ -31,7 +33,17 @@ export const TourActiveView: React.FC = () => {
     if (u.isLoggedIn) syncUserProfile(u);
   };
 
-  if (!activeTour) return null;
+  // Wait for Zustand to rehydrate from storage before deciding
+  if (!hasHydrated) {
+    return (
+      <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center">
+        <BdaiLogo className="w-16 h-16 animate-pulse" />
+      </div>
+    );
+  }
+
+  // After hydration, if there's no tour, redirect to home
+  if (!activeTour) return <Navigate to="/home" />;
 
   return (
     <ActiveTourCard 
