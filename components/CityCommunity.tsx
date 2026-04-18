@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
-import { supabase } from '../services/supabaseClient';
+import { supabase, addCommunityPostSecure } from '../services/supabaseClient';
 
 interface CommunityPost {
     id: string;
@@ -94,11 +94,7 @@ export const CityCommunity: React.FC<CityCommunityProps> = ({ citySlug, user }) 
         const updatedPosts = [post, ...posts];
 
         try {
-            await supabase.from('tours_cache').upsert({
-                city: citySlug,
-                language: 'community',
-                data: updatedPosts
-            }, { onConflict: 'city,language' });
+            await addCommunityPostSecure(citySlug, updatedPosts);
 
             setPosts(updatedPosts);
             setNewPost('');
@@ -118,11 +114,7 @@ export const CityCommunity: React.FC<CityCommunityProps> = ({ citySlug, user }) 
         }
 
         try {
-            await supabase.from('tours_cache').upsert({
-                city: citySlug,
-                language: 'community',
-                data: updatedPosts
-            }, { onConflict: 'city,language' });
+            await addCommunityPostSecure(citySlug, updatedPosts);
 
             setPosts(updatedPosts);
         } catch (e) {

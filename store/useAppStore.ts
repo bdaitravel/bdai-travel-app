@@ -42,6 +42,19 @@ interface AppState {
   selectedCityInfo: { city: string; country: string; countryEn: string; slug: string } | null;
   setSelectedCityInfo: (info: { city: string; country: string; countryEn: string; slug: string } | null) => void;
   
+  // Global UI States (Not persisted)
+  isLoading: boolean;
+  setIsLoading: (val: boolean) => void;
+  
+  loadingMessage: string;
+  setLoadingMessage: (msg: string) => void;
+
+  showOnboarding: boolean;
+  setShowOnboarding: (val: boolean) => void;
+
+  visaToShare: { cityName: string; miles: number } | null;
+  setVisaToShare: (val: { cityName: string; miles: number } | null) => void;
+
   clearSession: () => void;
 }
 
@@ -85,19 +98,35 @@ export const useAppStore = create<AppState>()(
       selectedCityInfo: null,
       setSelectedCityInfo: (info) => set({ selectedCityInfo: info }),
       
+      isLoading: false,
+      setIsLoading: (val) => set({ isLoading: val }),
+
+      loadingMessage: '',
+      setLoadingMessage: (msg) => set({ loadingMessage: msg }),
+
+      showOnboarding: false,
+      setShowOnboarding: (val) => set({ showOnboarding: val }),
+
+      visaToShare: null,
+      setVisaToShare: (val) => set({ visaToShare: val }),
+
       clearSession: () => set({
         userProfile: GUEST_PROFILE,
         activeTours: [],
         currentTour: null,
         currentStopIndex: 0,
         audioPlayer: { isPlaying: false, currentTrackId: null },
-        selectedCityInfo: null
+        selectedCityInfo: null,
+        isLoading: false,
+        loadingMessage: '',
+        showOnboarding: false,
+        visaToShare: null
       })
     }),
     {
       name: 'bdai-app-storage',
       storage: createJSONStorage(() => getEnvAwareStorage()),
-      // Don't persist ephemeral player state or location
+      // Don't persist ephemeral player state, location, or UI states
       partialize: (state) => ({
         userProfile: state.userProfile,
         activeTours: state.activeTours,

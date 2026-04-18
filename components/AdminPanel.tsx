@@ -196,7 +196,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 // Guardamos con la nueva llave
                 await saveToursToCache(matchingLongKey.city, "", record.language, record.data);
                 // Borramos la vieja (opcional, pero recomendado para limpiar)
-                await supabase.from('tours_cache').delete().eq('city', record.city).eq('language', record.language);
+                await supabase.rpc('delete_tours_cache_rpc', { p_city: record.city, p_language: record.language });
                 repairedCount++;
             }
         }
@@ -415,7 +415,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                                             visited_cities: ['vienna_austria', 'paris_france'],
                                             completed_tours: ['vienna_austria_tour1', 'paris_france_tour1']
                                         };
-                                        await supabase.from('profiles').upsert(restoredProfile, { onConflict: 'email' });
+                                        await supabase.rpc('upsert_profile_rpc', { p_payload: restoredProfile });
                                         addLog("✅ Perfil restaurado con éxito. Recarga la página.");
                                     } else {
                                         addLog("❌ No se encontró sesión activa.");
