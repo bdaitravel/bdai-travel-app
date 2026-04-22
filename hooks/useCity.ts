@@ -117,13 +117,19 @@ export const useCity = () => {
             navigate(`/city/${slug}`);
             setIsLoading(false);
           } else {
-            toast("No tours found", 'info');
-            navigate('/home');
+            // Si no devuelve tours y hemos estado un buen rato esperando, puede ser un Timeout encubierto
+            toast("La generación ha tardado demasiado o excedió el límite de Supabase. Por favor, reintenta.", 'error');
+            setSearchVal(cleanName); // Mantener el input para reintentar fácil
             setIsLoading(false);
           }
 
-        } catch (e) {
+        } catch (e: any) {
           console.error("Selection error:", e);
+          if (e?.message?.includes("Fallo en la generación") || e?.message?.includes("504") || e?.message?.includes("Timeout")) {
+              toast("El servidor tardó demasiado (Timeout de protección). Inténtalo de nuevo.", 'error');
+          } else {
+              toast("Error inesperado generando la ciudad", 'error');
+          }
         } finally {
           setIsLoading(false);
         }

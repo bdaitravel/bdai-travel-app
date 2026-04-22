@@ -104,18 +104,15 @@ export const generateToursForCity = async (
     onProgress?: (tour: Tour) => void
 ): Promise<Tour[]> => {
     
-    // Nueva Arquitectura Serverless (Edge Function)
-    // El frontend ya no computa el ruteo, ni llama a google, ni guarda en BD.
     try {
         console.log(`Pidiendo la generación del tour a Edge Function para ${city}, ${country}...`);
         
-        // Timeout alto porque la API y las docenas de llamadas GIS pueden tardar
-        const { data, error } = await supabase.functions.invoke('generate-tours-dai', {
-            body: { 
-                city, 
-                country, 
-                language: user.language || 'es'
-            }
+        const lang = user.language || 'es';
+        const slug = normalizeKey(city, country);
+
+        // Disparo a la Edge Function (devuelve al instante BACKGROUND_STARTED o READY)
+        const { data, error } = await supabase.functions.invoke('generate-tours-async', {
+            body: { city, country, language: lang }
         });
 
         if (error) {
@@ -123,19 +120,58 @@ export const generateToursForCity = async (
             throw new Error(error.message || "Fallo en la generación serverless");
         }
 
+        // Si la caché de Supabase la devolvió instántaneamente:
         if (data && data.tours) {
-            console.log(`Se recibieron ${data.tours.length} tours desde el servidor.`);
-            // Simulamos el pintado progresivo para la UI (opcional)
-            if (onProgress) {
-                data.tours.forEach((t: Tour) => onProgress(t));
-            }
+            console.log(`Se recibieron ${data.tours.length} tours desde el servidor (CACHED).`);
+            if (onProgress) data.tours.forEach((t: Tour) => onProgress(t));
             return data.tours;
+        }
+
+        // Si entró en SEGUNDO PLANO (Async Mode)
+        if (data && data.status === "BACKGROUND_STARTED") {
+            console.log("Servidor confirmando ejecución en segundo plano. Suscribiendo por Realtime...");
+            
+            return new Promise((resolve, reject) => {
+                // Timeout máximo de seguridad del cliente (6.5 minutos)
+                const timeoutId = setTimeout(() => {
+                    supabase.removeChannel(channel);
+                    reject(new Error("Timeout de cliente esperando generación asíncrona."));
+                }, 390000); 
+
+                const channel = supabase.channel(`city-generation-${slug}`)
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: 'tours_cache',
+                            filter: `city=eq.${slug}` // Filtramos por la ciudad actual
+                        },
+                        (payload) => {
+                            const newStatus = payload.new.status;
+                            console.log(`Realtime Update: status=${newStatus}`);
+                            
+                            if (newStatus === 'READY') {
+                                clearTimeout(timeoutId);
+                                supabase.removeChannel(channel);
+                                const tours = payload.new.data as Tour[];
+                                if (onProgress && tours) tours.forEach((t: Tour) => onProgress(t));
+                                resolve(tours || []);
+                            } else if (newStatus === 'ERROR') {
+                                clearTimeout(timeoutId);
+                                supabase.removeChannel(channel);
+                                reject(new Error("Fallo en la generación tras procesamiento en segundo plano."));
+                            }
+                        }
+                    )
+                    .subscribe();
+            });
         }
 
         return [];
     } catch (e) {
         console.error("Excepción invocando a generate-tours-dai:", e);
-        return [];
+        throw e; // Lanzamos de nuevo para que useCity.ts pueda ver el error y pintarlo
     }
 };
 
