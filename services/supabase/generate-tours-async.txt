@@ -801,7 +801,7 @@ FORMAT RULES:
    - CRITICAL: You MUST use Google Search to find the EXACT GPS coordinates (latitude and longitude) for every single stop you include. Prioritize the coordinates of the MAIN ENTRANCE, FAÇADE or specific street number over the geometric center of the building. NEVER guess or estimate coordinates. Always search for the real location.
    - If a VERIFIED POI CATALOG was provided above, use THOSE coordinates directly — they come from OpenStreetMap and are authoritative.
 5. Content in ${language}.
-6. NO POSITIONAL REFERENCES: NEVER use phrases like "to close this tour", "our last stop", "the final destination", "para cerrar", or "última parada" in any stop description. Stops may be reordered or removed after generation, so positional references will become incorrect. Each stop description must be self-contained and make no assumptions about its position in the tour.`;
+6. NO POSITIONAL REFERENCES (CRITICAL BAN): You are STRICTLY FORBIDDEN from using temporal or sequential phrases at the beginning or end of your descriptions (e.g., "To start", "To finish", "Finally", "Our last stop", "Para empezar", "Para terminar", "Finalmente"). Stops will be geographically reordered by an algorithm later. Therefore, every single stop description MUST be 100% self-contained and make NO assumptions about its chronological order in the tour.`;
 };
 
 const tryExtractTours = (text) => {
