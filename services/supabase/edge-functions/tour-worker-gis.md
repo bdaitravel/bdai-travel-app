@@ -104,6 +104,13 @@ const verifyStopCoordinates = async (stop, city, cityInfo, language) => {
 
 serve(async (req) => {
     try {
+        // SEGURIDAD: Verificar el Webhook Secret
+        const secret = req.headers.get('x-webhook-secret');
+        if (secret !== Deno.env.get('WEBHOOK_SECRET')) {
+            console.error("[WORKER GIS] Unauthorized webhook attempt");
+            return new Response("Unauthorized", { status: 401 });
+        }
+
         const payload = await req.json();
         
         if (payload.table !== 'generation_jobs' || payload.type !== 'UPDATE') {

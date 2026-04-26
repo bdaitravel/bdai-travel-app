@@ -110,9 +110,9 @@ export const generateToursForCity = async (
         const lang = user.language || 'es';
         const slug = normalizeKey(city, country);
 
-        // Disparo a la Edge Function (devuelve al instante BACKGROUND_STARTED o READY)
-        const { data, error } = await supabase.functions.invoke('generate-tours-async', {
-            body: { city, country, language: lang }
+        // Disparo a la Edge Function (devuelve al instante BACKGROUND_QUEUED)
+        const { data, error } = await supabase.functions.invoke('tour-orchestrator', {
+            body: { city, country, language: lang, slug }
         });
 
         if (error) {
@@ -128,7 +128,7 @@ export const generateToursForCity = async (
         }
 
         // Si entró en SEGUNDO PLANO (Async Mode) o ya estaba GENERATING
-        if (data && (data.status === "BACKGROUND_STARTED" || data.status === "GENERATING")) {
+        if (data && (data.status === "BACKGROUND_QUEUED" || data.status === "GENERATING")) {
             console.log("Servidor confirmando ejecución en segundo plano. Suscribiendo por Realtime...");
             
             return new Promise((resolve, reject) => {

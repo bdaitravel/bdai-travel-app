@@ -16,6 +16,13 @@ const supabaseClient = createClient(supabaseUrl, serviceKey, {
 
 serve(async (req) => {
     try {
+        // SEGURIDAD: Verificar el Webhook Secret
+        const secret = req.headers.get('x-webhook-secret');
+        if (secret !== Deno.env.get('WEBHOOK_SECRET')) {
+            console.error("[WORKER AI] Unauthorized webhook attempt");
+            return new Response("Unauthorized", { status: 401 });
+        }
+
         const payload = await req.json();
         
         // Supabase Database Webhooks envían { type, table, record, old_record }

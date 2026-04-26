@@ -54,6 +54,7 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - Idioma UI por defecto: Español.
 - Config: Variables en `.env`.
 - Infraestructura: Priorizar servicios gratuitos; optimizar batería vs rendimiento (Mobile).
+- **Despliegue y CI/CD:** El proyecto (frontend) corre en **Vercel** y se despliega automáticamente subiendo el código a GitHub. La regla absoluta al modificar el código de la app es instruir al usuario para que haga un `git commit` y un `git push` desde su terminal para probar los cambios en el entorno real, ya que es su flujo de trabajo establecido.
 - **Gestión de Estado (`zustand`):** El estado global volátil (reproductor de audio, tours activos) debe centralizarse con `zustand`. Evitar estados gigantes en `App.tsx` y el prop-drilling excesivo.
 - **Caché por Entorno (Obligatorio):** Cualquier persistencia de estado debe evaluar siempre la plataforma:
   - **Móvil (Capacitor):** Usar almacenamiento persistente (`localStorage`) para ahorrar cuota de red y batería al viajero.
