@@ -10,6 +10,7 @@ import {
 } from '../services/supabaseClient';
 import { toast } from '../components/Toast';
 import { Tour } from '../types';
+import { translations } from '../data/translations';
 
 export const useCity = () => {
     const { 
@@ -26,6 +27,7 @@ export const useCity = () => {
     const [isSearching, setIsSearching] = useState(false);
 
     const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
+        const t = translations[langCode] || translations.en;
         setIsLoading(true); 
         setSearchOptions(null); 
         setSearchVal(''); 
@@ -64,10 +66,10 @@ export const useCity = () => {
 
         try {
           setTours([]);
-          setLoadingMessage(forceRefresh ? "DAI IS REWRITING HISTORY..." : "syncing...");
+          setLoadingMessage(forceRefresh ? t.rewriting : t.syncing);
 
           if (forceRefresh) {
-            setLoadingMessage("PURGING OLD DATA...");
+            setLoadingMessage(t.purging);
             await supabase.from('tours_cache').delete()
               .eq('city', slug).eq('language', langCode.toLowerCase());
           }
@@ -93,7 +95,7 @@ export const useCity = () => {
             return;
           }
 
-          setLoadingMessage("generating...");
+          setLoadingMessage(t.generating);
 
           const generated = await generateToursForCity(
             cleanName,

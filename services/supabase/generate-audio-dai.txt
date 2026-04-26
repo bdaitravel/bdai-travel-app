@@ -37,11 +37,17 @@ function addWavHeader(pcmData: Uint8Array): Uint8Array {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  console.log("--- NUEVA PETICIÓN RECIBIDA ---");
+  console.log("--- NUEVA PETICIÓN DE AUDIO RECIBIDA ---");
   try {
+    // Fix: Usar MY_SERVICE_ROLE_KEY con fallback (bug conocido de Deno donde SUPABASE_SERVICE_ROLE_KEY llega vacío)
+    const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    if (!serviceKey) {
+      throw new Error("ERROR CRÍTICO: Falta la llave Service Role. Crea el secreto MY_SERVICE_ROLE_KEY.");
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') || '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
+      serviceKey,
       { auth: { persistSession: false } }
     );
 
@@ -52,12 +58,19 @@ Deno.serve(async (req) => {
     if (!text || !language || !city) throw new Error('Parámetros incompletos');
 
     const apiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) throw new Error('ERROR CRÍTICO: Falta GEMINI_API_KEY.');
+
     const cleanText = text.replace(/[*_~`]/g, '');
     const lang = language.toLowerCase();
-    const textHash = btoa(encodeURIComponent(cleanText)).substring(0, 32);
+    
+    // HASH SHA-256 (Robusto para evitar colisiones como la de Logroño/Aldeanueva)
+    const msgUint8 = new TextEncoder().encode(cleanText);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const textHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     // 1. INTENTO CACHÉ
-    console.log("Buscando en caché...");
+    console.log("🔍 Buscando en caché...");
     const { data: cached } = await supabaseClient
       .from('audio_cache')
       .select('url')
@@ -66,33 +79,25 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (cached?.url) {
-      console.log("ÉXITO: Audio encontrado en caché.");
+      console.log("✅ Audio encontrado en caché.");
       return new Response(JSON.stringify({ url: cached.url }), { headers: jsonHeaders });
     }
 
-    // 2. GENERACIÓN GOOGLE
-    console.log("No está en caché. Llamando a Google Gemini...");
+    // 2. GENERACIÓN GOOGLE (con timeout de 120s para evitar EarlyDrop)
+    console.log("🎙️ No está en caché. Llamando a Gemini TTS...");
     const modelName = "gemini-2.5-flash-preview-tts"; 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    let googleLangCode = "es-ES";
-    let targetVoice = "Kore"; // Default voice para DAI
-
-    if (lang === 'es') {
-        googleLangCode = "es-ES";
-    } else if (lang === 'en') {
-        googleLangCode = "en-US";
-    } else if (lang === 'fr') {
-        googleLangCode = "fr-FR";
-    } else if (lang === 'de') {
-        googleLangCode = "de-DE";
-    } else if (lang === 'it') {
-        googleLangCode = "it-IT";
-    } else if (lang === 'pt') {
-        googleLangCode = "pt-PT";
-    } else {
-        googleLangCode = lang;
-    }
+    const langCodeMap: Record<string, string> = {
+      es: "es-ES", en: "en-US", fr: "fr-FR", de: "de-DE",
+      it: "it-IT", pt: "pt-PT", nl: "nl-NL", ro: "ro-RO",
+      pl: "pl-PL", sv: "sv-SE", da: "da-DK", fi: "fi-FI",
+      no: "nb-NO", ru: "ru-RU", zh: "zh-CN", ja: "ja-JP",
+      ko: "ko-KR", ar: "ar-XA", hi: "hi-IN", th: "th-TH",
+      vi: "vi-VN", ca: "ca-ES", eu: "eu-ES", tr: "tr-TR"
+    };
+    const googleLangCode = langCodeMap[lang] || lang;
+    const targetVoice = "Kore"; // Voz oficial DAI
 
     const googleReq: any = {
       contents: [{ role: "user", parts: [{ text: cleanText }] }],
@@ -111,12 +116,13 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         'Referer': 'https://www.bdai.travel/' 
       },
-      body: JSON.stringify(googleReq)
+      body: JSON.stringify(googleReq),
+      signal: AbortSignal.timeout(120_000) // 120s timeout para evitar cuelgues
     });
 
     if (!response.ok) {
         const errTxt = await response.text();
-        console.error("Error Google API:", response.status, errTxt);
+        console.error("❌ Error Google API:", response.status, errTxt);
         throw new Error(`Google API respondió con status ${response.status}`);
     }
 

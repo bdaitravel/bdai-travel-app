@@ -147,7 +147,7 @@ export const generateToursForCity = async (
                             table: 'tours_cache',
                             filter: `city=eq.${slug}` // Filtramos por la ciudad actual
                         },
-                        (payload) => {
+                        (payload: any) => {
                             const newStatus = payload.new.status;
                             console.log(`Realtime Update: status=${newStatus}`);
                             
