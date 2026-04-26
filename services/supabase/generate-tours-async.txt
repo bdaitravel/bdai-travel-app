@@ -971,7 +971,7 @@ Deno.serve(async (req) => {
 
         const slug = normalizeKey(city, country);
         const { data: cached } = await supabaseClient.from('tours_cache')
-            .select('data, status')
+            .select('data, status, updated_at')
             .eq('city', slug)
             .eq('language', language.toLowerCase())
             .maybeSingle();
@@ -981,10 +981,18 @@ Deno.serve(async (req) => {
             return new Response(JSON.stringify({ tours: cached.data }), { headers: jsonHeaders });
         }
 
-        // Control de concurrencia: si ya se está generando, no duplicar
-        if (cached && cached.status === 'GENERATING') {
-            console.log(`⏳ Tours para ${slug} ya están en generación. Informando al cliente.`);
-            return new Response(JSON.stringify({ status: "GENERATING" }), { headers: jsonHeaders });
+        // Control de concurrencia: si ya se está generando, no duplicar, EXCEPTO si lleva más de 10 minutos (stale lock por crash)
+        if (cached && cached.status === 'GENERATING' && cached.updated_at) {
+            const lastUpdated = new Date(cached.updated_at).getTime();
+            const now = new Date().getTime();
+            const ageMinutes = (now - lastUpdated) / 60000;
+            
+            if (ageMinutes < 10) {
+                console.log(`⏳ Tours para ${slug} ya están en generación (${ageMinutes.toFixed(1)} min). Informando al cliente.`);
+                return new Response(JSON.stringify({ status: "GENERATING" }), { headers: jsonHeaders });
+            } else {
+                console.log(`⚠️ Estado GENERATING obsoleto (${ageMinutes.toFixed(1)} min). Ignorando bloqueo y reintentando.`);
+            }
         }
 
         // Marcar la ciudad como 'GENERATING' inmediatamente en la base de datos

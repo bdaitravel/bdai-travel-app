@@ -127,8 +127,8 @@ export const generateToursForCity = async (
             return data.tours;
         }
 
-        // Si entró en SEGUNDO PLANO (Async Mode)
-        if (data && data.status === "BACKGROUND_STARTED") {
+        // Si entró en SEGUNDO PLANO (Async Mode) o ya estaba GENERATING
+        if (data && (data.status === "BACKGROUND_STARTED" || data.status === "GENERATING")) {
             console.log("Servidor confirmando ejecución en segundo plano. Suscribiendo por Realtime...");
             
             return new Promise((resolve, reject) => {
