@@ -153,7 +153,7 @@ Como arquitecto senior y consultor estratégico, **debes**:
        - Los tours (`tours_cache`) son de **Solo Lectura** (`SELECT`) para el cliente. La escritura es exclusiva de las Edge Functions vía `service_role`.
        - La tabla `audio_cache` tiene RLS activado: lectura pública e inserción restringida a usuarios autenticados.
    - **Logs de Error:** `error_logs` permite `INSERT` público (anónimo) para telemetría de fallos, pero solo los administradores tienen permisos de `SELECT`.
-   - **Migración a Backend Completada:** La lógica pesada de generación (Llamadas a Gemini, Validación GIS y Optimización de rutas) se ha trasladado con éxito a la Edge Function central `generate-tours-dai`. El cliente ya no escribe en caché ni maneja bloqueos (locks).
+   - **Migración a Backend Completada:** La lógica pesada de generación (Llamadas a Gemini, Validación GIS y Optimización de rutas) se ha trasladado con éxito a la Edge Function central `generate-tours-async`. El cliente ya no escribe en caché ni maneja bloqueos (locks).
    - **Manejo de Secretos y RLS en Servidor:** Debido a un bug del entorno Deno en Supabase donde `SUPABASE_SERVICE_ROLE_KEY` a veces llega vacío, se utiliza la variable personalizada `MY_SERVICE_ROLE_KEY` en las Edge Functions para inicializar el cliente y saltarse el RLS al hacer `upsert` de la DB.
    - **Bypass de Google Cloud Referrer:** Dado que las Edge Functions no envían un HTTP Referer por defecto, las llamadas a `generativelanguage.googleapis.com` tienen hardcodeado el header `'Referer': 'https://www.bdai.travel/'` para pasar de forma segura las restricciones de Google Cloud asociadas a la API Key.
 - **Zustand como fuente única de verdad:** Se eliminaron todas las escrituras directas a `localStorage.setItem('bdai_profile', ...)` de `App.tsx`. El perfil persiste vía `storageProvider` (localStorage en Capacitor, sessionStorage en web).
@@ -180,9 +180,13 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **Razón**: Permite testear algoritmos de rutas sin llamadas a IA, facilita el cambio de modelo de LLM y mejora drásticamente la legibilidad.
 
 ## Restricciones de Entorno y Despliegue (IMPORTANTE)
-- **Despliegue de Supabase:** El terminal del Agente NO tiene permisos de escritura/deploy en Supabase. Todos los cambios en Edge Functions, SQL o Storage deben ser proporcionados al usuario en forma de código e instrucciones para que él los ejecute manualmente (vía Web Dashboard o su terminal local).
-- **Pruebas de Backend:** Evitar el uso de herramientas de modificación directa de DB/Estructura desde el terminal del Agente. Las propuestas de cambio deben ser validadas por el usuario primero.
-- **Flujo de Trabajo:** Proporcionar comandos listos para copiar y pegar (ej. `supabase functions deploy ...`) para facilitar la tarea al usuario.
+- **Flujo de Trabajo de Edge Functions (SSOT):** La ÚNICA fuente de la verdad para el código de las Edge Functions son los archivos con extensión **`.md`** ubicados en **`services/supabase/`**. 
+  - **Convención de Nombres en esta carpeta:** Los ficheros aquí siempre usan guiones medios (`-`) y extensión `.md` (ej. `generate-audio-dai.md`, `generate-tours-async.md`). Para estas funciones, no existen versiones `.txt` ni nombres con guiones bajos (`_`).
+  - **Resto del proyecto:** Fuera de esta carpeta, se pueden usar `.txt` o `_` según se hayan creado originalmente.
+  - Está estrictamente prohibido usar la estructura CLI de Supabase (`supabase/functions/`) para evitar el síndrome de "Split Brain".
+- **Despliegue de Supabase:** El usuario no utiliza el CLI de Supabase para despliegues. Cuando el Agente deba modificar una Edge Function, modificará directamente el archivo `.md` local correspondiente asegurando que el código TypeScript quede dentro de un bloque de código markdown (` ```typescript `). 
+- **Acción requerida del usuario:** Tras modificar el archivo `.md`, el Agente indicará al usuario que debe abrir ese archivo, copiar el bloque de código y pegarlo manualmente en el Web Dashboard de Supabase. Nunca se propondrán comandos `supabase functions deploy`.
+- **Pruebas de Backend:** Evitar el uso de herramientas de modificación directa de DB/Estructura desde el terminal del Agente. Las propuestas de cambio en SQL o reglas RLS deben ser validadas por el usuario y aplicadas manualmente en el Dashboard.
 
 ### Protocolo Obligatorio de Verificación (BUILD CHECK)
 - **Mandato:** Antes de dar por finalizada cualquier tarea que modifique la estructura del código (`App.tsx`, `store/`, `types.ts`, `routing`), el AGENTE **DEBE** ejecutar localmente el comando `npm run build`.

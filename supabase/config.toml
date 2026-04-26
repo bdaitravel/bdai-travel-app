@@ -1,5 +1,0 @@
-project_id = "slldavgsoxunkphqeamx"
-
-[functions.generate-tours-dai]
-verify_jwt = false
-timeout = 400

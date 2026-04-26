@@ -88,6 +88,16 @@ const sendGroundingLimitAlert = async (supabaseClient, used) => {
     }
 };
 
+const normalizeForMatch = (str) => {
+    if (!str) return '';
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+};
+
+const extractMunicipalityFromAddress = (address) => {
+    const raw = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
+    return normalizeForMatch(raw);
+};
+
 // ── UTILIDADES GIS ──────────────────────────────────────────────────────────
 const haversineKm = (lat1, lon1, lat2, lon2) => {
     const R = 6371; 
@@ -99,11 +109,6 @@ const haversineKm = (lat1, lon1, lat2, lon2) => {
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
-};
-
-const normalizeForMatch = (str) => {
-    if (!str) return '';
-    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 };
 
 const normalizeKey = (city, country) => {
@@ -122,11 +127,6 @@ const normalizeKey = (city, country) => {
     if (safeCity.endsWith(`_${safeCountry}`)) return safeCity;
     
     return `${safeCity}_${safeCountry}`;
-};
-
-const extractMunicipalityFromAddress = (address) => {
-    const raw = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
-    return normalizeForMatch(raw);
 };
 
 // ── Obtener info de la ciudad CON POBLACIÓN REAL ────────────────────────────
@@ -291,7 +291,7 @@ const formatCatalogForPrompt = (clusteredCatalog, flatCatalog) => {
     if ((!clusteredCatalog || clusteredCatalog.length === 0) && (!flatCatalog || flatCatalog.length === 0)) return '';
     
     const totalCount = flatCatalog?.length || 0;
-    const MAX_POIS = 60;
+    const MAX_POIS = 120;
     let totalShown = 0;
     
     // Fallback a lista plana si clustering falló
@@ -302,9 +302,9 @@ const formatCatalogForPrompt = (clusteredCatalog, flatCatalog) => {
         return `\n\nVERIFIED POI CATALOG (${totalCount} POIs):\n${entries}`;
     }
     
-    let text = `\n\nVERIFIED POI CATALOG (ORGANIZED BY GEOGRAPHIC ZONES — ${totalCount} POIs total):
+    let text = `\n\nVERIFIED POI CATALOG (ORGANIZED BY GEOGRAPHIC ZONES — ${totalCount} POIs total, showing top ${MAX_POIS}):
 The following places are CONFIRMED to exist in this city with verified coordinates from OpenStreetMap.
-You MUST prioritize these over your own knowledge. Use the EXACT names and coordinates provided.
+You MUST prioritize these over your own knowledge to reach your 12-stop target. Use the EXACT names and coordinates provided.
 If you want to include a place NOT in this catalog, you MUST be 100% certain it exists TODAY — and you MUST use Google Search to verify it before including it.
 
 GEOGRAPHIC ROUTING RULE (CRITICAL): Within each tour, group stops from ADJACENT zones to create a naturally walkable route. The tourist should feel they are exploring connected areas of the city, NOT hopping randomly across distant zones.`;
@@ -320,6 +320,22 @@ GEOGRAPHIC ROUTING RULE (CRITICAL): Within each tour, group stops from ADJACENT 
     }
     
     return text;
+};
+
+// ── Cálculo de radio dinámico basado en dispersión real de POIs (Opción C) ───
+const calculateRadiusFromCatalog = (catalog, cityCenter) => {
+    if (!catalog || catalog.length === 0 || !cityCenter) return 5;
+    
+    let maxDist = 0;
+    for (const poi of catalog) {
+        const dist = haversineKm(cityCenter.lat, cityCenter.lng, poi.lat, poi.lon);
+        if (dist > maxDist) maxDist = dist;
+    }
+    
+    // Margen del 20%, mínimo 2km, máximo 15km
+    const radius = Math.max(2, Math.min(15, maxDist * 1.2));
+    console.log(`📐 Radio dinámico: ${radius.toFixed(1)}km (POI más lejano: ${maxDist.toFixed(1)}km, ${catalog.length} POIs)`);
+    return radius;
 };
 
 // ── Verificación de existencia global ────────────────────────────────────────
@@ -825,7 +841,6 @@ You are real, accurate, but never boring.
 TRUTH BEFORE STYLE: Always confirm a place exists before describing it. Wit is meaningless without accuracy.
 CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
 GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. Place stops within 2km radius of the provided center. Never place stops in neighboring towns or wrong locations.`;
-
 const generateTourPrompt = (city, country, language, coordsAnchor, catalogText) => {
 const languageRules = language.toLowerCase().startsWith('es') 
 ? `- LEXICON & DIALECT (CRITICAL): You MUST write using STRICT Castilian Spanish (España peninsular). 
@@ -846,22 +861,23 @@ UNIVERSAL RIGOR & NO-INVENTION RULE:
 - GEOGRAPHIC STRICTNESS: ALL places MUST realistically exist physically inside the borders of ${city}, ${country}. Do NOT borrow or import real places from other cities or distant towns under any circumstance. If you run out of real places in ${city}, simply stop. 
 
 DEEP RETRIEVAL FOR 2 THEMATIC TOURS (CRITICAL):
-Your PRIMARY GOAL is to generate exactly 2 thematic tours, each targeting 12 stops (up to 24 verified stops total).
-STOP COUNT TARGET (NON-NEGOTIABLE): BOTH tours MUST target exactly 12 stops each. Only go below 12 if you genuinely cannot find enough real, verifiable places in ${city}. A tour of 11 stops is acceptable if the 12th truly cannot be found. A tour of 8 stops when more real places clearly exist is a FAILURE.
-To reach 12 stops per tour, you MUST perform a DEEP RETRIEVAL of your knowledge base for ${city} and its specific regional heritage. Search exhaustively for:
+Your PRIMARY GOAL is to generate exactly 2 thematic tours, each targeting exactly 12 stops (up to 24 verified stops total).
+STOP COUNT TARGET (NON-NEGOTIABLE): BOTH tours MUST target exactly 12 stops each. DO NOT STOP AT 5 OR 6 STOPS. Use the massive catalog provided below to fill all 12 spots per tour. Only go below 12 if you genuinely run out of real places, which is extremely rare. A tour of 11 stops is acceptable if the 12th truly cannot be found. A tour of 5 to 8 stops when more real places clearly exist is considered a COMPLETE FAILURE of your instructions.
+To reach 12 stops per tour, you MUST perform a DEEP RETRIEVAL of your knowledge base for ${city} and its specific regional heritage, and aggressively utilize the provided catalog. Search exhaustively for:
 - Historic civil & religious architecture (cathedrals, churches, palaces, bridges, city gates)
 - Traditional local markets, plazas, and iconic pedestrian streets
 - Authentic gastronomic landmarks specific to this region (NOT commercial restaurants — only heritage-level food culture)
-- Regional heritage elements (ancient wine presses/trujales, traditional workshops, industrial heritage, historic cellars)
+- Regional heritage elements (ancient wine presses/trujales, traditional workshops, industrial heritage, historic cellars like Calado de San Gregorio or Espacio Lagares)
 - Verified hidden local gems, forgotten plaques, and specific building numbers
 - Urban parks, gardens, and city viewpoints (NOT mountains or nature outside the urban perimeter)
 - Surprising plaques, inscriptions, unusual architectural details, buildings with extraordinary backstories
 - CRITICAL SELECTION: While the provided VERIFIED POI CATALOG is your primary source, you MUST skip any items that are ruined, inaccessible, non-existent today, or have zero historical/curiosity value (even if they appear in the catalog). Truth and relevance come first.
 
 GRACEFUL DEGRADATION (only when genuinely impossible to find enough verifiable places):
-- If fewer than 10 truly real stops exist in total: generate EXACTLY 1 tour (4 to 10 stops).
-- If 10 or more truly real stops exist: generate EXACTLY 2 tours, each targeting 12 stops.
+- If fewer than 16 truly real stops exist in total: generate EXACTLY 1 tour (aim for 12 stops, minimum viable: 4 stops).
+- If 16 or more truly real stops exist: generate EXACTLY 2 tours, each aiming for 12 stops (minimum 8 each).
 STRICT LIMIT: NEVER generate a 3rd tour. You are strictly limited to a maximum of 2 tour objects.
+ALWAYS push hard to reach 12 stops per tour before settling for fewer.
 DO NOT repeat any stop across tours.
 (If only 1 tour possible: combine essentials and the best curiosities into a single rich experience.)
 
@@ -955,7 +971,7 @@ Deno.serve(async (req) => {
 
         const slug = normalizeKey(city, country);
         const { data: cached } = await supabaseClient.from('tours_cache')
-            .select('data, status')
+            .select('data, status, updated_at')
             .eq('city', slug)
             .eq('language', language.toLowerCase())
             .maybeSingle();
@@ -965,10 +981,18 @@ Deno.serve(async (req) => {
             return new Response(JSON.stringify({ tours: cached.data }), { headers: jsonHeaders });
         }
 
-        // CONTROL DE CONCURRENCIA: Si ya se está generando, devolver BACKGROUND_STARTED sin duplicar tarea
-        if (cached && cached.status === 'GENERATING') {
-            console.log(`⏳ Ciudad ${slug} ya está en proceso de generación. Reutilizando flujo asíncrono.`);
-            return new Response(JSON.stringify({ status: "BACKGROUND_STARTED" }), { headers: jsonHeaders });
+        // Control de concurrencia: si ya se está generando, no duplicar, EXCEPTO si lleva más de 10 minutos (stale lock por crash)
+        if (cached && cached.status === 'GENERATING' && cached.updated_at) {
+            const lastUpdated = new Date(cached.updated_at).getTime();
+            const now = new Date().getTime();
+            const ageMinutes = (now - lastUpdated) / 60000;
+            
+            if (ageMinutes < 10) {
+                console.log(`⏳ Tours para ${slug} ya están en generación (${ageMinutes.toFixed(1)} min). Informando al cliente.`);
+                return new Response(JSON.stringify({ status: "GENERATING" }), { headers: jsonHeaders });
+            } else {
+                console.log(`⚠️ Estado GENERATING obsoleto (${ageMinutes.toFixed(1)} min). Ignorando bloqueo y reintentando.`);
+            }
         }
 
         // Marcar la ciudad como 'GENERATING' inmediatamente en la base de datos
@@ -991,6 +1015,12 @@ Deno.serve(async (req) => {
                 // ── CAPA 2: Obtener catálogo de POIs reales de Overpass + clustering ──
                 console.log(`📍 Consultando catálogo Overpass para ${city}...`);
                 const catalog = await fetchOverpassCatalog(cityInfo);
+                
+                // Radio dinámico basado en dispersión real de POIs (Opción C)
+                if (cityInfo) {
+                    cityInfo.radiusKm = calculateRadiusFromCatalog(catalog, cityInfo);
+                }
+                
                 const clusteredCatalog = clusterCatalogByProximity(catalog, cityInfo);
                 const catalogText = formatCatalogForPrompt(clusteredCatalog, catalog);
 
@@ -1046,7 +1076,7 @@ Deno.serve(async (req) => {
                         
                         const processed = await processTourStops(tour, city, country, cityInfo, catalog);
                         
-                        // Recolectar todas las paradas verificadas (evitar duplicados)
+                        // Recolectar TODAS las paradas verificadas (sin duplicados)
                         processed.stops.forEach(s => {
                             const key = normalizeForMatch(s.name);
                             if (!allUniqueVerifiedStops.has(key)) {
@@ -1054,29 +1084,28 @@ Deno.serve(async (req) => {
                             }
                         });
 
-                        // Optimizar y guardar si cumple el mínimo individual (3 paradas)
                         const optimized = await optimizeStopOrder(processed);
                         optimized.id = `${slug}_${language.toLowerCase()}_${i}`;
                         
                         if (optimized.stops.length >= 3) {
                             verifiedTours.push(optimized);
+                            console.log(`✅ Tour '${tour.title}': ${optimized.stops.length} paradas verificadas.`);
+                        } else {
+                            console.log(`⚠️ Tour '${tour.title}': solo ${optimized.stops.length} paradas (se intentará rescate).`);
                         }
                     }
                 }
 
-                // ── LÓGICA DE RESCATE / FUSIÓN ──
-                // Si no hay tours válidos O si el total de paradas es bajo (< 16), fusionamos en uno solo
+                // ── LÓGICA DE RESCATE / FUSIÓN (basada en paradas, NO en población) ──
                 const totalUniqueStops = Array.from(allUniqueVerifiedStops.values());
                 
                 if (totalUniqueStops.length >= 4 && (verifiedTours.length === 0 || totalUniqueStops.length < 16)) {
-                    console.log(`🌀 Aplicando Lógica de Rescate: Fusionando ${totalUniqueStops.length} paradas únicas en un único tour.`);
-                    
+                    console.log(`🌀 Rescate: Fusionando ${totalUniqueStops.length} paradas únicas en 1 tour.`);
                     let rescuedTour = {
-                        ...masterTourTemplate,
+                        ...(masterTourTemplate || {}),
                         id: `${slug}_${language.toLowerCase()}_0`,
                         stops: totalUniqueStops
                     };
-                    
                     rescuedTour = await optimizeStopOrder(rescuedTour);
                     verifiedTours = [rescuedTour];
                 }
@@ -1116,8 +1145,12 @@ Deno.serve(async (req) => {
             }
         };
 
-        // Lanzar tarea pesada sin "await" para no bloquear la respuesta HTTP
-        runBackgroundGeneration();
+        // Lanzar tarea pesada usando EdgeRuntime.waitUntil para no bloquear la respuesta HTTP y asegurar que el runtime no la pause
+        if (typeof EdgeRuntime !== 'undefined') {
+            EdgeRuntime.waitUntil(runBackgroundGeneration());
+        } else {
+            runBackgroundGeneration();
+        }
 
         // DEVOLVER RESPUESTA INMEDIATA
         return new Response(JSON.stringify({ status: "BACKGROUND_STARTED" }), { headers: jsonHeaders });
