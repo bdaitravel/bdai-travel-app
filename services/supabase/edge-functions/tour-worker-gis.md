@@ -1,7 +1,7 @@
-```javascript
 // services/supabase/tour-worker-gis.md
 // ESTE ARCHIVO ES LA FUENTE DE LA VERDAD (SSOT) PARA LA EDGE FUNCTION 'tour-worker-gis'
-// Despliegue: copiar este código en el editor del Dashboard de Supabase.
+// Recibe el webhook de UPDATE en generation_jobs (status=PENDING_GIS),
+// verifica coordenadas, optimiza rutas y guarda el resultado final.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
@@ -13,228 +13,255 @@ const supabaseClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
 });
 
-// --- GIS & ROUTING UTILS ---
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const normalizeForMatch = (str) => {
-    return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "").trim();
+const normalizeForMatch = (str: string): string => {
+    if (!str) return '';
+    return str.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, '')
+        .trim();
 };
 
-const haversineKm = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; 
+const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
-const calculateRadiusFromCatalog = (catalog, cityCenter) => {
-    if (!catalog || catalog.length === 0) return 3.0; // Fallback
-    let maxDist = 0;
-    catalog.forEach(poi => {
-        const d = haversineKm(cityCenter.lat, cityCenter.lon, poi.lat, poi.lon);
-        if (d > maxDist) maxDist = d;
-    });
-    // Max dist + 20% margin, min 2km, max 15km
-    return Math.min(15, Math.max(2, maxDist * 1.2));
+// ── Lógica de fusión con umbral configurable ──────────────────────────────────
+// REGLA: se mantienen 2 tours si AMBOS tienen ≥8 paradas. Si no, se fusiona en 1.
+// Umbral mínimo por tour: 8 paradas. Umbral total para justificar 2 tours: ≥16 paradas únicas.
+const shouldMergeIntoOneTour = (tours: any[], totalUniqueStops: any[]): boolean => {
+    if (tours.length === 0) return totalUniqueStops.length >= 4;
+    const totalStops = totalUniqueStops.length;
+    const allToursAboveThreshold = tours.every(t => t.stops.length >= 8);
+    return totalStops < 16 || !allToursAboveThreshold;
 };
 
-const optimizeStopOrder = async (tour) => {
-    if (tour.stops.length <= 2) return tour;
-    try {
-        const coordsStr = tour.stops.map(s => `${s.longitude},${s.latitude}`).join(';');
-        const osrmUrl = `https://routing.openstreetmap.de/routed-foot/trip/v1/foot/${coordsStr}?source=first&roundtrip=false&geometries=polyline`;
-        
-        const res = await fetch(osrmUrl, { headers: { 'User-Agent': 'BDAI-Travel-App/1.0' }});
-        if (!res.ok) return tour;
-        
-        const data = await res.json();
-        if (data.code === 'Ok' && data.waypoints && data.trips && data.trips.length > 0) {
-            // En el servicio /trip/, el array 'waypoints' viene en el orden de entrada.
-            // El campo 'waypoint_index' nos dice su posición en la ruta optimizada.
-            const optimizedStops = new Array(tour.stops.length);
-            data.waypoints.forEach((wp, i) => {
-                optimizedStops[wp.waypoint_index] = tour.stops[i];
-            });
-            
-            // Filtrar posibles huecos por si OSRM no devolvió todos los puntos
-            tour.stops = optimizedStops.filter(s => s !== undefined);
-            tour.routePolyline = data.trips[0].geometry;
-            const distKm = data.trips[0].distance / 1000;
-            const durationMin = Math.round((distKm / 4) * 60); // 4km/h walking
-            
-            tour.duration = durationMin > 120 ? `${(durationMin/60).toFixed(1)} horas` : `${durationMin} min`;
-        }
-        return tour;
-    } catch (e) {
-        console.error("Error optimizando ruta OSRM:", e);
-        return tour;
+// ── Título DAI para el tour fusionado ────────────────────────────────────────
+// Hereda el título del primer tour bruto si está disponible, 
+// o usa uno con sabor DAI genérico si no.
+const buildRescueTourTitle = (rawTours: any[], language: string): string => {
+    const isSpanish = language.startsWith('es');
+    const isEnglish = language.startsWith('en');
+    const isFrench = language.startsWith('fr');
+    const isGerman = language.startsWith('de');
+    const isItalian = language.startsWith('it');
+
+    // Si el AI generó al menos 1 tour con título propio, usarlo como base
+    const baseTitle = rawTours?.[0]?.title;
+    if (baseTitle && baseTitle.length > 3 && !baseTitle.toLowerCase().includes('tour 1')) {
+        return baseTitle; // heredar el título original, era el mejor candidato
     }
+
+    // Fallback con títulos DAI por idioma
+    if (isSpanish)  return 'Todo lo que merece la pena — en un solo paseo';
+    if (isEnglish)  return 'Everything Worth Seeing — One Walk to Rule Them All';
+    if (isFrench)   return 'L\'essentiel et les curiosités — une seule promenade';
+    if (isGerman)   return 'Alles, was zählt — ein einziger Spaziergang';
+    if (isItalian)  return 'Tutto ciò che vale — in un\'unica passeggiata';
+    return 'The Essential & Curiosities — One Complete Walk';
 };
 
-const verifyStopCoordinates = async (stop, city, cityInfo, language) => {
+// ── Verificación de coordenadas (Nominatim → Photon fallback) ─────────────────
+// cityInfo CONTRACT: { lat, lon, radiusKm, population, bbox:{south,west,north,east} }
+const verifyStopCoordinates = async (stop: any, city: string, cityInfo: any): Promise<any | null> => {
+    const radiusKm = cityInfo.radiusKm || 5;
+
     try {
-        await sleep(1100); // Global Rate Limiter Nominatim (1.1s)
+        await sleep(1100); // Rate limiter Nominatim (max 1 req/s)
+
+        // Intento 1: Nominatim
         const searchQuery = `${stop.name}, ${city}`;
-        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1&addressdetails=1`;
-        
+        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=3&addressdetails=1`;
         const nomRes = await fetch(nomUrl, { headers: { 'Accept-Language': 'en', 'User-Agent': 'BDAI-Travel-App/1.0' } });
+
         if (nomRes.ok) {
             const data = await nomRes.json();
-            if (data.length > 0) {
-                const lat = parseFloat(data[0].lat);
-                const lon = parseFloat(data[0].lon);
-                
+            for (const result of (data || [])) {
+                const lat = parseFloat(result.lat);
+                const lon = parseFloat(result.lon);
                 const distToCenter = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
-                const radius = cityInfo.radius || 3.0;
-
-                if (distToCenter <= radius) {
-                    console.log(`[GIS] Verified (Nominatim): ${stop.name} at ${distToCenter.toFixed(2)}km`);
+                if (distToCenter <= radiusKm) {
+                    console.log(`[GIS] ✅ Nominatim: ${stop.name} (${distToCenter.toFixed(2)}km)`);
                     return { ...stop, latitude: lat, longitude: lon, coordinatesVerified: true };
-                } else {
-                    console.warn(`[GIS] Stop ${stop.name} out of bounds: ${distToCenter.toFixed(2)}km > ${radius.toFixed(2)}km`);
                 }
             }
+            if (data && data.length > 0) {
+                console.warn(`[GIS] ⚠️ ${stop.name}: fuera de radio (${haversineKm(parseFloat(data[0].lat), parseFloat(data[0].lon), cityInfo.lat, cityInfo.lon).toFixed(2)}km > ${radiusKm.toFixed(2)}km)`);
+            }
         }
-        
-        // Fallback a Photon
+
+        // Intento 2: Photon fallback
         await sleep(500);
-        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(searchQuery)}&limit=1&lang=en`;
+        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(searchQuery)}&limit=3&lang=en`;
         const photRes = await fetch(photonUrl);
         if (photRes.ok) {
             const photData = await photRes.json();
-            if (photData.features && photData.features.length > 0) {
-                const f = photData.features[0];
+            for (const f of (photData.features || [])) {
                 const lon = f.geometry.coordinates[0];
                 const lat = f.geometry.coordinates[1];
-                
                 const distToCenter = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
-                const radius = cityInfo.radius || 3.0;
-
-                if (distToCenter <= radius) {
-                    console.log(`[GIS] Verified (Photon): ${stop.name} at ${distToCenter.toFixed(2)}km`);
+                if (distToCenter <= radiusKm) {
+                    console.log(`[GIS] ✅ Photon: ${stop.name} (${distToCenter.toFixed(2)}km)`);
                     return { ...stop, latitude: lat, longitude: lon, coordinatesVerified: true };
-                } else {
-                    console.warn(`[GIS] Stop ${stop.name} (Photon) out of bounds: ${distToCenter.toFixed(2)}km > ${radius.toFixed(2)}km`);
                 }
             }
         }
-        console.warn(`[GIS] No verification found for ${stop.name}`);
+
+        console.warn(`[GIS] ❌ ${stop.name}: sin verificación válida en ${city}.`);
         return null;
-    } catch(e) {
+
+    } catch (e) {
+        console.warn(`[GIS] Error verificando ${stop.name}:`, e);
         return null;
     }
 };
 
+// ── Optimización de ruta (OSRM /trip) ────────────────────────────────────────
+const optimizeStopOrder = async (tour: any): Promise<any> => {
+    if (!tour.stops || tour.stops.length <= 2) return tour;
+    try {
+        const coordsStr = tour.stops.map((s: any) => `${s.longitude},${s.latitude}`).join(';');
+        const osrmUrl = `https://routing.openstreetmap.de/routed-foot/trip/v1/foot/${coordsStr}?source=first&roundtrip=false&geometries=polyline`;
+        const res = await fetch(osrmUrl, { headers: { 'User-Agent': 'BDAI-Travel-App/1.0' } });
+        if (!res.ok) return tour;
+        const data = await res.json();
+        if (data.code === 'Ok' && data.waypoints && data.trips?.length > 0) {
+            const optimizedStops = new Array(tour.stops.length);
+            data.waypoints.forEach((wp: any, i: number) => {
+                optimizedStops[wp.waypoint_index] = tour.stops[i];
+            });
+            tour.stops = optimizedStops.filter((s: any) => s !== undefined);
+            tour.routePolyline = data.trips[0].geometry;
+            const distKm = data.trips[0].distance / 1000;
+            const durationMin = Math.round((distKm / 4) * 60);
+            tour.duration = durationMin > 120 ? `${(durationMin / 60).toFixed(1)} horas` : `${durationMin} min`;
+            tour.distance = `${distKm.toFixed(1)} km`;
+        }
+        return tour;
+    } catch (e) {
+        console.error('[GIS] Error OSRM:', e);
+        return tour;
+    }
+};
+
+// ── SERVIDOR ──────────────────────────────────────────────────────────────────
 serve(async (req) => {
     try {
-        // SEGURIDAD: Verificar el Webhook Secret
+        // Seguridad: verificar el Webhook Secret
         const secret = req.headers.get('x-webhook-secret');
         if (secret !== Deno.env.get('WEBHOOK_SECRET')) {
-            console.error("[WORKER GIS] Unauthorized webhook attempt");
-            return new Response("Unauthorized", { status: 401 });
+            console.error('[GIS] Unauthorized webhook attempt');
+            return new Response('Unauthorized', { status: 401 });
         }
 
         const payload = await req.json();
-        
+
         if (payload.table !== 'generation_jobs' || payload.type !== 'UPDATE') {
-            return new Response("Not an UPDATE on generation_jobs", { status: 200 });
+            return new Response('Not an UPDATE on generation_jobs', { status: 200 });
         }
 
         const job = payload.record;
         if (job.status !== 'PENDING_GIS') {
-            return new Response("Job is not PENDING_GIS", { status: 200 });
+            return new Response('Job is not PENDING_GIS', { status: 200 });
         }
 
-        console.log(`[WORKER GIS] Iniciando validación para Job ${job.id}`);
+        console.log(`[GIS] Iniciando validación para Job ${job.id}: ${job.city_slug} / ${job.language}`);
 
         const parts = job.city_slug.split('_');
         const city = parts[0];
-        const rawTours = job.raw_ai_data || [];
+        const rawTours: any[] = job.raw_ai_data || [];
+
+        // cityInfo CONTRACT (guardado por tour-worker-ai):
+        // { lat, lon, radiusKm, population, bbox:{south,west,north,east} }
         const cityInfo = job.city_info;
-        
-        if (!cityInfo || !cityInfo.lat) {
-            throw new Error("Missing city center in job.city_info");
+        if (!cityInfo?.lat || !cityInfo?.lon) {
+            throw new Error('Missing or malformed city_info in job (lat/lon required)');
+        }
+        // Garantía de seguridad: si radiusKm no llegó por algún motivo, usar fallback razonable
+        if (!cityInfo.radiusKm || cityInfo.radiusKm <= 0) {
+            console.warn('[GIS] cityInfo.radiusKm no definido, usando fallback de 5km');
+            cityInfo.radiusKm = 5;
         }
 
-        // 1. Radio Dinámico si falta (Backup logic)
-        if (!cityInfo.radius) {
-            cityInfo.radius = 3.0; // Fallback seguro si no se calculó en el AI worker
-        }
+        // ── 1. Verificación geográfica de paradas ──────────────────────────────
+        const allUniqueVerifiedStops = new Map<string, any>();
+        let processedTours: any[] = [];
 
-        let verifiedTours = [];
-        const allUniqueVerifiedStops = new Map();
-
-        // 1. Verificación Geográfica Iterativa
         for (let i = 0; i < rawTours.length; i++) {
             const tour = rawTours[i];
-            const processedStops = [];
-            
-            for (let j = 0; j < tour.stops.length; j++) {
-                const stop = tour.stops[j];
-                const verifiedStop = await verifyStopCoordinates(stop, city, cityInfo, job.language);
-                
+            if (!tour?.stops?.length) continue;
+
+            const processedStops: any[] = [];
+            for (const stop of tour.stops) {
+                const verifiedStop = await verifyStopCoordinates(stop, city, cityInfo);
                 if (verifiedStop) {
                     const key = normalizeForMatch(verifiedStop.name);
                     if (!allUniqueVerifiedStops.has(key)) {
-                        allUniqueVerifiedStops.set(key, { ...verifiedStop, id: `${job.city_slug}_stop_${allUniqueVerifiedStops.size}` });
-                        processedStops.push(allUniqueVerifiedStops.get(key));
+                        const enriched = { ...verifiedStop, id: `${job.city_slug}_stop_${allUniqueVerifiedStops.size}` };
+                        allUniqueVerifiedStops.set(key, enriched);
+                        processedStops.push(enriched);
                     }
                 }
             }
-            
+
             if (processedStops.length > 0) {
-                verifiedTours.push({
-                    title: tour.title || `Tour ${i+1}`,
+                processedTours.push({
+                    title: tour.title || `Tour ${i + 1}`,
                     theme: tour.theme || 'mixed',
                     stops: processedStops
                 });
             }
         }
 
-        // 2. Lógica Centralizada de Fusión (Rescue Logic)
         const totalUniqueStops = Array.from(allUniqueVerifiedStops.values());
-        const anyTourBelowThreshold = verifiedTours.some(t => t.stops.length < 8);
 
-        if (totalUniqueStops.length >= 4 && (verifiedTours.length === 0 || totalUniqueStops.length < 16 || anyTourBelowThreshold)) {
-            console.log(`[WORKER GIS] 🌀 Rescate activado. Fusionando ${totalUniqueStops.length} paradas en 1 único tour.`);
-            let rescuedTour = {
+        // ── 2. Fallo crítico: menos de 4 paradas verificadas ──────────────────
+        if (totalUniqueStops.length < 4) {
+            const errorMsg = `Not enough valid stops: ${totalUniqueStops.length} (minimum 4)`;
+            console.error(`[GIS] ❌ ${errorMsg}`);
+            await supabaseClient.from('tours_cache').update({ status: 'ERROR', error_message: errorMsg }).eq('city', job.city_slug).eq('language', job.language);
+            await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: errorMsg }).eq('id', job.id);
+            return new Response('Failed (Not enough stops)', { status: 200 });
+        }
+
+        // ── 3. Decisión de fusión ─────────────────────────────────────────────
+        // Mantener 2 tours solo si AMBOS tienen ≥8 paradas Y hay ≥16 paradas únicas en total.
+        // En cualquier otro caso, fusionar en 1 tour completo.
+        if (shouldMergeIntoOneTour(processedTours, totalUniqueStops)) {
+            console.log(`[GIS] 🌀 Fusión activada. ${processedTours.length} tours / ${totalUniqueStops.length} paradas únicas → 1 tour.`);
+            const rescueTitle = buildRescueTourTitle(rawTours, job.language);
+            let rescuedTour: any = {
                 id: `${job.city_slug}_${job.language}_0`,
-                title: "Lo Esencial y Curiosidades / Essentials & Curiosities",
-                theme: "mixed",
+                title: rescueTitle,
+                theme: 'mixed',
                 stops: totalUniqueStops
             };
             rescuedTour = await optimizeStopOrder(rescuedTour);
-            verifiedTours = [rescuedTour];
+            processedTours = [rescuedTour];
         } else {
-            // Optimizar todos los tours independientes
-            for (let i = 0; i < verifiedTours.length; i++) {
-                verifiedTours[i].id = `${job.city_slug}_${job.language}_${i}`;
-                verifiedTours[i] = await optimizeStopOrder(verifiedTours[i]);
+            // Optimizar cada tour independientemente
+            console.log(`[GIS] ✅ Manteniendo ${processedTours.length} tours separados (${totalUniqueStops.length} paradas únicas).`);
+            for (let i = 0; i < processedTours.length; i++) {
+                processedTours[i].id = `${job.city_slug}_${job.language}_${i}`;
+                processedTours[i] = await optimizeStopOrder(processedTours[i]);
             }
         }
 
-        // 3. Fallo Crítico
-        if (totalUniqueStops.length < 4) {
-            console.log(`[WORKER GIS] ❌ Fallo crítico: Solo ${totalUniqueStops.length} paradas validadas.`);
-            
-            const errorMsg = 'Not enough valid stops (<4)';
-            await supabaseClient.from('tours_cache').update({ 
-                status: 'ERROR',
-                error_message: errorMsg 
-            }).eq('city', job.city_slug).eq('language', job.language);
-            await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: errorMsg }).eq('id', job.id);
-            return new Response("Failed (Not enough stops)", { status: 200 });
-        }
-
-        // 4. Guardado Exitoso
-        const routePolylines = {};
-        verifiedTours.forEach(t => { if (t.routePolyline) routePolylines[t.id] = t.routePolyline; });
+        // ── 4. Guardado exitoso ───────────────────────────────────────────────
+        const routePolylines: Record<string, string> = {};
+        processedTours.forEach(t => { if (t.routePolyline) routePolylines[t.id] = t.routePolyline; });
 
         await supabaseClient.from('tours_cache').upsert({
             city: job.city_slug,
             language: job.language,
-            data: verifiedTours,
+            data: processedTours,
             route_polylines: routePolylines,
             status: 'READY',
             updated_at: new Date().toISOString()
@@ -242,24 +269,18 @@ serve(async (req) => {
 
         await supabaseClient.from('generation_jobs').update({ status: 'COMPLETED' }).eq('id', job.id);
 
-        console.log(`[WORKER GIS] ✅ Tarea completada con éxito. Tours generados: ${verifiedTours.length}`);
-        return new Response("GIS Validation Completed", { status: 200 });
+        console.log(`[GIS] ✅ Completado. Tours: ${processedTours.length}. Paradas totales: ${totalUniqueStops.length}.`);
+        return new Response('GIS Validation Completed', { status: 200 });
 
-    } catch (error) {
-        console.error("[WORKER GIS] Fatal Error:", error);
-        
+    } catch (error: any) {
+        console.error('[GIS] Fatal Error:', error);
         try {
-            const payload = await req.json();
-            if (payload && payload.record) {
+            const payload = await req.clone().json();
+            if (payload?.record) {
                 await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: error.message }).eq('id', payload.record.id);
-                await supabaseClient.from('tours_cache').update({ 
-                    status: 'ERROR',
-                    error_message: error.message 
-                }).eq('city', payload.record.city_slug).eq('language', payload.record.language);
+                await supabaseClient.from('tours_cache').update({ status: 'ERROR', error_message: error.message }).eq('city', payload.record.city_slug).eq('language', payload.record.language);
             }
-        } catch(e) {}
-
+        } catch (_) {}
         return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
 });
-```

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { UserProfile, Tour } from '../types';
 import { getEnvAwareStorage } from '../services/storageProvider';
-
+ 
 export const GUEST_PROFILE: UserProfile = { 
   id: 'guest', isLoggedIn: false, firstName: '', lastName: '', name: '', username: 'traveler', 
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix", 
@@ -12,21 +12,23 @@ export const GUEST_PROFILE: UserProfile = {
   stats: { photosTaken: 0, guidesBought: 0, sessionsStarted: 1, referralsCount: 0, streakDays: 1 }, 
   visitedCities: [], completedTours: [], badges: [], stamps: [], capturedMoments: [], audioSpeed: 1.0
 };
-
+ 
 interface AppState {
   
-  // Audio Player State (Kept in memory, not persisted to disk)
+  // Audio Player State (en memoria, no persistido)
   audioPlayer: {
     isPlaying: boolean;
     currentTrackId: string | null;
   };
   setAudioPlaying: (isPlaying: boolean, trackId?: string) => void;
-
-  // Data State (Persisted based on environment)
+ 
+  // Data State (solo userProfile se persiste)
   userProfile: UserProfile;
   setUserProfile: (profile: UserProfile | ((prev: UserProfile) => UserProfile)) => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
   
+  // Estado de navegación — NO se persiste. La URL es la fuente de verdad.
+  // CityDetailView se autoabastece de Supabase si estos están vacíos al montar.
   activeTours: Tour[];
   setActiveTours: (tours: Tour[] | ((prev: Tour[]) => Tour[])) => void;
   
@@ -38,29 +40,29 @@ interface AppState {
   
   userLocation: { lat: number; lng: number } | null;
   setUserLocation: (loc: { lat: number; lng: number } | null) => void;
-
+ 
   selectedCityInfo: { city: string; country: string; countryEn: string; slug: string } | null;
   setSelectedCityInfo: (info: { city: string; country: string; countryEn: string; slug: string } | null) => void;
   
-  // Global UI States (Not persisted)
+  // Global UI States (no persistidos)
   isLoading: boolean;
   setIsLoading: (val: boolean) => void;
   
   loadingMessage: string;
   setLoadingMessage: (msg: string) => void;
-
+ 
   showOnboarding: boolean;
   setShowOnboarding: (val: boolean) => void;
-
+ 
   visaToShare: { cityName: string; miles: number } | null;
   setVisaToShare: (val: { cityName: string; miles: number } | null) => void;
-
+ 
   hasHydrated: boolean;
   setHasHydrated: (val: boolean) => void;
-
+ 
   clearSession: () => void;
 }
-
+ 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
@@ -72,7 +74,7 @@ export const useAppStore = create<AppState>()(
             currentTrackId: trackId !== undefined ? trackId : state.audioPlayer.currentTrackId 
         } 
       })),
-
+ 
       userProfile: GUEST_PROFILE,
       setUserProfile: (profile) => set((state) => ({ 
         userProfile: typeof profile === 'function' ? profile(state.userProfile) : profile 
@@ -81,6 +83,7 @@ export const useAppStore = create<AppState>()(
         userProfile: { ...state.userProfile, ...updates } 
       })),
       
+      // Estado de navegación — siempre empieza vacío, se llena al navegar
       activeTours: [],
       setActiveTours: (tours) => set((state) => ({ 
         activeTours: typeof tours === 'function' ? tours(state.activeTours) : tours 
@@ -97,25 +100,25 @@ export const useAppStore = create<AppState>()(
       
       userLocation: null,
       setUserLocation: (loc) => set({ userLocation: loc }),
-
+ 
       selectedCityInfo: null,
       setSelectedCityInfo: (info) => set({ selectedCityInfo: info }),
       
       isLoading: false,
       setIsLoading: (val) => set({ isLoading: val }),
-
+ 
       loadingMessage: '',
       setLoadingMessage: (msg) => set({ loadingMessage: msg }),
-
+ 
       showOnboarding: false,
       setShowOnboarding: (val) => set({ showOnboarding: val }),
-
+ 
       visaToShare: null,
       setVisaToShare: (val) => set({ visaToShare: val }),
-
+ 
       hasHydrated: false,
       setHasHydrated: (val) => set({ hasHydrated: val }),
-
+ 
       clearSession: () => set({
         userProfile: GUEST_PROFILE,
         activeTours: [],
@@ -132,13 +135,12 @@ export const useAppStore = create<AppState>()(
     {
       name: 'bdai-app-storage',
       storage: createJSONStorage(() => getEnvAwareStorage()),
-      // Don't persist ephemeral player state, location, or UI states
+      // Solo se persiste el perfil del usuario.
+      // activeTours y selectedCityInfo son estado de navegación:
+      // la URL es la fuente de verdad y CityDetailView se autoabastece de Supabase.
       partialize: (state) => ({
         userProfile: state.userProfile,
-        activeTours: state.activeTours,
-        currentTour: state.currentTour,
         currentStopIndex: state.currentStopIndex,
-        selectedCityInfo: state.selectedCityInfo,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

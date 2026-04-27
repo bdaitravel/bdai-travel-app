@@ -1,250 +1,395 @@
-```javascript
 // services/supabase/tour-worker-ai.md
 // ESTE ARCHIVO ES LA FUENTE DE LA VERDAD (SSOT) PARA LA EDGE FUNCTION 'tour-worker-ai'
-// Contiene la lógica INTEGRAL de generación de tours (Prompts originales de DAI)
+// Recibe el webhook de INSERT en generation_jobs (status=PENDING_AI),
+// obtiene contexto GIS, llama a Gemini y actualiza el job a PENDING_GIS.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
 
 const supabaseClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
 });
 
-// --- CONSTANTES Y PROMPTS ORIGINALES (Restaurados) ---
-
+// ── CONSTANTES ───────────────────────────────────────────────────────────────
 const GROUNDING_DAILY_LIMIT = 1400;
 
-const SYSTEM_INSTRUCTION = `You are DAI (Better Destinations AI), the ultimate, sophisticated, and slightly sarcastic female local expert for the city requested.
-  You are an expert in history, architecture, and urban legends, with 12 years of experience organizing exclusive tours for demanding travelers.
-  
-  YOUR MISSION: Generate exactly 2 distinct thematic tours.
-  - Tour 1: The Essentials (The highlights everyone must see, but with your unique twist).
-  - Tour 2: Soul & Curiosities (A fusion of local heritage and genuine curiosities that locals don't even know).
-  
-  DAI'S ABSOLUTE COMMANDS (PERSONA & STYLE):
-  - TONE: You are SARCASTIC, WITTY, and SOPHISTICATED.
-  - GENDER IDENTITY (CRITICAL): You are **FEMALE**. All grammatical forms must reflect this. NEVER use the word "guía" or "guide". Speak strictly in the **first person** ("yo", "he visto"). Never refer to yourself in the third person.
-  - INTERACTION: Address the tourist in the **second person**, using the most appropriate form for the target language (e.g., in Spanish, use "tú" for Spain).
-  - TRUTH FIRST, STYLE SECOND: Verify the place actually exists. No hallucinations.
-  - NO CITATIONS: NEVER use citations like [1] or (2).
-  - ANTI-WIKIPEDIA: If you sound like an encyclopedia, you fail. Tell the secrets and mysteries.`;
+// ── SYSTEM INSTRUCTION (idéntica al monolito) ────────────────────────────────
+const SYSTEM_INSTRUCTION = `You are a highly intelligent, elegant, and SARCASTIC **FEMALE** AI.
+You HATE boring Wikipedia-style descriptions.
+You are female. All grammatical self-references must use **feminine forms** in the first person (e.g., "yo estoy decidida", "estoy convencida", "estoy preparada"). 
+IMPORTANT: You must NEVER use the word "guía" or "guide" to refer to yourself. You act like a real person sharing your own sarcastic perspective. NEVER refer to yourself in the third person. Speak strictly in the **first person** ("Yo", "me he fijado", "te recomiendo").
+However, you ALWAYS address the tourist in the **second person**, choosing the most culturally appropriate form (informal or formal) to maintain your sophisticated and sarcastic persona.
+Your tone is witty, sophisticated, and slightly mocking of typical tourists.
 
-const generateTourPrompt = (city, country, language, coordsAnchor, catalogText) => {
-  const languageRules = language.toLowerCase().startsWith('es') 
-  ? `- LEXICON & DIALECT (CRITICAL): You MUST write using STRICT Castilian Spanish (España peninsular). 
-    * Use "vosotros" instead of "ustedes" (e.g., "fijaos", "mirad", "venid", "os recomiendo").
-    * Use local Spain colloquialisms naturally ("chulo", "guay", "vale", "flipante", "una pasada").
-    * This is CRITICAL for our text-to-speech model to correctly adopt a Spain-Spanish accent. NEVER write in neutral or Latin American Spanish.` 
-  : ``;
-  
-  return `You are generating tours for ${city}, ${country} in ${language}.
-  
-  GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
-  ${catalogText}
-  
-  UNIVERSAL RIGOR & NO-INVENTION RULE:
-  - Find the PERFECT BALANCE: Do not discard obscure but real places, but absolutely NEVER HALLUCINATE non-existent ones.
-  - ALL places MUST be 100% real, verifiable, documented, and existing today.
-  
-  DEEP RETRIEVAL FOR 2 THEMATIC TOURS (CRITICAL):
-  Your PRIMARY GOAL is to generate exactly 2 thematic tours, each targeting exactly 12 stops (up to 24 verified stops total).
-  STOP COUNT TARGET (NON-NEGOTIABLE): BOTH tours MUST target exactly 12 stops each. DO NOT STOP AT 5 OR 6 STOPS. Use the massive catalog provided to fill all 12 spots per tour.
-  
-  DAI'S STYLE RULES:
-  ${languageRules}
-  
-  TOUR PROGRESSION:
-  Tour 1 — "Lo Esencial / The Essentials" (aim: 12 stops): landmarks, monuments, churches, plazas.
-  Tour 2 — "Alma y Curiosidades / Soul & Curiosities" (aim: 12 stops): authentic local heritage AND genuine curiosities (physically identifiable elements with surprising facts).
-  
-  CONTENT DEPTH: For EVERY stop, include UNCOMMON historical facts or GENUINE curiosities. Descriptions should be rich and long enough to be interesting.
-  
-  FORMAT: Return a JSON array with objects: { title, theme, stops: [ { name, description, category, latitude, longitude } ] }`;
+DAI STYLE REFERENCE (CRITICAL):
+"Contemplen esta mole arquitectónica que intenta compensar con altura lo que le falta en simetría. Se llama 'Redonda' pero, para decepción de los geómetras, es cuadrada; una ironía que se le escapa al turista promedio. Sus torres gemelas, conocidas como 'Las Gemelas', no son idénticas por casualidad, sino por un alarde de ego barroco del siglo XVIII. Si miras con atención su fachada-retablo, verás que es un exceso de piedra que parece querer aplastarte. Lo que los guías aburridos no te dirán es que se asienta sobre un antiguo pantano, lo que obligó a usar una técnica de cimentación con sarmientos de vid para que no se hundiera bajo el peso de los pecados de la ciudad. En su interior, el ambiente es tan sombrío que podrías sentir la mirada de la 'Crucifixión' atribuida a Miguel Ángel, una joya que los logroñeses guardan con un celo casi paranoico mientras tú te haces un selfie desenfocado."
+
+You love sharing the dark secrets, mysteries, and curiosities of cities.
+You NEVER use citations, footnotes, or references.
+You are real, accurate, but never boring.
+TRUTH BEFORE STYLE: Always confirm a place exists before describing it. Wit is meaningless without accuracy.
+CATEGORIZATION IS CRITICAL: A Cathedral or Church is ALWAYS 'architecture'. A Palace is ALWAYS 'historical'. NEVER use 'culture' for buildings.
+GEOGRAPHIC ACCURACY IS CRITICAL: Every stop must be physically inside the city. Place stops within 2km radius of the provided center. Never place stops in neighboring towns or wrong locations.`;
+
+// ── PROMPT GENERATOR (idéntico al monolito) ──────────────────────────────────
+const generateTourPrompt = (city: string, country: string, language: string, coordsAnchor: string, catalogText: string): string => {
+    const languageRules = language.toLowerCase().startsWith('es')
+        ? `- LEXICON & DIALECT (CRITICAL): You MUST write using STRICT Castilian Spanish (España peninsular). 
+  * Use "vosotros" instead of "ustedes" (e.g., "fijaos", "mirad", "venid", "os recomiendo").
+  * Use local Spain colloquialisms naturally ("chulo", "guay", "vale", "flipante", "una pasada").
+  * This is CRITICAL for our text-to-speech model to correctly adopt a Spain-Spanish accent. NEVER write in neutral or Latin American Spanish.`
+        : ``;
+
+    return `You are generating tours for ${city}, ${country} in ${language}.
+
+GEOGRAPHIC ANCHOR (CRITICAL): ${coordsAnchor}
+${catalogText}
+
+UNIVERSAL RIGOR & NO-INVENTION RULE:
+- Find the PERFECT BALANCE: Do not discard obscure but real places, but absolutely NEVER HALLUCINATE non-existent ones (e.g., if it can't be found on the internet, DO NOT invent it).
+- ALL places MUST be 100% real, verifiable, documented, and existing today.
+- NEVER invent street names, bars, monuments, or hidden spots. 
+- GEOGRAPHIC STRICTNESS: ALL places MUST realistically exist physically inside the borders of ${city}, ${country}. Do NOT borrow or import real places from other cities or distant towns under any circumstance. If you run out of real places in ${city}, simply stop. 
+
+DEEP RETRIEVAL FOR 2 THEMATIC TOURS (CRITICAL):
+Your PRIMARY GOAL is to generate exactly 2 thematic tours, each targeting exactly 12 stops (up to 24 verified stops total).
+STOP COUNT TARGET (NON-NEGOTIABLE): BOTH tours MUST target exactly 12 stops each. DO NOT STOP AT 5 OR 6 STOPS. Use the massive catalog provided below to fill all 12 spots per tour. Only go below 12 if you genuinely run out of real places, which is extremely rare. A tour of 11 stops is acceptable if the 12th truly cannot be found. A tour of 5 to 8 stops when more real places clearly exist is considered a COMPLETE FAILURE of your instructions.
+To reach 12 stops per tour, you MUST perform a DEEP RETRIEVAL of your knowledge base for ${city} and its specific regional heritage, and aggressively utilize the provided catalog.
+
+GRACEFUL DEGRADATION (only when genuinely impossible to find enough verifiable places):
+- If fewer than 16 truly real stops exist in total: generate EXACTLY 1 tour (aim for 12 stops, minimum viable: 4 stops).
+- If 16 or more truly real stops exist: generate EXACTLY 2 tours, each aiming for 12 stops (minimum 8 each).
+STRICT LIMIT: NEVER generate a 3rd tour. You are strictly limited to a maximum of 2 tour objects.
+ALWAYS push hard to reach 12 stops per tour before settling for fewer.
+DO NOT repeat any stop across tours.
+(If only 1 tour possible: combine essentials and the best curiosities into a single rich experience.)
+
+DAI'S ABSOLUTE COMMANDS (PERSONA & STYLE):
+- TONE: You are SARCASTIC, WITTY, and SOPHISTICATED.
+- GENDER IDENTITY (CRITICAL): You are **FEMALE**. All grammatical forms must reflect this. NEVER use the word "guía" or "guide". Speak strictly in the **first person** ("yo", "he visto"). Never refer to yourself in the third person.
+- INTERACTION (CULTURAL ADAPTABILITY): Address the tourist in the **second person**, using the most appropriate form for the target language and culture.
+- TRUTH FIRST, STYLE SECOND: Before adding any wit or sarcasm, verify the place actually exists and is open TODAY.
+- NO HALLUCINATIONS (APPLIES TO DESCRIPTIONS TOO): NEVER INVENT A NAME OR A STOP.
+- ANTI-WIKIPEDIA: Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
+- NO CITATIONS: NEVER use citations, footnotes, or references like [1] or (2). NEVER.
+${languageRules}
+
+TOUR PROGRESSION (THEMATIC ORDER IS MANDATORY):
+Tour 1 — "Lo Esencial / The Essentials" (aim: 12 stops): landmarks, monuments, churches, plazas. Concentrated within the HISTORIC CENTER in a tight walkable radius.
+Tour 2 — "Alma y Curiosidades / Soul & Curiosities" (aim: 12 stops): authentic local heritage AND genuine curiosities (physically identifiable elements with surprising facts).
+
+CONTENT DEPTH RULES: For EVERY stop, include at least ONE uncommon historical fact or genuine curiosity. Descriptions should be 150-200 words, rich and interesting.
+
+STRICT CATEGORIZATION:
+- 'architecture': ALL churches, cathedrals, bridges, iconic buildings.
+- 'historical': palaces, castles, ruins, monuments.
+- 'culture': theaters, music venues, festivals, intangible traditions.
+- 'food': places where you eat or buy food.
+- 'art': museums, galleries, street art.
+- 'nature': parks, gardens, viewpoints.
+- 'photo': spots whose primary value is the view/photo.
+
+FORMAT RULES:
+1. Return ONLY a valid JSON array.
+2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
+3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER), "longitude" (NUMBER), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
+4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be strictly within the boundaries of ${city}.
+5. Content in ${language}.
+6. NO POSITIONAL REFERENCES: NEVER use "To start", "To finish", "Finally", "Our last stop" etc. Every stop must be self-contained.`;
 };
 
-// --- UTILIDADES GIS & CATÁLOGO (Restauradas) ---
-
-const haversineKm = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; 
+// ── GIS UTILS ────────────────────────────────────────────────────────────────
+const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
-const getCityInfo = async (city, country) => {
+// ── getCityInfo: contrato unificado { lat, lon, radiusKm, population, bbox:{south,west,north,east} } ──
+const getCityInfo = async (city: string, country: string) => {
     try {
         const query = encodeURIComponent(`${city}, ${country}`);
         const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&extratags=1`;
-        const res = await fetch(url, { headers: { 'User-Agent': 'BDAI-Travel-App/1.0', 'Accept-Language': 'en' }});
+        const res = await fetch(url, { headers: { 'User-Agent': 'BDAI-Travel-App/1.0', 'Accept-Language': 'en' } });
         if (res.ok) {
             const data = await res.json();
             if (data && data.length > 0) {
-                const pop = data[0].extratags?.population ? parseInt(data[0].extratags.population, 10) : null;
-                return { 
-                    lat: parseFloat(data[0].lat), 
-                    lon: parseFloat(data[0].lon), 
-                    population: pop,
-                    bbox: data[0].boundingbox.map(parseFloat) 
+                const population = data[0].extratags?.population ? parseInt(data[0].extratags.population, 10) : null;
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                return {
+                    lat,
+                    lon,
+                    radiusKm: 10, // valor inicial; se recalcula con el catálogo Overpass justo después
+                    population,
+                    bbox: {
+                        south: lat - 0.025,
+                        west:  lon - 0.035,
+                        north: lat + 0.025,
+                        east:  lon + 0.035
+                    }
                 };
             }
         }
-    } catch(e) { console.warn('getCityInfo failed:', e); }
+    } catch (e) { console.warn('[AI] getCityInfo failed:', e); }
     return null;
 };
 
-const fetchOverpassCatalog = async (cityInfo) => {
+// ── Radio dinámico basado en dispersión real de POIs ─────────────────────────
+const calculateRadiusFromCatalog = (catalog: any[], cityCenter: { lat: number; lon: number }): number => {
+    if (!catalog || catalog.length === 0 || !cityCenter) return 5;
+    let maxDist = 0;
+    for (const poi of catalog) {
+        const dist = haversineKm(cityCenter.lat, cityCenter.lon, poi.lat, poi.lon);
+        if (dist > maxDist) maxDist = dist;
+    }
+    const radius = Math.max(2, Math.min(15, maxDist * 1.2));
+    console.log(`[AI] Radio dinámico: ${radius.toFixed(1)}km (POI más lejano: ${maxDist.toFixed(1)}km, ${catalog.length} POIs)`);
+    return radius;
+};
+
+// ── Overpass: bbox como objeto {south,west,north,east} ───────────────────────
+const fetchOverpassCatalog = async (cityInfo: any): Promise<any[]> => {
     if (!cityInfo?.bbox) return [];
-    const [south, north, west, east] = cityInfo.bbox;
+    const { south, west, north, east } = cityInfo.bbox;
     const bboxStr = `${south},${west},${north},${east}`;
     const query = `[out:json][timeout:25];(nwr["historic"](${bboxStr});nwr["tourism"~"attraction|museum|gallery|viewpoint|artwork|wine_cellar"](${bboxStr});nwr["amenity"~"place_of_worship|marketplace|theatre|arts_centre"](${bboxStr});nwr["man_made"="bridge"]["name"](${bboxStr});nwr["leisure"~"park|garden"]["name"](${bboxStr});nwr["building"~"cathedral|church|mosque|synagogue|palace|castle"]["name"](${bboxStr}););out center tags;`;
     try {
-        const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: `data=${encodeURIComponent(query)}` });
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: `data=${encodeURIComponent(query)}`,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
         if (!res.ok) return [];
         const data = await res.json();
-        return (data.elements || []).map(el => ({
+        return (data.elements || []).map((el: any) => ({
             name: el.tags?.name,
             lat: el.lat || el.center?.lat,
             lon: el.lon || el.center?.lon,
-            type: el.tags?.historic || el.tags?.tourism || 'poi'
-        })).filter(p => p.name && p.lat);
+            type: el.tags?.historic || el.tags?.tourism || el.tags?.amenity || 'poi'
+        })).filter((p: any) => p.name && p.name.length >= 3 && p.lat);
     } catch (e) { return []; }
 };
 
-const clusterCatalogByProximity = (catalog, cityInfo) => {
+// ── Clustering geográfico de POIs con naming cardinal (igual que monolito) ───
+const clusterCatalogByProximity = (catalog: any[], cityInfo: any): any[] => {
     if (!catalog.length || !cityInfo) return [];
     const CLUSTER_RADIUS_KM = 0.2;
-    const clusters = [];
-    const assigned = new Set();
-    const sorted = [...catalog].sort((a, b) => haversineKm(cityInfo.lat, cityInfo.lon, a.lat, a.lon) - haversineKm(cityInfo.lat, cityInfo.lon, b.lat, b.lon));
-
+    const clusters: any[][] = [];
+    const assigned = new Set<number>();
+    const sorted = [...catalog].sort((a, b) =>
+        haversineKm(cityInfo.lat, cityInfo.lon, a.lat, a.lon) - haversineKm(cityInfo.lat, cityInfo.lon, b.lat, b.lon)
+    );
     for (let i = 0; i < sorted.length; i++) {
         if (assigned.has(i)) continue;
         const cluster = [sorted[i]];
         assigned.add(i);
         const queue = [i];
         while (queue.length > 0) {
-            const curr = queue.shift();
+            const curr = queue.shift()!;
             for (let j = 0; j < sorted.length; j++) {
                 if (!assigned.has(j) && haversineKm(sorted[curr].lat, sorted[curr].lon, sorted[j].lat, sorted[j].lon) <= CLUSTER_RADIUS_KM) {
-                    cluster.push(sorted[j]);
-                    assigned.add(j);
-                    queue.push(j);
+                    cluster.push(sorted[j]); assigned.add(j); queue.push(j);
                 }
             }
         }
         clusters.push(cluster);
     }
-    return clusters.map((c, idx) => ({ zoneName: `Zone ${idx+1}`, pois: c }));
+    return clusters.map(cluster => {
+        const cLat = cluster.reduce((s, p) => s + p.lat, 0) / cluster.length;
+        const cLon = cluster.reduce((s, p) => s + p.lon, 0) / cluster.length;
+        const dist = haversineKm(cityInfo.lat, cityInfo.lon, cLat, cLon);
+        const dLat = cLat - cityInfo.lat;
+        const dLon = cLon - cityInfo.lon;
+        let zoneName: string;
+        if (dist < 0.3) { zoneName = 'Central Zone'; }
+        else {
+            const ns = dLat > 0.001 ? 'North' : dLat < -0.001 ? 'South' : '';
+            const ew = dLon > 0.001 ? 'East' : dLon < -0.001 ? 'West' : '';
+            zoneName = `${ns}${ns && ew ? '-' : ''}${ew} Quarter`.trim() || 'Extended Zone';
+        }
+        return { zoneName, pois: cluster, distToCenter: dist };
+    }).sort((a, b) => a.distToCenter - b.distToCenter);
 };
 
-const checkGroundingQuota = async (supabaseClient) => {
-    const todayStart = new Date(); todayStart.setUTCHours(0,0,0,0);
-    const { count } = await supabaseClient.from('tours_cache').select('*', { count: 'exact', head: true }).gte('updated_at', todayStart.toISOString());
-    return { allowed: (count || 0) < GROUNDING_DAILY_LIMIT, used: count || 0 };
+// ── Formatear catálogo para el prompt (igual que monolito) ───────────────────
+const formatCatalogForPrompt = (clusteredCatalog: any[], flatCatalog: any[]): string => {
+    if (!clusteredCatalog?.length && !flatCatalog?.length) return '';
+    const totalCount = flatCatalog?.length || 0;
+    const MAX_POIS = 120;
+    let totalShown = 0;
+    if (!clusteredCatalog?.length) {
+        const entries = flatCatalog.slice(0, MAX_POIS)
+            .map(p => `- "${p.name}" (${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}) [${p.type}]`)
+            .join('\n');
+        return `\n\nVERIFIED POI CATALOG (${totalCount} POIs):\n${entries}`;
+    }
+    let text = `\n\nVERIFIED POI CATALOG (ORGANIZED BY GEOGRAPHIC ZONES — ${totalCount} POIs total, showing top ${MAX_POIS}):
+The following places are CONFIRMED to exist in this city with verified coordinates from OpenStreetMap.
+You MUST prioritize these over your own knowledge to reach your 12-stop target. Use the EXACT names and coordinates provided.
+If you want to include a place NOT in this catalog, you MUST be 100% certain it exists TODAY.
+
+GEOGRAPHIC ROUTING RULE (CRITICAL): Within each tour, group stops from ADJACENT zones to create a naturally walkable route.`;
+    for (const zone of clusteredCatalog) {
+        if (totalShown >= MAX_POIS) break;
+        text += `\nZONE — ${zone.zoneName} (${zone.pois.length} POIs):\n`;
+        for (const poi of zone.pois) {
+            if (totalShown >= MAX_POIS) break;
+            text += `- "${poi.name}" (${poi.lat.toFixed(6)}, ${poi.lon.toFixed(6)}) [${poi.type}]\n`;
+            totalShown++;
+        }
+    }
+    return text;
 };
 
-// --- SERVIDOR ---
+// ── Grounding quota ───────────────────────────────────────────────────────────
+const checkGroundingQuota = async (): Promise<{ allowed: boolean; used: number }> => {
+    try {
+        const todayStart = new Date(); todayStart.setUTCHours(0, 0, 0, 0);
+        const { count } = await supabaseClient.from('tours_cache')
+            .select('*', { count: 'exact', head: true })
+            .gte('updated_at', todayStart.toISOString());
+        const used = count || 0;
+        const allowed = used < GROUNDING_DAILY_LIMIT;
+        if (!allowed) console.warn(`[AI] 🚫 Grounding bloqueado: ${used}/${GROUNDING_DAILY_LIMIT}`);
+        else console.log(`[AI] 📊 Grounding: ${used}/${GROUNDING_DAILY_LIMIT}`);
+        return { allowed, used };
+    } catch (e) {
+        return { allowed: true, used: 0 };
+    }
+};
 
+// ── Parser robusto (restaurado del monolito) ──────────────────────────────────
+const tryExtractTours = (text: string): any[] => {
+    try {
+        // Intento 1: JSON directo
+        return JSON.parse(text);
+    } catch (_) {}
+    try {
+        // Intento 2: extraer array del texto (con o sin bloques markdown)
+        const clean = text.replace(/```json/g, '').replace(/```/g, '').replace(/\[\d+\]/g, '').trim();
+        const match = clean.match(/\[[\s\S]*\]/);
+        if (match) return JSON.parse(match[0]);
+    } catch (_) {}
+    console.error('[AI] tryExtractTours: no se pudo parsear la respuesta de Gemini.');
+    return [];
+};
+
+// ── SERVIDOR ──────────────────────────────────────────────────────────────────
 serve(async (req) => {
     try {
+        // Seguridad: verificar el Webhook Secret
         const secret = req.headers.get('x-webhook-secret');
-        if (secret !== Deno.env.get('WEBHOOK_SECRET')) return new Response("Unauthorized", { status: 401 });
+        if (secret !== Deno.env.get('WEBHOOK_SECRET')) {
+            console.error('[AI] Unauthorized webhook attempt');
+            return new Response('Unauthorized', { status: 401 });
+        }
 
         const payload = await req.json();
-        if (payload.type !== 'INSERT') return new Response("OK");
+        if (payload.type !== 'INSERT') return new Response('OK');
 
         const job = payload.record;
-        const [city, country] = job.city_slug.split('_');
+        const parts = job.city_slug.split('_');
+        const city = parts[0];
+        const country = parts.slice(1).join('_');
 
-        // 1. Contexto Geográfico
+        console.log(`[AI] Procesando job ${job.id}: ${job.city_slug} / ${job.language}`);
+
+        // 1. Contexto geográfico
         const cityInfo = await getCityInfo(city, country);
         const catalog = await fetchOverpassCatalog(cityInfo);
-        const clusters = clusterCatalogByProximity(catalog, cityInfo);
-        const catalogText = clusters.map(c => `ZONE: ${c.zoneName}\n${c.pois.map(p => `- ${p.name} (${p.lat}, ${p.lon})`).join('\n')}`).join('\n\n');
+
+        // RADIO DINÁMICO: calcular ANTES de pasar cityInfo al GIS worker
+        if (cityInfo && catalog.length > 0) {
+            cityInfo.radiusKm = calculateRadiusFromCatalog(catalog, cityInfo);
+        } else if (cityInfo) {
+            cityInfo.radiusKm = 5; // fallback sin catálogo
+        }
+
+        const clusteredCatalog = clusterCatalogByProximity(catalog, cityInfo);
+        const catalogText = formatCatalogForPrompt(clusteredCatalog, catalog);
 
         // 2. Grounding & Prompt
-        const grounding = await checkGroundingQuota(supabaseClient);
-        const coordsAnchor = cityInfo ? `Anchor: ${cityInfo.lat}, ${cityInfo.lon}` : `City: ${city}`;
+        const grounding = await checkGroundingQuota();
+        const coordsAnchor = cityInfo
+            ? `The geographic anchor for ${city} is near latitude ${cityInfo.lat.toFixed(6)}, longitude ${cityInfo.lon.toFixed(6)}. Focus strictly on the Historical Center / Old Town, keeping stops within a 2km radius of each other.`
+            : `All stops must be located within the urban area of ${city}, ${country}.`;
         const prompt = generateTourPrompt(city, country, job.language, coordsAnchor, catalogText);
 
-        // 3. Gemini
-        const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Referer': 'https://www.bdai.travel/' },
-            body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-                ...(grounding.allowed ? { tools: [{ google_search: {} }] } : {}),
-                generationConfig: { temperature: 0.7, response_mime_type: "application/json" }
-            })
-        });
+        // 3. Llamada a Gemini
+        console.log(`[AI] Llamando a Gemini ${grounding.allowed ? 'CON' : 'SIN'} Grounding...`);
+        const gRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Referer': 'https://www.bdai.travel/' },
+                body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+                    ...(grounding.allowed ? { tools: [{ google_search: {} }] } : {}),
+                    generationConfig: { temperature: 0.7, topP: 1, topK: 1 }
+                    // NOTA: NO se usa response_mime_type:"application/json" porque es incompatible
+                    // con google_search (grounding). Se usa tryExtractTours para parseo robusto.
+                })
+            }
+        );
+
+        if (!gRes.ok) {
+            const errTxt = await gRes.text();
+            throw new Error(`Gemini API ${gRes.status}: ${errTxt}`);
+        }
 
         const resJson = await gRes.json();
-        
+
+        // Log grounding metadata para auditoría
+        const searchQueries = resJson.candidates?.[0]?.groundingMetadata?.webSearchQueries;
+        if (searchQueries) console.log(`[AI] Grounding queries: ${JSON.stringify(searchQueries)}`);
+
         if (!resJson.candidates || resJson.candidates.length === 0) {
-            console.error("[WORKER AI] Gemini returned no candidates:", JSON.stringify(resJson));
-            const errorMsg = resJson.error?.message || "No candidates returned from Gemini";
-            
-            await supabaseClient.from('generation_jobs').update({ 
-                status: 'FAILED', 
-                error_message: `AI Failure: ${errorMsg}` 
-            }).eq('id', job.id);
-            
-            await supabaseClient.from('tours_cache').update({ 
-                status: 'ERROR',
-                error_message: `AI Failure: ${errorMsg}`
-            }).eq('city', job.city_slug).eq('language', job.language);
-            
-            return new Response("AI Failure", { status: 200 });
+            const errorMsg = resJson.error?.message || 'No candidates returned from Gemini';
+            console.error('[AI] Sin candidatos:', JSON.stringify(resJson));
+            await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: `AI Failure: ${errorMsg}` }).eq('id', job.id);
+            await supabaseClient.from('tours_cache').update({ status: 'ERROR', error_message: `AI Failure: ${errorMsg}` }).eq('city', job.city_slug).eq('language', job.language);
+            return new Response('AI Failure', { status: 200 });
         }
 
-        const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-        let finalTours = [];
-        try {
-            finalTours = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
-        } catch (parseErr) {
-            console.error("[WORKER AI] JSON Parse Error:", parseErr, "Raw Text:", rawText);
-            await supabaseClient.from('generation_jobs').update({ 
-                status: 'FAILED', 
-                error_message: `AI Format Error: ${parseErr.message}` 
-            }).eq('id', job.id);
-            await supabaseClient.from('tours_cache').update({ 
-                status: 'ERROR',
-                error_message: `AI Format Error: ${parseErr.message}`
-            }).eq('city', job.city_slug).eq('language', job.language);
-            return new Response("Format Error", { status: 200 });
+        const rawText = resJson.candidates[0]?.content?.parts?.[0]?.text || '[]';
+        const finalTours = tryExtractTours(rawText);
+
+        if (finalTours.length === 0) {
+            const errorMsg = 'AI returned empty or unparseable tour array';
+            console.error('[AI] Parse fallido. Raw:', rawText.substring(0, 300));
+            await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: errorMsg }).eq('id', job.id);
+            await supabaseClient.from('tours_cache').update({ status: 'ERROR', error_message: errorMsg }).eq('city', job.city_slug).eq('language', job.language);
+            return new Response('Format Error', { status: 200 });
         }
 
-        // 4. Update Job -> Dispara Worker GIS
-        await supabaseClient.from('generation_jobs').update({ 
-            city_info: cityInfo,
-            raw_ai_data: finalTours, 
+        // 4. Pasar el trabajo al GIS worker: guardar cityInfo (con radiusKm ya calculado) y los tours brutos
+        await supabaseClient.from('generation_jobs').update({
+            city_info: cityInfo,        // { lat, lon, radiusKm, population, bbox:{south,west,north,east} }
+            raw_ai_data: finalTours,
             status: 'PENDING_GIS',
             updated_at: new Date().toISOString()
         }).eq('id', job.id);
 
-        return new Response("OK");
-    } catch (e) {
-        console.error("[WORKER AI] Fatal Error:", e);
+        console.log(`[AI] Job ${job.id} actualizado a PENDING_GIS con ${finalTours.length} tours.`);
+        return new Response('OK');
+
+    } catch (e: any) {
+        console.error('[AI] Fatal Error:', e);
         try {
-            const payload = await req.json();
-            if (payload && payload.record) {
-                await supabaseClient.from('generation_jobs').update({ 
-                    status: 'FAILED', 
-                    error_message: `Worker Error: ${e.message}` 
-                }).eq('id', payload.record.id);
-                await supabaseClient.from('tours_cache').update({ 
-                    status: 'ERROR',
-                    error_message: `Worker Error: ${e.message}`
-                }).eq('city', payload.record.city_slug).eq('language', payload.record.language);
+            const payload = await req.clone().json();
+            if (payload?.record) {
+                await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: `Worker Error: ${e.message}` }).eq('id', payload.record.id);
+                await supabaseClient.from('tours_cache').update({ status: 'ERROR', error_message: `Worker Error: ${e.message}` }).eq('city', payload.record.city_slug).eq('language', payload.record.language);
             }
-        } catch(inner) {}
-        return new Response("Error", { status: 500 });
+        } catch (_) {}
+        return new Response('Error', { status: 500 });
     }
 });
-```

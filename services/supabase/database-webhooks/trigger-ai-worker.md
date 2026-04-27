@@ -9,7 +9,7 @@
 - **Events**: `Insert` (SOLO activado para inserciones)
 - **Type**: `Webhook`
 - **Method**: `POST`
-- **URL**: `https://slldavgsoxunkphqeamx.supabase.co/functions/v1/tour-worker-gis`
+- **URL**: `https://slldavgsoxunkphqeamx.supabase.co/functions/v1/tour-worker-ai`
 - **Headers**:
   - `Content-Type`: `application/json`
   - `Authorization`: `Bearer <TU_ANON_KEY>` (Requerido si la función no es pública, aunque por defecto las webhooks mandan el JWT del service role o anon, se recomienda verificar).
