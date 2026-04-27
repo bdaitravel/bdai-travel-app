@@ -28,6 +28,17 @@ const haversineKm = (lat1, lon1, lat2, lon2) => {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
+const calculateRadiusFromCatalog = (catalog, cityCenter) => {
+    if (!catalog || catalog.length === 0) return 3.0; // Fallback
+    let maxDist = 0;
+    catalog.forEach(poi => {
+        const d = haversineKm(cityCenter.lat, cityCenter.lon, poi.lat, poi.lon);
+        if (d > maxDist) maxDist = d;
+    });
+    // Max dist + 20% margin, min 2km, max 15km
+    return Math.min(15, Math.max(2, maxDist * 1.2));
+};
+
 const optimizeStopOrder = async (tour) => {
     if (tour.stops.length <= 2) return tour;
     try {
@@ -74,12 +85,14 @@ const verifyStopCoordinates = async (stop, city, cityInfo, language) => {
                 const lat = parseFloat(data[0].lat);
                 const lon = parseFloat(data[0].lon);
                 
-                const cityCenterLat = cityInfo.lat;
-                const cityCenterLon = cityInfo.lon;
-                
-                const distToCenter = haversineKm(lat, lon, cityCenterLat, cityCenterLon);
-                if (distToCenter <= 3.0) { // 3km radio max
+                const distToCenter = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
+                const radius = cityInfo.radius || 3.0;
+
+                if (distToCenter <= radius) {
+                    console.log(`[GIS] Verified (Nominatim): ${stop.name} at ${distToCenter.toFixed(2)}km`);
                     return { ...stop, latitude: lat, longitude: lon, coordinatesVerified: true };
+                } else {
+                    console.warn(`[GIS] Stop ${stop.name} out of bounds: ${distToCenter.toFixed(2)}km > ${radius.toFixed(2)}km`);
                 }
             }
         }
@@ -96,11 +109,17 @@ const verifyStopCoordinates = async (stop, city, cityInfo, language) => {
                 const lat = f.geometry.coordinates[1];
                 
                 const distToCenter = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
-                if (distToCenter <= 3.0) {
+                const radius = cityInfo.radius || 3.0;
+
+                if (distToCenter <= radius) {
+                    console.log(`[GIS] Verified (Photon): ${stop.name} at ${distToCenter.toFixed(2)}km`);
                     return { ...stop, latitude: lat, longitude: lon, coordinatesVerified: true };
+                } else {
+                    console.warn(`[GIS] Stop ${stop.name} (Photon) out of bounds: ${distToCenter.toFixed(2)}km > ${radius.toFixed(2)}km`);
                 }
             }
         }
+        console.warn(`[GIS] No verification found for ${stop.name}`);
         return null;
     } catch(e) {
         return null;
@@ -134,6 +153,15 @@ serve(async (req) => {
         const rawTours = job.raw_ai_data || [];
         const cityInfo = job.city_info;
         
+        if (!cityInfo || !cityInfo.lat) {
+            throw new Error("Missing city center in job.city_info");
+        }
+
+        // 1. Radio Dinámico si falta (Backup logic)
+        if (!cityInfo.radius) {
+            cityInfo.radius = 3.0; // Fallback seguro si no se calculó en el AI worker
+        }
+
         let verifiedTours = [];
         const allUniqueVerifiedStops = new Map();
 
@@ -190,8 +218,12 @@ serve(async (req) => {
         if (totalUniqueStops.length < 4) {
             console.log(`[WORKER GIS] ❌ Fallo crítico: Solo ${totalUniqueStops.length} paradas validadas.`);
             
-            await supabaseClient.from('tours_cache').update({ status: 'ERROR' }).eq('city', job.city_slug).eq('language', job.language);
-            await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: 'Not enough valid stops (<4)' }).eq('id', job.id);
+            const errorMsg = 'Not enough valid stops (<4)';
+            await supabaseClient.from('tours_cache').update({ 
+                status: 'ERROR',
+                error_message: errorMsg 
+            }).eq('city', job.city_slug).eq('language', job.language);
+            await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: errorMsg }).eq('id', job.id);
             return new Response("Failed (Not enough stops)", { status: 200 });
         }
 
@@ -220,7 +252,10 @@ serve(async (req) => {
             const payload = await req.json();
             if (payload && payload.record) {
                 await supabaseClient.from('generation_jobs').update({ status: 'FAILED', error_message: error.message }).eq('id', payload.record.id);
-                await supabaseClient.from('tours_cache').update({ status: 'ERROR' }).eq('city', payload.record.city_slug).eq('language', payload.record.language);
+                await supabaseClient.from('tours_cache').update({ 
+                    status: 'ERROR',
+                    error_message: error.message 
+                }).eq('city', payload.record.city_slug).eq('language', payload.record.language);
             }
         } catch(e) {}
 

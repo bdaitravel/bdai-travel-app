@@ -185,8 +185,40 @@ serve(async (req) => {
         });
 
         const resJson = await gRes.json();
+        
+        if (!resJson.candidates || resJson.candidates.length === 0) {
+            console.error("[WORKER AI] Gemini returned no candidates:", JSON.stringify(resJson));
+            const errorMsg = resJson.error?.message || "No candidates returned from Gemini";
+            
+            await supabaseClient.from('generation_jobs').update({ 
+                status: 'FAILED', 
+                error_message: `AI Failure: ${errorMsg}` 
+            }).eq('id', job.id);
+            
+            await supabaseClient.from('tours_cache').update({ 
+                status: 'ERROR',
+                error_message: `AI Failure: ${errorMsg}`
+            }).eq('city', job.city_slug).eq('language', job.language);
+            
+            return new Response("AI Failure", { status: 200 });
+        }
+
         const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-        const finalTours = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
+        let finalTours = [];
+        try {
+            finalTours = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
+        } catch (parseErr) {
+            console.error("[WORKER AI] JSON Parse Error:", parseErr, "Raw Text:", rawText);
+            await supabaseClient.from('generation_jobs').update({ 
+                status: 'FAILED', 
+                error_message: `AI Format Error: ${parseErr.message}` 
+            }).eq('id', job.id);
+            await supabaseClient.from('tours_cache').update({ 
+                status: 'ERROR',
+                error_message: `AI Format Error: ${parseErr.message}`
+            }).eq('city', job.city_slug).eq('language', job.language);
+            return new Response("Format Error", { status: 200 });
+        }
 
         // 4. Update Job -> Dispara Worker GIS
         await supabaseClient.from('generation_jobs').update({ 
@@ -198,7 +230,20 @@ serve(async (req) => {
 
         return new Response("OK");
     } catch (e) {
-        console.error(e);
+        console.error("[WORKER AI] Fatal Error:", e);
+        try {
+            const payload = await req.json();
+            if (payload && payload.record) {
+                await supabaseClient.from('generation_jobs').update({ 
+                    status: 'FAILED', 
+                    error_message: `Worker Error: ${e.message}` 
+                }).eq('id', payload.record.id);
+                await supabaseClient.from('tours_cache').update({ 
+                    status: 'ERROR',
+                    error_message: `Worker Error: ${e.message}`
+                }).eq('city', payload.record.city_slug).eq('language', payload.record.language);
+            }
+        } catch(inner) {}
         return new Response("Error", { status: 500 });
     }
 });

@@ -160,7 +160,8 @@ export const generateToursForCity = async (
                             } else if (newStatus === 'ERROR') {
                                 clearTimeout(timeoutId);
                                 supabase.removeChannel(channel);
-                                reject(new Error("Fallo en la generación tras procesamiento en segundo plano."));
+                                const errorMsg = payload.new.error_message || "Fallo en la generación tras procesamiento en segundo plano.";
+                                reject(new Error(errorMsg));
                             }
                         }
                     )
