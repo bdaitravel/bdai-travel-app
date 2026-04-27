@@ -68,17 +68,27 @@ const buildRescueTourTitle = (rawTours: any[], language: string): string => {
     return 'The Essential & Curiosities — One Complete Walk';
 };
 
+// ── Normalización para comparación de municipios ─────────────────────────────
+const extractMunicipalityFromAddress = (address: any): string => {
+    const raw = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
+    return raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+};
+
 // ── Verificación de coordenadas (Nominatim → Photon fallback) ─────────────────
 // cityInfo CONTRACT: { lat, lon, radiusKm, population, bbox:{south,west,north,east} }
+// VALIDACIÓN DE MUNICIPIO: se descarta cualquier resultado cuyo address.city/town/village
+// no coincida con la ciudad objetivo. Esto previene que calles con el mismo nombre en
+// municipios adyacentes (ej. Calle Laurel en Villamediana vs Logroño) pasen el filtro de radio.
 const verifyStopCoordinates = async (stop: any, city: string, cityInfo: any): Promise<any | null> => {
     const radiusKm = cityInfo.radiusKm || 5;
+    const normalizedCity = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
     try {
         await sleep(1100); // Rate limiter Nominatim (max 1 req/s)
 
-        // Intento 1: Nominatim
+        // Intento 1: Nominatim con validación de municipio
         const searchQuery = `${stop.name}, ${city}`;
-        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=3&addressdetails=1`;
+        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&addressdetails=1`;
         const nomRes = await fetch(nomUrl, { headers: { 'Accept-Language': 'en', 'User-Agent': 'BDAI-Travel-App/1.0' } });
 
         if (nomRes.ok) {
@@ -86,26 +96,51 @@ const verifyStopCoordinates = async (stop: any, city: string, cityInfo: any): Pr
             for (const result of (data || [])) {
                 const lat = parseFloat(result.lat);
                 const lon = parseFloat(result.lon);
+
+                // VALIDACIÓN DE MUNICIPIO: el resultado debe pertenecer a la ciudad objetivo,
+                // no a un municipio vecino con el mismo nombre de calle/lugar.
+                const resultMunicipality = extractMunicipalityFromAddress(result.address);
+                const isCorrectMunicipality = resultMunicipality === '' ||
+                    resultMunicipality.includes(normalizedCity) ||
+                    normalizedCity.includes(resultMunicipality);
+
+                if (!isCorrectMunicipality) {
+                    console.warn(`[GIS] ⚠️ ${stop.name}: municipio incorrecto (${result.address?.city || result.address?.town} ≠ ${city}). Descartando.`);
+                    continue;
+                }
+
                 const distToCenter = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
                 if (distToCenter <= radiusKm) {
-                    console.log(`[GIS] ✅ Nominatim: ${stop.name} (${distToCenter.toFixed(2)}km)`);
+                    console.log(`[GIS] ✅ Nominatim: ${stop.name} (${distToCenter.toFixed(2)}km, municipio: ${resultMunicipality || 'ok'})`);
                     return { ...stop, latitude: lat, longitude: lon, coordinatesVerified: true };
+                } else {
+                    console.warn(`[GIS] ⚠️ ${stop.name}: fuera de radio (${distToCenter.toFixed(2)}km > ${radiusKm.toFixed(2)}km)`);
                 }
-            }
-            if (data && data.length > 0) {
-                console.warn(`[GIS] ⚠️ ${stop.name}: fuera de radio (${haversineKm(parseFloat(data[0].lat), parseFloat(data[0].lon), cityInfo.lat, cityInfo.lon).toFixed(2)}km > ${radiusKm.toFixed(2)}km)`);
             }
         }
 
-        // Intento 2: Photon fallback
+        // Intento 2: Photon fallback con validación de municipio
         await sleep(500);
-        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(searchQuery)}&limit=3&lang=en`;
+        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(searchQuery)}&limit=5&lang=en`;
         const photRes = await fetch(photonUrl);
         if (photRes.ok) {
             const photData = await photRes.json();
             for (const f of (photData.features || [])) {
                 const lon = f.geometry.coordinates[0];
                 const lat = f.geometry.coordinates[1];
+
+                // Validación de municipio en Photon
+                const photonCity = (f.properties?.city || f.properties?.county || '').toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+                const isCorrectMunicipality = photonCity === '' ||
+                    photonCity.includes(normalizedCity) ||
+                    normalizedCity.includes(photonCity);
+
+                if (!isCorrectMunicipality) {
+                    console.warn(`[GIS] ⚠️ ${stop.name} (Photon): municipio incorrecto (${photonCity} ≠ ${city}). Descartando.`);
+                    continue;
+                }
+
                 const distToCenter = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
                 if (distToCenter <= radiusKm) {
                     console.log(`[GIS] ✅ Photon: ${stop.name} (${distToCenter.toFixed(2)}km)`);
@@ -215,6 +250,8 @@ serve(async (req) => {
                 processedTours.push({
                     title: tour.title || `Tour ${i + 1}`,
                     theme: tour.theme || 'mixed',
+                    city: tour.city || city,       // garantizar que city nunca se pierda
+                    country: tour.country || '',
                     stops: processedStops
                 });
             }
@@ -241,6 +278,8 @@ serve(async (req) => {
                 id: `${job.city_slug}_${job.language}_0`,
                 title: rescueTitle,
                 theme: 'mixed',
+                city: city,
+                country: job.city_slug.split('_').slice(1).join('_') || '',
                 stops: totalUniqueStops
             };
             rescuedTour = await optimizeStopOrder(rescuedTour);

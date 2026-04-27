@@ -9,7 +9,7 @@ import { optimizeStopOrder } from '../lib/routingService';
 
 export { QuotaError };
 
-// ── Tipos auxiliares (se mantienen aquí por ahora) ─────────────────────────
+// ── Tipos auxiliares ───────────────────────────────────────────────────────
 type CityTier = 'SMALL' | 'MEDIUM' | 'LARGE';
 
 // ── Traduce o normaliza la búsqueda del usuario ───────────────────────────
@@ -87,16 +87,33 @@ For each result return:
     });
 };
 
-// ── Helper para extracción de JSON acumulado ───────────────────────────────
-const tryExtractTours = (text: string): Tour[] => {
-    try {
-        const match = text.match(/\[[\s\S]*\]/);
-        if (match) return JSON.parse(match[0]);
-    } catch (e) {}
-    return [];
+// ── Helper: leer tours desde caché de Supabase ────────────────────────────
+const fetchToursFromCache = async (slug: string, lang: string): Promise<Tour[] | null> => {
+    const { data } = await supabase
+        .from('tours_cache')
+        .select('data, status, route_polylines, error_message')
+        .eq('city', slug)
+        .eq('language', lang)
+        .maybeSingle();
+
+    if (!data) return null;
+
+    if (data.status === 'READY' && data.data?.length > 0) {
+        const savedPolylines: Record<string, string> = data.route_polylines || {};
+        return (data.data as Tour[]).map((tour: Tour) => ({
+            ...tour,
+            routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
+        }));
+    }
+
+    if (data.status === 'ERROR') {
+        throw new Error(data.error_message || 'Fallo en la generación en segundo plano.');
+    }
+
+    return null; // GENERATING o sin datos aún — seguir esperando
 };
 
-// ── Generación adaptada de tours por nivel de ciudad ─────────────────────
+// ── Generación de tours vía Edge Function + Realtime + polling de rescate ──
 export const generateToursForCity = async (
     city: string,
     country: string,
@@ -110,7 +127,7 @@ export const generateToursForCity = async (
         const lang = user.language || 'es';
         const slug = normalizeKey(city, country);
 
-        // Disparo a la Edge Function (devuelve al instante BACKGROUND_QUEUED)
+        // Disparo al orquestador (devuelve al instante BACKGROUND_QUEUED)
         const { data, error } = await supabase.functions.invoke('tour-orchestrator', {
             body: { city, country, language: lang, slug }
         });
@@ -120,24 +137,45 @@ export const generateToursForCity = async (
             throw new Error(error.message || "Fallo en la generación serverless");
         }
 
-        // Si la caché de Supabase la devolvió instántaneamente:
+        // Caché devuelta directamente (caso raro: orquestador respondió con tours)
         if (data && data.tours) {
-            console.log(`Se recibieron ${data.tours.length} tours desde el servidor (CACHED).`);
+            console.log(`Tours recibidos directamente (CACHED): ${data.tours.length}`);
             if (onProgress) data.tours.forEach((t: Tour) => onProgress(t));
             return data.tours;
         }
 
-        // Si entró en SEGUNDO PLANO (Async Mode) o ya estaba GENERATING
+        // Modo asíncrono: orquestador confirmó encolado o ya estaba generando
         if (data && (data.status === "BACKGROUND_QUEUED" || data.status === "GENERATING")) {
-            console.log("Servidor confirmando ejecución en segundo plano. Suscribiendo por Realtime...");
-            
-            return new Promise((resolve, reject) => {
-                // Timeout máximo de seguridad del cliente (6.5 minutos)
-                const timeoutId = setTimeout(() => {
-                    supabase.removeChannel(channel);
-                    reject(new Error("Timeout de cliente esperando generación asíncrona."));
-                }, 390000); 
+            console.log("Generación en segundo plano confirmada. Iniciando Realtime + polling...");
 
+            return new Promise((resolve, reject) => {
+                let resolved = false;
+
+                const resolveOnce = (tours: Tour[]) => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearTimeout(timeoutId);
+                    clearInterval(pollId);
+                    supabase.removeChannel(channel);
+                    if (onProgress) tours.forEach((t: Tour) => onProgress(t));
+                    resolve(tours);
+                };
+
+                const rejectOnce = (err: Error) => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearTimeout(timeoutId);
+                    clearInterval(pollId);
+                    supabase.removeChannel(channel);
+                    reject(err);
+                };
+
+                // Timeout máximo de seguridad (6.5 minutos)
+                const timeoutId = setTimeout(() => {
+                    rejectOnce(new Error("Timeout: la generación tardó demasiado."));
+                }, 390000);
+
+                // ── SUSCRIPCIÓN REALTIME ──────────────────────────────────
                 const channel = supabase.channel(`city-generation-${slug}`)
                     .on(
                         'postgres_changes',
@@ -145,34 +183,55 @@ export const generateToursForCity = async (
                             event: 'UPDATE',
                             schema: 'public',
                             table: 'tours_cache',
-                            filter: `city=eq.${slug}` // Filtramos por la ciudad actual
+                            filter: `city=eq.${slug}`
                         },
                         (payload: any) => {
                             const newStatus = payload.new.status;
-                            console.log(`Realtime Update: status=${newStatus}`);
-                            
+                            console.log(`[Realtime] tours_cache status=${newStatus}`);
+
                             if (newStatus === 'READY') {
-                                clearTimeout(timeoutId);
-                                supabase.removeChannel(channel);
                                 const tours = payload.new.data as Tour[];
-                                if (onProgress && tours) tours.forEach((t: Tour) => onProgress(t));
-                                resolve(tours || []);
+                                const savedPolylines: Record<string, string> = payload.new.route_polylines || {};
+                                const toursWithPolylines = (tours || []).map((t: Tour) => ({
+                                    ...t,
+                                    routePolyline: savedPolylines[t.id] ?? t.routePolyline
+                                }));
+                                resolveOnce(toursWithPolylines);
                             } else if (newStatus === 'ERROR') {
-                                clearTimeout(timeoutId);
-                                supabase.removeChannel(channel);
-                                const errorMsg = payload.new.error_message || "Fallo en la generación tras procesamiento en segundo plano.";
-                                reject(new Error(errorMsg));
+                                const errorMsg = payload.new.error_message || "Fallo en la generación.";
+                                rejectOnce(new Error(errorMsg));
                             }
                         }
                     )
                     .subscribe();
+
+                // ── POLLING DE RESCATE ────────────────────────────────────
+                // Se ejecuta inmediatamente (rescata el caso en que el pipeline
+                // ya terminó antes de que se estableciera la suscripción Realtime)
+                // y luego cada 5 segundos como red de seguridad.
+                const poll = async () => {
+                    if (resolved) return;
+                    try {
+                        console.log(`[Poll] Comprobando tours_cache para ${slug}...`);
+                        const tours = await fetchToursFromCache(slug, lang);
+                        if (tours) resolveOnce(tours);
+                    } catch (e: any) {
+                        rejectOnce(e);
+                    }
+                };
+
+                // Primera comprobación inmediata tras suscribirse
+                poll();
+
+                // Polling cada 5 segundos como red de seguridad
+                const pollId = setInterval(poll, 5000);
             });
         }
 
         return [];
     } catch (e) {
-        console.error("Excepción invocando a generate-tours-dai:", e);
-        throw e; // Lanzamos de nuevo para que useCity.ts pueda ver el error y pintarlo
+        console.error("Excepción invocando a tour-orchestrator:", e);
+        throw e;
     }
 };
 
@@ -191,17 +250,17 @@ export const generateAudio = async (text: string, language: string, city: string
 };
 
 export const generateCityPostcard = async (city: string, country: string): Promise<string | null> => {
-    return null; // Stub para evitar error de compilación
+    return null;
 };
 
 export const moderateContent = async (text: string): Promise<boolean> => {
-    return true; // Stub para evitar error de compilación
+    return true;
 };
 
 export const checkApiStatus = async (): Promise<{ ok: boolean; message: string }> => {
-    return { ok: true, message: "IA Services operational (Rehabilitado)" };
+    return { ok: true, message: "IA Services operational" };
 };
 
 export const translateToursBatch = async (tours: Tour[], targetLang: string): Promise<Tour[]> => {
-    return tours; // Stub para evitar error de compilación
+    return tours;
 };

@@ -265,19 +265,59 @@ const checkGroundingQuota = async (): Promise<{ allowed: boolean; used: number }
     }
 };
 
-// ── Parser robusto (restaurado del monolito) ──────────────────────────────────
+// ── Parser robusto: maneja preámbulos de texto, markdown y corchetes espúreos ──
+// Gemini con grounding a veces devuelve texto libre ANTES del JSON (estilo DAI).
+// Estrategia: buscar el array JSON más largo (más paradas) entre todos los candidatos.
 const tryExtractTours = (text: string): any[] => {
+    // Paso 1: limpiar bloques markdown y citas numéricas tipo [1]
+    const clean = text
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .replace(/\[\d+\]/g, '')   // citas numéricas [1], [2]...
+        .trim();
+
+    // Paso 2: JSON directo (cuando response_mime_type funciona sin grounding)
     try {
-        // Intento 1: JSON directo
-        return JSON.parse(text);
+        const parsed = JSON.parse(clean);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     } catch (_) {}
-    try {
-        // Intento 2: extraer array del texto (con o sin bloques markdown)
-        const clean = text.replace(/```json/g, '').replace(/```/g, '').replace(/\[\d+\]/g, '').trim();
-        const match = clean.match(/\[[\s\S]*\]/);
-        if (match) return JSON.parse(match[0]);
-    } catch (_) {}
-    console.error('[AI] tryExtractTours: no se pudo parsear la respuesta de Gemini.');
+
+    // Paso 3: encontrar TODOS los arrays JSON candidatos y quedarse con el más rico.
+    // Usamos un parser de balance de corchetes para no depender de regex goloso.
+    const candidates: any[] = [];
+    for (let i = 0; i < clean.length; i++) {
+        if (clean[i] !== '[') continue;
+        let depth = 0;
+        let j = i;
+        while (j < clean.length) {
+            if (clean[j] === '[') depth++;
+            else if (clean[j] === ']') { depth--; if (depth === 0) break; }
+            j++;
+        }
+        if (depth === 0) {
+            const candidate = clean.slice(i, j + 1);
+            try {
+                const parsed = JSON.parse(candidate);
+                // Solo nos interesan arrays que contengan objetos con 'stops' (tours reales)
+                if (Array.isArray(parsed) && parsed.some((t: any) => Array.isArray(t.stops))) {
+                    candidates.push(parsed);
+                }
+            } catch (_) {}
+        }
+    }
+
+    if (candidates.length > 0) {
+        // Elegir el candidato con más paradas totales
+        candidates.sort((a, b) => {
+            const stopsA = a.reduce((s: number, t: any) => s + (t.stops?.length || 0), 0);
+            const stopsB = b.reduce((s: number, t: any) => s + (t.stops?.length || 0), 0);
+            return stopsB - stopsA;
+        });
+        console.log(`[AI] tryExtractTours: ${candidates[0].length} tours, ${candidates[0].reduce((s: number, t: any) => s + (t.stops?.length || 0), 0)} paradas totales.`);
+        return candidates[0];
+    }
+
+    console.error('[AI] tryExtractTours: no se pudo extraer ningún array de tours válido.');
     return [];
 };
 
@@ -370,10 +410,18 @@ serve(async (req) => {
             return new Response('Format Error', { status: 200 });
         }
 
+        // Garantizar que cada tour tiene el campo 'city' aunque Gemini lo haya omitido.
+        // TourCard.tsx usa tour.city para generateAudio — sin esto el audio falla con city=undefined.
+        const toursWithCity = finalTours.map((t: any) => ({
+            ...t,
+            city: t.city || city,
+            country: t.country || country,
+        }));
+
         // 4. Pasar el trabajo al GIS worker: guardar cityInfo (con radiusKm ya calculado) y los tours brutos
         await supabaseClient.from('generation_jobs').update({
             city_info: cityInfo,        // { lat, lon, radiusKm, population, bbox:{south,west,north,east} }
-            raw_ai_data: finalTours,
+            raw_ai_data: toursWithCity,
             status: 'PENDING_GIS',
             updated_at: new Date().toISOString()
         }).eq('id', job.id);
