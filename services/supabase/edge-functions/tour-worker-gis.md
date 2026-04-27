@@ -39,10 +39,15 @@ const optimizeStopOrder = async (tour) => {
         
         const data = await res.json();
         if (data.code === 'Ok' && data.waypoints && data.trips && data.trips.length > 0) {
-            const sortedWaypoints = data.waypoints.sort((a, b) => a.waypoint_index - b.waypoint_index);
-            const optimizedStops = sortedWaypoints.map(wp => tour.stops[wp.original_index]);
+            // En el servicio /trip/, el array 'waypoints' viene en el orden de entrada.
+            // El campo 'waypoint_index' nos dice su posición en la ruta optimizada.
+            const optimizedStops = new Array(tour.stops.length);
+            data.waypoints.forEach((wp, i) => {
+                optimizedStops[wp.waypoint_index] = tour.stops[i];
+            });
             
-            tour.stops = optimizedStops;
+            // Filtrar posibles huecos por si OSRM no devolvió todos los puntos
+            tour.stops = optimizedStops.filter(s => s !== undefined);
             tour.routePolyline = data.trips[0].geometry;
             const distKm = data.trips[0].distance / 1000;
             const durationMin = Math.round((distKm / 4) * 60); // 4km/h walking
