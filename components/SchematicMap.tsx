@@ -1,21 +1,20 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Stop } from '../types';
 
 const L = (window as any).L;
-const STOP_CONFIG: Record<string, { icon: string, color: string }> = { 
-    historical: { icon: 'fa-landmark', color: '#FF3B30' }, 
+const STOP_CONFIG: Record<string, { icon: string, color: string }> = {
+    historical: { icon: 'fa-landmark', color: '#FF3B30' },
     history: { icon: 'fa-landmark', color: '#FF3B30' },
     monument: { icon: 'fa-monument', color: '#FF3B30' },
-    food: { icon: 'fa-utensils', color: '#FF9500' }, 
+    food: { icon: 'fa-utensils', color: '#FF9500' },
     gastronomy: { icon: 'fa-utensils', color: '#FF9500' },
     restaurant: { icon: 'fa-utensils', color: '#FF9500' },
     art: { icon: 'fa-palette', color: '#FF2D55' },
     museum: { icon: 'fa-building-columns', color: '#FF2D55' },
-    nature: { icon: 'fa-leaf', color: '#34C759' }, 
+    nature: { icon: 'fa-leaf', color: '#34C759' },
     parks: { icon: 'fa-leaf', color: '#34C759' },
     garden: { icon: 'fa-leaf', color: '#34C759' },
-    photo: { icon: 'fa-camera', color: '#007AFF' }, 
+    photo: { icon: 'fa-camera', color: '#007AFF' },
     culture: { icon: 'fa-masks-theater', color: '#AF52DE' },
     theater: { icon: 'fa-masks-theater', color: '#AF52DE' },
     architecture: { icon: 'fa-archway', color: '#5856D6' },
@@ -45,172 +44,132 @@ const TEXTS: any = {
 };
 
 export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopIndex, language = 'es', onStopSelect, userLocation }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const userMarkerRef = useRef<any>(null);
-  const fullPathRef = useRef<any>(null);
-  const activeLineRef = useRef<any>(null);
-  const geofenceCirclesRef = useRef<any[]>([]);
-  const lastRoutingRef = useRef<{lat: number, lng: number, time: number} | null>(null);
-  
-  const [isAutoFollowing, setIsAutoFollowing] = useState(true);
-  const [walkingTime, setWalkingTime] = useState<number | null>(null);
-  const tl = TEXTS[language] || TEXTS.es;
-  
-  // Validar paradas antes de usarlas
-  const validStops = React.useMemo(() => {
-    return (stops || []).map((s: any, originalIndex: number) => {
-      const lat = typeof s.latitude === 'string' ? parseFloat(s.latitude.replace(',', '.')) : s.latitude;
-      const lng = typeof s.longitude === 'string' ? parseFloat(s.longitude.replace(',', '.')) : s.longitude;
-      return {
-        ...s,
-        latitude: lat,
-        longitude: lng,
-        originalIndex,
-        isValid: !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0
-      };
-    });
-  }, [stops]);
-  const currentStop = validStops[currentStopIndex]?.isValid ? validStops[currentStopIndex] : validStops.find((s: any) => s.isValid);
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const mapInstanceRef = useRef<any>(null);
+    const markersRef = useRef<any[]>([]);
+    const userMarkerRef = useRef<any>(null);
+    const fullPathRef = useRef<any>(null);
+    const activeLineRef = useRef<any>(null);
+    const geofenceCirclesRef = useRef<any[]>([]);
+    const lastRoutingRef = useRef<{ lat: number, lng: number, time: number } | null>(null);
 
-  useEffect(() => {
-    if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
-    
-    const map = L.map(mapContainerRef.current, { 
-        zoomControl: false, 
-        attributionControl: false, 
-        tap: false,
-        dragging: true,
-        touchZoom: true,
-        maxZoom: 19
-    }).setView([0, 0], 15);
-    
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19
-    }).addTo(map);
-    
-    map.on('dragstart', () => setIsAutoFollowing(false));
-    mapInstanceRef.current = map;
+    const [isAutoFollowing, setIsAutoFollowing] = useState(true);
+    const [walkingTime, setWalkingTime] = useState<number | null>(null);
+    const tl = TEXTS[language] || TEXTS.es;
 
-    const resizeObserver = new ResizeObserver(() => {
-        if (mapInstanceRef.current) {
-            mapInstanceRef.current.invalidateSize();
-        }
-    });
-    resizeObserver.observe(mapContainerRef.current);
-    
-    return () => { 
-        resizeObserver.disconnect();
-        if (mapInstanceRef.current) {
-            mapInstanceRef.current.remove();
-            mapInstanceRef.current = null;
-        }
-    };
-  }, []);
+    // Validar paradas antes de usarlas
+    const validStops = React.useMemo(() => {
+        return (stops || []).map((s: any, originalIndex: number) => {
+            const lat = typeof s.latitude === 'string' ? parseFloat(s.latitude.replace(',', '.')) : s.latitude;
+            const lng = typeof s.longitude === 'string' ? parseFloat(s.longitude.replace(',', '.')) : s.longitude;
+            return {
+                ...s,
+                latitude: lat,
+                longitude: lng,
+                originalIndex,
+                isValid: !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0
+            };
+        });
+    }, [stops]);
+    const currentStop = validStops[currentStopIndex]?.isValid ? validStops[currentStopIndex] : validStops.find((s: any) => s.isValid);
 
-  // Actualizar ubicación del usuario y seguimiento
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !L) return;
+    useEffect(() => {
+        if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
 
-    // Actualizar marcador de usuario si hay ubicación
-    if (userLocation?.lat && userLocation?.lng) {
-        if (userMarkerRef.current) {
-            userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
-        } else {
-            userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { 
-                zIndexOffset: 1000,
-                icon: L.divIcon({ 
-                    className: '', 
-                    html: `
+        const map = L.map(mapContainerRef.current, {
+            zoomControl: false,
+            attributionControl: false,
+            tap: false,
+            dragging: true,
+            touchZoom: true,
+            maxZoom: 19
+        }).setView([0, 0], 15);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        map.on('dragstart', () => setIsAutoFollowing(false));
+        mapInstanceRef.current = map;
+
+        const resizeObserver = new ResizeObserver(() => {
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.invalidateSize();
+            }
+        });
+        resizeObserver.observe(mapContainerRef.current);
+
+        return () => {
+            resizeObserver.disconnect();
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove();
+                mapInstanceRef.current = null;
+            }
+        };
+    }, []);
+
+    // Actualizar ubicación del usuario y seguimiento
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        if (!map || !L) return;
+
+        // Actualizar marcador de usuario si hay ubicación
+        if (userLocation?.lat && userLocation?.lng) {
+            if (userMarkerRef.current) {
+                userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng]);
+            } else {
+                userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], {
+                    zIndexOffset: 1000,
+                    icon: L.divIcon({
+                        className: '',
+                        html: `
                         <div class="relative w-10 h-10 flex items-center justify-center">
                             <div class="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-40"></div>
                             <div class="w-6 h-6 bg-purple-600 rounded-full border-4 border-white shadow-2xl z-10 flex items-center justify-center">
                                 <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
                             </div>
                         </div>
-                    `, 
-                    iconSize: [40, 40], 
-                    iconAnchor: [20, 20] 
-                }) 
-            }).addTo(map);
-        }
+                    `,
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    })
+                }).addTo(map);
+            }
 
-        if (currentStop?.latitude && currentStop?.longitude) {
-            const dist = map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]);
-            
-            if (dist < 40000) { // Only draw route if within 40km
-                const now = Date.now();
-                let shouldFetchRouting = false;
+            if (currentStop?.latitude && currentStop?.longitude) {
+                const dist = map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]);
 
-                if (!lastRoutingRef.current) {
-                    shouldFetchRouting = true;
-                } else {
-                    const timeElapsed = now - lastRoutingRef.current.time;
-                    const distMoved = map.distance([userLocation.lat, userLocation.lng], [lastRoutingRef.current.lat, lastRoutingRef.current.lng]);
-                    // Geo-Debounce: Solo recalcular si se ha movido > 25m o han pasado > 15s
-                    if (timeElapsed > 15000 || distMoved > 25) {
+                if (dist < 40000) { // Only draw route if within 40km
+                    const now = Date.now();
+                    let shouldFetchRouting = false;
+
+                    if (!lastRoutingRef.current) {
                         shouldFetchRouting = true;
+                    } else {
+                        const timeElapsed = now - lastRoutingRef.current.time;
+                        const distMoved = map.distance([userLocation.lat, userLocation.lng], [lastRoutingRef.current.lat, lastRoutingRef.current.lng]);
+                        // Geo-Debounce: Solo recalcular si se ha movido > 25m o han pasado > 15s
+                        if (timeElapsed > 15000 || distMoved > 25) {
+                            shouldFetchRouting = true;
+                        }
                     }
-                }
 
-                if (shouldFetchRouting) {
-                    lastRoutingRef.current = { lat: userLocation.lat, lng: userLocation.lng, time: now };
-                    
-                    const fetchRouting = async () => {
-                        // Prioridad 1: Ruta pública OpenStreetMap
-                        const urlPrimary = `https://routing.openstreetmap.de/routed-foot/route/v1/driving/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline`;
-                        // Prioridad 2: OSRM Public Server con flag para evitar rutas serpenteantes
-                        const urlFallback = `https://router.project-osrm.org/route/v1/foot/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline&continue_straight=true`;
-                        
-                        const drawRoute = (data: any) => {
-                            const points = decodePolyline(data.routes[0].geometry);
-                            setWalkingTime(Math.round(data.routes[0].duration / 60)); // Minutes
-                            if (activeLineRef.current) {
-                                activeLineRef.current.setLatLngs(points);
-                            } else {
-                                activeLineRef.current = L.polyline(points, { 
-                                    color: '#9333ea', weight: 6, dashArray: '12, 20', opacity: 0.8, lineCap: 'round', className: 'animate-marching-ants'
-                                }).addTo(map);
+                    if (shouldFetchRouting) {
+                        lastRoutingRef.current = { lat: userLocation.lat, lng: userLocation.lng, time: now };
 
-                                if (!document.getElementById('marching-ants-style')) {
-                                    const style = document.createElement('style');
-                                    style.id = 'marching-ants-style';
-                                    style.innerHTML = `@keyframes marching-ants { from { stroke-dashoffset: 64; } to { stroke-dashoffset: 0; } } .animate-marching-ants { animation: marching-ants 1.5s linear infinite; }`;
-                                    document.head.appendChild(style);
-                                }
-                            }
-                        };
+                        const fetchRouting = async () => {
+                            // Prioridad 1: Ruta pública OpenStreetMap
+                            const urlPrimary = `https://routing.openstreetmap.de/routed-foot/route/v1/driving/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline`;
+                            // Prioridad 2: OSRM Public Server con flag para evitar rutas serpenteantes
+                            const urlFallback = `https://router.project-osrm.org/route/v1/foot/${userLocation.lng},${userLocation.lat};${currentStop.longitude},${currentStop.latitude}?overview=full&geometries=polyline&continue_straight=true`;
 
-                        try {
-                            const res = await fetch(urlPrimary, { signal: AbortSignal.timeout(4000) });
-                            if (!res.ok) throw new Error("Primary failed");
-                            const data = await res.json();
-                            if (data.code === 'Ok' && data.routes?.[0]) {
-                                drawRoute(data);
-                                return;
-                            }
-                            throw new Error("Primary returned bad response");
-                        } catch (e) {
-                            console.warn("Primary routing failed, trying fallback...", e);
-                            try {
-                                const res2 = await fetch(urlFallback, { signal: AbortSignal.timeout(4000) });
-                                if (!res2.ok) throw new Error("Fallback failed");
-                                const data2 = await res2.json();
-                                if (data2.code === 'Ok' && data2.routes?.[0]) {
-                                    drawRoute(data2);
-                                    return;
-                                }
-                                throw new Error("Fallback returned bad response");
-                            } catch (e2) {
-                                console.warn("All routing APIs failed. Falling back to straight line.", e2);
-                                const points = [[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]];
-                                setWalkingTime(null);
+                            const drawRoute = (data: any) => {
+                                const points = decodePolyline(data.routes[0].geometry);
+                                setWalkingTime(Math.round(data.routes[0].duration / 60)); // Minutes
                                 if (activeLineRef.current) {
                                     activeLineRef.current.setLatLngs(points);
                                 } else {
-                                    activeLineRef.current = L.polyline(points, { 
+                                    activeLineRef.current = L.polyline(points, {
                                         color: '#9333ea', weight: 6, dashArray: '12, 20', opacity: 0.8, lineCap: 'round', className: 'animate-marching-ants'
                                     }).addTo(map);
 
@@ -221,185 +180,226 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
                                         document.head.appendChild(style);
                                     }
                                 }
+                            };
+
+                            try {
+                                const res = await fetch(urlPrimary, { signal: AbortSignal.timeout(4000) });
+                                if (!res.ok) throw new Error("Primary failed");
+                                const data = await res.json();
+                                if (data.code === 'Ok' && data.routes?.[0]) {
+                                    drawRoute(data);
+                                    return;
+                                }
+                                throw new Error("Primary returned bad response");
+                            } catch (e) {
+                                console.warn("Primary routing failed, trying fallback...", e);
+                                try {
+                                    const res2 = await fetch(urlFallback, { signal: AbortSignal.timeout(4000) });
+                                    if (!res2.ok) throw new Error("Fallback failed");
+                                    const data2 = await res2.json();
+                                    if (data2.code === 'Ok' && data2.routes?.[0]) {
+                                        drawRoute(data2);
+                                        return;
+                                    }
+                                    throw new Error("Fallback returned bad response");
+                                } catch (e2) {
+                                    console.warn("All routing APIs failed. Falling back to straight line.", e2);
+                                    const points = [[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]];
+                                    setWalkingTime(null);
+                                    if (activeLineRef.current) {
+                                        activeLineRef.current.setLatLngs(points);
+                                    } else {
+                                        activeLineRef.current = L.polyline(points, {
+                                            color: '#9333ea', weight: 6, dashArray: '12, 20', opacity: 0.8, lineCap: 'round', className: 'animate-marching-ants'
+                                        }).addTo(map);
+
+                                        if (!document.getElementById('marching-ants-style')) {
+                                            const style = document.createElement('style');
+                                            style.id = 'marching-ants-style';
+                                            style.innerHTML = `@keyframes marching-ants { from { stroke-dashoffset: 64; } to { stroke-dashoffset: 0; } } .animate-marching-ants { animation: marching-ants 1.5s linear infinite; }`;
+                                            document.head.appendChild(style);
+                                        }
+                                    }
+                                }
                             }
-                        }
-                    };
-                    fetchRouting();
+                        };
+                        fetchRouting();
+                    }
+                } else if (activeLineRef.current) {
+                    map.removeLayer(activeLineRef.current);
+                    activeLineRef.current = null;
                 }
-            } else if (activeLineRef.current) {
-                map.removeLayer(activeLineRef.current);
-                activeLineRef.current = null;
             }
         }
-    }
-  }, [userLocation?.lat, userLocation?.lng, currentStop?.latitude, currentStop?.longitude]);
+    }, [userLocation?.lat, userLocation?.lng, currentStop?.latitude, currentStop?.longitude]);
 
-  // Lógica de seguimiento (Auto-following)
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !L || !isAutoFollowing || !currentStop) return;
+    // Lógica de seguimiento (Auto-following)
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        if (!map || !L || !isAutoFollowing || !currentStop) return;
 
-    if (userLocation?.lat && userLocation?.lng) {
-        // Just pan to user location smoothly to avoid zoom stuttering
-        map.panTo([userLocation.lat, userLocation.lng], { animate: true });
-    } else {
-        // Si no hay ubicación, centrar en la parada actual
-        map.panTo([currentStop.latitude, currentStop.longitude], { animate: true });
-    }
-  }, [userLocation?.lat, userLocation?.lng, currentStop?.latitude, currentStop?.longitude, isAutoFollowing]);
-
-  // Renderizar paradas y ruta
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !L) return;
-
-    // Limpieza
-    markersRef.current.forEach(m => map.removeLayer(m));
-    geofenceCirclesRef.current.forEach(c => map.removeLayer(c));
-    if (fullPathRef.current) map.removeLayer(fullPathRef.current);
-
-    markersRef.current = [];
-    geofenceCirclesRef.current = [];
-
-    if (validStops.length > 0) {
-        let routePoints = [];
-        if (routePolyline) {
-            routePoints = decodePolyline(routePolyline);
+        if (userLocation?.lat && userLocation?.lng) {
+            // Just pan to user location smoothly to avoid zoom stuttering
+            map.panTo([userLocation.lat, userLocation.lng], { animate: true });
         } else {
-            routePoints = validStops.map((s: any) => [s.latitude, s.longitude]);
+            // Si no hay ubicación, centrar en la parada actual
+            map.panTo([currentStop.latitude, currentStop.longitude], { animate: true });
         }
+    }, [userLocation?.lat, userLocation?.lng, currentStop?.latitude, currentStop?.longitude, isAutoFollowing]);
 
-        fullPathRef.current = L.polyline(routePoints, {
-            color: routePolyline ? '#fcd34d' : 'white', // Ámbar si es real, Blanco si es fallback
-            weight: routePolyline ? 4 : 2,
-            opacity: routePolyline ? 0.6 : 0.2,
-            dashArray: routePolyline ? undefined : '5, 10',
-            lineJoin: 'round'
-        }).addTo(map);
+    // Renderizar paradas y ruta
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        if (!map || !L) return;
 
-        validStops.forEach((stop: any, idx: number) => {
-            const stopType = (stop.type || 'architecture').toLowerCase();
-            const config = STOP_CONFIG[stopType] || STOP_CONFIG['architecture'] || { icon: 'fa-location-dot', color: '#9333ea' };
-            
-            const circle = L.circle([stop.latitude, stop.longitude], {
-                radius: 50,
-                color: '#334155',
-                fillColor: '#1e293b',
-                fillOpacity: 0.05,
-                weight: 1,
-                dashArray: '5, 5'
+        // Limpieza
+        markersRef.current.forEach(m => map.removeLayer(m));
+        geofenceCirclesRef.current.forEach(c => map.removeLayer(c));
+        if (fullPathRef.current) map.removeLayer(fullPathRef.current);
+
+        markersRef.current = [];
+        geofenceCirclesRef.current = [];
+
+        if (validStops.length > 0) {
+            let routePoints = [];
+            if (routePolyline) {
+                routePoints = decodePolyline(routePolyline);
+            } else {
+                routePoints = validStops.map((s: any) => [s.latitude, s.longitude]);
+            }
+
+            fullPathRef.current = L.polyline(routePoints, {
+                color: routePolyline ? '#fcd34d' : 'white', // Ámbar si es real, Blanco si es fallback
+                weight: routePolyline ? 4 : 2,
+                opacity: routePolyline ? 0.6 : 0.2,
+                dashArray: routePolyline ? undefined : '5, 10',
+                lineJoin: 'round'
             }).addTo(map);
-            geofenceCirclesRef.current.push(circle);
 
-            const marker = L.marker([stop.latitude, stop.longitude], { 
-                icon: L.divIcon({ 
-                    className: '', 
-                    html: `
+            validStops.forEach((stop: any, idx: number) => {
+                const stopType = (stop.type || 'architecture').toLowerCase();
+                const config = STOP_CONFIG[stopType] || STOP_CONFIG['architecture'] || { icon: 'fa-location-dot', color: '#9333ea' };
+
+                const circle = L.circle([stop.latitude, stop.longitude], {
+                    radius: 50,
+                    color: '#334155',
+                    fillColor: '#1e293b',
+                    fillOpacity: 0.05,
+                    weight: 1,
+                    dashArray: '5, 5'
+                }).addTo(map);
+                geofenceCirclesRef.current.push(circle);
+
+                const marker = L.marker([stop.latitude, stop.longitude], {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `
                         <div class="relative transition-all duration-300 opacity-80">
                             <div class="w-10 h-10 rounded-2xl border-2 border-slate-800 shadow-2xl flex items-center justify-center text-[12px] font-black" style="background-color: #0f172a; color: ${config.color}">
                                 <i class="fas ${config.icon}"></i>
                             </div>
                             <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 -z-10" style="background-color: #0f172a"></div>
                         </div>
-                    `, 
-                    iconSize: [40, 40], 
-                    iconAnchor: [20, 40]
-                }) 
-            }).addTo(map);
+                    `,
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 40]
+                    })
+                }).addTo(map);
 
-            marker.on('click', () => {
-                onStopSelect?.(idx);
-                setIsAutoFollowing(true);
-            });
-            
-            markersRef.current.push(marker);
-        });
-    }
-  }, [validStops]); // Only recreate when validStops changes
+                marker.on('click', () => {
+                    onStopSelect?.(idx);
+                    setIsAutoFollowing(true);
+                });
 
-  // Update active state of markers
-  useEffect(() => {
-    if (!L || markersRef.current.length === 0) return;
-
-    validStops.forEach((stop: any, idx: number) => {
-        const isActive = idx === currentStopIndex;
-        const stopType = (stop.type || 'architecture').toLowerCase();
-        const config = STOP_CONFIG[stopType] || STOP_CONFIG['architecture'] || { icon: 'fa-location-dot', color: '#9333ea' };
-        
-        const circle = geofenceCirclesRef.current[idx];
-        if (circle) {
-            circle.setStyle({
-                color: isActive ? config.color : '#334155',
-                fillColor: isActive ? config.color : '#1e293b',
-                fillOpacity: isActive ? 0.2 : 0.05
+                markersRef.current.push(marker);
             });
         }
+    }, [validStops]); // Only recreate when validStops changes
 
-        const marker = markersRef.current[idx];
-        if (marker) {
-            marker.setIcon(L.divIcon({ 
-                className: '', 
-                html: `
+    // Update active state of markers
+    useEffect(() => {
+        if (!L || markersRef.current.length === 0) return;
+
+        validStops.forEach((stop: any, idx: number) => {
+            const isActive = idx === currentStopIndex;
+            const stopType = (stop.type || 'architecture').toLowerCase();
+            const config = STOP_CONFIG[stopType] || STOP_CONFIG['architecture'] || { icon: 'fa-location-dot', color: '#9333ea' };
+
+            const circle = geofenceCirclesRef.current[idx];
+            if (circle) {
+                circle.setStyle({
+                    color: isActive ? config.color : '#334155',
+                    fillColor: isActive ? config.color : '#1e293b',
+                    fillOpacity: isActive ? 0.2 : 0.05
+                });
+            }
+
+            const marker = markersRef.current[idx];
+            if (marker) {
+                marker.setIcon(L.divIcon({
+                    className: '',
+                    html: `
                     <div class="relative transition-all duration-300 ${isActive ? 'scale-125 z-50' : 'opacity-80'}">
                         <div class="w-10 h-10 rounded-2xl border-2 border-slate-800 shadow-2xl flex items-center justify-center text-[12px] font-black" style="background-color: ${isActive ? config.color : '#0f172a'}; color: ${isActive ? 'white' : config.color}">
                             <i class="fas ${config.icon}"></i>
                         </div>
                         <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 -z-10" style="background-color: ${isActive ? config.color : '#0f172a'}"></div>
                     </div>
-                `, 
-                iconSize: [40, 40], 
-                iconAnchor: [20, 40]
-            }));
-            if (isActive) {
-                marker.setZIndexOffset(1000);
-            } else {
-                marker.setZIndexOffset(0);
+                `,
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 40]
+                }));
+                if (isActive) {
+                    marker.setZIndexOffset(1000);
+                } else {
+                    marker.setZIndexOffset(0);
+                }
             }
+        });
+    }, [currentStopIndex, validStops]);
+
+    // Ajustar zoom inicial a todas las paradas solo cuando cambian las paradas
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        const activeStops = validStops.filter((s: any) => s.isValid);
+        if (!map || !L || activeStops.length === 0) return;
+
+        // Use a small timeout to ensure the map container has its final size
+        const timer = setTimeout(() => {
+            const group = L.featureGroup(markersRef.current);
+            if (group.getLayers().length > 0) {
+                map.invalidateSize();
+                map.fitBounds(group.getBounds().pad(0.2), { maxZoom: 16 });
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [stops]);
+
+    // Volar a la parada cuando cambia el índice si no estamos en auto-following
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        if (!map || !L || !currentStop) return;
+
+        if (!isAutoFollowing) {
+            map.flyTo([currentStop.latitude, currentStop.longitude], 16, { animate: true });
         }
-    });
-  }, [currentStopIndex, validStops]);
+    }, [currentStopIndex]);
 
-  // Ajustar zoom inicial a todas las paradas solo cuando cambian las paradas
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    const activeStops = validStops.filter((s: any) => s.isValid);
-    if (!map || !L || activeStops.length === 0) return;
-    
-    // Use a small timeout to ensure the map container has its final size
-    const timer = setTimeout(() => {
-        const group = L.featureGroup(markersRef.current);
-        if (group.getLayers().length > 0) {
-            map.invalidateSize();
-            map.fitBounds(group.getBounds().pad(0.2), { maxZoom: 16 });
-        }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [stops]);
-
-  // Volar a la parada cuando cambia el índice si no estamos en auto-following
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !L || !currentStop) return;
-    
-    if (!isAutoFollowing) {
-        map.flyTo([currentStop.latitude, currentStop.longitude], 16, { animate: true });
-    }
-  }, [currentStopIndex]);
-
-  return (
-    <div className="w-full h-full relative overflow-hidden bg-slate-950">
-        <div ref={mapContainerRef} className="w-full h-full" />
-        <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-3">
-
-            <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
-            <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center"><i className="fas fa-bullseye text-lg"></i></button>
-        </div>
-        {walkingTime !== null && isAutoFollowing && (
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-10 z-[450] bg-purple-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl border-2 border-purple-400 flex items-center gap-2 animate-bounce">
-                <i className="fas fa-person-walking"></i>
-                <span>{walkingTime} min {tl.dist} {currentStop?.name || ''}</span>
+    return (
+        <div className="w-full h-full relative overflow-hidden bg-slate-950">
+            <div ref={mapContainerRef} className="w-full h-full" />
+            <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-3">
+                <button onClick={() => mapInstanceRef.current?.zoomIn()} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-plus text-lg"></i></button>
+                <button onClick={() => mapInstanceRef.current?.zoomOut()} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-minus text-lg"></i></button>
+                <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
+                <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-bullseye text-lg"></i></button>
             </div>
-        )}
-    </div>
-  );
+            {walkingTime !== null && isAutoFollowing && (
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-10 z-[450] bg-purple-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl border-2 border-purple-400 flex items-center gap-2 animate-bounce">
+                    <i className="fas fa-person-walking"></i>
+                    <span>{walkingTime} min {tl.dist} {currentStop?.name || ''}</span>
+                </div>
+            )}
+        </div>
+    );
 };

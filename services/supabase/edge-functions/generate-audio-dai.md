@@ -99,8 +99,16 @@ Deno.serve(async (req) => {
     const googleLangCode = langCodeMap[lang] || lang;
     const targetVoice = "Kore"; // Voz oficial DAI
 
+    // ACENTO PENINSULAR: anteponemos un prefijo fonético al texto para guiar
+    // al modelo TTS hacia entonación castellana de España.
+    // El prefijo NO se incluye en el hash (calculado antes) para no invalidar caché.
+    const isSpanish = lang === 'es' || lang.startsWith('es-');
+    const ttsText = isSpanish
+        ? `[Locutora española de España, acento castellano peninsular, entonación de Madrid]\n\n${cleanText}`
+        : cleanText;
+
     const googleReq: any = {
-      contents: [{ role: "user", parts: [{ text: cleanText }] }],
+      contents: [{ role: "user", parts: [{ text: ttsText }] }],
       generationConfig: {
          responseModalities: ["AUDIO"],
          speechConfig: { 
