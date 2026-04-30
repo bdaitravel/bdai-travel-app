@@ -1,4 +1,5 @@
 import { Tour, Stop } from '../types';
+import { logger } from './logger';
 
 // ── Utilitario Haversine (hoistado para uso en toda la verificación GIS) ──
 export const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -42,7 +43,7 @@ export const getCityInfo = async (city: string, country: string): Promise<any> =
             };
         }
     } catch (e) {
-        console.warn('Nominatim city lookup failed:', e);
+        logger.warn('Nominatim city lookup failed:', e);
     }
     return null;
 };
@@ -74,15 +75,15 @@ const verifyStopExists = async (stopName: string, requestTs: { last: number }): 
 
             const data = await res.json();
             if (data && data.length > 0) {
-                console.log(`GIS ✅ EXISTE globalmente: '${q}'`);
+                logger.log(`GIS ✅ EXISTE globalmente: '${q}'`);
                 return true;
             }
         }
 
-        console.warn(`GIS 🚫 ALUCINACIÓN DETECTADA: '${stopName}' no existe en OSM global. Eliminando.`);
+        logger.warn(`GIS 🚫 ALUCINACIÓN DETECTADA: '${stopName}' no existe en OSM global. Eliminando.`);
         return false;
     } catch (e) {
-        console.warn(`GIS existence check error for '${stopName}':`, e);
+        logger.warn(`GIS existence check error for '${stopName}':`, e);
         return true; // Conservador: no eliminar si hay error de red
     }
 };
@@ -154,20 +155,20 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
                             resultMunicipality === '';
 
                         if (!isCorrectMunicipality) {
-                            console.warn(`GIS ⚠️ '${query}' encontrado en '${res.address?.city || res.address?.town}' ≠ ${city}. Descartando resultado.`);
+                            logger.warn(`GIS ⚠️ '${query}' encontrado en '${res.address?.city || res.address?.town}' ≠ ${city}. Descartando resultado.`);
                             continue; // Probar siguiente resultado
                         }
 
                         // ENDURECIDO: Exact/Fuzzy name match → RESCATE sin límite de distancia
                         //             Sin match de nombre → máximo 500m (antes era 2.5km)
                         if (isExactNameMatch || isFuzzyNameMatch) {
-                            console.log(`GIS 🎯 RESCATE via '${query}' para '${stop.name}' en ${city}: ${(dist * 1000).toFixed(1)}m de ajuste.`);
+                            logger.log(`GIS 🎯 RESCATE via '${query}' para '${stop.name}' en ${city}: ${(dist * 1000).toFixed(1)}m de ajuste.`);
                             bestAuthorityLat = nLat;
                             bestAuthorityLon = nLon;
                             foundMatch = true;
                             break;
                         } else if (dist <= 1.0) {
-                            console.log(`GIS 🧲 MAGNETO 1km via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
+                            logger.log(`GIS 🧲 MAGNETO 1km via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
                             bestAuthorityLat = nLat;
                             bestAuthorityLon = nLon;
                             foundMatch = true;
@@ -205,19 +206,19 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
                                 photonCity === '';
 
                             if (!isCorrectMunicipality) {
-                                console.warn(`GIS ⚠️ Photon: '${photonName}' encontrado en municipio incorrecto. Descartando.`);
+                                logger.warn(`GIS ⚠️ Photon: '${photonName}' encontrado en municipio incorrecto. Descartando.`);
                                 continue;
                             }
 
                             // ENDURECIDO: misma lógica que Nominatim
                             if (isExactMatch || isFuzzyNameMatch) {
-                                console.log(`GIS 🔮 RESCATE (Photon) via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
+                                logger.log(`GIS 🔮 RESCATE (Photon) via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
                                 bestAuthorityLat = pLat;
                                 bestAuthorityLon = pLon;
                                 foundMatch = true;
                                 break;
                             } else if (dist <= 1.0) {
-                                console.log(`GIS 🧲 MAGNETO 1km (Photon) via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
+                                logger.log(`GIS 🧲 MAGNETO 1km (Photon) via '${query}' para '${stop.name}': ${(dist * 1000).toFixed(1)}m de ajuste.`);
                                 bestAuthorityLat = pLat;
                                 bestAuthorityLon = pLon;
                                 foundMatch = true;
@@ -234,10 +235,10 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
         }
 
     } catch (e) {
-        console.warn(`GIS Refinement error for '${stop.name}':`, e);
+        logger.warn(`GIS Refinement error for '${stop.name}':`, e);
     }
 
-    console.log(`GIS ⚠️ ${stop.name}: No se encontró mejor ubicación en OSM para ${city}. Manteniendo original con baja confianza.`);
+    logger.warn(`GIS ⚠️ ${stop.name}: No se encontró mejor ubicación en OSM para ${city}. Manteniendo original con baja confianza.`);
     return { ...stop, coordinatesVerified: false };
 };
 
@@ -252,7 +253,7 @@ export const processTourStops = async (tour: Tour, city: string, country: string
         // PASO 1: ¿El lugar existe en OSM globalmente? Si no → alucinación → saltar.
         const exists = await verifyStopExists(stop.name, requestTs);
         if (!exists) {
-            console.warn(`GIS 🚫 '${stop.name}' eliminada: no encontrada en OSM global.`);
+            logger.warn(`GIS 🚫 '${stop.name}' eliminada: no encontrada en OSM global.`);
             continue;
         }
 
@@ -263,7 +264,7 @@ export const processTourStops = async (tour: Tour, city: string, country: string
         if (cityCenter) {
             const distToCenterKm = haversineKm(verified.latitude, verified.longitude, cityCenter.lat, cityCenter.lng);
             if (distToCenterKm > radiusKm) {
-                console.warn(`GIS 📍 Eliminando '${verified.name}': está a ${distToCenterKm.toFixed(1)}km del centro (máx. ${radiusKm}km para esta ciudad).`);
+                logger.warn(`GIS 📍 Eliminando '${verified.name}': está a ${distToCenterKm.toFixed(1)}km del centro (máx. ${radiusKm}km para esta ciudad).`);
                 continue;
             }
         }
@@ -272,7 +273,7 @@ export const processTourStops = async (tour: Tour, city: string, country: string
         if (verified.coordinatesVerified) {
             results.push(verified);
         } else {
-            console.warn(`GIS ⚠️ '${verified.name}': coordenadas no verificadas en ${city}. Descartada.`);
+            logger.warn(`GIS ⚠️ '${verified.name}': coordenadas no verificadas en ${city}. Descartada.`);
         }
     }
 

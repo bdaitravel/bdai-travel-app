@@ -6,6 +6,7 @@ import { SYSTEM_INSTRUCTION, generateTourPrompt } from './gemini/prompts';
 import { getCityInfo, processTourStops } from '../lib/gisService';
 export { fetchRoutePolyline } from '../lib/routingService';
 import { optimizeStopOrder } from '../lib/routingService';
+import { logger } from '../lib/logger';
 
 export { QuotaError };
 
@@ -122,7 +123,7 @@ export const generateToursForCity = async (
 ): Promise<Tour[]> => {
     
     try {
-        console.log(`Pidiendo la generación del tour a Edge Function para ${city}, ${country}...`);
+        logger.log(`Pidiendo la generación del tour a Edge Function para ${city}, ${country}...`);
         
         const lang = user.language || 'es';
         const slug = normalizeKey(city, country);
@@ -139,14 +140,14 @@ export const generateToursForCity = async (
 
         // Caché devuelta directamente (caso raro: orquestador respondió con tours)
         if (data && data.tours) {
-            console.log(`Tours recibidos directamente (CACHED): ${data.tours.length}`);
+            logger.log(`Tours recibidos directamente (CACHED): ${data.tours.length}`);
             if (onProgress) data.tours.forEach((t: Tour) => onProgress(t));
             return data.tours;
         }
 
         // Modo asíncrono: orquestador confirmó encolado o ya estaba generando
         if (data && (data.status === "BACKGROUND_QUEUED" || data.status === "GENERATING")) {
-            console.log("Generación en segundo plano confirmada. Iniciando Realtime + polling...");
+            logger.log("Generación en segundo plano confirmada. Iniciando Realtime + polling...");
 
             return new Promise((resolve, reject) => {
                 let resolved = false;
@@ -187,7 +188,7 @@ export const generateToursForCity = async (
                         },
                         (payload: any) => {
                             const newStatus = payload.new.status;
-                            console.log(`[Realtime] tours_cache status=${newStatus}`);
+                            logger.log(`[Realtime] tours_cache status=${newStatus}`);
 
                             if (newStatus === 'READY') {
                                 const tours = payload.new.data as Tour[];
@@ -212,7 +213,7 @@ export const generateToursForCity = async (
                 const poll = async () => {
                     if (resolved) return;
                     try {
-                        console.log(`[Poll] Comprobando tours_cache para ${slug}...`);
+                        logger.log(`[Poll] Comprobando tours_cache para ${slug}...`);
                         const tours = await fetchToursFromCache(slug, lang);
                         if (tours) resolveOnce(tours);
                     } catch (e: any) {

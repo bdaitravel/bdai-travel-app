@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import type * as LeafletLib from 'leaflet';
+import { logger } from '../lib/logger';
 import { Stop } from '../types';
 
-const L = (window as any).L;
+const L = (window as Window & { L: typeof LeafletLib }).L;
 const STOP_CONFIG: Record<string, { icon: string, color: string }> = {
     historical: { icon: 'fa-landmark', color: '#FF3B30' },
     history: { icon: 'fa-landmark', color: '#FF3B30' },
@@ -24,7 +26,7 @@ const STOP_CONFIG: Record<string, { icon: string, color: string }> = {
 
 // Helper to decode Google Polyline algorithm
 const decodePolyline = (str: string, precision: number = 5) => {
-    let index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null;
+    let index = 0, lat = 0, lng = 0, coordinates: [number, number][] = [], shift = 0, result = 0, byte: number | null = null;
     const factor = Math.pow(10, precision);
     while (index < str.length) {
         byte = null; shift = 0; result = 0;
@@ -33,25 +35,35 @@ const decodePolyline = (str: string, precision: number = 5) => {
         byte = null; shift = 0; result = 0;
         do { byte = str.charCodeAt(index++) - 63; result |= (byte & 0x1f) << shift; shift += 5; } while (byte >= 0x20);
         const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1)); lng += dlng;
-        coordinates.push([lat / factor, lng / factor]);
+        coordinates.push([lat / factor, lng / factor] as [number, number]);
     }
     return coordinates;
 };
 
-const TEXTS: any = {
+interface MapTexts { guide: string; follow: string; stopFollow: string; focus: string; dist: string; }
+const TEXTS: Record<string, MapTexts> = {
     es: { guide: "Ir a", follow: "Seguir", stopFollow: "Libre", focus: "Fijar", dist: "a" },
     en: { guide: "Go to", follow: "Follow", stopFollow: "Free", focus: "Fix", dist: "at" }
 };
 
-export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopIndex, language = 'es', onStopSelect, userLocation }) => {
+interface SchematicMapProps {
+    stops: Stop[];
+    routePolyline?: string;
+    currentStopIndex: number;
+    language?: string;
+    onStopSelect?: (index: number) => void;
+    userLocation?: { lat: number; lng: number } | null;
+}
+
+export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline, currentStopIndex, language = 'es', onStopSelect, userLocation }) => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<any>(null);
-    const markersRef = useRef<any[]>([]);
-    const userMarkerRef = useRef<any>(null);
-    const fullPathRef = useRef<any>(null);
-    const activeLineRef = useRef<any>(null);
-    const geofenceCirclesRef = useRef<any[]>([]);
-    const lastRoutingRef = useRef<{ lat: number, lng: number, time: number } | null>(null);
+    const mapInstanceRef = useRef<LeafletLib.Map | null>(null);
+    const markersRef = useRef<LeafletLib.Marker[]>([]);
+    const userMarkerRef = useRef<LeafletLib.Marker | null>(null);
+    const fullPathRef = useRef<LeafletLib.Polyline | null>(null);
+    const activeLineRef = useRef<LeafletLib.Polyline | null>(null);
+    const geofenceCirclesRef = useRef<LeafletLib.Circle[]>([]);
+    const lastRoutingRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
 
     const [isAutoFollowing, setIsAutoFollowing] = useState(true);
     const [walkingTime, setWalkingTime] = useState<number | null>(null);
@@ -59,19 +71,13 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
 
     // Validar paradas antes de usarlas
     const validStops = React.useMemo(() => {
-        return (stops || []).map((s: any, originalIndex: number) => {
-            const lat = typeof s.latitude === 'string' ? parseFloat(s.latitude.replace(',', '.')) : s.latitude;
-            const lng = typeof s.longitude === 'string' ? parseFloat(s.longitude.replace(',', '.')) : s.longitude;
-            return {
-                ...s,
-                latitude: lat,
-                longitude: lng,
-                originalIndex,
-                isValid: !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0
-            };
-        });
+        return (stops || []).map((s: Stop, originalIndex: number) => ({
+            ...s,
+            originalIndex,
+            isValid: !isNaN(s.latitude) && !isNaN(s.longitude) && s.latitude !== 0 && s.longitude !== 0
+        }));
     }, [stops]);
-    const currentStop = validStops[currentStopIndex]?.isValid ? validStops[currentStopIndex] : validStops.find((s: any) => s.isValid);
+    const currentStop = validStops[currentStopIndex]?.isValid ? validStops[currentStopIndex] : validStops.find(s => s.isValid);
 
     useEffect(() => {
         if (!mapContainerRef.current || !L || mapInstanceRef.current) return;
@@ -79,7 +85,6 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
         const map = L.map(mapContainerRef.current, {
             zoomControl: false,
             attributionControl: false,
-            tap: false,
             dragging: true,
             touchZoom: true,
             maxZoom: 19
@@ -192,7 +197,7 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
                                 }
                                 throw new Error("Primary returned bad response");
                             } catch (e) {
-                                console.warn("Primary routing failed, trying fallback...", e);
+                                logger.warn("Primary routing failed, trying fallback...", e);
                                 try {
                                     const res2 = await fetch(urlFallback, { signal: AbortSignal.timeout(4000) });
                                     if (!res2.ok) throw new Error("Fallback failed");
@@ -203,8 +208,8 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
                                     }
                                     throw new Error("Fallback returned bad response");
                                 } catch (e2) {
-                                    console.warn("All routing APIs failed. Falling back to straight line.", e2);
-                                    const points = [[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]];
+                                    logger.warn("All routing APIs failed. Falling back to straight line.", e2);
+                                    const points: [number, number][] = [[userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]];
                                     setWalkingTime(null);
                                     if (activeLineRef.current) {
                                         activeLineRef.current.setLatLngs(points);
@@ -261,11 +266,11 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
         geofenceCirclesRef.current = [];
 
         if (validStops.length > 0) {
-            let routePoints = [];
+            let routePoints: [number, number][] = [];
             if (routePolyline) {
                 routePoints = decodePolyline(routePolyline);
             } else {
-                routePoints = validStops.map((s: any) => [s.latitude, s.longitude]);
+                routePoints = validStops.map(s => [s.latitude, s.longitude] as [number, number]);
             }
 
             fullPathRef.current = L.polyline(routePoints, {
@@ -361,7 +366,7 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
     // Ajustar zoom inicial a todas las paradas solo cuando cambian las paradas
     useEffect(() => {
         const map = mapInstanceRef.current;
-        const activeStops = validStops.filter((s: any) => s.isValid);
+        const activeStops = validStops.filter(s => s.isValid);
         if (!map || !L || activeStops.length === 0) return;
 
         // Use a small timeout to ensure the map container has its final size
@@ -392,7 +397,7 @@ export const SchematicMap: React.FC<any> = ({ stops, routePolyline, currentStopI
                 <button onClick={() => mapInstanceRef.current?.zoomIn()} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-plus text-lg"></i></button>
                 <button onClick={() => mapInstanceRef.current?.zoomOut()} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-minus text-lg"></i></button>
                 <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-lg`}></i></button>
-                <button onClick={() => { if (currentStop) mapInstanceRef.current.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-bullseye text-lg"></i></button>
+                <button onClick={() => { if (currentStop) mapInstanceRef.current?.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-14 h-14 rounded-2xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-bullseye text-lg"></i></button>
             </div>
             {walkingTime !== null && isAutoFollowing && (
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-10 z-[450] bg-purple-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl border-2 border-purple-400 flex items-center gap-2 animate-bounce">

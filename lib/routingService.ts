@@ -1,5 +1,6 @@
 import { Tour, Stop } from '../types';
 import { haversineKm } from './gisService';
+import { logger } from './logger';
 
 // ── Utilidades de navegación y enrutamiento ──────────────────────────────
 export const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefined> => {
@@ -15,7 +16,7 @@ export const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefi
             }
         }
     } catch (e) {
-        console.warn("Global routing fetch failed:", e);
+        logger.warn("Global routing fetch failed:", e);
     }
     return undefined;
 };
@@ -285,7 +286,7 @@ export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
             const dist = haversineKm(current.latitude, current.longitude, existing.latitude, existing.longitude);
 
             if (dist < 0.015) {
-                console.log(`🗺️ DROP: '${current.name}' solapado a ${dist.toFixed(3)}km de '${existing.name}'. Punto excluido del tour para evitar redundancia.`);
+                logger.log(`🗺️ DROP: '${current.name}' solapado a ${dist.toFixed(3)}km de '${existing.name}'. Punto excluido del tour para evitar redundancia.`);
                 wasDropped = true;
                 break;
             }
@@ -310,7 +311,7 @@ export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
 
     const routePolyline = await fetchRoutePolyline(reorderedStops);
 
-    console.log(`🗺️ Route optimized: ${tour.title} — ${reorderedStops.length} stops, ${newDistance}, ~${newDuration} (Polyline: ${routePolyline ? 'Yes ✅' : 'No ⚠️'})`);
+    logger.log(`🗺️ Route optimized: ${tour.title} — ${reorderedStops.length} stops, ${newDistance}, ~${newDuration} (Polyline: ${routePolyline ? 'Yes ✅' : 'No ⚠️'})`);
 
     return {
         ...tour,
