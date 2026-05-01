@@ -1,12 +1,14 @@
 import { Tour, TourCache, Stop } from '../../types';
 import { supabase } from './client';
 import { normalizeKey } from '../supabaseClient';
+import { slugToDisplayName } from '../../lib/slugToDisplayName';
 
-export const checkIfCityCached = async (city: string, slug: string): Promise<boolean> => {
+export const checkIfCityCached = async (city: string, slug: string, language = 'es'): Promise<boolean> => {
     if (!slug) return false;
+    const lang = language || 'es';
     try {
         const { data: d1 } = await supabase
-            .from('tours_cache').select('city, status').eq('city', slug).limit(1);
+            .from('tours_cache').select('city, status').eq('city', slug).eq('language', lang).limit(1);
 
         if (d1 && d1.length > 0 && d1[0].status === 'READY') return true;
 
@@ -14,35 +16,43 @@ export const checkIfCityCached = async (city: string, slug: string): Promise<boo
         if (!cityOnly) return false;
         const { data: d2 } = await supabase
             .from('tours_cache').select('city, status')
-            .ilike('city', `${cityOnly}%`).eq('status', 'READY').limit(1);
+            .ilike('city', `${cityOnly}%`).eq('language', lang).eq('status', 'READY').limit(1);
         return !!(d2 && d2.length > 0);
     } catch (e) { return false; }
 };
 
-export const searchCitiesInCache = async (query: string): Promise<any[]> => {
+export const searchCitiesInCache = async (query: string, language = 'es'): Promise<any[]> => {
     if (!query || query.length < 2) return [];
+    // Normalizar la query para que "logroño" encuentre "logrono_spain"
+    const normalizedQuery = query
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase().trim().replace(/\s+/g, '_');
     try {
         const { data, error } = await supabase
             .from('tours_cache')
             .select('city, language')
-            .ilike('city', `%${query}%`)
-            .limit(10);
+            .ilike('city', `%${normalizedQuery}%`)
+            .eq('status', 'READY')
+            .eq('language', language)
+            .limit(8);
 
         if (error) throw error;
 
-        const seen = new Set();
+        const seen = new Set<string>();
         return (data || []).reduce((acc: any[], curr: any) => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
-                const parts = curr.city.split('_');
-                const cityName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : '';
-                const countryName = parts.length > 1 ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Cache";
+                const { city, country, countryCode, fullName } = slugToDisplayName(curr.city);
                 acc.push({
-                    name: cityName,
-                    country: countryName,
-                    fullName: `${cityName}, ${countryName}`,
+                    name: city,
+                    city,
+                    cityLocal: city,
+                    country,
+                    countryEn: country,
+                    countryCode,
+                    fullName,
                     isCached: true,
-                    slug: curr.city
+                    slug: curr.city,
                 });
             }
             return acc;

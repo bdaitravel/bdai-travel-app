@@ -1,21 +1,22 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useDebounce } from '../lib/useDebounce';
-import { 
-    generateToursForCity, normalizeCityWithAI, fetchRoutePolyline 
+import {
+    generateToursForCity, normalizeCityWithAI, fetchRoutePolyline
 } from '../services/geminiService';
-import { 
-    supabase, checkIfCityCached, normalizeKey, updateRoutePolyline 
+import {
+    supabase, checkIfCityCached, normalizeKey, updateRoutePolyline,
+    searchCitiesInCache
 } from '../services/supabaseClient';
 import { toast } from '../components/Toast';
 import { Tour } from '../types';
 import { translations } from '../data/translations';
 
 export const useCity = () => {
-    const { 
-        userProfile: user, 
-        setActiveTours: setTours, 
+    const {
+        userProfile: user,
+        setActiveTours: setTours,
         setSelectedCityInfo,
         setIsLoading,
         setLoadingMessage
@@ -26,37 +27,36 @@ export const useCity = () => {
     const [searchOptions, setSearchOptions] = useState<any[] | null>(null);
     const [isSearching, setIsSearching] = useState(false);
 
+    // Ref para que doAiSearch acceda a los resultados locales actuales sin closure stale
+    const localResultsRef = useRef<any[]>([]);
+
     const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
-        const t = translations[langCode] || translations.en;
-        setIsLoading(true); 
-        setSearchOptions(null); 
-        setSearchVal(''); 
+        const lang = langCode || user.language || 'es';
+        const t = translations[lang] || translations.en;
+        setIsLoading(true);
+        setSearchOptions(null);
+        setSearchVal('');
 
         const cleanName = selection.name?.split(',')[0].trim() || selection.city;
         const slug = (selection.slug || normalizeKey(cleanName, selection.countryEn || selection.country))
           .replace(/-/g, '_').toLowerCase();
 
-        const backfillMissingPolylines = (tours: Tour[], citySlug: string, lang: string): void => {
+        const backfillMissingPolylines = (tours: Tour[], citySlug: string, l: string): void => {
           const toursMissingPolyline = tours.filter(t => !t.routePolyline && t.stops?.length >= 2);
           if (toursMissingPolyline.length === 0) return;
-
-          console.log(`🔄 Backfilling ${toursMissingPolyline.length} tour(s) without polyline for ${citySlug}...`);
 
           (async () => {
             for (const tour of toursMissingPolyline) {
               try {
                 const polyline = await fetchRoutePolyline(tour.stops);
-                if (polyline && tour.id) {
-                  await updateRoutePolyline(citySlug, lang, tour.id, polyline);
-                  console.log(`✅ Polyline backfilled for tour: ${tour.title}`);
-                }
+                if (polyline && tour.id) await updateRoutePolyline(citySlug, l, tour.id, polyline);
               } catch (e) {
-                console.warn(`⚠️ Backfill failed for ${tour.title} (non-critical):`, e);
+                console.warn(`⚠️ Backfill failed for ${tour.title}:`, e);
               }
             }
           })();
         };
-          
+
         setSelectedCityInfo({
           city: cleanName,
           country: selection.country,
@@ -71,14 +71,14 @@ export const useCity = () => {
           if (forceRefresh) {
             setLoadingMessage(t.purging);
             await supabase.from('tours_cache').delete()
-              .eq('city', slug).eq('language', langCode.toLowerCase());
+              .eq('city', slug).eq('language', lang);
           }
 
           const { data: existing } = await supabase
             .from('tours_cache')
             .select('data, route_polylines')
             .eq('city', slug)
-            .eq('language', langCode.toLowerCase())
+            .eq('language', lang)
             .maybeSingle();
 
           if (existing && existing.data && existing.data.length > 0) {
@@ -87,11 +87,11 @@ export const useCity = () => {
               ...tour,
               routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
             }));
-            
+
             setTours(toursWithPolylines);
             navigate(`/city/${slug}`);
             setIsLoading(false);
-            backfillMissingPolylines(toursWithPolylines, slug, langCode);
+            backfillMissingPolylines(toursWithPolylines, slug, lang);
             return;
           }
 
@@ -100,7 +100,7 @@ export const useCity = () => {
           const generated = await generateToursForCity(
             cleanName,
             selection.countryEn || selection.country,
-            { ...user, language: langCode } as any,
+            { ...user, language: lang } as any,
             (tour) => {
               setTours(prev => {
                 const existingIdx = prev.findIndex(t => t.id === tour.id);
@@ -119,9 +119,8 @@ export const useCity = () => {
             navigate(`/city/${slug}`);
             setIsLoading(false);
           } else {
-            // Si no devuelve tours y hemos estado un buen rato esperando, puede ser un Timeout encubierto
             toast("La generación ha tardado demasiado o excedió el límite de Supabase. Por favor, reintenta.", 'error');
-            setSearchVal(cleanName); // Mantener el input para reintentar fácil
+            setSearchVal(cleanName);
             setIsLoading(false);
           }
 
@@ -140,25 +139,34 @@ export const useCity = () => {
     const handleTravelServiceSelect = (name: string, country?: string) => {
         if (country) {
           const slug = normalizeKey(name, country);
-          processCitySelection({
-            city: name,
-            name: name,
-            country: country,
-            countryEn: country,
-            slug: slug
-          }, user.language);
+          processCitySelection({ city: name, name, country, countryEn: country, slug }, user.language);
         } else {
           handleCitySearch(name);
         }
     };
 
-    const doSearch = useDebounce(async (val: string) => {
-        if (val.length < 2) { setSearchOptions(null); setIsSearching(false); return; }
+    // ── Fase 1: Supabase instantánea (150ms) ─────────────────────────────────
+    const doLocalSearch = useDebounce(async (val: string) => {
+        if (val.length < 2) {
+            localResultsRef.current = [];
+            setSearchOptions(null);
+            return;
+        }
+        const lang = user.language || 'es';
+        const cached = await searchCitiesInCache(val, lang);
+        localResultsRef.current = cached;
+        if (cached.length > 0) setSearchOptions(cached);
+    }, 150);
+
+    // ── Fase 2: Gemini en paralelo (1000ms) ──────────────────────────────────
+    const doAiSearch = useDebounce(async (val: string) => {
+        if (val.length < 2) { setIsSearching(false); return; }
+        const lang = user.language || 'es';
         try {
-          const aiResults = await normalizeCityWithAI(val, user.language);
-          const results = await Promise.all(aiResults.map(async (res) => {
+          const aiResults = await normalizeCityWithAI(val, lang);
+          const enriched = await Promise.all(aiResults.map(async (res) => {
             const slug = res.slug.replace(/-/g, '_').toLowerCase();
-            const isCached = await checkIfCityCached(res.city, slug);
+            const isCached = await checkIfCityCached(res.city, slug, lang);
             return {
               name: res.city,
               city: res.city,
@@ -171,9 +179,22 @@ export const useCity = () => {
               fullName: res.cityLocal || res.city
             };
           }));
-          setSearchOptions(results);
+
+          // Merge: los resultados de caché van primero. Si la IA tiene el mismo slug,
+          // enriquece la entrada local con nombre correcto (acentos) y flag.
+          const merged = [...localResultsRef.current];
+          for (const aiResult of enriched) {
+            const localIdx = merged.findIndex(r => r.slug === aiResult.slug);
+            if (localIdx !== -1) {
+              merged[localIdx] = { ...merged[localIdx], ...aiResult };
+            } else {
+              merged.push(aiResult);
+            }
+          }
+          setSearchOptions(merged.length > 0 ? merged : null);
         } catch (e) {
           console.error("Search protocol error:", e);
+          // Los resultados locales siguen visibles; no limpiar
         } finally {
           setIsSearching(false);
         }
@@ -181,18 +202,24 @@ export const useCity = () => {
 
     const handleCitySearch = (val: string) => {
         setSearchVal(val);
-        if (val.length < 2) { setSearchOptions(null); return; }
+        if (val.length < 2) {
+            localResultsRef.current = [];
+            setSearchOptions(null);
+            setIsSearching(false);
+            return;
+        }
         setIsSearching(true);
-        doSearch(val);
+        doLocalSearch(val); // responde en <150ms
+        doAiSearch(val);    // enriquece en 5-20s
     };
 
-    return { 
-        searchVal, 
+    return {
+        searchVal,
         setSearchVal,
-        searchOptions, 
+        searchOptions,
         isSearching,
-        processCitySelection, 
-        handleTravelServiceSelect, 
-        handleCitySearch 
+        processCitySelection,
+        handleTravelServiceSelect,
+        handleCitySearch
     };
 };
