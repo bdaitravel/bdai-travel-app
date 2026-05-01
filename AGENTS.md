@@ -157,13 +157,29 @@ Como arquitecto senior y consultor estratégico, **debes**:
    - **Caché Protegida:** 
        - Los tours (`tours_cache`) son de **Solo Lectura** (`SELECT`) para el cliente. La escritura es exclusiva de las Edge Functions vía `service_role`.
        - La tabla `audio_cache` tiene RLS activado: lectura pública e inserción restringida a usuarios autenticados.
-   - **Logs de Error:** `error_logs` permite `INSERT` público (anónimo) para telemetría de fallos, pero solo los administradores tienen permisos de `SELECT`.
+   - **Logs de Error:** `error_logs` permite `INSERT` público (anónimo) para telemetría de fallos, pero solo los administradores tienen permisos de `SELECT`. Ver arquitectura completa en la sección "Reporting de Errores & Telemetría".
    - **Migración a Cola Nativa Completada:** La lógica pesada de generación se ha desacoplado en tres funciones: `tour-orchestrator`, `tour-worker-ai` y `tour-worker-gis`. Utilizan la tabla `generation_jobs` como cola de mensajes. El cliente ya no escribe en caché ni maneja bloqueos (locks).
    - **Manejo de Secretos y RLS en Servidor:** Debido a un bug del entorno Deno en Supabase donde `SUPABASE_SERVICE_ROLE_KEY` a veces llega vacío, se utiliza la variable personalizada `MY_SERVICE_ROLE_KEY` en las Edge Functions para inicializar el cliente y saltarse el RLS al hacer `upsert` de la DB.
    - **Bypass de Google Cloud Referrer:** Dado que las Edge Functions no envían un HTTP Referer por defecto, las llamadas a `generativelanguage.googleapis.com` tienen hardcodeado el header `'Referer': 'https://www.bdai.travel/'` para pasar de forma segura las restricciones de Google Cloud asociadas a la API Key.
    - **Reporting de Errores Mejorado:** La tabla `tours_cache` incluye la columna `error_message`. Cuando una generación falla en los workers (AI o GIS), se guarda el mensaje de error específico. La UI (`geminiService.ts`) detecta el estado `ERROR` vía Realtime y propaga este mensaje al usuario para un feedback inmediato y accionable.
 - **Zustand como fuente única de verdad:** Se eliminaron todas las escrituras directas a `localStorage.setItem('bdai_profile', ...)` de `App.tsx`. El perfil persiste vía `storageProvider` (localStorage en Capacitor, sessionStorage en web). `activeTours` y `selectedCityInfo` son estado de navegación volátil y NO se persisten en ningún storage.
 - **Toast en vez de alert():** Todos los errores de UI usan `toast()` del componente `Toast.tsx`. Compatible con Capacitor.
+
+### Reporting de Errores & Telemetría
+
+- **Fuente única de verdad:** Toda la lógica de inserción de errores en la base de datos está centralizada en `services/errorService.ts`. Ningún componente debe importar `supabase` directamente para reportar errores.
+  - `submitBugReport({ description, language, userEmail? })` — reporte manual iniciado por el usuario. Enriquece automáticamente con `url` y `userAgent`.
+  - `logAutoError({ error, componentStack?, language? })` — captura automática desde `ErrorBoundary`. Se llama en `componentDidCatch` sin intervención del usuario.
+- **Tabla exclusiva:** `error_logs` (PostgreSQL). **La tabla `bug_reports` no existe.** El schema de `error_logs` es: `id`, `error_message`, `context`, `user_email` (default `'anonymous'`), `language`, `url`, `created_at`. RLS: INSERT público (anon), SELECT solo admin.
+- **Dos flujos de captura:**
+  1. **Manual:** Usuario pulsa "Reportar Error" en `ProfileModal` → `ReportBugModal` (con `userEmail` pasado como prop) → `errorService.submitBugReport()`. Tras el INSERT exitoso, muestra mensaje de agradecimiento y se cierra sola en 3 segundos. Si el INSERT falla, muestra error inline.
+  2. **Automático (sin acción del usuario):** `ErrorBoundary.componentDidCatch` llama a `errorService.logAutoError()` de forma silenciosa. El prefijo `[AUTO]` en `error_message` distingue estos registros de los manuales.
+- **Notificación por email:** Database Webhook (`trigger-error-log`) → Edge Function `notify-error` → Resend API → `support@bdai.travel`.
+  - Secrets requeridos en Supabase: `RESEND_API_KEY` y `SUPPORT_EMAIL` (valor: `support@bdai.travel`).
+  - El asunto distingue el tipo: `🔴 Crash automático` vs `🐛 Reporte de usuario`.
+  - Documentación del webhook: `services/supabase/database-webhooks/trigger-error-log.md`.
+  - Código de la Edge Function: `services/supabase/edge-functions/notify-error.md`.
+- **`ReportBugModal` acepta `userEmail?: string`** para identificar al usuario en los reportes del perfil. El `ErrorBoundary` no tiene acceso al perfil, por lo que envía `anonymous`.
 
 ### Navegación & Rutas (Opción B — Columna Dedicada)
 - **Arquitectura elegida:** Columna `route_polylines jsonb` separada en `tours_cache` (NO embebida en el objeto `data`). Permite actualizaciones quirúrgicas O(1) sin reescribir el blob completo de ~30KB por fila.

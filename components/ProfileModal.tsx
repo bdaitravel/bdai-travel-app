@@ -451,7 +451,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       )}
 
       {showReportBug && ReactDOM.createPortal(
-        <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} />,
+        <ReportBugModal onClose={() => setShowReportBug(false)} language={language || user.language || 'es'} userEmail={user.email} />,
         document.body
       )}
 

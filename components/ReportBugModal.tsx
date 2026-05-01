@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { supabase } from '../services/supabaseClient';
+import { submitBugReport } from '../services/errorService';
 
 interface ReportBugModalProps {
     onClose: () => void;
     language: string;
     prefillText?: string;
+    userEmail?: string;
 }
 
 const BUG_TEXTS: Record<string, any> = {
@@ -32,21 +33,26 @@ const BUG_TEXTS: Record<string, any> = {
 
 const getText = (lang: string) => BUG_TEXTS[lang] || BUG_TEXTS['en'];
 
-export const ReportBugModal: React.FC<ReportBugModalProps> = ({ onClose, language, prefillText }) => {
+export const ReportBugModal: React.FC<ReportBugModalProps> = ({ onClose, language, prefillText, userEmail }) => {
     const [text, setText] = useState(prefillText || '');
     const [sent, setSent] = useState(false);
     const [isSending, setIsSending] = useState(false);
+    const [submitError, setSubmitError] = useState(false);
     const t = getText(language);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSending(true);
+        setSubmitError(false);
         try {
-            const { error } = await supabase.from('bug_reports').insert([{ description: text, language }]);
-            if (!error) { setSent(true); setTimeout(onClose, 2500); }
-        } catch (error) {
-            console.error("Error sending bug report:", error);
-        } finally { setIsSending(false); }
+            await submitBugReport({ description: text, language, userEmail });
+            setSent(true);
+            setTimeout(onClose, 3000);
+        } catch {
+            setSubmitError(true);
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (
@@ -75,6 +81,12 @@ export const ReportBugModal: React.FC<ReportBugModalProps> = ({ onClose, languag
                             onChange={e => setText(e.target.value)}
                             required
                         />
+                        {submitError && (
+                            <p className="text-red-400 text-[10px] font-bold mb-4 text-center">
+                                <i className="fas fa-exclamation-triangle mr-1"></i>
+                                {language === 'es' ? 'Error al enviar. Inténtalo de nuevo.' : 'Failed to send. Please try again.'}
+                            </p>
+                        )}
                         <div className="flex gap-3">
                             <button type="button" onClick={onClose} disabled={isSending} className="flex-1 py-4 rounded-2xl bg-slate-800 text-slate-300 font-black uppercase text-[10px] tracking-widest hover:bg-slate-700 transition-colors active:scale-95">
                                 {t.cancel}
