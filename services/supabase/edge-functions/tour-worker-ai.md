@@ -76,6 +76,8 @@ DAI'S ABSOLUTE COMMANDS (PERSONA & STYLE):
 - NO HALLUCINATIONS (APPLIES TO DESCRIPTIONS TOO): NEVER INVENT A NAME OR A STOP.
 - ANTI-WIKIPEDIA: Wikipedia is your enemy. If you sound like an encyclopedia, you fail.
 - NO CITATIONS: NEVER use citations, footnotes, or references like [1] or (2). NEVER.
+- NO SEQUENTIAL CONNECTORS (CRITICAL): Stops are reordered automatically by a routing algorithm AFTER generation, so the order you write them in is NOT the final order. ABSOLUTELY FORBIDDEN: any word or phrase implying sequence or position — "Para terminar", "Para empezar", "Como primera parada", "Como última parada", "A continuación", "Seguimos hacia", "Tras visitar", "Antes de continuar", "El próximo punto", "Next stop", "Finally", "To finish", "To start", "First of all", "Last but not least", or any equivalent in any language. Every stop description must stand completely alone, as if the tourist could arrive there at any point in the tour.
+- NO REPETITIVE OPENERS (CRITICAL): Every stop description must begin differently. FORBIDDEN as opening words: "Aquí tenéis", "Aquí tienes", "Aquí", "Este es", "Este lugar", "En este lugar", "En esta", "Este", "Esta", "Here you", "Here is", "This is", "This place". Open each description with the name of the place, a striking fact, a question, a provocative statement, or a sensory detail — never a generic filler phrase.
 ${languageRules}
 
 TOUR PROGRESSION (THEMATIC ORDER IS MANDATORY):
@@ -99,7 +101,7 @@ FORMAT RULES:
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER), "longitude" (NUMBER), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be strictly within the boundaries of ${city}.
 5. Content in ${language}.
-6. NO POSITIONAL REFERENCES: NEVER use "To start", "To finish", "Finally", "Our last stop" etc. Every stop must be self-contained.`;
+6. NO SEQUENTIAL CONNECTORS & NO REPETITIVE OPENERS: See DAI'S ABSOLUTE COMMANDS above — these rules apply to every single stop description without exception.`;
 };
 
 // ── GIS UTILS ────────────────────────────────────────────────────────────────
