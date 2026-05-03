@@ -12,7 +12,7 @@ type AudioState = {
 type Listener = (state: AudioState) => void;
 
 class AudioManager {
-  private audioElement: HTMLAudioElement | null = null;
+  private audioElement: HTMLAudioElement;
   private state: AudioState = {
     isPlaying: false,
     isLoading: false,
@@ -20,8 +20,24 @@ class AudioManager {
     playbackRate: 1.0,
   };
   private listeners: Set<Listener> = new Set();
+  private currentPlayPromise: Promise<void> | null = null;
 
   constructor() {
+    // 💡 SOLUCIÓN: Reutilizar un ÚNICO elemento de audio.
+    // iOS/Safari limitan a ~3 los decodificadores por hardware. Crear 'new Audio()'
+    // constantemente sin liberarlos colapsa el reproductor tras 3-4 paradas.
+    this.audioElement = new Audio();
+    
+    // Configurar listeners persistentes en el elemento único
+    this.audioElement.onended = () => {
+      this.stop();
+    };
+
+    this.audioElement.onerror = () => {
+      console.error("Audio element error");
+      this.stop();
+    };
+
     document.addEventListener('visibilitychange', () => {});
   }
 
@@ -42,17 +58,14 @@ class AudioManager {
 
   setSpeed(rate: number) {
     this.state.playbackRate = rate;
-    if (this.audioElement) {
-      this.audioElement.playbackRate = rate;
-    }
+    this.audioElement.playbackRate = rate;
     this.notify();
   }
 
   stop() {
-    if (this.audioElement) {
-      this.audioElement.pause();
-      this.audioElement = null;
-    }
+    this.audioElement.pause();
+    this.audioElement.currentTime = 0;
+    
     this.state.isPlaying = false;
     this.state.isLoading = false;
     this.state.stopName = '';
@@ -77,36 +90,25 @@ class AudioManager {
     this.notify();
 
     try {
-      const audio = new Audio(audioUrl);
-      this.audioElement = audio;
-      audio.playbackRate = this.state.playbackRate;
+      this.audioElement.src = audioUrl;
+      this.audioElement.playbackRate = this.state.playbackRate;
+      this.audioElement.load(); // Forzar recarga del nuevo src
       
-      // Manejo programático de promesa (arregla el bug de la caché y oncanplaythrough)
-      audio.play().then(() => {
-        if (this.audioElement === audio) {
+      this.currentPlayPromise = this.audioElement.play();
+      
+      this.currentPlayPromise
+        .then(() => {
           this.state.isLoading = false;
           this.state.isPlaying = true;
           this.notify();
-        }
-      }).catch(e => {
-        console.error("Playback failed:", e);
-        if (this.audioElement === audio) {
-          this.stop();
-        }
-      });
-
-      audio.onended = () => {
-        if (this.audioElement === audio) {
-          this.stop();
-        }
-      };
-
-      audio.onerror = () => {
-        if (this.audioElement === audio) {
-          console.error("Audio element error");
-          this.stop();
-        }
-      };
+        })
+        .catch(e => {
+          // Ignorar errores de "AbortError" (ocurren al llamar a stop() rápidamente antes de que empiece a sonar)
+          if (e.name !== 'AbortError') {
+            console.error("Playback failed:", e);
+            this.stop();
+          }
+        });
 
     } catch (e) {
       console.error("AudioManager play error:", e);

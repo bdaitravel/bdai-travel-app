@@ -8,7 +8,12 @@ interface LeaderboardProps {
   language: string;
 }
 
-const TEXTS: any = {
+interface LeaderboardTexts {
+  title: string; you: string; subtitle: string;
+  catGlobal: string; catCountry: string; catBadges: string;
+}
+
+const TEXTS: Record<string, LeaderboardTexts> = {
     es: { title: "Ranking Global", you: "Tu Estado", subtitle: "Exploradores de élite", catGlobal: "Global", catCountry: "País", catBadges: "Insignias" },
     en: { title: "Elite Travelers", you: "Your Status", subtitle: "Global explorer rankings", catGlobal: "Global", catCountry: "Country", catBadges: "Badges" },
     it: { title: "Classifica Mondiale", you: "Tuo Stato", subtitle: "Esploratori d'élite", catGlobal: "Globale", catCountry: "Paese", catBadges: "Distintivi" },

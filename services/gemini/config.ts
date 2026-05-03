@@ -15,8 +15,9 @@ export class QuotaError extends Error {
 export const handleAiCall = async <T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> => {
     try {
         return await fn();
-    } catch (error: any) {
-        const errorMsg = typeof error === 'string' ? error : JSON.stringify(error);
+    } catch (error: unknown) {
+        const errorMsg = typeof error === 'string' ? error :
+            (error instanceof Error ? error.message : JSON.stringify(error));
         if (errorMsg.includes("429") || errorMsg.includes("RESOURCE_EXHAUSTED") || errorMsg.includes("quota")) {
             if (retries > 0) {
                 await new Promise(resolve => setTimeout(resolve, delay));

@@ -7,7 +7,39 @@ import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKe
 import { VisaShare } from './VisaShare';
 import { audioManager } from '../services/audioManager';
 
-const TEXTS: any = {
+interface TourCardTexts {
+  start: string; stop: string; of: string; daiShot: string; angleLabel: string;
+  photoTipFallback: string; capture: string; rewardReceived: string; prev: string; next: string;
+  meters: string; itinerary: string; finish: string; congrats: string; stampDesc: string;
+  shareIg: string; close: string; tooFar: string; checkIn: string; checkedIn: string;
+  distance: string; duration: string; nearbyAlert: string; jumpTo: string; rewardMiles: string;
+  visaId: string; boardingPass: string; approved: string; rewardTotal: string; rankUp: string;
+  fixLocation?: string; locationFixed?: string; shareText: string;
+}
+
+interface UserLocation { lat: number; lng: number; }
+
+interface TourCardProps {
+  tour: Tour;
+  onSelect: (tour: Tour) => void;
+  language?: string;
+}
+
+interface ActiveTourCardProps {
+  tour: Tour;
+  user: UserProfile;
+  currentStopIndex: number;
+  onNext: () => void;
+  onPrev: () => void;
+  onJumpTo: (index: number) => void;
+  onUpdateUser: (updatedUser: UserProfile) => void;
+  onBack: () => void;
+  onTourComplete?: () => void;
+  language?: string;
+  userLocation?: UserLocation | null;
+}
+
+const TEXTS: Record<string, TourCardTexts> = {
     es: { 
         start: "Lanzar", stop: "Parada", of: "de", daiShot: "Consejo Dai", angleLabel: "Ángulo Dai:", 
         photoTipFallback: "Busca una perspectiva lateral para captar la profundidad de la estructura.", 
@@ -67,7 +99,7 @@ const calculateDistance = (lat1: number | string, lon1: number | string, lat2: n
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => {
+export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
   const [isLaunching, setIsLaunching] = useState(false);
 
@@ -122,7 +154,7 @@ export const TourCard: React.FC<any> = ({ tour, onSelect, language = 'es' }) => 
   );
 };
 
-export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
+export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
     const currentStop = tour.stops[currentStopIndex] as Stop;
     
@@ -166,7 +198,7 @@ export const ActiveTourCard: React.FC<any> = ({ tour, user, currentStopIndex, on
         const citySlug = normalizeKey(tour.city, tour.country);
         const success = await updateTourStopLocation(citySlug, language, currentStop.id, userLocation.lat, userLocation.lng);
         if (success) {
-            toast(tl.locationFixed, "success");
+            toast(tl.locationFixed ?? '', "success");
             currentStop.latitude = userLocation.lat;
             currentStop.longitude = userLocation.lng;
         } else {

@@ -1,5 +1,7 @@
-import { Tour, TourCache, Stop } from '../../types';
+import { Tour, TourCache, Stop, CitySearchResult } from '../../types';
 import { supabase } from './client';
+
+interface ToursCacheSlimRow { city: string; language: string; }
 import { normalizeKey } from '../supabaseClient';
 import { slugToDisplayName } from '../../lib/slugToDisplayName';
 
@@ -21,7 +23,7 @@ export const checkIfCityCached = async (city: string, slug: string, language = '
     } catch (e) { return false; }
 };
 
-export const searchCitiesInCache = async (query: string, language = 'es'): Promise<any[]> => {
+export const searchCitiesInCache = async (query: string, language = 'es'): Promise<CitySearchResult[]> => {
     if (!query || query.length < 2) return [];
     // Normalizar la query para que "logroño" encuentre "logrono_spain"
     const normalizedQuery = query
@@ -39,7 +41,7 @@ export const searchCitiesInCache = async (query: string, language = 'es'): Promi
         if (error) throw error;
 
         const seen = new Set<string>();
-        return (data || []).reduce((acc: any[], curr: any) => {
+        return (data || []).reduce((acc: CitySearchResult[], curr: ToursCacheSlimRow) => {
             if (!seen.has(curr.city)) {
                 seen.add(curr.city);
                 const { city, country, countryCode, fullName } = slugToDisplayName(curr.city);
@@ -238,7 +240,7 @@ export const getAllToursCache = async (): Promise<TourCache[]> => {
     try {
         const { data, error } = await supabase.from('tours_cache').select('*');
         if (error) throw error;
-        return data || [];
+        return (data || []) as TourCache[];
     } catch (e) {
         console.error("Error fetching all tours cache:", e);
         return [];
@@ -247,8 +249,8 @@ export const getAllToursCache = async (): Promise<TourCache[]> => {
 
 export const getCommunityPosts = async (city: string) => { return []; };
 export const getCityPosts = async (city: string) => { return []; };
-export const addCommunityPost = async (post: any) => { return { success: true }; };
-export const addCommunityPostSecure = async (citySlug: string, posts: any[]) => {
+export const addCommunityPost = async (post: unknown) => { return { success: true }; };
+export const addCommunityPostSecure = async (citySlug: string, posts: unknown[]) => {
     return await supabase.rpc('add_community_post', {
         p_city: citySlug,
         p_posts: posts

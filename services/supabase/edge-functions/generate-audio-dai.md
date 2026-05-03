@@ -11,6 +11,50 @@ const jsonHeaders = {
   'Content-Type': 'application/json',
 };
 
+// ── MP3 Encoder (carga lazy en primera petición) ────────────────────────
+let Mp3Encoder: any = null;
+let mp3Available = false;
+let mp3Checked = false;
+
+async function ensureMp3Encoder(): Promise<void> {
+  if (mp3Checked) return;
+  mp3Checked = true;
+  try {
+    const mod = await import("npm:lamejs@1.2.1");
+    Mp3Encoder = mod?.Mp3Encoder || mod?.default?.Mp3Encoder;
+    if (Mp3Encoder) {
+      // Test rápido: crear un encoder para verificar que MPEGMode existe
+      new Mp3Encoder(1, 24000, 64);
+      mp3Available = true;
+      console.log("✅ lamejs cargado — modo MP3 activo");
+    }
+  } catch (e: any) {
+    console.warn("⚠️ MP3 no disponible, usando WAV:", e?.message || e);
+    mp3Available = false;
+  }
+}
+
+function encodePcmToMp3(pcmData: Uint8Array, sampleRate = 24000, bitrate = 64): Uint8Array {
+  const int16 = new Int16Array(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength / 2);
+  const encoder = new Mp3Encoder(1, sampleRate, bitrate);
+  const maxSamples = 1152;
+  const chunks: Int8Array[] = [];
+  for (let i = 0; i < int16.length; i += maxSamples) {
+    const buf = encoder.encodeBuffer(int16.subarray(i, i + maxSamples));
+    if (buf.length > 0) chunks.push(buf);
+  }
+  const flush = encoder.flush();
+  if (flush.length > 0) chunks.push(flush);
+  const totalLen = chunks.reduce((a, c) => a + c.length, 0);
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength), offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
 function addWavHeader(pcmData: Uint8Array): Uint8Array {
   const numChannels = 1;
   const sampleRate = 24000;
@@ -39,6 +83,10 @@ Deno.serve(async (req) => {
 
   console.log("--- NUEVA PETICIÓN DE AUDIO RECIBIDA ---");
   try {
+    // Intentar cargar MP3 encoder (solo una vez, lazy)
+    await ensureMp3Encoder();
+    console.log(`Modo encoding: ${mp3Available ? 'MP3 (64kbps)' : 'WAV'}`);
+
     // Fix: Usar MY_SERVICE_ROLE_KEY con fallback (bug conocido de Deno donde SUPABASE_SERVICE_ROLE_KEY llega vacío)
     const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     if (!serviceKey) {
@@ -142,19 +190,41 @@ Deno.serve(async (req) => {
         throw new Error('No se recibió audio de Google');
     }
 
-    console.log("Audio recibido. Procesando WAV...");
     const rawPcm = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
-    const wavBuffer = addWavHeader(rawPcm);
+
+    // 2.5. ENCODING: MP3 si disponible, WAV como fallback seguro
+    let audioBuffer: Uint8Array;
+    let fileExt: string;
+    let contentType: string;
+
+    if (mp3Available) {
+      try {
+        console.log("Codificando a MP3 (64kbps)...");
+        audioBuffer = encodePcmToMp3(rawPcm);
+        fileExt = "mp3";
+        contentType = "audio/mpeg";
+        console.log(`PCM: ${rawPcm.length} bytes → MP3: ${audioBuffer.length} bytes (${Math.round(100 - audioBuffer.length / rawPcm.length * 100)}% reducción)`);
+      } catch (encErr: any) {
+        console.error("❌ Error en MP3 encoding, usando WAV:", encErr?.message);
+        audioBuffer = addWavHeader(rawPcm);
+        fileExt = "wav";
+        contentType = "audio/wav";
+      }
+    } else {
+      audioBuffer = addWavHeader(rawPcm);
+      fileExt = "wav";
+      contentType = "audio/wav";
+    }
 
     // 3. STORAGE
     const safeCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const fileName = `${safeCity}/${lang}/${Date.now()}.wav`;
+    const fileName = `${safeCity}/${lang}/${Date.now()}.${fileExt}`;
     console.log(`Subiendo a Storage: ${fileName}...`);
 
     const { error: uploadError } = await supabaseClient.storage
       .from('audios')
-      .upload(fileName, wavBuffer, {
-        contentType: 'audio/wav',
+      .upload(fileName, audioBuffer, {
+        contentType,
         upsert: true
       });
 

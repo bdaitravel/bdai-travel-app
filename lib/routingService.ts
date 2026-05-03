@@ -8,7 +8,8 @@ export const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefi
     try {
         const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
         const url = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=polyline`;
-        const res = await fetch(url, { signal: (AbortSignal as any).timeout?.(5000) });
+        const abortWithTimeout = (AbortSignal as typeof AbortSignal & { timeout?: (ms: number) => AbortSignal }).timeout;
+        const res = await fetch(url, { signal: abortWithTimeout?.(5000) });
         if (res.ok) {
             const data = await res.json();
             if (data.code === 'Ok' && data.routes?.[0]?.geometry) {

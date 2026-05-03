@@ -164,6 +164,24 @@ export interface TourCache {
 }
 
 
+export interface CitySearchResult {
+  city: string;
+  cityLocal: string;
+  country: string;
+  countryEn: string;
+  countryCode: string;
+  slug: string;
+  fullName: string;
+  name?: string;
+  isCached?: boolean;
+}
+
+export interface CityInfo {
+  lat: number;
+  lng: number;
+  population: number | null;
+}
+
 export const LANGUAGES = [
   { code: 'es', name: 'ES' }, { code: 'en', name: 'EN' }, { code: 'fr', name: 'FR' },
   { code: 'de', name: 'DE' }, { code: 'it', name: 'IT' }, { code: 'pt', name: 'PT' },

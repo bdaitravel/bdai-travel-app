@@ -1,5 +1,18 @@
-import { Tour, Stop } from '../types';
+import { Tour, Stop, CityInfo } from '../types';
 import { logger } from './logger';
+
+interface NominatimAddress {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+}
+
+// AbortSignal.timeout() is a modern browser API not yet in all TS DOM lib versions
+type AbortSignalWithTimeout = typeof AbortSignal & { timeout?: (ms: number) => AbortSignal };
+const timeoutSignal = (ms: number): AbortSignal | undefined =>
+    (AbortSignal as AbortSignalWithTimeout).timeout?.(ms);
 
 // ── Utilitario Haversine (hoistado para uso en toda la verificación GIS) ──
 export const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -25,7 +38,7 @@ const getHallucinationRadiusKm = (population: number | null): number => {
 };
 
 // ── Obtiene metadatos geográficos reales de la ciudad (Ground Truth) ──
-export const getCityInfo = async (city: string, country: string): Promise<any> => {
+export const getCityInfo = async (city: string, country: string): Promise<CityInfo | null> => {
     try {
         const query = encodeURIComponent(`${city}, ${country}`);
         const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&extratags=1`, {
@@ -68,7 +81,7 @@ const verifyStopExists = async (stopName: string, requestTs: { last: number }): 
             const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=0`;
             const res = await fetch(url, {
                 headers: { 'User-Agent': 'bdai-travel-app/1.0' },
-                signal: (AbortSignal as any).timeout?.(4000)
+                signal: timeoutSignal(4000)
             }).catch(() => null);
 
             if (!res?.ok) return true; // Si la API falla, no penalizar — ser conservador
@@ -111,7 +124,7 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
     const normalizedCity = normalizeForMatch(city);
 
     // Extrae el nombre de municipio de la respuesta address de Nominatim
-    const extractMunicipalityFromAddress = (address: any): string => {
+    const extractMunicipalityFromAddress = (address: NominatimAddress): string => {
         const raw = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
         return normalizeForMatch(raw);
     };
@@ -132,7 +145,7 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
             const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=3&addressdetails=1`;
             const nomRes = await fetch(nomUrl, {
                 headers: { 'User-Agent': 'bdai-travel-app/1.0' },
-                signal: (AbortSignal as any).timeout?.(4000)
+                signal: timeoutSignal(4000)
             }).catch(() => null);
 
             if (nomRes?.ok) {
@@ -183,7 +196,7 @@ export const verifyStopCoordinates = async (stop: Stop, city: string, country: s
                 await waitForRateLimit();
                 const phoUrl = `https://photon.komoot.io/api/?q=${queryPho}&limit=3`;
                 const phoRes = await fetch(phoUrl, {
-                    signal: (AbortSignal as any).timeout?.(4000)
+                    signal: timeoutSignal(4000)
                 }).catch(() => null);
 
                 if (phoRes?.ok) {

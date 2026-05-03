@@ -1,4 +1,34 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// Placeholder Database type for projects without generated Supabase types.
+// All table/view/function access returns `any`-valued rows, preserving existing
+// dynamic query patterns. Replace with `npx supabase gen types typescript`
+// output for full end-to-end type safety.
+//
+// The Views entry must include `Relationships` to satisfy `GenericView` (supabase-js 2.49+).
+// Without it, the Schema generic collapses to `never` and every query result becomes `never`.
+type UntypedDatabase = {
+    public: {
+        Tables: Record<string, { Row: Record<string, any>; Insert: Record<string, any>; Update: Record<string, any>; Relationships: never[]; }>;
+        Views: Record<string, { Row: Record<string, any>; Relationships: never[]; }>;
+        Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown; }>;
+        Enums: Record<string, string>;
+        CompositeTypes: Record<string, any>;
+    };
+};
+
+type SupabaseClientType = SupabaseClient<UntypedDatabase>;
+
+interface MockQueryBuilder {
+    select: () => MockQueryBuilder;
+    eq: () => MockQueryBuilder;
+    ilike: () => MockQueryBuilder;
+    order: () => MockQueryBuilder;
+    limit: () => MockQueryBuilder;
+    maybeSingle: () => Promise<{ data: null; error: null }>;
+    single: () => Promise<{ data: null; error: null }>;
+    then: <T>(onfulfilled: (value: { data: unknown[]; error: null }) => T) => Promise<T>;
+}
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
@@ -18,13 +48,13 @@ console.error = (...args) => {
     originalConsoleError(...args);
 };
 
-export let supabase: any;
+export let supabase: SupabaseClientType;
 try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    supabase = createClient(supabaseUrl, supabaseAnonKey) as SupabaseClientType;
 } catch (e) {
     console.error("Critical Supabase Init Error:", e);
-    const createMockQuery = () => {
-        const query: any = {
+    const createMockQuery = (): MockQueryBuilder => {
+        const query: MockQueryBuilder = {
             select: () => query,
             eq: () => query,
             ilike: () => query,
@@ -32,7 +62,7 @@ try {
             limit: () => query,
             maybeSingle: async () => ({ data: null, error: null }),
             single: async () => ({ data: null, error: null }),
-            then: (onfulfilled: any) => Promise.resolve({ data: [], error: null }).then(onfulfilled)
+            then: <T>(onfulfilled: (value: { data: unknown[]; error: null }) => T) => Promise.resolve({ data: [], error: null }).then(onfulfilled)
         };
         return query;
     };
@@ -52,5 +82,5 @@ try {
             delete: () => ({ eq: () => ({ eq: async () => ({}) }) })
         }),
         storage: { from: () => ({ upload: async () => ({ error: "Storage failure" }), getPublicUrl: () => ({ data: { publicUrl: "" } }) }) }
-    };
+    } as unknown as SupabaseClientType;
 }

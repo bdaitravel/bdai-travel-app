@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
-import lamejs from 'lamejs';
+import lamejs from '@breezystack/lamejs';
 
 // Support both .env and .env.local
 dotenv.config({ path: '.env.local' });
@@ -63,7 +63,7 @@ async function migrate() {
     console.log(`Found ${records.length} records in audio_cache.`);
 
     for (const record of records) {
-        if (!record.audio_url || !record.audio_url.endsWith('.wav')) {
+        if (!record.url || !record.url.endsWith('.wav')) {
             continue;
         }
 
@@ -71,9 +71,9 @@ async function migrate() {
             console.log(`Migrating: ${record.language} / ${record.city}`);
             
             // 1. Download WAV
-            const response = await fetch(record.audio_url);
+            const response = await fetch(record.url);
             if (!response.ok) {
-                console.error(`Failed to download ${record.audio_url}`);
+                console.error(`Failed to download ${record.url}`);
                 continue;
             }
             
@@ -90,7 +90,7 @@ async function migrate() {
             newTotalSize += newSize;
 
             // 4. Determine new filename and path
-            const urlObj = new URL(record.audio_url);
+            const urlObj = new URL(record.url);
             // Example URL: https://[project].supabase.co/storage/v1/object/public/audios/madrid/es/171234567.wav
             const pathParts = urlObj.pathname.split('/audios/');
             if (pathParts.length < 2) continue;
@@ -116,7 +116,7 @@ async function migrate() {
             // 6. Update Database
             const { error: updateError } = await supabase
                 .from('audio_cache')
-                .update({ audio_url: publicUrl })
+                .update({ url: publicUrl })
                 .eq('text_hash', record.text_hash)
                 .eq('language', record.language);
 

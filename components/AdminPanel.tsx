@@ -20,6 +20,17 @@ interface TranslationTask {
     baseTours: Tour[];
 }
 
+interface ToursCacheRow {
+    city: string;
+    language: string;
+}
+
+interface ToursCacheFullRecord {
+    city: string;
+    language: string;
+    data: Tour[];
+}
+
 export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = ({ user, onBack }) => {
     const [activeTab, setActiveTab] = useState<'DATA' | 'USERS'>('DATA');
     const [stats, setStats] = useState({ totalCities: 0, totalEntries: 0, pendingTasks: 0 });
@@ -60,8 +71,9 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
             const { data, error } = await supabase.from('profiles').select('*');
             if (error) throw error;
             if (data) {
-                setUsers(data);
-                
+                const users = data as UserProfile[];
+                setUsers(users);
+
                 const today = new Date().toISOString().split('T')[0];
                 let activeToday = 0;
                 let totalAge = 0;
@@ -70,9 +82,9 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
                 const byCountry: Record<string, number> = {};
                 const byInterest: Record<string, number> = {};
 
-                data.forEach((u: any) => {
+                users.forEach((u) => {
                     // Active today?
-                    if (u.stats?.lastActive?.startsWith(today) || u.lastActive?.startsWith(today)) activeToday++;
+                    if (u.stats?.lastActive?.startsWith(today)) activeToday++;
                     
                     // Language
                     const lang = u.language || 'es';
@@ -127,7 +139,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         if (!baseRecords) return;
 
         const globalCityMap: Record<string, Set<string>> = {};
-        allRecords.forEach((r: any) => {
+        (allRecords as ToursCacheRow[]).forEach((r) => {
             if (r.city) {
                 const baseName = r.city.split('_')[0].toLowerCase();
                 if (!globalCityMap[baseName]) globalCityMap[baseName] = new Set();
@@ -136,7 +148,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         });
 
         let pendingCount = 0;
-        const progressData: CityProgress[] = baseRecords.map((base: any) => {
+        const progressData: CityProgress[] = (baseRecords as ToursCacheRow[]).map((base) => {
             const baseName = base.city.split('_')[0].toLowerCase();
             const translatedLangs = Array.from(globalCityMap[baseName] || []);
             const count = translatedLangs.length;
@@ -183,13 +195,14 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         const { data: allRecords } = await supabase.from('tours_cache').select('*');
         if (!allRecords) { setIsWorking(false); return; }
 
-        const shortKeys = allRecords.filter((r: any) => !r.city.includes('_'));
-        const longKeysMap = allRecords.filter((r: any) => r.city.includes('_') && r.language === 'es');
+        const typedRecords = allRecords as ToursCacheFullRecord[];
+        const shortKeys = typedRecords.filter((r) => !r.city.includes('_'));
+        const longKeysMap = typedRecords.filter((r) => r.city.includes('_') && r.language === 'es');
 
         let repairedCount = 0;
         for (const record of shortKeys) {
             const baseName = record.city.toLowerCase();
-            const matchingLongKey = longKeysMap.find((l: any) => l.city.startsWith(baseName));
+            const matchingLongKey = longKeysMap.find((l) => l.city.startsWith(baseName));
 
             if (matchingLongKey) {
                 addLog(`🔧 Migrando: ${record.city} (${record.language}) -> ${matchingLongKey.city}`);
@@ -215,7 +228,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
 
         const { data: allRecords } = await supabase.from('tours_cache').select('city, language');
         const globalCityMap: Record<string, Set<string>> = {};
-        allRecords?.forEach((r: any) => {
+        (allRecords as ToursCacheRow[] | null)?.forEach((r) => {
             if (r.city) {
                 const baseName = r.city.split('_')[0].toLowerCase();
                 if (!globalCityMap[baseName]) globalCityMap[baseName] = new Set();
@@ -224,7 +237,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
         });
 
         const taskQueue: TranslationTask[] = [];
-        for (const base of baseRecords) {
+        for (const base of (baseRecords as ToursCacheFullRecord[])) {
             const baseName = base.city.split('_')[0].toLowerCase();
             const existingLangs = globalCityMap[baseName] || new Set();
             const missingLangs = LANGUAGES.filter(l => !existingLangs.has(l.code));

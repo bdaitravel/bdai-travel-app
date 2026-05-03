@@ -7,10 +7,10 @@ import { useEffect, useRef } from 'react';
  * @param callback  Función a ejecutar tras el silencio
  * @param delay     Tiempo de espera en ms
  */
-export const useDebounce = (callback: (...args: any[]) => void, delay: number) => {
+export const useDebounce = <T extends unknown[]>(callback: (...args: T) => void, delay: number) => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const debouncedFn = (...args: any[]) => {
+  const debouncedFn = (...args: T) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       callback(...args);

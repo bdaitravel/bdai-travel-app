@@ -3,7 +3,9 @@ import React from 'react';
 // Fix: Import HubIntel which is now correctly exported from types.ts
 import { HubIntel } from '../types';
 
-const TEXTS: any = {
+interface HubTexts { details: string; save: string; saved: string; close: string; }
+
+const TEXTS: Record<string, HubTexts> = {
   en: { details: "Intel Details", save: "Save to My Passport", saved: "Saved", close: "Close" },
   es: { details: "Detalles del Intel", save: "Guardar en Mi Pasaporte", saved: "Guardado", close: "Cerrar" },
   ca: { details: "Detalls", save: "Desar al Passaport", saved: "Desat", close: "Tancar" },

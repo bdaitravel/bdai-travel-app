@@ -20,7 +20,7 @@ interface ProfileModalProps {
   onLangChange?: (code: string) => void;
 }
 
-const MODAL_TEXTS: any = {
+const MODAL_TEXTS: Record<string, Record<string, string>> = {
     es: { title: "Pasaporte Global bdai", subtitle: "Nómada Digital ID", surname: "Apellidos", givenNames: "Nombres", city: "Ciudad", country: "País", age: "Edad", birthday: "Nacimiento", save: "Guardar", edit: "Editar", logout: "Cerrar Sesión", stamps: "Mis Visados", badges: "Insignias", rankBadges: "Rangos", achievementBadges: "Logros", langLabel: "Idioma", rank: "RANGO", miles: "MILLAS", admin: "ADMIN", streak: "Racha", changeAvatar: "Cambiar Foto", email: "Correo Electrónico", reportBug: "Reportar Error", privacy: "Privacidad", terms: "Términos", deleteAccount: "Eliminar Cuenta (GDPR)", deleteConfirmTitle: "⚠️ ZONA DE PELIGRO", deleteConfirmText: "Esta acción es IRREVERSIBLE. Perderás todas tus millas, visados, insignias e historial para siempre.", deleteConfirmInstruction: "Escribe tu email para confirmar:", deleteConfirmPlaceholder: "tu@email.com", deleteConfirmCancel: "Cancelar", deleteConfirmYes: "Eliminar permanentemente", deleting: "Borrando...", deleteCountdown: "Espera {n}s...", deleteEmailMismatch: "El email no coincide" },
     en: { title: "bdai Global Passport", subtitle: "Digital Nomad ID", surname: "Surname", givenNames: "Given Names", city: "City", country: "Country", age: "Age", birthday: "Birthdate", save: "Save", edit: "Edit", logout: "Logout", stamps: "My Visas", badges: "Badges", rankBadges: "Ranks", achievementBadges: "Achievements", langLabel: "Language", rank: "RANK", miles: "MILES", admin: "ADMIN", streak: "Streak", changeAvatar: "Change Photo", email: "Email Address", reportBug: "Report Bug", privacy: "Privacy", terms: "Terms", deleteAccount: "Delete Account (GDPR)", deleteConfirmTitle: "⚠️ DANGER ZONE", deleteConfirmText: "This action is IRREVERSIBLE. You will permanently lose all your miles, visas, badges and history.", deleteConfirmInstruction: "Type your email to confirm:", deleteConfirmPlaceholder: "your@email.com", deleteConfirmCancel: "Cancel", deleteConfirmYes: "Permanently delete", deleting: "Deleting...", deleteCountdown: "Wait {n}s...", deleteEmailMismatch: "Email doesn't match" },
     fr: { title: "Passeport Global bdai", subtitle: "ID Nomade Numérique", surname: "Nom", givenNames: "Prénoms", city: "Ville", country: "Pays", age: "Âge", birthday: "Naissance", save: "Enregistrer", edit: "Modifier", logout: "Déconnexion", stamps: "Mes Visas", badges: "Badges", rankBadges: "Rangs", achievementBadges: "Réalisations", langLabel: "Langue", rank: "RANG", miles: "MILES", admin: "ADMIN", streak: "Série", changeAvatar: "Changer Photo", email: "Adresse e-mail", reportBug: "Signaler un bug", privacy: "Confidentialité", terms: "Conditions", deleteAccount: "Supprimer le Compte (RGPD)", deleteConfirmTitle: "⚠️ ZONE DANGEREUSE", deleteConfirmText: "Cette action est IRRÉVERSIBLE. Vous perdrez définitivement tous vos miles, visas, badges et historique.", deleteConfirmInstruction: "Tapez votre email pour confirmer:", deleteConfirmPlaceholder: "votre@email.com", deleteConfirmCancel: "Annuler", deleteConfirmYes: "Supprimer définitivement", deleting: "Suppression...", deleteCountdown: "Attendez {n}s...", deleteEmailMismatch: "L'email ne correspond pas" },
@@ -159,7 +159,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
     const dict = MODAL_TEXTS[lang] || MODAL_TEXTS['en'];
     const globalDict = translations[lang] || translations['en'];
     
-    const extra: any = {
+    const extra: Record<string, Record<string, string>> = {
         es: { locked: "BLOQUEADO", unlockReq: "Requisito:", milesReq: "Millas restantes:", confirmShare: "Compartir", cancel: "Cerrar", image: "Guardar Imagen", share: "Compartir Enlace", backToPassport: "Volver al Pasaporte", statusVerified: "Estado: Verificado", missionAccomplished: "MISIÓN CUMPLIDA", locationIdentity: "Identidad de Ubicación", protocolReward: "Recompensa", currentRank: "Rango Actual", digitalAuth: "Autenticación", verified: "VERIFICADO", totalDistance: "Distancia Total", minting: "GENERANDO...", transmitting: "TRANSMITIENDO...", readyToShare: "LISTO PARA COMPARTIR" },
         en: { locked: "LOCKED", unlockReq: "Requirement:", milesReq: "Miles remaining:", confirmShare: "Share", cancel: "Close", image: "Save Image", share: "Share Link", backToPassport: "Back to Passport", statusVerified: "Status: Verified", missionAccomplished: "MISSION ACCOMPLISHED", locationIdentity: "Location Identity", protocolReward: "Protocol Reward", currentRank: "Current Rank", digitalAuth: "Autenticación", verified: "VERIFIED", totalDistance: "Total Distance", minting: "MINTING...", transmitting: "TRANSMITTING...", readyToShare: "READY TO SHARE" },
         fr: { locked: "VERROUILLÉ", unlockReq: "Exigence :", milesReq: "Miles restants :", confirmShare: "Partager", cancel: "Fermer" },
@@ -308,9 +308,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         <div key={field} className="space-y-1">
                             <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt(label)}</p>
                             {isEditing ? (
-                                <input type={field === 'birthday' ? 'date' : 'text'} value={(formData as any)[field]} onChange={e => setFormData({...formData, [field]: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" />
+                                <input type={field === 'birthday' ? 'date' : 'text'} value={formData[field as keyof typeof formData]} onChange={e => setFormData({...formData, [field]: e.target.value})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px] uppercase" />
                             ) : (
-                                <p className="font-bold text-slate-800 text-[10px] uppercase">{(formData as any)[field] || '---'}</p>
+                                <p className="font-bold text-slate-800 text-[10px] uppercase">{formData[field as keyof typeof formData] || '---'}</p>
                             )}
                         </div>
                     ))}
@@ -387,7 +387,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             <button onClick={onOpenAdmin} className="flex-1 py-4 bg-slate-900 text-yellow-500 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
                                 <i className="fas fa-tools text-xs"></i> {pt('admin')}
                             </button>
-                            <button onClick={() => { onClose(); (window as any).dispatchEvent(new CustomEvent('open-partner-dashboard')); }} className="flex-1 py-4 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
+                            <button onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('open-partner-dashboard')); }} className="flex-1 py-4 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 rounded-2xl active:scale-95 shadow-lg">
                                 <i className="fas fa-chart-line text-xs"></i> PARTNER
                             </button>
                         </div>

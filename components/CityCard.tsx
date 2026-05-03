@@ -8,7 +8,9 @@ interface CityCardProps {
   onClick: () => void;
 }
 
-const TYPE_CONFIG: any = {
+interface TypeConfig { icon: string; color: string; text: string; }
+
+const TYPE_CONFIG: Record<string, TypeConfig> = {
     history: { icon: 'fa-fingerprint', color: 'from-amber-500/10 to-orange-950/40', text: 'Registro Histórico' },
     food: { icon: 'fa-microscope', color: 'from-emerald-500/10 to-teal-950/40', text: 'Análisis Gastro' },
     art: { icon: 'fa-eye', color: 'from-purple-500/10 to-indigo-950/40', text: 'Visión Estética' },

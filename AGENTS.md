@@ -115,7 +115,7 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - **ErrorBoundary global:** `components/ErrorBoundary.tsx` envuelve toda la app en `index.tsx`. Captura errores de render no manejados y muestra una pantalla de fallback con el botón "Reportar Fallo" pre-relleno con el stack trace, URL, timestamp y user agent.
 - **`ReportBugModal`:** Acepta `prefillText?: string` para recibir datos del `ErrorBoundary` automáticamente.
 - **GPS validation:** Las coordenadas de `watchPosition` se validan (rango válido, no NaN, no 0,0) antes de actualizar el estado.
-- **Flujo de Audio Persistente:** `generateAudio` es secuencial e íntegro. Se utiliza **hashing SHA-256** sobre el texto completo (normalizado) para identificar los audios de forma unívoca. La Edge Function `generate-audio-dai` usa `MY_SERVICE_ROLE_KEY` (con fallback a `SUPABASE_SERVICE_ROLE_KEY`) para evitar el bug conocido de Deno, y aplica un timeout de 120s a la llamada TTS para prevenir EarlyDrop. Si el audio no está en caché, se genera con Gemini TTS (voz Kore), se sube a Supabase Storage y se devuelve la URL pública del bucket.
+- **Flujo de Audio Persistente (WAV→MP3):** `generateAudio` es secuencial e íntegro. Se utiliza **hashing SHA-256** sobre el texto completo (normalizado) para identificar los audios de forma unívoca. La Edge Function `generate-audio-dai` usa `MY_SERVICE_ROLE_KEY` (con fallback a `SUPABASE_SERVICE_ROLE_KEY`) para evitar el bug conocido de Deno, y aplica un timeout de 120s a la llamada TTS para prevenir EarlyDrop. Si el audio no está en caché, se genera con Gemini TTS (voz Kore), se sube a Supabase Storage como **WAV** y se devuelve la URL pública del bucket. **Conversión a MP3:** El script `scripts/migrateAudios.ts` (Node.js + lamejs) convierte batch los WAVs a MP3 64kbps mono (~83% reducción), actualiza las URLs en `audio_cache` y elimina los WAVs antiguos. **Nota técnica:** lamejs es incompatible con el runtime Deno de Supabase Edge Functions (variable interna `MPEGMode` no sobrevive la conversión CJS→ESM), por lo que la conversión MP3 se realiza exclusivamente en Node.js.
 - **AudioContext lifecycle:** El `AudioManager` singleton suspende el `AudioContext` al ir a segundo plano (`visibilitychange`) y lo reanuda al volver. Reduce consumo de batería en iOS/Android.
 - **Bloqueo de Concurrencia (tours_cache):** Implementado sistema de bloqueo atómico mediante columna `status` ('GENERATING', 'READY', 'ERROR'). Evita que múltiples clientes disparen Gemini para la misma ciudad. Las pestañas secundarias se suscriben vía Realtime y esperan el estado 'READY' mostrando el mensaje oficial de DAI. El lock expira automáticamente tras 10 minutos para prevenir bloqueos permanentes por crash del worker.
 - **Ejecución Asíncrona Desacoplada (Database Webhooks):** La generación pesada de tours ahora utiliza una arquitectura de cola nativa (`generation_jobs`) dividida en 3 Edge Functions atómicas (ubicadas en `/services/supabase/`):
@@ -201,6 +201,22 @@ Como arquitecto senior y consultor estratégico, **debes**:
   - `services/gemini/prompts.ts`: Definición de la Identidad de DAI y plantillas de prompts.
   - `services/geminiService.ts`: Orquestador que coordina las capas anteriores.
 - **Razón**: Permite testear algoritmos de rutas sin llamadas a IA, facilita el cambio de modelo de LLM y mejora drásticamente la legibilidad.
+
+### Ficheros de Infraestructura Core (OBLIGATORIO — No Eliminar)
+
+#### `services/gemini/config.ts` — Cliente Gemini con reintentos
+- **Qué hace:** Singleton `GoogleGenAI`, clase `QuotaError` y wrapper `handleAiCall` con backoff exponencial (3 reintentos, 2 s → 4 s → 8 s).
+- **Por qué es necesario:** La generación de tours (`tour-orchestrator`, `tour-worker-ai`) ocurre vía Edge Functions sin pasar por este fichero. Pero `geminiService.ts` sigue usando Gemini directamente **desde el cliente** para dos llamadas ligeras que no justifican una Edge Function:
+  1. `translateSearchQuery()` — detecta el idioma y traduce el término de búsqueda a inglés.
+  2. `normalizeCityWithAI()` — desambigua ciudades homónimas (ej. "Valencia" → España vs Venezuela) y corrige typos en tiempo real mientras el usuario escribe.
+- **Si se elimina:** el buscador de ciudades rompe completamente; los usuarios no pueden buscar en su idioma ni encontrar ciudades con nombres ambiguos.
+
+#### `services/supabase/client.ts` — Singleton del cliente Supabase
+- **Qué hace:** Inicializa `createClient` con las variables de entorno (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) y exporta `supabase`. Incluye un fallback mock para entornos sin credenciales.
+- **Por qué es necesario:** Es el único punto de creación del cliente. **Toda** la app accede a Supabase a través de este singleton (via `supabaseClient.ts` que re-exporta `supabase` de aquí). `errorService.ts` también lo importa directamente. Instanciar un segundo cliente rompería la política RLS y el manejo de sesión.
+- **Tipado (`UntypedDatabase`):** Como el proyecto no usa `supabase gen types`, se define un tipo placeholder `UntypedDatabase` con `Tables/Views/Functions` como `Record<string, any/unknown>`. Esto satisface el constraint `GenericSchema` de supabase-js 2.49+ sin colapsar a `never`. El campo `Relationships: never[]` en Tables y Views es **obligatorio** — sin él, `Schema` colapsa a `never` y todas las queries devuelven `never` en vez de `Record<string, any>`.
+- **Boundary casts:** Las queries devuelven `Record<string, any>[]`. Cada punto de consumo usa `data as TypedInterface[]` para tipar los datos al entrar en la app. Las llamadas `.rpc()` requieren que los args extiendan `Record<string, unknown>` (no `any`), lo que es compatible con todos los payloads actuales.
+- **Si se elimina:** toda la app pierde acceso a auth, datos, storage y Edge Functions.
 
 ## Restricciones de Entorno y Despliegue (IMPORTANTE)
 - **Flujo de Trabajo de Edge Functions (SSOT):** La ÚNICA fuente de la verdad para el código de las Edge Functions son los archivos con extensión **`.md`** ubicados en **`services/supabase/`**. 

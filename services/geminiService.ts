@@ -1,8 +1,24 @@
 import { Type } from "@google/genai";
-import { Tour, Stop, UserProfile, TourCache } from '../types';
+import { Tour, Stop, UserProfile, TourCache, CitySearchResult } from '../types';
+
+interface GeminiCityRaw {
+    cityEn: string;
+    cityLocal?: string;
+    country: string;
+    countryEn: string;
+    countryCode: string;
+}
+
+interface ToursRealtimePayload {
+    new: {
+        status: string;
+        data: Tour[];
+        route_polylines?: Record<string, string>;
+        error_message?: string;
+    };
+}
 import { normalizeKey, supabase } from './supabaseClient';
 import { ai, handleAiCall, QuotaError } from './gemini/config';
-import { SYSTEM_INSTRUCTION, generateTourPrompt } from './gemini/prompts';
 import { getCityInfo, processTourStops } from '../lib/gisService';
 export { fetchRoutePolyline } from '../lib/routingService';
 import { optimizeStopOrder } from '../lib/routingService';
@@ -37,7 +53,7 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
 };
 
 // ── Normaliza el nombre de ciudad con IA ──────────────────────────────────
-export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<any[]> => {
+export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<CitySearchResult[]> => {
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -76,7 +92,7 @@ For each result return:
         });
 
         const raw = JSON.parse(response.text || '[]');
-        return raw.map((r: any) => ({
+        return raw.map((r: GeminiCityRaw) => ({
             city: r.cityEn,
             cityLocal: r.cityLocal || r.cityEn,
             country: r.country,
@@ -186,7 +202,7 @@ export const generateToursForCity = async (
                             table: 'tours_cache',
                             filter: `city=eq.${slug}`
                         },
-                        (payload: any) => {
+                        (payload: ToursRealtimePayload) => {
                             const newStatus = payload.new.status;
                             logger.log(`[Realtime] tours_cache status=${newStatus}`);
 
@@ -216,8 +232,8 @@ export const generateToursForCity = async (
                         logger.log(`[Poll] Comprobando tours_cache para ${slug}...`);
                         const tours = await fetchToursFromCache(slug, lang);
                         if (tours) resolveOnce(tours);
-                    } catch (e: any) {
-                        rejectOnce(e);
+                    } catch (e: unknown) {
+                        rejectOnce(e instanceof Error ? e : new Error(String(e)));
                     }
                 };
 
