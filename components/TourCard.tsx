@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp, RouteMode } from '../types';
-import { optimizeStopOrder } from '../lib/routingService';
+import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
 import { toast } from './Toast';
 import { generateAudio } from '../services/geminiService';
@@ -100,39 +99,15 @@ const calculateDistance = (lat1: number | string, lon1: number | string, lat2: n
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-const ROUTE_MODES: { mode: RouteMode; icon: string; label: string }[] = [
-    { mode: 'open',        icon: 'fa-route',    label: 'Lineal'   },
-    { mode: 'circular',    icon: 'fa-rotate',   label: 'Circular' },
-    { mode: 'centripetal', icon: 'fa-bullseye', label: 'Al centro' },
-];
-
 export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = 'es' }) => {
   const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
-  const [isLaunching, setIsLaunching]   = useState(false);
-  const [localTour, setLocalTour]       = useState<Tour>(tour);
-  const [activeMode, setActiveMode]     = useState<RouteMode>(tour.routeMode || 'open');
-  const [isReordering, setIsReordering] = useState(false);
-
-  const handleModeChange = async (e: React.MouseEvent, mode: RouteMode) => {
-      e.stopPropagation();
-      if (mode === activeMode || isReordering) return;
-      setIsReordering(true);
-      try {
-          const optimized = await optimizeStopOrder(localTour, mode);
-          setLocalTour(optimized);
-          setActiveMode(mode);
-      } catch {
-          // si OSRM falla, mantenemos el orden actual sin mostrar error
-      } finally {
-          setIsReordering(false);
-      }
-  };
+  const [isLaunching, setIsLaunching] = useState(false);
 
   const handleLaunch = (e: React.MouseEvent) => {
       e.stopPropagation();
       setIsLaunching(true);
       setTimeout(() => {
-          onSelect(localTour);
+          onSelect(tour);
           setIsLaunching(false);
       }, 300);
   };
@@ -155,41 +130,15 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
           <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
           <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-4 font-medium flex-1">{tour.description}</p>
 
-          {/* Toggle de modo de ruta */}
-          <div className="flex items-center gap-2 mb-5" onClick={e => e.stopPropagation()}>
-              {isReordering ? (
-                  <div className="flex items-center gap-2 h-7">
-                      <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-[9px] text-slate-500 uppercase tracking-widest">Calculando...</span>
-                  </div>
-              ) : (
-                  ROUTE_MODES.map(({ mode, icon, label }) => (
-                      <button
-                          key={mode}
-                          onClick={e => handleModeChange(e, mode)}
-                          title={label}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                              activeMode === mode
-                                  ? 'bg-purple-600/30 border border-purple-500/50 text-purple-400'
-                                  : 'bg-white/5 border border-white/10 text-slate-500 hover:text-slate-300 hover:bg-white/10'
-                          }`}
-                      >
-                          <i className={`fas ${icon} text-[8px]`}></i>
-                          <span>{label}</span>
-                      </button>
-                  ))
-              )}
-          </div>
-
           <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
                <div className="flex gap-4">
                   <div className="flex flex-col">
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.duration}</span>
-                    <span className="text-white font-black text-xs uppercase tracking-tighter">{localTour.duration}</span>
+                    <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.duration}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.distance}</span>
-                    <span className="text-white font-black text-xs uppercase tracking-tighter">{localTour.distance}</span>
+                    <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.distance}</span>
                   </div>
                </div>
                <div className="flex items-center gap-3">
@@ -522,8 +471,11 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                         </button>
                     )}
 
-                    <div className="space-y-4 text-slate-800 text-base leading-relaxed font-medium">
-                        {(currentStop.description || "").split('\n\n').map((p: string, i: number) => <p key={i} className="animate-fade-in">{p}</p>)}
+                    <div className="relative">
+                        <div className="max-h-[28vh] overflow-y-auto no-scrollbar space-y-4 text-slate-800 text-base leading-relaxed font-medium">
+                            {(currentStop.description || "").split('\n\n').map((p: string, i: number) => <p key={i} className="animate-fade-in">{p}</p>)}
+                        </div>
+                        <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-white to-transparent pointer-events-none" />
                     </div>
                 </div>
              </div>
