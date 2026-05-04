@@ -1,5 +1,7 @@
 
 
+export type RouteMode = 'open' | 'circular' | 'centripetal';
+
 export interface VisaStamp {
   city: string;
   country: string;
@@ -153,6 +155,7 @@ export interface Tour {
   stops: Stop[];
   isEssential?: boolean;
   routePolyline?: string;
+  routeMode?: RouteMode;
 }
 
 export interface TourCache {

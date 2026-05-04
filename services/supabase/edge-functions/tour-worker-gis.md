@@ -163,7 +163,7 @@ const optimizeStopOrder = async (tour: any): Promise<any> => {
     if (!tour.stops || tour.stops.length <= 2) return tour;
     try {
         const coordsStr = tour.stops.map((s: any) => `${s.longitude},${s.latitude}`).join(';');
-        const osrmUrl = `https://routing.openstreetmap.de/routed-foot/trip/v1/foot/${coordsStr}?source=first&roundtrip=false&geometries=polyline`;
+        const osrmUrl = `https://routing.openstreetmap.de/routed-foot/trip/v1/foot/${coordsStr}?source=any&roundtrip=false&geometries=polyline`;
         const res = await fetch(osrmUrl, { headers: { 'User-Agent': 'BDAI-Travel-App/1.0' } });
         if (!res.ok) return tour;
         const data = await res.json();

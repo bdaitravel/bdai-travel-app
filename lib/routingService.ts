@@ -1,25 +1,149 @@
-import { Tour, Stop } from '../types';
+import { Tour, Stop, RouteMode } from '../types';
 import { haversineKm } from './gisService';
 import { logger } from './logger';
 
 // ── Utilidades de navegación y enrutamiento ──────────────────────────────
-export const fetchRoutePolyline = async (stops: Stop[]): Promise<string | undefined> => {
+export const fetchRoutePolyline = async (stops: Stop[], mode: RouteMode = 'open'): Promise<string | undefined> => {
     if (!stops || stops.length < 2) return undefined;
     try {
         const coords = stops.map(s => `${s.longitude},${s.latitude}`).join(';');
-        const url = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=polyline`;
+        // Circular: OSRM /trip con roundtrip=true para calcular polilínea de bucle real
+        const url = mode === 'circular'
+            ? `https://routing.openstreetmap.de/routed-foot/trip/v1/foot/${coords}?roundtrip=true&source=any&geometries=polyline`
+            : `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=polyline`;
         const abortWithTimeout = (AbortSignal as typeof AbortSignal & { timeout?: (ms: number) => AbortSignal }).timeout;
         const res = await fetch(url, { signal: abortWithTimeout?.(5000) });
         if (res.ok) {
             const data = await res.json();
-            if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
-                return data.routes[0].geometry;
+            if (data.code === 'Ok') {
+                // /trip devuelve data.trips, /route devuelve data.routes
+                return data.trips?.[0]?.geometry ?? data.routes?.[0]?.geometry;
             }
         }
     } catch (e) {
         logger.warn("Global routing fetch failed:", e);
     }
     return undefined;
+};
+
+// ── Funciones auxiliares de modo Circular y Centrípeto ───────────────────
+
+const calcCentroid = (stops: Stop[]): { lat: number; lon: number } => ({
+    lat: stops.reduce((s, p) => s + p.latitude, 0) / stops.length,
+    lon: stops.reduce((s, p) => s + p.longitude, 0) / stops.length,
+});
+
+// 2-opt circular: incluye el coste de volver al inicio
+const twoOptCircular = (order: number[], distMatrix: number[][]): number[] => {
+    const n = order.length;
+    if (n < 4) return order;
+    let improved = true;
+    let route = [...order];
+    while (improved) {
+        improved = false;
+        for (let i = 0; i < n - 1; i++) {
+            for (let j = i + 2; j < n; j++) {
+                if (i === 0 && j === n - 1) continue;
+                const nj = (j + 1) % n;
+                const cur = distMatrix[route[i]][route[i + 1]] + distMatrix[route[j]][route[nj]];
+                const nw = distMatrix[route[i]][route[j]] + distMatrix[route[i + 1]][route[nj]];
+                if (nw < cur - 0.001) {
+                    route = [...route.slice(0, i + 1), ...route.slice(i + 1, j + 1).reverse(), ...route.slice(j + 1)];
+                    improved = true;
+                }
+            }
+        }
+    }
+    return route;
+};
+
+// Or-opt circular: incluye coste de regreso al inicio en la métrica
+const orOptCircular = (order: number[], distMatrix: number[][]): number[] => {
+    const n = order.length;
+    if (n < 4) return order;
+    const dist = (r: number[]): number => {
+        let d = 0;
+        for (let i = 0; i < r.length - 1; i++) d += distMatrix[r[i]][r[i + 1]];
+        return d + distMatrix[r[r.length - 1]][r[0]];
+    };
+    let improved = true;
+    let route = [...order];
+    while (improved) {
+        improved = false;
+        for (let p = 0; p < route.length && !improved; p++) {
+            const stop = route[p];
+            const without = route.filter((_, i) => i !== p);
+            const cur = dist(route);
+            let best = cur - 0.001;
+            let bestQ = -1;
+            for (let q = 0; q <= without.length; q++) {
+                const d = dist([...without.slice(0, q), stop, ...without.slice(q)]);
+                if (d < best) { best = d; bestQ = q; }
+            }
+            if (bestQ !== -1) {
+                const w = route.filter((_, i) => i !== p);
+                route = [...w.slice(0, bestQ), stop, ...w.slice(bestQ)];
+                improved = true;
+            }
+        }
+    }
+    return route;
+};
+
+// 2-opt con primer y último punto fijos (j < n-1 garantiza que el último no se mueve)
+const twoOptFixed = (order: number[], distMatrix: number[][]): number[] => {
+    const n = order.length;
+    if (n < 4) return order;
+    let improved = true;
+    let route = [...order];
+    while (improved) {
+        improved = false;
+        for (let i = 0; i < n - 2; i++) {
+            for (let j = i + 2; j < n - 1; j++) {
+                const cur = distMatrix[route[i]][route[i + 1]] + distMatrix[route[j]][route[j + 1]];
+                const nw = distMatrix[route[i]][route[j]] + distMatrix[route[i + 1]][route[j + 1]];
+                if (nw < cur - 0.001) {
+                    route = [...route.slice(0, i + 1), ...route.slice(i + 1, j + 1).reverse(), ...route.slice(j + 1)];
+                    improved = true;
+                }
+            }
+        }
+    }
+    return route;
+};
+
+// Or-opt con primer y último punto fijos (centrípeto)
+const orOptFixed = (order: number[], distMatrix: number[][]): number[] => {
+    const n = order.length;
+    if (n < 5) return order;
+    const dist = (r: number[]): number => {
+        let d = 0;
+        for (let i = 0; i < r.length - 1; i++) d += distMatrix[r[i]][r[i + 1]];
+        return d;
+    };
+    let improved = true;
+    let route = [...order];
+    while (improved) {
+        improved = false;
+        for (let p = 1; p < route.length - 1 && !improved; p++) {
+            const stop = route[p];
+            const without = route.filter((_, i) => i !== p);
+            const cur = dist(route);
+            let best = cur - 0.001;
+            let bestQ = -1;
+            // q=1 mantiene el primero fijo; q < without.length mantiene el último fijo
+            for (let q = 1; q < without.length; q++) {
+                const d = dist([...without.slice(0, q), stop, ...without.slice(q)]);
+                if (d < best) { best = d; bestQ = q; }
+            }
+            if (bestQ !== -1) {
+                const w = route.filter((_, i) => i !== p);
+                route = [...w.slice(0, bestQ), stop, ...w.slice(bestQ)];
+                improved = true;
+            }
+        }
+    }
+    return route;
 };
 
 // ── Utilidades de optimización de ruta (9 reglas de pront-calcular-rutas) ─
@@ -182,6 +306,42 @@ const nearestNeighborTSP = (stops: Stop[], distMatrix: number[][]): number[] => 
     return bestOrder;
 };
 
+// Or-opt: reubica cada parada en su posición óptima para eliminar backtracks
+const orOptImprove = (order: number[], distMatrix: number[][]): number[] => {
+    const n = order.length;
+    if (n < 4) return order;
+
+    const routeDist = (r: number[]): number => {
+        let d = 0;
+        for (let i = 0; i < r.length - 1; i++) d += distMatrix[r[i]][r[i + 1]];
+        return d;
+    };
+
+    let improved = true;
+    let route = [...order];
+
+    while (improved) {
+        improved = false;
+        for (let p = 0; p < route.length && !improved; p++) {
+            const stop = route[p];
+            const without = route.filter((_, i) => i !== p);
+            const currentDist = routeDist(route);
+            let bestDist = currentDist - 0.001;
+            let bestQ = -1;
+            for (let q = 0; q <= without.length; q++) {
+                const d = routeDist([...without.slice(0, q), stop, ...without.slice(q)]);
+                if (d < bestDist) { bestDist = d; bestQ = q; }
+            }
+            if (bestQ !== -1) {
+                const w = route.filter((_, i) => i !== p);
+                route = [...w.slice(0, bestQ), stop, ...w.slice(bestQ)];
+                improved = true;
+            }
+        }
+    }
+    return route;
+};
+
 // Regla 2 (complemento): 2-opt local search para deshacer cruces
 const twoOptImprove = (order: number[], distMatrix: number[][]): number[] => {
     const n = order.length;
@@ -265,15 +425,48 @@ export const calculateDuration = (distanceKm: number, numStops: number): string 
     return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
 };
 
-export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
+export const optimizeStopOrder = async (tour: Tour, mode: RouteMode = 'open'): Promise<Tour> => {
     if (!tour.stops || tour.stops.length < 3) return tour;
 
     const stops = tour.stops;
     const distMatrix = buildDistanceMatrix(stops);
 
-    let order = nearestNeighborTSP(stops, distMatrix);
-    order = twoOptImprove(order, distMatrix);
-    order = applyFamousLastRule(order, stops, distMatrix);
+    let order: number[];
+
+    if (mode === 'circular') {
+        order = nearestNeighborTSP(stops, distMatrix);
+        order = twoOptCircular(order, distMatrix);
+        order = orOptCircular(order, distMatrix);
+        // Sin famousLastRule: en bucle no hay clímax narrativo al final
+    } else if (mode === 'centripetal') {
+        // Fija la parada más alejada del centroide como inicio y la más cercana como fin
+        const centroid = calcCentroid(stops);
+        const ranked = stops
+            .map((s, i) => ({ idx: i, d: haversineKm(s.latitude, s.longitude, centroid.lat, centroid.lon) }))
+            .sort((a, b) => b.d - a.d);
+        const firstIdx = ranked[0].idx;
+        const lastIdx = ranked[ranked.length - 1].idx;
+        const pool = stops.map((_, i) => i).filter(i => i !== firstIdx && i !== lastIdx);
+        const visited = new Set<number>();
+        order = [firstIdx];
+        let cur = firstIdx;
+        while (pool.some(i => !visited.has(i))) {
+            let minD = Infinity, next = -1;
+            for (const idx of pool) {
+                if (!visited.has(idx) && distMatrix[cur][idx] < minD) { minD = distMatrix[cur][idx]; next = idx; }
+            }
+            if (next === -1) break;
+            order.push(next); visited.add(next); cur = next;
+        }
+        order.push(lastIdx);
+        order = twoOptFixed(order, distMatrix);
+        order = orOptFixed(order, distMatrix);
+    } else {
+        order = nearestNeighborTSP(stops, distMatrix);
+        order = twoOptImprove(order, distMatrix);
+        order = orOptImprove(order, distMatrix);
+        order = applyFamousLastRule(order, stops, distMatrix);
+    }
 
     let reorderedStops = order.map(i => stops[i]);
 
@@ -310,15 +503,16 @@ export const optimizeStopOrder = async (tour: Tour): Promise<Tour> => {
     const newDistance = `${finalDistKm.toFixed(1)} km`;
     const newDuration = calculateDuration(finalDistKm, reorderedStops.length);
 
-    const routePolyline = await fetchRoutePolyline(reorderedStops);
+    const routePolyline = await fetchRoutePolyline(reorderedStops, mode);
 
-    logger.log(`🗺️ Route optimized: ${tour.title} — ${reorderedStops.length} stops, ${newDistance}, ~${newDuration} (Polyline: ${routePolyline ? 'Yes ✅' : 'No ⚠️'})`);
+    logger.log(`🗺️ Route optimized [${mode}]: ${tour.title} — ${reorderedStops.length} stops, ${newDistance}, ~${newDuration} (Polyline: ${routePolyline ? 'Yes ✅' : 'No ⚠️'})`);
 
     return {
         ...tour,
         stops: reorderedStops,
         distance: newDistance,
         duration: newDuration,
+        routeMode: mode,
         routePolyline: routePolyline || tour.routePolyline
     };
 };

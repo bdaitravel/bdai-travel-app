@@ -46,6 +46,9 @@ Central dictionary at `data/translations.ts` (20 languages). Use `useTranslation
 
 All Supabase access goes through `services/supabase/`. The client is in `services/supabase/client.ts` — never instantiate a new `createClient` anywhere else. Heavy write operations (tour generation) use three Edge Functions (`tour-orchestrator`, `tour-worker-ai`, `tour-worker-gis`) documented in `services/supabase/*.md` files.
 
+**⚠️ STRICT RULE FOR AI AGENTS**: **ALWAYS** ask the user for explicit permission BEFORE modifying any data directly in Supabase (whether through scripts, RPCs, or edge functions). Never perform destructive actions or unauthorized inserts/updates without their direct consent.
+
+
 ### Edge Functions
 
 Source of truth is `services/supabase/*.md` files — TypeScript code lives inside markdown code blocks. **No Supabase CLI is used.** To deploy: edit the `.md` file, then instruct the user to copy-paste the code block into the Supabase Dashboard manually. Never propose `supabase functions deploy`.

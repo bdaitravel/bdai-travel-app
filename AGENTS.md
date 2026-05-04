@@ -79,6 +79,7 @@ Como arquitecto senior y consultor estratégico, **debes**:
 - `/components`: UI aislada y reutilizable.
 - `/services`: Integraciones API (Supabase, Gemini).
 - `/services/gemini`: Lógica específica de IA (config, prompts).
+- `/services/supabase/schema_doc.md`: Documentación oficial y actualizada de las tablas de Supabase (SSOT de la Base de Datos).
 - `/data`: Datos estáticos, fallbacks, config.
 - `/lib`: Utilidades y helpers globales (GIS, Routing, Debounce).
 
