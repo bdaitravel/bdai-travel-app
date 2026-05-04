@@ -158,30 +158,137 @@ const verifyStopCoordinates = async (stop: any, city: string, cityInfo: any): Pr
     }
 };
 
-// ── Optimización de ruta (OSRM /trip) ────────────────────────────────────────
+// ── Optimización de ruta (Haversine NN+2-opt+Or-opt + OSRM /route para polilínea) ──
+// NOTA: El servidor público routing.openstreetmap.de NO soporta /trip para foot
+// (devuelve NotImplemented). Se usa optimización Haversine local y /route para la polilínea.
+
+const haversineKmRoute = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+const buildRouteMatrix = (stops: any[]): number[][] => {
+    const n = stops.length;
+    const m: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+    for (let i = 0; i < n; i++)
+        for (let j = i + 1; j < n; j++) {
+            const d = haversineKmRoute(stops[i].latitude, stops[i].longitude, stops[j].latitude, stops[j].longitude);
+            m[i][j] = m[j][i] = d;
+        }
+    return m;
+};
+
+const nearestNeighborRoute = (stops: any[], m: number[][]): number[] => {
+    const n = stops.length;
+    let best: number[] = [], bestD = Infinity;
+    for (let start = 0; start < n; start++) {
+        const visited = new Set<number>(), order: number[] = [];
+        let cur = start;
+        while (order.length < n) {
+            if (visited.has(cur)) {
+                let minD = Infinity, nxt = -1;
+                for (let j = 0; j < n; j++) if (!visited.has(j) && m[cur][j] < minD) { minD = m[cur][j]; nxt = j; }
+                if (nxt === -1) break;
+                cur = nxt;
+            }
+            order.push(cur); visited.add(cur);
+            let minD = Infinity, nxt = -1;
+            for (let j = 0; j < n; j++) if (!visited.has(j) && m[cur][j] < minD) { minD = m[cur][j]; nxt = j; }
+            if (nxt === -1) break;
+            cur = nxt;
+        }
+        let d = 0; for (let i = 0; i < order.length - 1; i++) d += m[order[i]][order[i + 1]];
+        if (d < bestD) { bestD = d; best = [...order]; }
+    }
+    return best;
+};
+
+const twoOptRoute = (order: number[], m: number[][]): number[] => {
+    const n = order.length;
+    let improved = true, route = [...order];
+    while (improved) {
+        improved = false;
+        for (let i = 0; i < n - 2; i++)
+            for (let j = i + 2; j < n; j++) {
+                if (j === n - 1 && i === 0) continue;
+                const cur = m[route[i]][route[i + 1]] + m[route[j]][route[(j + 1) % n]];
+                const nw = m[route[i]][route[j]] + m[route[i + 1]][route[(j + 1) % n]];
+                if (nw < cur - 0.001) {
+                    route = [...route.slice(0, i + 1), ...route.slice(i + 1, j + 1).reverse(), ...route.slice(j + 1)];
+                    improved = true;
+                }
+            }
+    }
+    return route;
+};
+
+const orOptRoute = (order: number[], m: number[][]): number[] => {
+    const dist = (r: number[]): number => { let d = 0; for (let i = 0; i < r.length - 1; i++) d += m[r[i]][r[i + 1]]; return d; };
+    let improved = true, route = [...order];
+    while (improved) {
+        improved = false;
+        for (let p = 0; p < route.length && !improved; p++) {
+            const stop = route[p], without = route.filter((_: number, i: number) => i !== p);
+            const cur = dist(route);
+            let best = cur - 0.001, bestQ = -1;
+            for (let q = 0; q <= without.length; q++) {
+                const d = dist([...without.slice(0, q), stop, ...without.slice(q)]);
+                if (d < best) { best = d; bestQ = q; }
+            }
+            if (bestQ !== -1) {
+                const w = route.filter((_: number, i: number) => i !== p);
+                route = [...w.slice(0, bestQ), stop, ...w.slice(bestQ)];
+                improved = true;
+            }
+        }
+    }
+    return route;
+};
+
+const calcRouteDuration = (distKm: number, nStops: number): string => {
+    const total = Math.round(distKm * 15 + nStops * 7.5 + 20);
+    if (total < 60) return `${total} min`;
+    const h = Math.floor(total / 60), m = total % 60;
+    return m > 0 ? `${h}h ${m}min` : `${h}h`;
+};
+
 const optimizeStopOrder = async (tour: any): Promise<any> => {
     if (!tour.stops || tour.stops.length <= 2) return tour;
     try {
-        const coordsStr = tour.stops.map((s: any) => `${s.longitude},${s.latitude}`).join(';');
-        const osrmUrl = `https://routing.openstreetmap.de/routed-foot/trip/v1/foot/${coordsStr}?source=any&roundtrip=false&geometries=polyline`;
-        const res = await fetch(osrmUrl, { headers: { 'User-Agent': 'BDAI-Travel-App/1.0' } });
-        if (!res.ok) return tour;
-        const data = await res.json();
-        if (data.code === 'Ok' && data.waypoints && data.trips?.length > 0) {
-            const optimizedStops = new Array(tour.stops.length);
-            data.waypoints.forEach((wp: any, i: number) => {
-                optimizedStops[wp.waypoint_index] = tour.stops[i];
-            });
-            tour.stops = optimizedStops.filter((s: any) => s !== undefined);
-            tour.routePolyline = data.trips[0].geometry;
-            const distKm = data.trips[0].distance / 1000;
-            const durationMin = Math.round((distKm / 4) * 60);
-            tour.duration = durationMin > 120 ? `${(durationMin / 60).toFixed(1)} horas` : `${durationMin} min`;
-            tour.distance = `${distKm.toFixed(1)} km`;
-        }
+        const stops = tour.stops;
+        const m = buildRouteMatrix(stops);
+        let order = nearestNeighborRoute(stops, m);
+        order = twoOptRoute(order, m);
+        order = orOptRoute(order, m);
+        const optimized = order.map((i: number) => stops[i]);
+
+        let distKm = 0;
+        for (let i = 0; i < optimized.length - 1; i++)
+            distKm += haversineKmRoute(optimized[i].latitude, optimized[i].longitude, optimized[i + 1].latitude, optimized[i + 1].longitude);
+
+        // Polilínea visual: OSRM /route (sí disponible para foot)
+        let polyline: string | undefined;
+        try {
+            const coords = optimized.map((s: any) => `${s.longitude},${s.latitude}`).join(';');
+            const osrmRes = await fetch(
+                `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${coords}?overview=full&geometries=polyline`,
+                { headers: { 'User-Agent': 'BDAI-Travel-App/1.0' } }
+            );
+            if (osrmRes.ok) {
+                const d = await osrmRes.json();
+                if (d.code === 'Ok') polyline = d.routes?.[0]?.geometry;
+            }
+        } catch (e) { console.warn('[GIS] OSRM /route polyline failed:', e); }
+
+        tour.stops = optimized;
+        tour.distance = `${distKm.toFixed(1)} km`;
+        tour.duration = calcRouteDuration(distKm, optimized.length);
+        if (polyline) tour.routePolyline = polyline;
+        console.log(`[GIS] 🗺️ Ruta optimizada: ${tour.title} — ${optimized.length} paradas, ${tour.distance}, ~${tour.duration}`);
         return tour;
     } catch (e) {
-        console.error('[GIS] Error OSRM:', e);
+        console.error('[GIS] Error optimizando ruta:', e);
         return tour;
     }
 };

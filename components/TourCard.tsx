@@ -448,9 +448,9 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                  <VisaShare user={user} cityName={tour.city} milesEarned={totalMiles} onClose={() => setShowSocialVisa(false)} />
              )}
 
-             <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 gap-3">
+             <div className="bg-white border-b border-slate-100 px-4 py-2 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 gap-2">
                 {/* ✅ FIX 2: stop audio antes de salir */}
-                <button onClick={handleBack} className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center shrink-0"><i className="fas fa-arrow-left text-xs"></i></button>
+                <button onClick={handleBack} className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center shrink-0"><i className="fas fa-arrow-left text-xs"></i></button>
                 <button onClick={() => setShowItinerary(true)} className="flex-1 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between min-w-0">
                     <div className="flex items-center gap-3 truncate">
                         <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
@@ -469,7 +469,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                 <div className="relative">
                     <button 
                         onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-                        className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center border transition-all active:scale-95 text-[9px] font-black ${
+                        className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center border transition-all active:scale-95 text-[9px] font-black ${
                             showSpeedMenu ? 'bg-purple-600 border-purple-500 text-white shadow-lg' : 'bg-slate-50 border-slate-200 text-slate-400'
                         }`}
                     >
@@ -504,31 +504,17 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                 <button 
                     onClick={() => handlePlayAudio(currentStop.name, (currentStop.description || ""))} 
                     disabled={isAudioLoading}
-                    className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.name ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'} disabled:opacity-70`}
+                    className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.name ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'} disabled:opacity-70`}
                 >
                     {isAudioLoading ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${audioPlayingId === currentStop.name ? 'fa-stop' : 'fa-play'} text-xs`}></i>}
                 </button>
              </div>
 
              <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
-                <div className="h-[45vh] w-full sticky top-0 z-0">
+                <div className="h-[52vh] w-full sticky top-0 z-0">
                     <SchematicMap stops={tour.stops} routePolyline={tour.routePolyline} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
-                <div className="px-8 pt-10 pb-10 space-y-8 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)] z-10 relative min-h-[60vh]">
-                    <div className="grid grid-cols-2 gap-4">
-                        <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border transition-all ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
-                            <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-lg mb-1`}></i>
-                            <span className="text-[9px]">{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
-                            {distToTarget !== null && !rewardClaimed && (
-                                <span className="text-[7px] mt-1 opacity-60 font-bold">{distToTarget}{tl.meters}</span>
-                            )}
-                        </button>
-                        <button onClick={() => setShowPhotoTip(true)} className="flex flex-col items-center justify-center p-5 rounded-[2rem] font-black uppercase border bg-slate-900 text-white border-slate-800 shadow-xl shadow-slate-900/10 active:scale-95 transition-all">
-                            <i className="fas fa-camera text-lg mb-1"></i>
-                            <span className="text-[9px]">{tl.daiShot}</span>
-                        </button>
-                    </div>
-
+                <div className="px-6 pt-6 pb-6 space-y-5 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)] z-10 relative">
                     {isAdmin && (
                         <button onClick={handleFixLocation} disabled={isFixing || !userLocation} className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[9px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
                             <i className={`fas ${isFixing ? 'fa-spinner fa-spin' : 'fa-map-marker-alt'}`}></i>
@@ -536,18 +522,36 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                         </button>
                     )}
 
-                    <div className="space-y-6 text-slate-800 text-lg leading-relaxed font-medium">
+                    <div className="space-y-4 text-slate-800 text-base leading-relaxed font-medium">
                         {(currentStop.description || "").split('\n\n').map((p: string, i: number) => <p key={i} className="animate-fade-in">{p}</p>)}
                     </div>
                 </div>
              </div>
 
-             <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 p-6 flex gap-3 z-[6000] pb-safe-iphone shrink-0">
-                <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-5 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[10px] tracking-widest disabled:opacity-0">{tl.prev}</button>
+             <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 px-4 py-3 flex gap-2 z-[6000] pb-safe-iphone shrink-0">
+                <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest disabled:opacity-0 flex flex-col items-center justify-center gap-0.5">
+                    <i className="fas fa-arrow-left text-xs"></i>
+                    <span>{tl.prev}</span>
+                </button>
+                <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex-1 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest border flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500 shadow-lg' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
+                    <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-xs`}></i>
+                    <span>{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
+                    {distToTarget !== null && !rewardClaimed && <span className="text-[7px] opacity-60 font-bold leading-none">{distToTarget}{tl.meters}</span>}
+                </button>
+                <button onClick={() => setShowPhotoTip(true)} className="flex-1 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest border bg-slate-900 text-white border-slate-800 shadow-xl flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-all">
+                    <i className="fas fa-camera text-xs"></i>
+                    <span>{tl.daiShot}</span>
+                </button>
                 {currentStopIndex === tour.stops.length - 1 ? (
-                    <button onClick={handleFinishTour} className="flex-[2] py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98]">{tl.finish}</button>
+                    <button onClick={handleFinishTour} className="flex-[1.5] py-3 bg-green-600 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl active:scale-[0.98] flex flex-col items-center justify-center gap-0.5">
+                        <i className="fas fa-flag-checkered text-xs"></i>
+                        <span>{tl.finish}</span>
+                    </button>
                 ) : (
-                    <button onClick={() => { onNext(); stopAudio(); }} className="flex-[2] py-5 bg-slate-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-[0.98]">{tl.next}</button>
+                    <button onClick={() => { onNext(); stopAudio(); }} className="flex-[1.5] py-3 bg-slate-950 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl active:scale-[0.98] flex flex-col items-center justify-center gap-0.5">
+                        <i className="fas fa-arrow-right text-xs"></i>
+                        <span>{tl.next}</span>
+                    </button>
                 )}
              </div>
         </div>
