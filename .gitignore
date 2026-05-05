@@ -76,3 +76,8 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Android keystore
+*.jks
+*.keystore
+android/keystore.properties
