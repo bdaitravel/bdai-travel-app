@@ -22,7 +22,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6 pt-safe-iphone w-full max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto px-0 sm:px-6 md:px-8 animate-fade-in relative z-10">
+    <div className="space-y-6 pt-safe-iphone w-full max-w-lg md:max-w-3xl lg:max-w-6xl mx-auto px-0 sm:px-6 md:px-8 animate-fade-in relative">
       <header className="flex justify-between items-center py-4 px-6">
         <div className="flex items-center gap-3"><BdaiLogo className="w-8 h-8"/><span className="font-black text-xl tracking-tighter lowercase">bdai</span></div>
         <div className="flex items-center gap-2">
@@ -31,11 +31,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
         </div>
       </header>
 
-      <div className="py-10 px-6 text-center flex flex-col items-center">
-        <BdaiLogo className="w-32 h-32 mb-6 animate-pulse-logo" />
-        <h1 className="text-8xl font-black text-white lowercase tracking-tighter leading-none">bdai</h1>
+      <div className="py-4 px-6 text-center flex flex-col items-center">
+        <BdaiLogo className="w-20 h-20 mb-3 animate-pulse-logo" />
+        <h1 className="text-6xl font-black text-white lowercase tracking-tighter leading-none">bdai</h1>
         <p className="text-[11px] font-medium text-purple-400 mt-2 lowercase opacity-80 mb-4">better destinations by ai</p>
-        <p className="text-xs text-slate-400 max-w-[280px] mx-auto mb-10 leading-relaxed font-medium">
+        <p className="text-xs text-slate-400 max-w-[280px] mx-auto mb-6 leading-relaxed font-medium">
           {appDesc[user.language] || appDesc['en']}
         </p>
         
@@ -50,7 +50,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
           </div>
 
           {searchOptions && searchOptions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-4 space-y-2 bg-[#0a0f1e]/98 backdrop-blur-3xl border border-white/5 p-3 rounded-[2rem] shadow-2xl animate-slide-up z-[1001]">
+            <div className="absolute left-0 right-0 top-full mt-4 space-y-2 bg-[#0a0f1e]/98 backdrop-blur-3xl border border-white/5 p-3 rounded-[2rem] shadow-2xl animate-slide-up z-[8000]">
               {searchOptions.map((opt, i) => (
                 <button key={i} onClick={() => processCitySelection(opt, user.language)} 
                   className="w-full p-4 bg-white/[0.03] rounded-xl flex items-center justify-between border border-white/5 active:bg-purple-600/10 transition-all text-left">
