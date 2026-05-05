@@ -114,16 +114,14 @@ export const useAuth = (autoInit: boolean = false) => {
         setIsLoading(true);
         setLoadingMessage("CONNECTING TO GOOGLE...");
         try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
+            const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin, skipBrowserRedirect: true }
+                options: { redirectTo: window.location.origin }
             });
             if (error) throw error;
-            if (data?.url) window.open(data.url, '_blank', 'width=500,height=600');
         } catch (e: any) {
             toast(e.message || "Error al conectar con Google.", 'error');
-        } finally { 
-            setIsLoading(false); 
+            setIsLoading(false);
         }
     };
 
