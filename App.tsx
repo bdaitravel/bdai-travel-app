@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Leaderboard } from './components/Leaderboard';
 import { ProfileModal } from './components/ProfileModal';
-import { Shop } from './components/Shop'; 
+import { Shop } from './components/Shop';
 import { TravelServices } from './components/TravelServices';
-import { BdaiLogo } from './components/BdaiLogo'; 
+import { BdaiLogo } from './components/BdaiLogo';
 import { AdminPanel } from './components/AdminPanel';
 import { Onboarding } from './components/Onboarding';
 import { VisaShare } from './components/VisaShare';
@@ -59,7 +59,7 @@ const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: st
 );
 
 export default function App() {
-  const { 
+  const {
     userProfile: user, setUserProfile: setUser,
     isLoading, setIsLoading, loadingMessage,
     showOnboarding, setShowOnboarding,
@@ -70,9 +70,9 @@ export default function App() {
   const location = useLocation();
   const { t, handleLangChange, isSyncingLang } = useTranslation();
   const { isVerifyingSession, setLoginPhase } = useAuth(true);
-  const { handleTravelServiceSelect } = useCity(); 
-  
-  useGeolocation(); 
+  const { handleTravelServiceSelect } = useCity();
+
+  useGeolocation();
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
@@ -121,7 +121,7 @@ export default function App() {
             <Route path="/home" element={user.isLoggedIn ? <HomeView appDesc={APP_DESC} /> : <Navigate to="/login" />} />
             <Route path="/city/:slug" element={user.isLoggedIn ? <CityDetailView /> : <Navigate to="/login" />} />
             <Route path="/tour/:tourId/stop/:stopIdx" element={user.isLoggedIn ? <TourActiveView /> : <Navigate to="/login" />} />
-            
+
             <Route path="/leaderboard" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div> : <Navigate to="/login" />} />
             <Route path="/profile" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
             <Route path="/profile/visa/:cityName" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />

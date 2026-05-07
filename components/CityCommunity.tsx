@@ -214,4 +214,3 @@ export const CityCommunity: React.FC<CityCommunityProps> = ({ citySlug, user }) 
         </div>
     );
 };
-

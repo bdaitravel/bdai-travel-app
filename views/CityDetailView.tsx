@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { TourCard } from '../components/TourCard';
-import { CityCommunity } from '../components/CityCommunity';
+// futura mejora, actualmente no implantado
+// import { CityCommunity } from '../components/CityCommunity';
 import { formatCityName } from '../components/TravelServices';
 import { useAppStore } from '../store/useAppStore';
 import { useCity } from '../hooks/useCity';
@@ -121,7 +122,8 @@ export const CityDetailView: React.FC = () => {
             language={user.language}
           />
         ))}
-        {slug && <CityCommunity citySlug={slug} user={user} />}
+        {/* futura mejora, actualmente no implantado: sección de comunidad por ciudad */}
+        {/* {slug && <CityCommunity citySlug={slug} user={user} />} */}
       </div>
     </div>
   );
