@@ -12,7 +12,8 @@
     "add-android": "npx cap add android",
     "add-ios": "npx cap add ios",
     "open-android": "npx cap open android",
-    "open-ios": "npx cap open ios"
+    "open-ios": "npx cap open ios",
+    "seed": "npx tsx scripts/seedTours.ts"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",

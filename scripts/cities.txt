@@ -1,0 +1,9 @@
+# BDAI Tour Seed List
+# Format: City, Country  (English names, one per line)
+# Lines starting with # are ignored
+
+Madrid, Spain
+Barcelona, Spain
+Seville, Spain
+Valencia, Spain
+Bilbao, Spain

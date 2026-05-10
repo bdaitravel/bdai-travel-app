@@ -299,9 +299,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             <p className="font-bold text-slate-600 text-[8px] truncate leading-none">{user.email}</p>
                         </div>
                         <div><p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">{pt('rank')}</p><p className="font-black text-purple-600 text-[9px] uppercase">{user.rank}</p></div>
-                        <div className="flex justify-between border-t border-slate-200 pt-3">
+                        <div className="border-t border-slate-200 pt-3">
                             <div><p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('miles')}</p><p className="font-black text-slate-900 text-[9px] mt-1">{user.miles.toLocaleString()}</p></div>
-                            <div className="text-right"><p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('streak')}</p><p className="font-black text-orange-600 text-[9px] mt-1"><i className="fas fa-fire mr-1"></i> {user.stats.streakDays}</p></div>
                         </div>
                     </div>
                 </div>
@@ -410,7 +409,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         <div className="flex items-center gap-2">
                             <i className="fas fa-database text-slate-600 text-[10px]"></i>
                             <span className="text-slate-600 text-[9px] font-black uppercase tracking-widest">
-                                {(user.language || 'es') === 'es' ? 'Caché Offline' : 'Offline Cache'}
+                                {(user.language || 'es') === 'es' ? 'Caché Tours Offline' : 'Tours Offline Cache'}
                             </span>
                             <span className="text-purple-500 text-[9px] font-bold">
                                 {(cacheSize / (1024 * 1024)).toFixed(1)} MB
