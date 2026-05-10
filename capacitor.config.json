@@ -1,7 +1,7 @@
 
 {
-  "appId": "com.techtravel.bdai",
-  "appName": "bdai",
+  "appId": "travel.bdai.app",
+  "appName": "bdai.travel",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
