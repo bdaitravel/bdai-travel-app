@@ -6,10 +6,29 @@ import { Browser } from '@capacitor/browser';
 import { supabase, getUserProfileByEmail, syncUserProfile, validateEmailFormat, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
 import { useAppStore, GUEST_PROFILE } from '../store/useAppStore';
 import { toast } from '../components/Toast';
+import { hapticSuccess } from '../lib/haptics';
 import { UserProfile } from '../types';
 
 // URL de callback para la app nativa Android/iOS
 const NATIVE_REDIRECT_URL = 'travel.bdai.app://login-callback';
+
+// TTL de 24h para rutas guardadas — evita restaurar tours de días anteriores
+const ROUTE_TTL_MS = 24 * 60 * 60 * 1000;
+
+// Devuelve la ruta del tour guardada si existe y no ha expirado
+const getSavedTourRoute = (): string | null => {
+  try {
+    const raw = localStorage.getItem('bdai_last_tour_route');
+    const ts = localStorage.getItem('bdai_last_tour_route_ts');
+    if (!raw || !ts) return null;
+    if (Date.now() - parseInt(ts, 10) > ROUTE_TTL_MS) {
+      localStorage.removeItem('bdai_last_tour_route');
+      localStorage.removeItem('bdai_last_tour_route_ts');
+      return null;
+    }
+    return raw;
+  } catch { return null; }
+};
 // URL de callback para la versión web
 const WEB_REDIRECT_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -42,6 +61,7 @@ export const useAuth = (autoInit: boolean = false) => {
                     badges: (() => {
                         const existingIds = new Set((profile.badges || []).map(b => b.id));
                         const newBadges = checkBadges(profile).filter(b => !existingIds.has(b.id));
+                        if (newBadges.length > 0) hapticSuccess();
                         return [...(profile.badges || []), ...newBadges];
                     })(),
                     stats: { 
@@ -51,7 +71,9 @@ export const useAuth = (autoInit: boolean = false) => {
                 };
                 setUser(updatedProfile);
                 if (location.pathname === '/login' || location.pathname === '/') {
-                    navigate('/home');
+                    // Si Android mató el proceso, restaurar la última parada del tour
+                    const savedRoute = getSavedTourRoute();
+                    navigate(savedRoute || '/home');
                 }
             } else {
                 const newProfile: UserProfile = { 
@@ -67,7 +89,7 @@ export const useAuth = (autoInit: boolean = false) => {
                 setUser(newProfile);
                 setShowOnboarding(true);
                 if (location.pathname === '/login' || location.pathname === '/') {
-                    navigate('/home');
+                    navigate('/home'); // Usuarios nuevos siempre al home
                 }
             }
         } catch (e) {

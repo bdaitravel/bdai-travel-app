@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, AVATARS, APP_BADGES } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 import { syncUserProfile, supabase } from '../services/supabaseClient';
+import { tourCacheService } from '../lib/tourCacheService';
 import { translations } from '../data/translations';
 import { LegalModal } from './LegalModal';
 import { ReportBugModal } from './ReportBugModal';
@@ -122,6 +123,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showReportBug, setShowReportBug] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [cacheSize, setCacheSize] = useState(() => tourCacheService.getCacheSize());
+  const [isClearing, setIsClearing] = useState(false);
 
   // ✅ Sincronizar sub-rutas (visa/badge) con el estado interno
   useEffect(() => {
@@ -403,6 +406,29 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                     <button onClick={() => setShowReportBug(true)} className="w-full py-3 mb-2 bg-transparent text-slate-500 hover:text-purple-500 rounded-2xl font-black text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
                         <i className="fas fa-bug"></i>{pt('reportBug')}
                     </button>
+                    <div className="w-full flex items-center justify-between px-2 py-3 mb-2 rounded-2xl border border-white/5">
+                        <div className="flex items-center gap-2">
+                            <i className="fas fa-database text-slate-600 text-[10px]"></i>
+                            <span className="text-slate-600 text-[9px] font-black uppercase tracking-widest">
+                                {(user.language || 'es') === 'es' ? 'Caché Offline' : 'Offline Cache'}
+                            </span>
+                            <span className="text-purple-500 text-[9px] font-bold">
+                                {(cacheSize / (1024 * 1024)).toFixed(1)} MB
+                            </span>
+                        </div>
+                        <button
+                            disabled={isClearing || cacheSize === 0}
+                            onClick={async () => {
+                                setIsClearing(true);
+                                await tourCacheService.clearAudioCache();
+                                setCacheSize(0);
+                                setIsClearing(false);
+                            }}
+                            className="text-[9px] font-black text-red-400 uppercase tracking-widest active:scale-90 disabled:opacity-30 transition-all"
+                        >
+                            {isClearing ? '...' : ((user.language || 'es') === 'es' ? 'Vaciar' : 'Clear')}
+                        </button>
+                    </div>
                     <button onClick={() => setShowDeleteConfirm(true)} className="w-full py-3 bg-transparent text-slate-600 hover:text-red-400 rounded-2xl font-bold text-[9px] tracking-widest flex items-center justify-center gap-2 transition-all">
                         <i className="fas fa-trash-alt"></i>{pt('deleteAccount')}
                     </button>

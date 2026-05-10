@@ -11,6 +11,7 @@ import {
 } from '../services/supabaseClient';
 import { toast } from '../components/Toast';
 import { Tour } from '../types';
+import { tourCacheService } from '../lib/tourCacheService';
 import { translations } from '../data/translations';
 
 export const useCity = () => {
@@ -88,6 +89,7 @@ export const useCity = () => {
               routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
             }));
 
+            tourCacheService.saveTours(slug, lang, toursWithPolylines);
             setTours(toursWithPolylines);
             navigate(`/city/${slug}`);
             setIsLoading(false);

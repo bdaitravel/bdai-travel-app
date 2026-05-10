@@ -17,6 +17,7 @@ import { TourActiveView } from './views/TourActiveView';
 import { useAppStore } from './store/useAppStore';
 import { useTranslation } from './hooks/useTranslation';
 import { useGeolocation } from './hooks/useGeolocation';
+import { tourCacheService } from './lib/tourCacheService';
 import { useAuth } from './hooks/useAuth';
 import { useCity } from './hooks/useCity';
 import { supabase, getGlobalRanking, syncUserProfile } from './services/supabaseClient';
@@ -72,7 +73,7 @@ export default function App() {
   const { isVerifyingSession, setLoginPhase } = useAuth(true);
   const { handleTravelServiceSelect } = useCity();
 
-  useGeolocation();
+  useGeolocation(location.pathname.startsWith('/tour/') ? 'active' : 'idle');
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
@@ -82,8 +83,21 @@ export default function App() {
     setVisaToShare(null);
   }, [location.pathname, setIsLoading, setVisaToShare]);
 
+  // Guardar la ruta del tour activo en localStorage para Android state restoration.
+  // Si el proceso es matado y recreado por Android, useAuth la restaurará en el login.
+  useEffect(() => {
+    if (location.pathname.startsWith('/tour/')) {
+      localStorage.setItem('bdai_last_tour_route', location.pathname);
+      localStorage.setItem('bdai_last_tour_route_ts', String(Date.now()));
+    } else if (location.pathname === '/home' || location.pathname === '/login' || location.pathname === '/') {
+      localStorage.removeItem('bdai_last_tour_route');
+      localStorage.removeItem('bdai_last_tour_route_ts');
+    }
+  }, [location.pathname]);
+
   useEffect(() => {
     getGlobalRanking().then(setLeaderboard);
+    tourCacheService.evictExpired().catch(() => {});
   }, []);
 
   const updateUserAndSync = (updatedUser: any) => {

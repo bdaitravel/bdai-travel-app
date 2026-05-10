@@ -7,6 +7,7 @@ import { formatCityName } from '../components/TravelServices';
 import { useAppStore } from '../store/useAppStore';
 import { useCity } from '../hooks/useCity';
 import { supabase } from '../services/supabaseClient';
+import { tourCacheService } from '../lib/tourCacheService';
 import { Tour } from '../types';
 
 export const CityDetailView: React.FC = () => {
@@ -35,8 +36,9 @@ export const CityDetailView: React.FC = () => {
 
     const rehydrateFromCache = async () => {
       setIsHydrating(true);
+      // lang fuera del try para que catch pueda usarlo en el fallback offline
+      const lang = user.language || 'es';
       try {
-        const lang = user.language || 'es';
         const { data } = await supabase
           .from('tours_cache')
           .select('data, route_polylines')
@@ -50,16 +52,27 @@ export const CityDetailView: React.FC = () => {
             ...tour,
             routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
           }));
+          tourCacheService.saveTours(slug, lang, toursWithPolylines);
           setTours(toursWithPolylines);
         } else {
-          // No hay caché para este slug — volver al home para que el usuario
-          // inicie el flujo de generación correctamente
-          console.warn(`[CityDetailView] No cache found for ${slug}. Redirecting to home.`);
-          navigate('/home', { replace: true });
+          // Supabase sin datos — intentar copia local antes de volver al home
+          const offline = tourCacheService.loadTours(slug, lang);
+          if (offline && offline.length > 0) {
+            setTours(offline);
+          } else {
+            console.warn(`[CityDetailView] No cache found for ${slug}. Redirecting to home.`);
+            navigate('/home', { replace: true });
+          }
         }
       } catch (e) {
         console.error('[CityDetailView] Rehydration error:', e);
-        navigate('/home', { replace: true });
+        // Sin red: cargar la copia local si existe
+        const offline = tourCacheService.loadTours(slug, lang);
+        if (offline && offline.length > 0) {
+          setTours(offline);
+        } else {
+          navigate('/home', { replace: true });
+        }
       } finally {
         setIsHydrating(false);
       }

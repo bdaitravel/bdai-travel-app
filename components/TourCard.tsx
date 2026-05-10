@@ -6,6 +6,8 @@ import { generateAudio } from '../services/geminiService';
 import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges } from '../services/supabaseClient';
 import { VisaShare } from './VisaShare';
 import { audioManager } from '../services/audioManager';
+import { hapticLight, hapticHeavy, hapticSuccess } from '../lib/haptics';
+import { tourCacheService } from '../lib/tourCacheService';
 
 interface TourCardTexts {
     start: string; stop: string; of: string; daiShot: string; angleLabel: string;
@@ -176,7 +178,9 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
             else if (type === 'photo') updatedUser.photoPoints = (updatedUser.photoPoints || 0) + 1;
             else if (type === 'culture') updatedUser.culturePoints = (updatedUser.culturePoints || 0) + 1;
             else if (type === 'architecture') updatedUser.archPoints = (updatedUser.archPoints || 0) + 1;
+            const prevBadgeCount = (user.badges || []).length;
             updatedUser.badges = checkBadges(updatedUser);
+            if (updatedUser.badges.length > prevBadgeCount) hapticSuccess();
             onUpdateUser(updatedUser);
         } else {
             toast(`${tl.tooFar}: ${distToTarget}m`, "error");
@@ -265,6 +269,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
     const speeds = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
     const handleFinishTour = async () => {
+        hapticHeavy();
         const newStamp: VisaStamp = {
             city: tour.city,
             country: tour.country || "",
@@ -302,8 +307,9 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
         }
         audioManager.setLoading(stopName);
         try {
-            const audioUrl = await generateAudio(text, user.language, tour.city);
-            if (!audioUrl) { audioManager.stop(); return; }
+            const remoteUrl = await generateAudio(text, user.language, tour.city);
+            if (!remoteUrl) { audioManager.stop(); return; }
+            const audioUrl = await tourCacheService.getOrCacheAudioUrl(remoteUrl);
             await audioManager.play(audioUrl, stopName, user.audioSpeed || 1.0);
         } catch (e) {
             console.error("Audio error:", e);
@@ -342,7 +348,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                         <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6">{tl.itinerary}</h3>
                         <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2">
                             {tour.stops.map((s: Stop, idx: number) => (
-                                <button key={`${s.id}-${idx}`} onClick={() => { onJumpTo(idx); setShowItinerary(false); stopAudio(); }} className={`w-full p-5 rounded-2xl flex items-center gap-4 border transition-all ${idx === currentStopIndex ? 'bg-purple-50 border-purple-200' : 'bg-slate-50 border-slate-100'}`}>
+                                <button key={`${s.id}-${idx}`} onClick={() => { hapticLight(); onJumpTo(idx); setShowItinerary(false); stopAudio(); }} className={`w-full p-5 rounded-2xl flex items-center gap-4 border transition-all ${idx === currentStopIndex ? 'bg-purple-50 border-purple-200' : 'bg-slate-50 border-slate-100'}`}>
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${idx === currentStopIndex ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
                                         <i className={`fas ${STOP_ICONS[s.type?.toLowerCase()] || 'fa-location-dot'}`}></i>
                                     </div>
@@ -476,7 +482,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
             </div>
 
             <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 px-4 py-3 flex gap-2 z-[6000] pb-safe-iphone shrink-0">
-                <button onClick={() => { onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest disabled:opacity-0 flex flex-col items-center justify-center gap-0.5">
+                <button onClick={() => { hapticLight(); onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest disabled:opacity-0 flex flex-col items-center justify-center gap-0.5">
                     <i className="fas fa-arrow-left text-xs"></i>
                     <span>{tl.prev}</span>
                 </button>
@@ -495,7 +501,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                         <span>{tl.finish}</span>
                     </button>
                 ) : (
-                    <button onClick={() => { onNext(); stopAudio(); }} className="flex-[1.5] py-3 bg-slate-950 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl active:scale-[0.98] flex flex-col items-center justify-center gap-0.5">
+                    <button onClick={() => { hapticLight(); onNext(); stopAudio(); }} className="flex-[1.5] py-3 bg-slate-950 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl active:scale-[0.98] flex flex-col items-center justify-center gap-0.5">
                         <i className="fas fa-arrow-right text-xs"></i>
                         <span>{tl.next}</span>
                     </button>
