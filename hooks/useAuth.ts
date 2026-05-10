@@ -1,9 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { supabase, getUserProfileByEmail, syncUserProfile, validateEmailFormat, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
 import { useAppStore, GUEST_PROFILE } from '../store/useAppStore';
 import { toast } from '../components/Toast';
 import { UserProfile } from '../types';
+
+// URL de callback para la app nativa Android/iOS
+const NATIVE_REDIRECT_URL = 'travel.bdai.app://login-callback';
+// URL de callback para la versión web
+const WEB_REDIRECT_URL = typeof window !== 'undefined' ? window.location.origin : '';
+
+const isNative = Capacitor.isNativePlatform();
 
 export const useAuth = (autoInit: boolean = false) => {
     const { 
@@ -88,8 +98,68 @@ export const useAuth = (autoInit: boolean = false) => {
             }
         });
 
+        // --- DEEP LINK LISTENER (solo en Android/iOS nativo) ---
+        // Captura el callback de OAuth/Magic Link y lo procesa dentro de la app
+        let deepLinkCleanup: (() => void) | null = null;
+        if (isNative) {
+            const handleDeepLink = async ({ url }: { url: string }) => {
+                // Cerrar el browser in-app si está abierto (viene del flujo Google OAuth)
+                try { await Browser.close(); } catch (_) {}
+
+                // Supabase inserta el token en el hash o como query param
+                if (url.includes('login-callback')) {
+                    // Convertir la URL nativa al formato que Supabase puede procesar
+                    // travel.bdai.app://login-callback#access_token=... → https://x#access_token=...
+                    const normalized = url
+                        .replace('travel.bdai.app://login-callback', window.location.origin)
+                        .replace('travel.bdai.app://login-callback', `${window.location.origin}/login`);
+                    
+                    try {
+                        // Para PKCE flow (OAuth Google): exchange code for session
+                        const hashOrSearch = url.includes('code=') 
+                            ? url.split('?')[1] 
+                            : url.split('#')[1];
+
+                        if (hashOrSearch) {
+                            const params = new URLSearchParams(hashOrSearch);
+                            const code = params.get('code');
+                            if (code) {
+                                const { error } = await supabase.auth.exchangeCodeForSession(code);
+                                if (error) throw error;
+                                // onAuthStateChange se dispara y llama a handleLoginSuccess
+                                return;
+                            }
+                            
+                            // Para implicit flow (magic link): set session directamente
+                            const accessToken = params.get('access_token');
+                            const refreshToken = params.get('refresh_token');
+                            if (accessToken && refreshToken) {
+                                const { error } = await supabase.auth.setSession({ 
+                                    access_token: accessToken, 
+                                    refresh_token: refreshToken 
+                                });
+                                if (error) throw error;
+                                // onAuthStateChange se dispara y llama a handleLoginSuccess
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Deep link auth error:', e);
+                        toast('Error al completar el login. Reintenta.', 'error');
+                    }
+                }
+            };
+
+            App.addListener('appUrlOpen', handleDeepLink).then(handle => {
+                deepLinkCleanup = () => handle.remove();
+            });
+        }
+
         checkAuth();
-        return () => { subscription.unsubscribe(); };
+        return () => { 
+            subscription.unsubscribe(); 
+            if (deepLinkCleanup) deepLinkCleanup();
+        };
     }, []);
 
     const handleRequestOtp = async () => {
@@ -99,7 +169,11 @@ export const useAuth = (autoInit: boolean = false) => {
         try {
             const { error } = await supabase.auth.signInWithOtp({ 
                 email,
-                options: { emailRedirectTo: window.location.origin }
+                options: { 
+                    // En nativo usamos el deep link para que el enlace del email abra la app
+                    // En web usamos la URL normal
+                    emailRedirectTo: isNative ? NATIVE_REDIRECT_URL : WEB_REDIRECT_URL
+                }
             });
             if (error) throw error;
             setLoginPhase('OTP');
@@ -114,11 +188,33 @@ export const useAuth = (autoInit: boolean = false) => {
         setIsLoading(true);
         setLoadingMessage("CONNECTING TO GOOGLE...");
         try {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.origin }
-            });
-            if (error) throw error;
+            if (isNative) {
+                // En nativo: obtener la URL OAuth sin redirigir automáticamente
+                // y abrirla en el InAppBrowser de Capacitor (no en Chrome)
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { 
+                        redirectTo: NATIVE_REDIRECT_URL,
+                        skipBrowserRedirect: true,  // ← no abre Chrome automáticamente
+                    }
+                });
+                if (error) throw error;
+                if (data.url) {
+                    setIsLoading(false);
+                    // Abrir en el InAppBrowser de Capacitor (se queda dentro de la app)
+                    await Browser.open({ 
+                        url: data.url,
+                        presentationStyle: 'popover'
+                    });
+                }
+            } else {
+                // En web: comportamiento estándar (redirige a Google y vuelve)
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: WEB_REDIRECT_URL }
+                });
+                if (error) throw error;
+            }
         } catch (e: any) {
             toast(e.message || "Error al conectar con Google.", 'error');
             setIsLoading(false);

@@ -166,6 +166,10 @@ Como arquitecto senior y consultor estratégico, **debes**:
    - **Reporting de Errores Mejorado:** La tabla `tours_cache` incluye la columna `error_message`. Cuando una generación falla en los workers (AI o GIS), se guarda el mensaje de error específico. La UI (`geminiService.ts`) detecta el estado `ERROR` vía Realtime y propaga este mensaje al usuario para un feedback inmediato y accionable.
 - **Zustand como fuente única de verdad:** Se eliminaron todas las escrituras directas a `localStorage.setItem('bdai_profile', ...)` de `App.tsx`. El perfil persiste vía `storageProvider` (localStorage en Capacitor, sessionStorage en web). `activeTours` y `selectedCityInfo` son estado de navegación volátil y NO se persisten en ningún storage.
 - **Toast en vez de alert():** Todos los errores de UI usan `toast()` del componente `Toast.tsx`. Compatible con Capacitor.
+- **Flujo de Autenticación Dual (Web/Nativo):** Para solucionar problemas de redirección en Android (donde Supabase abría Chrome en lugar de volver a la app), se implementó un flujo híbrido en `useAuth.ts`:
+   - **Nativo (Android/iOS):** Usa `@capacitor/browser` con `skipBrowserRedirect: true`. El login de Google se abre en un InAppBrowser. Los enlaces (OTP/OAuth) redirigen al custom scheme `travel.bdai.app://login-callback`. Un listener (`App.addListener('appUrlOpen')`) intercepta el deep link, procesa el token y cierra el browser, manteniendo al usuario 100% dentro de la app.
+   - **Web:** Mantiene el flujo estándar redirigiendo a `window.location.origin`.
+   - **Requisito de Infraestructura:** El AndroidManifest debe incluir el `intent-filter` para el scheme `travel.bdai.app`, y Supabase Dashboard debe tener `travel.bdai.app://**` en las Redirect URLs permitidas.
 
 ### Reporting de Errores & Telemetría
 
