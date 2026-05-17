@@ -96,12 +96,14 @@ STRICT CATEGORIZATION:
 - 'photo': spots whose primary value is the view/photo.
 
 FORMAT RULES:
-1. Return ONLY a valid JSON array.
+1. Return ONLY a valid JSON array. DO NOT include any conversational text before or after the JSON.
 2. Tour object: { "id", "city": "${city}", "title", "description", "duration", "distance", "theme", "stops": [] }
 3. Each stop: { "id", "name", "description" (150-200 words), "latitude" (NUMBER), "longitude" (NUMBER), "type", "photoSpot": { "angle", "milesReward": 50, "secretLocation" } }
 4. COORDINATES ARE CRITICAL: Use the geographic anchor above. All stops must be strictly within the boundaries of ${city}.
 5. Content in ${language}.
-6. NO SEQUENTIAL CONNECTORS & NO REPETITIVE OPENERS: See DAI'S ABSOLUTE COMMANDS above — these rules apply to every single stop description without exception.`;
+6. NO SEQUENTIAL CONNECTORS & NO REPETITIVE OPENERS: See DAI'S ABSOLUTE COMMANDS above — these rules apply to every single stop description without exception.
+
+CRITICAL FINAL INSTRUCTION: GENERATE THE JSON ARRAY IMMEDIATELY NOW. DO NOT acknowledge this prompt. DO NOT say you are ready. DO NOT ask for confirmation. OUTPUT THE JSON ARRAY DIRECTLY.`;
 };
 
 // ── GIS UTILS ────────────────────────────────────────────────────────────────
@@ -117,24 +119,35 @@ const haversineKm = (lat1: number, lon1: number, lat2: number, lon2: number): nu
 const getCityInfo = async (city: string, country: string) => {
     try {
         const query = encodeURIComponent(`${city}, ${country}`);
-        const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=1&extratags=1`;
+        const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=5&addressdetails=1&extratags=1`;
         const res = await fetch(url, { headers: { 'User-Agent': 'BDAI-Travel-App/1.0', 'Accept-Language': 'en' } });
         if (res.ok) {
             const data = await res.json();
             if (data && data.length > 0) {
-                const population = data[0].extratags?.population ? parseInt(data[0].extratags.population, 10) : null;
-                const lat = parseFloat(data[0].lat);
-                const lon = parseFloat(data[0].lon);
+                // Preferir ciudad/pueblo sobre provincia/estado
+                const validTypes = ['city', 'town', 'village', 'municipality'];
+                let selected = data[0];
+                for (const item of data) {
+                    if (validTypes.includes(item.addresstype) || validTypes.includes(item.type)) {
+                        selected = item;
+                        break;
+                    }
+                }
+
+                const population = selected.extratags?.population ? parseInt(selected.extratags.population, 10) : null;
+                const lat = parseFloat(selected.lat);
+                const lon = parseFloat(selected.lon);
+                console.log(`[AI] getCityInfo: Seleccionado ${selected.addresstype} (${selected.name}) en lat:${lat}, lon:${lon}`);
                 return {
                     lat,
                     lon,
                     radiusKm: 10, // valor inicial; se recalcula con el catálogo Overpass justo después
                     population,
                     bbox: {
-                        south: lat - 0.025,
-                        west:  lon - 0.035,
-                        north: lat + 0.025,
-                        east:  lon + 0.035
+                        south: parseFloat(selected.boundingbox?.[0] || String(lat - 0.025)),
+                        north: parseFloat(selected.boundingbox?.[1] || String(lat + 0.025)),
+                        west:  parseFloat(selected.boundingbox?.[2] || String(lon - 0.035)),
+                        east:  parseFloat(selected.boundingbox?.[3] || String(lon + 0.035))
                     }
                 };
             }

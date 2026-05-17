@@ -8,6 +8,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const PLACES_API_KEY = Deno.env.get('PLACES_API_KEY') || '';
 
 const supabaseClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
@@ -74,7 +75,54 @@ const extractMunicipalityFromAddress = (address: any): string => {
     return raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 };
 
-// ── Verificación de coordenadas (Nominatim → Photon fallback) ─────────────────
+// ── Google Places API (New) v1: searchText → fachada/entrada principal ────────
+// Usa Places API (New) v1 (searchText) — el legacy findplacefromtext ya no se activa
+// en proyectos nuevos de Google Cloud. Devuelve el punto de entrada/fachada del POI.
+const verifyWithGooglePlaces = async (stop: any, city: string, country: string, cityInfo: any): Promise<any | null> => {
+    if (!PLACES_API_KEY) return null;
+    const radiusKm = cityInfo.radiusKm || 5;
+    const radiusM = Math.min(Math.round(radiusKm * 1000), 50000);
+    try {
+        const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': PLACES_API_KEY,
+                'X-Goog-FieldMask': 'places.displayName,places.location',
+                'Referer': 'https://www.bdai.travel/',
+            },
+            body: JSON.stringify({
+                textQuery: `${stop.name}, ${city}, ${country}`,
+                locationBias: {
+                    circle: {
+                        center: { latitude: cityInfo.lat, longitude: cityInfo.lon },
+                        radius: radiusM,
+                    },
+                },
+                maxResultCount: 1,
+            }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data.places?.length) {
+            console.log(`[GIS] Google Places: sin resultados para "${stop.name}"`);
+            return null;
+        }
+        const { latitude: lat, longitude: lng } = data.places[0].location;
+        const distToCenter = haversineKm(lat, lng, cityInfo.lat, cityInfo.lon);
+        if (distToCenter <= radiusKm) {
+            console.log(`[GIS] ✅ Google Places: ${stop.name} → (${lat.toFixed(6)}, ${lng.toFixed(6)}) ${distToCenter.toFixed(2)}km`);
+            return { ...stop, latitude: lat, longitude: lng, coordinatesVerified: true };
+        }
+        console.warn(`[GIS] ⚠️ Google Places: ${stop.name} fuera de radio (${distToCenter.toFixed(2)}km > ${radiusKm}km)`);
+        return null;
+    } catch (e) {
+        console.warn(`[GIS] Google Places error para "${stop.name}":`, e);
+        return null;
+    }
+};
+
+// ── Verificación de coordenadas (Google Places → Nominatim → Photon) ──────────
 // cityInfo CONTRACT: { lat, lon, radiusKm, population, bbox:{south,west,north,east} }
 // VALIDACIÓN DE MUNICIPIO: se descarta cualquier resultado cuyo address.city/town/village
 // no coincida con la ciudad objetivo. Esto previene que calles con el mismo nombre en
@@ -84,9 +132,13 @@ const verifyStopCoordinates = async (stop: any, city: string, country: string, c
     const normalizedCity = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
     try {
+        // Intento 0: Google Places API (fachada/entrada principal — máxima precisión)
+        const googleResult = await verifyWithGooglePlaces(stop, city, country, cityInfo);
+        if (googleResult) return googleResult;
+
         await sleep(1100); // Rate limiter Nominatim (max 1 req/s)
 
-        // Intento 1: Nominatim con validación de municipio
+        // Intento 1: Nominatim con validación de municipio (fallback si Google no encuentra)
         const searchQuery = `${stop.name}, ${city}${country ? ', ' + country : ''}`;
         const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&addressdetails=1`;
         const nomRes = await fetch(nomUrl, { headers: { 'Accept-Language': 'en', 'User-Agent': 'BDAI-Travel-App/1.0' } });

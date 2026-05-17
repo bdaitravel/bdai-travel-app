@@ -40,6 +40,9 @@ interface AppState {
   
   userLocation: { lat: number; lng: number } | null;
   setUserLocation: (loc: { lat: number; lng: number } | null) => void;
+
+  gpsStatus: 'idle' | 'loading' | 'active' | 'denied' | 'unavailable';
+  setGpsStatus: (status: 'idle' | 'loading' | 'active' | 'denied' | 'unavailable') => void;
  
   selectedCityInfo: { city: string; country: string; countryEn: string; slug: string } | null;
   setSelectedCityInfo: (info: { city: string; country: string; countryEn: string; slug: string } | null) => void;
@@ -100,6 +103,9 @@ export const useAppStore = create<AppState>()(
       
       userLocation: null,
       setUserLocation: (loc) => set({ userLocation: loc }),
+
+      gpsStatus: 'idle',
+      setGpsStatus: (status) => set({ gpsStatus: status }),
  
       selectedCityInfo: null,
       setSelectedCityInfo: (info) => set({ selectedCityInfo: info }),

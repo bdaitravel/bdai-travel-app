@@ -138,6 +138,7 @@ export interface Stop {
   type: 'historical' | 'food' | 'art' | 'nature' | 'photo' | 'culture' | 'architecture';
   visited: boolean;
   coordinatesVerified?: boolean;
+  coordinateSource?: 'osm_entrance' | 'google_places' | 'nominatim' | 'photon';
   photoSpot?: PhotoSpot;
   b2bPartner?: B2BPartner;
 }

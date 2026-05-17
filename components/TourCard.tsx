@@ -8,6 +8,7 @@ import { VisaShare } from './VisaShare';
 import { audioManager } from '../services/audioManager';
 import { hapticLight, hapticHeavy, hapticSuccess } from '../lib/haptics';
 import { tourCacheService } from '../lib/tourCacheService';
+import { useAppStore } from '../store/useAppStore';
 
 interface TourCardTexts {
     start: string; stop: string; of: string; daiShot: string; angleLabel: string;
@@ -16,7 +17,7 @@ interface TourCardTexts {
     shareIg: string; close: string; tooFar: string; checkIn: string; checkedIn: string;
     distance: string; duration: string; nearbyAlert: string; jumpTo: string; rewardMiles: string;
     visaId: string; boardingPass: string; approved: string; rewardTotal: string; rankUp: string;
-    fixLocation?: string; locationFixed?: string; shareText: string;
+    fixLocation?: string; locationFixed?: string; gpsBlocked?: string; gpsSearching?: string; gpsUnavailable?: string; shareText: string;
 }
 
 interface UserLocation { lat: number; lng: number; }
@@ -52,6 +53,9 @@ const TEXTS: Record<string, TourCardTexts> = {
         duration: "Duración", nearbyAlert: "Parada Cercana", jumpTo: "Saltar aquí", rewardMiles: "+50 MILLAS",
         visaId: "VISADO", boardingPass: "TARJETA DE EMBARQUE", approved: "APROBADO", rewardTotal: "Recompensa total",
         rankUp: "Rango actualizado", fixLocation: "Corregir GPS (Admin)", locationFixed: "GPS Actualizado",
+        gpsBlocked: "Activa la ubicación en los ajustes del dispositivo para hacer check-in GPS",
+        gpsSearching: "Buscando señal GPS...",
+        gpsUnavailable: "GPS no disponible en este dispositivo",
         shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️"
     },
     en: {
@@ -64,6 +68,9 @@ const TEXTS: Record<string, TourCardTexts> = {
         duration: "Duration", nearbyAlert: "Nearby Stop", jumpTo: "Jump here", rewardMiles: "+50 MILES",
         visaId: "VISA", boardingPass: "BOARDING PASS", approved: "APPROVED", rewardTotal: "Total reward",
         rankUp: "Rank updated", fixLocation: "Fix GPS (Admin)", locationFixed: "GPS Updated",
+        gpsBlocked: "Enable location access in device settings for GPS check-in",
+        gpsSearching: "Looking for GPS signal...",
+        gpsUnavailable: "GPS not available on this device",
         shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️"
     },
     fr: { start: "Lancer", stop: "Arrêt", of: "sur", daiShot: "Conseil Dai", angleLabel: "Angle Dai :", photoTipFallback: "Cherchez une perspective latérale pour capturer la profondeur de la structure.", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Précédent", next: "Suivant", meters: "m", itinerary: "Itinéraire", finish: "Terminer le Tour", congrats: "Tour Terminé!", stampDesc: "Nouveau tampon gagné", shareIg: "Générer Visa Social (+100)", close: "Fermer", tooFar: "GPS Incertain", checkIn: "Check-in GPS", checkedIn: "Vérifié", distance: "Distance", duration: "Durée", nearbyAlert: "Arrêt Proche", jumpTo: "Aller ici", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "CARTE D'EMBARQUEMENT", approved: "APPROUVÉ", rewardTotal: "Récompense totale", rankUp: "Rang mis à jour", shareText: "Je viens de terminer la Masterclass {city} sur bdai ! +250 miles gagnés. 🌍✈️" },
@@ -160,6 +167,7 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
 export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
     const currentStop = tour.stops[currentStopIndex] as Stop;
+    const { gpsStatus } = useAppStore();
 
     const [claimedStops, setClaimedStops] = useState<Set<string>>(new Set());
     const rewardClaimed = claimedStops.has(currentStop.id);
@@ -480,6 +488,19 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                     </div>
                 </div>
             </div>
+
+            {!userLocation && (gpsStatus === 'denied' || gpsStatus === 'unavailable' || gpsStatus === 'loading') && (
+                <div className={`px-4 py-2.5 flex items-center gap-3 shrink-0 border-t ${gpsStatus === 'denied' ? 'bg-orange-50 border-orange-200' : gpsStatus === 'unavailable' ? 'bg-red-50 border-red-200' : 'bg-slate-100 border-slate-200'}`}>
+                    <i className={`fas text-sm shrink-0 ${gpsStatus === 'denied' ? 'fa-location-slash text-orange-500' : gpsStatus === 'unavailable' ? 'fa-location-slash text-red-500' : 'fa-location-dot text-slate-400 animate-pulse'}`}></i>
+                    <p className={`text-[9px] font-bold leading-tight ${gpsStatus === 'denied' ? 'text-orange-600' : gpsStatus === 'unavailable' ? 'text-red-600' : 'text-slate-500'}`}>
+                        {gpsStatus === 'denied'
+                            ? (tl.gpsBlocked || 'Enable location access in device settings')
+                            : gpsStatus === 'unavailable'
+                            ? (tl.gpsUnavailable || 'GPS not available on this device')
+                            : (tl.gpsSearching || 'Looking for GPS signal...')}
+                    </p>
+                </div>
+            )}
 
             <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 px-4 py-3 flex gap-2 z-[6000] pb-safe-iphone shrink-0">
                 <button onClick={() => { hapticLight(); onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest disabled:opacity-0 flex flex-col items-center justify-center gap-0.5">
