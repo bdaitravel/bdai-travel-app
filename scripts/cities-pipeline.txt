@@ -1,0 +1,50 @@
+# BDAI City Pipeline — Lista de ciudades para generación automática de tours
+# 
+# Formato por línea: Ciudad, País | STATUS
+#   STATUS puede ser:
+#     [PENDING]    → pendiente, se procesará
+#     [DONE]       → completada (tours es+en + audios + mp3 listos)
+#     [ES_ONLY]    → solo tour en español listo, faltan en/audios
+#     [ERROR]      → falló en el último intento, requiere revisión
+#     [SKIP]       → ignorar manualmente esta ciudad
+#
+# Líneas que empiezan por # son comentarios y se ignoran.
+# El script actualiza automáticamente el STATUS al completar cada ciudad.
+#
+# Ciudades ya procesadas manualmente (antes del pipeline):
+Logroño, Spain | [DONE]
+Soria, Spain | [DONE]
+Vitoria-Gasteiz, Spain | [DONE]
+
+# Ciudades pendientes:
+Málaga, Spain | [DONE]
+Zaragoza, Spain | [DONE]
+Pamplona, Spain | [DONE]
+Barcelona, Spain | [DONE]
+San Sebastián, Spain | [DONE]
+Burgos, Spain | [DONE]
+Salamanca, Spain | [DONE]
+Valladolid, Spain | [DONE]
+Santander, Spain | [DONE]
+Bilbao, Spain | [DONE]
+Granada, Spain | [DONE]
+Córdoba, Spain | [DONE]
+Toledo, Spain | [DONE]
+Segovia, Spain | [DONE]
+Ávila, Spain | [DONE]
+León, Spain | [DONE]
+Oviedo, Spain | [DONE]
+Santiago de Compostela, Spain | [DONE]
+Cáceres, Spain | [DONE]
+Mérida, Spain | [DONE]
+Cuenca, Spain | [DONE]
+Tarragona, Spain | [DONE]
+Girona, Spain | [DONE]
+Palma de Mallorca, Spain | [DONE]
+Alicante, Spain | [DONE]
+Murcia, Spain | [DONE]
+Cádiz, Spain | [DONE]
+Huelva, Spain | [DONE]
+Jaén, Spain | [DONE]
+Almería, Spain | [DONE]
+Badajoz, Spain | [DONE]

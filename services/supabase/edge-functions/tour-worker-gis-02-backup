@@ -8,7 +8,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const PLACES_API_KEY = Deno.env.get('PLACES_API_KEY') || '';
 
 const supabaseClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
@@ -21,7 +20,7 @@ const normalizeForMatch = (str: string): string => {
     if (!str) return '';
     return str.toLowerCase()
         .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
+        .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9\s]/g, '')
         .trim();
 };
@@ -72,76 +71,25 @@ const buildRescueTourTitle = (rawTours: any[], language: string): string => {
 // ── Normalización para comparación de municipios ─────────────────────────────
 const extractMunicipalityFromAddress = (address: any): string => {
     const raw = address?.city || address?.town || address?.village || address?.municipality || address?.county || '';
-    return raw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    return raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 };
 
-// ── Verificación de coordenadas (Google Maps → Nominatim → Photon) ────────────
+// ── Verificación de coordenadas (Nominatim → Photon fallback) ─────────────────
 // cityInfo CONTRACT: { lat, lon, radiusKm, population, bbox:{south,west,north,east} }
-//
-// ESTRATEGIA DE GEOCODIFICACIÓN:
-//   1. Google Maps Places Text Search (PRIMARY): posiciona edificios en su entrada
-//      principal y parques en su centro geográfico. Sin límite de rate.
-//      Para nombres con paréntesis ("Alameda de Cervantes (Parque de la Dehesa)"):
-//        a) Prueba el nombre principal (antes del paréntesis): "Alameda de Cervantes"
-//        b) Prueba el alias del paréntesis: "Parque de la Dehesa"
-//   2. Nominatim + validación de municipio (FALLBACK 1): previene que calles con el
-//      mismo nombre en municipios adyacentes pasen el filtro (ej. Calle Laurel en
-//      Villamediana vs Logroño).
-//   3. Photon + validación de municipio (FALLBACK 2)
+// VALIDACIÓN DE MUNICIPIO: se descarta cualquier resultado cuyo address.city/town/village
+// no coincida con la ciudad objetivo. Esto previene que calles con el mismo nombre en
+// municipios adyacentes (ej. Calle Laurel en Villamediana vs Logroño) pasen el filtro de radio.
 const verifyStopCoordinates = async (stop: any, city: string, country: string, cityInfo: any): Promise<any | null> => {
     // Radio mínimo de 20km para abarcar todo el municipio (ej. Sagrada Familia en Barcelona)
     const radiusKm = Math.max(20, cityInfo.radiusKm || 20);
-    const normalizedCity = city.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-
-    // Extraer nombre principal y alias entre paréntesis para geocodificar por separado.
-    // "Alameda de Cervantes (Parque de la Dehesa)" → mainName="Alameda de Cervantes", alias="Parque de la Dehesa"
-    const parenMatch = stop.name.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
-    const mainName = parenMatch ? parenMatch[1].trim() : stop.name;
-    const aliasName = parenMatch ? parenMatch[2].trim() : null;
-    // Intentar mainName primero; si hay alias, intentarlo como segunda opción independiente
-    const namesToTry = aliasName ? [mainName, aliasName] : [mainName];
+    const normalizedCity = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
     try {
-        // ── Intento 1: Google Maps Places Text Search (PRIMARY) ──────────────────
-        // Ventajas: posiciona la entrada principal de edificios y el centro de parques.
-        // No tiene límite de rate como Nominatim (1 req/s).
-        if (PLACES_API_KEY) {
-            for (const nameVariant of namesToTry) {
-                const gmQuery = `${nameVariant}, ${city}${country ? ', ' + country : ''}`;
-                const gmUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(gmQuery)}&key=${PLACES_API_KEY}`;
-                try {
-                    const gmRes = await fetch(gmUrl);
-                    if (gmRes.ok) {
-                        const gmData = await gmRes.json();
-                        if (gmData.status === 'OK' && gmData.results?.length > 0) {
-                            for (const result of gmData.results) {
-                                const lat = result.geometry.location.lat;
-                                const lon = result.geometry.location.lng;
-                                const distToCenter = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
-                                if (distToCenter <= radiusKm) {
-                                    console.log(`[GIS] ✅ GMaps: ${stop.name} via "${nameVariant}" (${distToCenter.toFixed(2)}km)`);
-                                    return { ...stop, latitude: lat, longitude: lon, coordinatesVerified: true };
-                                } else {
-                                    console.warn(`[GIS] ⚠️ GMaps: ${stop.name} via "${nameVariant}" fuera de radio (${distToCenter.toFixed(2)}km > ${radiusKm.toFixed(2)}km)`);
-                                }
-                            }
-                        } else if (gmData.status !== 'ZERO_RESULTS') {
-                            console.warn(`[GIS] GMaps status ${gmData.status} para "${nameVariant}"`);
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`[GIS] GMaps fetch error para ${stop.name}:`, e);
-                }
-            }
-            console.warn(`[GIS] ⚠️ GMaps: sin resultado válido para ${stop.name}. Pasando a Nominatim.`);
-        }
-
-        // ── Intento 2: Nominatim con validación de municipio (FALLBACK 1) ─────────
-        // VALIDACIÓN DE MUNICIPIO: descartar resultados de municipios vecinos con el mismo
-        // nombre de calle/lugar (ej. Calle Laurel en Villamediana vs Logroño).
         await sleep(1100); // Rate limiter Nominatim (max 1 req/s)
-        const nominatimQuery = `${mainName}, ${city}${country ? ', ' + country : ''}`;
-        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(nominatimQuery)}&format=json&limit=5&addressdetails=1`;
+
+        // Intento 1: Nominatim con validación de municipio
+        const searchQuery = `${stop.name}, ${city}${country ? ', ' + country : ''}`;
+        const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&addressdetails=1`;
         const nomRes = await fetch(nomUrl, { headers: { 'Accept-Language': 'en', 'User-Agent': 'BDAI-Travel-App/1.0' } });
 
         if (nomRes.ok) {
@@ -150,6 +98,8 @@ const verifyStopCoordinates = async (stop: any, city: string, country: string, c
                 const lat = parseFloat(result.lat);
                 const lon = parseFloat(result.lon);
 
+                // VALIDACIÓN DE MUNICIPIO: el resultado debe pertenecer a la ciudad objetivo,
+                // no a un municipio vecino con el mismo nombre de calle/lugar.
                 const resultMunicipality = extractMunicipalityFromAddress(result.address);
                 const isCorrectMunicipality = resultMunicipality === '' ||
                     resultMunicipality.includes(normalizedCity) ||
@@ -170,9 +120,9 @@ const verifyStopCoordinates = async (stop: any, city: string, country: string, c
             }
         }
 
-        // ── Intento 3: Photon con validación de municipio (FALLBACK 2) ────────────
+        // Intento 2: Photon fallback con validación de municipio
         await sleep(500);
-        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(nominatimQuery)}&limit=5&lang=en`;
+        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(searchQuery)}&limit=5&lang=en`;
         const photRes = await fetch(photonUrl);
         if (photRes.ok) {
             const photData = await photRes.json();
@@ -180,8 +130,9 @@ const verifyStopCoordinates = async (stop: any, city: string, country: string, c
                 const lon = f.geometry.coordinates[0];
                 const lat = f.geometry.coordinates[1];
 
+                // Validación de municipio en Photon
                 const photonCity = (f.properties?.city || f.properties?.county || '').toLowerCase()
-                    .normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
                 const isCorrectMunicipality = photonCity === '' ||
                     photonCity.includes(normalizedCity) ||
                     normalizedCity.includes(photonCity);
@@ -199,7 +150,24 @@ const verifyStopCoordinates = async (stop: any, city: string, country: string, c
             }
         }
 
-        console.warn(`[GIS] ❌ ${stop.name}: sin verificación válida en ${city}.`);
+        // FALLBACK: Si Nominatim y Photon fallan pero las coordenadas de Gemini
+        // están dentro del bounding box de la ciudad, confiar en ellas.
+        // Gemini con Google Search grounding genera coordenadas bastante precisas.
+        // Sin este fallback, rate-limiting de Nominatim descarta paradas reales.
+        if (stop.latitude && stop.longitude && cityInfo?.bbox) {
+            const aiLat = parseFloat(stop.latitude);
+            const aiLon = parseFloat(stop.longitude);
+            const { south, north, west, east } = cityInfo.bbox;
+            const inBbox = aiLat >= south && aiLat <= north && aiLon >= west && aiLon <= east;
+            const distToCenter = haversineKm(aiLat, aiLon, cityInfo.lat, cityInfo.lon);
+
+            if (inBbox && distToCenter <= radiusKm) {
+                console.warn(`[GIS] ⚠️ ${stop.name}: usando coordenadas de Gemini (${aiLat.toFixed(5)}, ${aiLon.toFixed(5)}) — dist=${distToCenter.toFixed(2)}km. No verificado externamente.`);
+                return { ...stop, latitude: aiLat, longitude: aiLon, coordinatesVerified: false };
+            }
+        }
+
+        console.warn(`[GIS] ❌ ${stop.name}: sin verificación válida en ${city} y coordenadas AI fuera de bbox.`);
         return null;
 
     } catch (e) {

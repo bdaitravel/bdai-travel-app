@@ -69,6 +69,116 @@ const verifyWithGooglePlaces = async (stop, city, country, cityInfo) => {
     }
 };
 
+// ── OSM Overpass: entrada principal y centros de espacios abiertos ────────────
+const isOpenSpaceStop = (stop) => {
+    const name = (stop.name || '').toLowerCase();
+    return /plaza|platz|plein|piazza|square|markt|march[eé]|mercado|jard[ií]n|jardin|park|parque|jardim|campo|pra[çc]a|cours|esplanade/.test(name);
+};
+
+const getOSMEntrance = async (lat, lon) => {
+    // Query relacional: busca edificios/históricos/turismo cerca y extrae sus nodos entrada
+    const query = `[out:json][timeout:8];(nwr(around:150,${lat},${lon})["building"];nwr(around:150,${lat},${lon})["historic"];nwr(around:150,${lat},${lon})["tourism"];)->.pois;(node(w.pois)["entrance"~"main|yes|visitor|public"];node(r.pois)["entrance"~"main|yes|visitor|public"];);out body;`;
+    try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `data=${encodeURIComponent(query)}`,
+        });
+        if (res.ok) {
+            const d = await res.json();
+            if (d.elements?.length) {
+                const main = d.elements.find(e => e.tags?.entrance === 'main');
+                const visitor = d.elements.find(e => e.tags?.entrance === 'visitor' || e.tags?.entrance === 'public');
+                const el = main || visitor || d.elements[0];
+                return { lat: el.lat, lon: el.lon };
+            }
+        }
+    } catch {}
+
+    // Fallback: caja ampliada (~120m)
+    const delta = 0.0015;
+    const fallbackQuery = `[out:json][timeout:8];node["entrance"~"main|yes|visitor|public"](${lat - delta},${lon - delta},${lat + delta},${lon + delta});out body;`;
+    try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `data=${encodeURIComponent(fallbackQuery)}`,
+        });
+        if (res.ok) {
+            const d = await res.json();
+            if (d.elements?.length) {
+                const main = d.elements.find(e => e.tags?.entrance === 'main');
+                const el = main || d.elements[0];
+                return { lat: el.lat, lon: el.lon };
+            }
+        }
+    } catch {}
+    return null;
+};
+
+const snapToNearestStreet = async (lat, lon) => {
+    try {
+        const res = await fetch(
+            `https://routing.openstreetmap.de/routed-foot/nearest/v1/foot/${lon},${lat}?number=1`,
+            { headers: { 'User-Agent': 'BDAI-Travel-App/1.0' } }
+        );
+        if (res.ok) {
+            const d = await res.json();
+            if (d.code === 'Ok' && d.waypoints?.length) {
+                const [snapLon, snapLat] = d.waypoints[0].location;
+                const dist = haversineKm(lat, lon, snapLat, snapLon);
+                if (dist <= 0.12) return { lat: snapLat, lon: snapLon };
+            }
+        }
+    } catch {}
+    return null;
+};
+
+const refineCoordinates = async (stop, lat, lon) => {
+    if (isOpenSpaceStop(stop)) {
+        const center = await getOSMAreaCenter(lat, lon);
+        if (center) {
+            console.log(`     🗺️  ${stop.name.substring(0, 38).padEnd(38)} OSM área → centroide`);
+            return { lat: center.lat, lon: center.lon };
+        }
+    } else {
+        const entrance = await getOSMEntrance(lat, lon);
+        if (entrance) {
+            console.log(`     🚪 ${stop.name.substring(0, 38).padEnd(38)} OSM entrada principal`);
+            return { lat: entrance.lat, lon: entrance.lon };
+        }
+        const snapped = await snapToNearestStreet(lat, lon);
+        if (snapped) {
+            console.log(`     🧲 ${stop.name.substring(0, 38).padEnd(38)} snap acera OSRM`);
+            return { lat: snapped.lat, lon: snapped.lon };
+        }
+    }
+    return { lat, lon };
+};
+
+const getOSMAreaCenter = async (lat, lon) => {
+    const delta = 0.002; // ~200 m
+    const query = `[out:json][timeout:8];(way["place"~"square|marketplace"](${lat - delta},${lon - delta},${lat + delta},${lon + delta});way["leisure"="park"](${lat - delta},${lon - delta},${lat + delta},${lon + delta}););out center;`;
+    try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `data=${encodeURIComponent(query)}`,
+        });
+        if (!res.ok) return null;
+        const d = await res.json();
+        if (!d.elements?.length) return null;
+        let best = null, bestDist = Infinity;
+        for (const el of d.elements) {
+            if (!el.center) continue;
+            const dist = haversineKm(el.center.lat, el.center.lon, lat, lon);
+            if (dist < bestDist) { bestDist = dist; best = el; }
+        }
+        if (!best || bestDist > 0.3) return null;
+        return { lat: best.center.lat, lon: best.center.lon };
+    } catch { return null; }
+};
+
 // ── Route optimization (idéntico al GIS worker) ───────────────────────────────
 const buildRouteMatrix = (stops) => {
     const n = stops.length;
@@ -259,12 +369,14 @@ async function main() {
                 const googleResult = await verifyWithGooglePlaces(stop, city, country, cityInfo);
 
                 if (googleResult) {
+                    const refined = await refineCoordinates(stop, googleResult.latitude, googleResult.longitude);
+                    const finalResult = { ...googleResult, latitude: refined.lat, longitude: refined.lon };
                     const movedM = Math.round(
-                        haversineKm(stop.latitude, stop.longitude, googleResult.latitude, googleResult.longitude) * 1000
+                        haversineKm(stop.latitude, stop.longitude, finalResult.latitude, finalResult.longitude) * 1000
                     );
                     const tag = movedM > 15 ? `⬆  movido ${movedM}m` : `≈ sin cambio (${movedM}m)`;
                     console.log(`     ✅ ${stop.name.substring(0, 42).padEnd(42)} ${tag}`);
-                    updatedStops.push(googleResult);
+                    updatedStops.push(finalResult);
                 } else {
                     console.log(`     ❌ ${stop.name.substring(0, 42).padEnd(42)} NO ENCONTRADO — coords originales`);
                     globalNotFound.push({ city: citySlug, lang: language, tour: tour.title, stop: stop.name });

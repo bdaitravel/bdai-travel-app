@@ -1,5 +1,5 @@
-// services/supabase/edge-functions/tour-orchestrator-02.md
-// Versión -02 del orquestador que activa el pipeline de GCP (Service Account)
+// services/supabase/tour-orchestrator-02.md
+// ESTE ARCHIVO ES LA FUENTE DE LA VERDAD (SSOT) PARA LA EDGE FUNCTION 'tour-orchestrator-02'
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
@@ -17,6 +17,7 @@ const supabaseClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
 });
 
+// ── Normalizar slug (misma lógica que el cliente) ────────────────────────────
 const normalizeKey = (city: string, country: string): string | null => {
     if (!city || !country) return null;
     const clean = (str: string) => str.toLowerCase()
@@ -41,15 +42,41 @@ serve(async (req) => {
         const { city, country, language, slug: rawSlug } = body;
 
         if (!city || !country || !language) {
-            return new Response(JSON.stringify({ error: 'Missing parameters' }), { status: 400, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: 'Missing parameters: city, country, language' }), {
+                status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
         }
 
         const slug = rawSlug || normalizeKey(city, country);
+        if (!slug) {
+            return new Response(JSON.stringify({ error: 'Could not compute slug from city/country' }), {
+                status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
         const lang = language.toLowerCase();
+        console.log(`[ORCHESTRATOR] Encolando ${slug} / ${lang}...`);
 
-        console.log(`[ORCHESTRATOR-02] Encolando ${slug} / ${lang} para GCP...`);
+        // 1. Verificar si ya hay un job reciente en vuelo para evitar duplicados
+        const { data: existing } = await supabaseClient
+            .from('tours_cache')
+            .select('status, updated_at')
+            .eq('city', slug)
+            .eq('language', lang)
+            .maybeSingle();
 
-        // Marcar como generando
+        if (existing?.status === 'GENERATING' && existing?.updated_at) {
+            const ageMinutes = (Date.now() - new Date(existing.updated_at).getTime()) / 60000;
+            if (ageMinutes < 10) {
+                console.log(`[ORCHESTRATOR] ${slug} ya en generación (${ageMinutes.toFixed(1)} min). Ignorando duplicado.`);
+                return new Response(JSON.stringify({ status: 'GENERATING' }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+            console.log(`[ORCHESTRATOR] Lock obsoleto (${ageMinutes.toFixed(1)} min). Reintentando.`);
+        }
+
+        // 2. Marcar UI como GENERANDO
         await supabaseClient.from('tours_cache').upsert({
             city: slug,
             language: lang,
@@ -57,20 +84,25 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
         }, { onConflict: 'city, language' });
 
-        // INSERT con status especial PENDING_AI_02
+        // 3. Encolar trabajo en generation_jobs → dispara el Trigger AI Worker
         const { error: insertError } = await supabaseClient.from('generation_jobs').insert({
             city_slug: slug,
             language: lang,
-            status: 'PENDING_AI_02' 
+            status: 'PENDING_AI_02',
+            city_info: { city, country }
         });
 
         if (insertError) throw insertError;
 
-        return new Response(JSON.stringify({ status: 'QUEUED_GCP', slug }), {
+        console.log(`[ORCHESTRATOR] Job encolado OK para ${slug} / ${lang}`);
+        return new Response(JSON.stringify({ status: 'BACKGROUND_QUEUED' }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
 
     } catch (error: any) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
+        console.error('[ORCHESTRATOR] Error:', error);
+        return new Response(JSON.stringify({ error: error.message }), {
+            status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
     }
 });

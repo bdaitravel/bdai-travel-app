@@ -1,0 +1,30 @@
+para correr el script que cambia de wav a mp3
+npx tsx scripts/migrateAudios.ts
+
+─────────────────────────────────────────────────────────────
+
+PIPELINE MAESTRO DE CIUDADES (genera tours es+en + audios + mp3)
+─────────────────────────────────────────────────────────────
+
+Ver estado de la lista de ciudades:
+npx tsx scripts/runCityPipeline.ts --status
+
+Continuar el pipeline (procesa el siguiente lote automáticamente):
+npx tsx scripts/runCityPipeline.ts
+
+Procesar solo N ciudades (ej. 5):
+npx tsx scripts/runCityPipeline.ts --limit 5
+
+La lista de ciudades y su estado está en:
+scripts/cities-pipeline.txt
+
+El pipeline hace por cada ciudad:
+  1. Genera tour en Español (via edge function tour-orchestrator, espera hasta 15 min)
+  2. Genera audios en Español (via edge function generate-audio-gcp)
+  3. Traduce tour al Inglés (via Gemini 2.5 Flash + GCP Service Account)
+  4. Genera audios en Inglés
+  5. Convierte todos los WAV → MP3 localmente (83% menos tamaño)
+  6. Actualiza el estado en cities-pipeline.txt: [PENDING] → [DONE]
+
+Límite diario gratuito: ~43 ciudades/día (en 2 idiomas es+en)
+La cuota de GCP se resetea a las 9:00 AM hora de España.
