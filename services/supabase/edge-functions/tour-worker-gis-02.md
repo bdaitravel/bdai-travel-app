@@ -75,18 +75,19 @@ const extractMunicipalityFromAddress = (address: any): string => {
     return raw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 };
 
-// ── Verificación de coordenadas (Google Maps → Nominatim → Photon) ────────────
+// ── Verificación de coordenadas (Google Places → Nominatim → Photon) ──────────
 // cityInfo CONTRACT: { lat, lon, radiusKm, population, bbox:{south,west,north,east} }
 //
 // ESTRATEGIA DE GEOCODIFICACIÓN:
-//   1. Google Maps Places Text Search (PRIMARY): posiciona edificios en su entrada
-//      principal y parques en su centro geográfico. Sin límite de rate.
+//   1. Google Places API v1 searchText (PRIMARY): pide displayName + location +
+//      formattedAddress. Valida que la dirección contenga el municipio objetivo y que
+//      el nombre coincida con ≥30% de las palabras clave (score ≥ 0.3). Esto evita
+//      que resultados de municipios vecinos o puntos genéricos del municipio pasen.
 //      Para nombres con paréntesis ("Alameda de Cervantes (Parque de la Dehesa)"):
 //        a) Prueba el nombre principal (antes del paréntesis): "Alameda de Cervantes"
 //        b) Prueba el alias del paréntesis: "Parque de la Dehesa"
-//   2. Nominatim + validación de municipio (FALLBACK 1): previene que calles con el
-//      mismo nombre en municipios adyacentes pasen el filtro (ej. Calle Laurel en
-//      Villamediana vs Logroño).
+//   2. Nominatim + validación de municipio (FALLBACK 1): descarta municipios vecinos
+//      Y descarta resultados de tipo boundary/administrative (centroides de polígono).
 //   3. Photon + validación de municipio (FALLBACK 2)
 const verifyStopCoordinates = async (stop: any, city: string, country: string, cityInfo: any): Promise<any | null> => {
     // Radio mínimo de 20km para abarcar todo el municipio (ej. Sagrada Familia en Barcelona)
@@ -102,38 +103,81 @@ const verifyStopCoordinates = async (stop: any, city: string, country: string, c
     const namesToTry = aliasName ? [mainName, aliasName] : [mainName];
 
     try {
-        // ── Intento 1: Google Maps Places Text Search (PRIMARY) ──────────────────
-        // Ventajas: posiciona la entrada principal de edificios y el centro de parques.
-        // No tiene límite de rate como Nominatim (1 req/s).
+        // ── Intento 1: Google Places API v1 searchText (PRIMARY) ────────────────
+        // Usa la New Places API (v1) — la única habilitada en PLACES_API_KEY.
+        // locationBias.circle (no locationRestriction, que solo acepta rectangle).
+        // Itera hasta 5 resultados, toma el primero dentro del radio de la ciudad.
         if (PLACES_API_KEY) {
+            const restrictionRadiusM = Math.round(Math.max(20000, radiusKm * 1000));
             for (const nameVariant of namesToTry) {
                 const gmQuery = `${nameVariant}, ${city}${country ? ', ' + country : ''}`;
-                const gmUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(gmQuery)}&key=${PLACES_API_KEY}`;
                 try {
-                    const gmRes = await fetch(gmUrl);
+                    const gmRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Goog-Api-Key': PLACES_API_KEY,
+                            'X-Goog-FieldMask': 'places.displayName,places.location,places.formattedAddress',
+                            'Referer': 'https://www.bdai.travel/',
+                        },
+                        body: JSON.stringify({
+                            textQuery: gmQuery,
+                            locationBias: {
+                                circle: {
+                                    center: { latitude: cityInfo.lat, longitude: cityInfo.lon },
+                                    radius: restrictionRadiusM,
+                                },
+                            },
+                            maxResultCount: 5,
+                        }),
+                    });
                     if (gmRes.ok) {
                         const gmData = await gmRes.json();
-                        if (gmData.status === 'OK' && gmData.results?.length > 0) {
-                            for (const result of gmData.results) {
-                                const lat = result.geometry.location.lat;
-                                const lon = result.geometry.location.lng;
-                                const distToCenter = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
-                                if (distToCenter <= radiusKm) {
-                                    console.log(`[GIS] ✅ GMaps: ${stop.name} via "${nameVariant}" (${distToCenter.toFixed(2)}km)`);
-                                    return { ...stop, latitude: lat, longitude: lon, coordinatesVerified: true };
-                                } else {
-                                    console.warn(`[GIS] ⚠️ GMaps: ${stop.name} via "${nameVariant}" fuera de radio (${distToCenter.toFixed(2)}km > ${radiusKm.toFixed(2)}km)`);
+                        if (gmData.places?.length > 0) {
+                            // Elegir el resultado con mejor coincidencia de nombre; distancia al
+                            // centro como desempate. Evita homónimos en otros barrios.
+                            const normStr = (s: string) => s.toLowerCase().normalize('NFD')
+                                .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
+                            const queryWords = normStr(nameVariant).split(/\s+/).filter((w: string) => w.length > 2);
+                            const nameScore = (n: string) => {
+                                if (!n || !queryWords.length) return 0;
+                                const norm = normStr(n);
+                                return queryWords.filter((w: string) => norm.includes(w)).length / queryWords.length;
+                            };
+                            let best: any = null;
+                            for (const place of gmData.places) {
+                                const lat = place.location.latitude;
+                                const lon = place.location.longitude;
+                                const dist = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
+                                if (dist > radiusKm) continue;
+                                const score = nameScore(place.displayName?.text);
+                                // Rechazar si la coincidencia de nombre es demasiado débil
+                                if (score < 0.3) continue;
+                                // Rechazar si la dirección no pertenece al municipio objetivo
+                                const addr = (place.formattedAddress || '').toLowerCase()
+                                    .normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+                                if (addr && !addr.includes(normalizedCity)) {
+                                    console.warn(`[GIS] ⚠️ GMaps: "${stop.name}" → "${place.formattedAddress}" no pertenece a ${city}. Descartando.`);
+                                    continue;
+                                }
+                                if (!best || score > best.score || (score === best.score && dist < best.dist)) {
+                                    best = { lat, lon, score, dist };
                                 }
                             }
-                        } else if (gmData.status !== 'ZERO_RESULTS') {
-                            console.warn(`[GIS] GMaps status ${gmData.status} para "${nameVariant}"`);
+                            if (best) {
+                                console.log(`[GIS] ✅ GMaps v1: ${stop.name} via "${nameVariant}" (score=${best.score.toFixed(2)}, ${best.dist.toFixed(2)}km)`);
+                                return { ...stop, latitude: best.lat, longitude: best.lon, coordinatesVerified: true };
+                            }
                         }
+                    } else {
+                        const errText = await gmRes.text();
+                        console.warn(`[GIS] GMaps v1 error ${gmRes.status} para "${nameVariant}": ${errText}`);
                     }
                 } catch (e) {
-                    console.warn(`[GIS] GMaps fetch error para ${stop.name}:`, e);
+                    console.warn(`[GIS] GMaps v1 fetch error para ${stop.name}:`, e);
                 }
             }
-            console.warn(`[GIS] ⚠️ GMaps: sin resultado válido para ${stop.name}. Pasando a Nominatim.`);
+            console.warn(`[GIS] ⚠️ GMaps v1: sin resultado válido para ${stop.name}. Pasando a Nominatim.`);
         }
 
         // ── Intento 2: Nominatim con validación de municipio (FALLBACK 1) ─────────
@@ -147,6 +191,14 @@ const verifyStopCoordinates = async (stop: any, city: string, country: string, c
         if (nomRes.ok) {
             const data = await nomRes.json();
             for (const result of (data || [])) {
+                // Rechazar límites administrativos: son centroides del polígono municipal,
+                // no ubicaciones de lugares concretos. Son la causa de las coordenadas idénticas.
+                if (result.class === 'boundary' ||
+                    (result.class === 'place' && ['city', 'town', 'village', 'hamlet', 'municipality'].includes(result.type))) {
+                    console.warn(`[GIS] ⚠️ ${stop.name} (Nominatim): resultado es entidad administrativa (${result.class}/${result.type}). Descartando.`);
+                    continue;
+                }
+
                 const lat = parseFloat(result.lat);
                 const lon = parseFloat(result.lon);
 

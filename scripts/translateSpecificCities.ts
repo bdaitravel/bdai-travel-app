@@ -4,21 +4,16 @@
 
 import * as dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import { getGCPAccessToken, geminiHeaders, GEMINI_URL } from './lib/gcpAuth.js';
 
 // Cargar variables desde .env.local
 dotenv.config({ path: '.env.local' });
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY_02 || process.env.VITE_GEMINI_API_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("❌ Falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en .env.local");
-  process.exit(1);
-}
-
-if (!GEMINI_API_KEY) {
-  console.error("❌ Falta la API Key de Gemini en .env.local");
   process.exit(1);
 }
 
@@ -38,9 +33,9 @@ CRITICAL RULES:
 JSON to translate:
 ${JSON.stringify(data)}`;
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+  const res = await fetch(GEMINI_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: geminiHeaders(await getGCPAccessToken()),
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.2 }

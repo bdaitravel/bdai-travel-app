@@ -8,7 +8,7 @@
  *   VITE_SUPABASE_URL   (or SUPABASE_URL)
  *   VITE_SUPABASE_ANON_KEY  (or SUPABASE_ANON_KEY)   — for edge function calls
  *   SUPABASE_SERVICE_ROLE_KEY                          — for direct DB writes
- *   VITE_GEMINI_API_KEY (or GEMINI_API_KEY)           — for translation
+ *   GCP_SERVICE_ACCOUNT                                — service account JSON para auth Gemini vía OAuth2
  *
  * cities.txt format — one entry per line:
  *   Madrid, Spain
@@ -18,6 +18,7 @@
 
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
+import { getGCPAccessToken, geminiHeaders, GEMINI_URL } from './lib/gcpAuth.js';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -58,14 +59,11 @@ interface Tour {
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const ANON_KEY     = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
-const GEMINI_KEY   = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
-
-if (!SUPABASE_URL || !SERVICE_KEY || !GEMINI_KEY) {
+if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error('❌  Missing env vars. Required:');
   if (!SUPABASE_URL) console.error('   VITE_SUPABASE_URL (or SUPABASE_URL)');
   if (!SERVICE_KEY)  console.error('   SUPABASE_SERVICE_ROLE_KEY');
   if (!ANON_KEY)     console.error('   VITE_SUPABASE_ANON_KEY (or SUPABASE_ANON_KEY)  [for edge functions]');
-  if (!GEMINI_KEY)   console.error('   VITE_GEMINI_API_KEY (or GEMINI_API_KEY)');
   process.exit(1);
 }
 
@@ -197,10 +195,9 @@ Rules:
 
 ${JSON.stringify(slim)}`;
 
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
-  const res = await fetch(apiUrl, {
+  const res = await fetch(GEMINI_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: geminiHeaders(await getGCPAccessToken()),
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: { responseMimeType: 'application/json' }

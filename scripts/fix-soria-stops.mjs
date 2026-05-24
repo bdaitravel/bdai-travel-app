@@ -1,22 +1,19 @@
-// scripts/update-stops-google-places.mjs
-// Re-geocodifica todas las paradas en tours_cache via Google Places API (textsearch),
-// recalcula rutas optimizadas (NN + 2-opt + or-opt + OSRM) y guarda en Supabase.
-// Uso: node scripts/update-stops-google-places.mjs
+// scripts/fix-soria-stops.mjs
+// Re-geocodifica todas las paradas del tour de Soria usando Google Places API v1,
+// aplica refinamiento OSM (entrada principal / centroide de área) y recalcula la ruta.
+// Uso: node scripts/fix-soria-stops.mjs
 //
-// LÓGICA DE VERIFICACIÓN (idéntica a tour-worker-gis-02):
-//   - Usa Places Text Search (textsearch.json): itera hasta 5 resultados, toma
-//     el primero dentro del radio de la ciudad. El parámetro 'location' actúa
-//     como sesgo geográfico para que el resultado correcto salga primero.
-//   - Nombres con paréntesis ("Alameda de Cervantes (Parque de la Dehesa)"):
-//     prueba el nombre principal y luego el alias por separado.
-//   - City info desde Nominatim (no desde coords existentes, que pueden estar mal).
-//   - Refinamiento OSM: entrada principal para edificios, centroide para parques.
+// Para nombres con paréntesis ("Alameda de Cervantes (Parque de la Dehesa)"):
+//   1. Intenta el nombre principal: "Alameda de Cervantes"
+//   2. Si falla, intenta el alias: "Parque de la Dehesa"
 
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL     = 'https://slldavgsoxunkphqeamx.supabase.co';
 const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsbGRhdmdzb3h1bmtwaHFlYW14Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDU1NTY2MSwiZXhwIjoyMDgwMTMxNjYxfQ.rfpnTCt0AuSC1AE2MZgYmU67ARZXWh2__pIf5CoHKTc';
 const PLACES_API_KEY   = 'AIzaSyBytczKNs8oOO7r0sjGcehkW9VHZDVJqrA';
+
+const CITY_SLUG = 'soria_spain';
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -34,55 +31,17 @@ const haversineKm = (lat1, lon1, lat2, lon2) => {
 };
 
 // ── Parseo de nombres con paréntesis ─────────────────────────────────────────
-// "Alameda de Cervantes (Parque de la Dehesa)" → { main, alias }
+// "Alameda de Cervantes (Parque de la Dehesa)" → { main: "Alameda de Cervantes", alias: "Parque de la Dehesa" }
 const parseStopName = (name) => {
     const match = name.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
     if (match) return { main: match[1].trim(), alias: match[2].trim() };
     return { main: name, alias: null };
 };
 
-// ── City info desde Nominatim (centro real, no desde coords existentes) ───────
-const nominatimCache = new Map();
-const getCityInfo = async (city, country) => {
-    const key = `${city}|${country}`;
-    if (nominatimCache.has(key)) return nominatimCache.get(key);
-
-    await sleep(1100); // rate limiter Nominatim
-    try {
-        const query = encodeURIComponent(`${city}, ${country}`);
-        const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=5&addressdetails=1&extratags=1`;
-        const res = await fetch(url, { headers: { 'User-Agent': 'BDAI-Travel-App/1.0', 'Accept-Language': 'en' } });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (!data?.length) return null;
-
-        // Preferir ciudad/pueblo sobre provincia/región
-        let selected = data[0];
-        for (const p of ['city', 'town', 'village', 'municipality']) {
-            const match = data.find(item => item.addresstype === p || item.type === p);
-            if (match) { selected = match; break; }
-        }
-
-        const lat = parseFloat(selected.lat);
-        const lon = parseFloat(selected.lon);
-        const bb  = selected.boundingbox || [];
-        const bboxH = bb.length === 4 ? Math.abs(parseFloat(bb[1]) - parseFloat(bb[0])) : 0.05;
-        const bboxW = bb.length === 4 ? Math.abs(parseFloat(bb[3]) - parseFloat(bb[2])) : 0.07;
-        // Radio basado en el bbox de Nominatim, entre 3 y 20 km
-        const radiusKm = Math.max(3, Math.min(20, Math.max(bboxH, bboxW) * 111 * 0.7));
-
-        const info = { lat, lon, radiusKm };
-        nominatimCache.set(key, info);
-        return info;
-    } catch { return null; }
-};
-
-// ── Google Places API v1 searchText — itera hasta 5 resultados ───────────────
-// locationRestriction (estricto) descarta homónimos de otras ciudades.
-// Google Maps posiciona edificios en la entrada principal y parques en su centro.
-const searchGoogleTextSearch = async (nameVariant, city, country, cityInfo) => {
-    const radiusKm = cityInfo.radiusKm;
-    const restrictionRadiusM = Math.round(Math.max(3000, radiusKm * 1000));
+// ── Google Places API v1: searchText con locationBias ────────────────────────
+// Devuelve { latitude, longitude } o null si no encuentra nada dentro del radio.
+const searchGooglePlaces = async (query, cityInfo) => {
+    const radiusM = Math.min(Math.round((cityInfo.radiusKm || 5) * 1000), 50000);
     try {
         const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
             method: 'POST',
@@ -93,61 +52,40 @@ const searchGoogleTextSearch = async (nameVariant, city, country, cityInfo) => {
                 'Referer': 'https://www.bdai.travel/',
             },
             body: JSON.stringify({
-                textQuery: `${nameVariant}, ${city}, ${country}`,
+                textQuery: query,
                 locationBias: {
                     circle: {
                         center: { latitude: cityInfo.lat, longitude: cityInfo.lon },
-                        radius: restrictionRadiusM,
+                        radius: radiusM,
                     },
                 },
-                maxResultCount: 5,
+                maxResultCount: 1,
             }),
         });
         if (!res.ok) return null;
         const data = await res.json();
         if (!data.places?.length) return null;
-
-        // Normalizar palabras clave de la búsqueda (>2 chars, sin tildes)
-        const normalize = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
-        const queryWords = normalize(nameVariant).split(/\s+/).filter(w => w.length > 2);
-        const nameScore = (resultName) => {
-            if (!resultName || !queryWords.length) return 0;
-            const norm = normalize(resultName);
-            return queryWords.filter(w => norm.includes(w)).length / queryWords.length;
-        };
-
-        // Elegir el resultado con mejor coincidencia de nombre; distancia al centro como desempate.
-        // Evita que homónimos en otros barrios (ej. "Pl. Mayor-Soria Las Casas") ganen al
-        // lugar correcto aunque estén dentro del radio.
-        let best = null;
-        for (const place of data.places) {
-            const lat = place.location.latitude;
-            const lon = place.location.longitude;
-            const dist = haversineKm(lat, lon, cityInfo.lat, cityInfo.lon);
-            if (dist > radiusKm) continue;
-            const score = nameScore(place.displayName?.text);
-            if (!best || score > best.score || (score === best.score && dist < best.dist)) {
-                best = { lat, lon, resultName: place.displayName?.text, dist, score };
-            }
-        }
-        return best;
-    } catch {}
-    return null;
+        const { latitude: lat, longitude: lng } = data.places[0].location;
+        const dist = haversineKm(lat, lng, cityInfo.lat, cityInfo.lon);
+        if (dist <= (cityInfo.radiusKm || 5) * 1.5) return { lat, lon: lng };
+        return null;
+    } catch { return null; }
 };
 
-// ── Verificación principal con doble nombre (main → alias) ────────────────────
+// ── Verificación con doble nombre (main → alias) ──────────────────────────────
 const verifyWithGooglePlaces = async (stop, city, country, cityInfo) => {
     const { main, alias } = parseStopName(stop.name);
     const namesToTry = alias ? [main, alias] : [main];
 
     for (const nameVariant of namesToTry) {
-        const result = await searchGoogleTextSearch(nameVariant, city, country, cityInfo);
+        const query = `${nameVariant}, ${city}, ${country}`;
+        const result = await searchGooglePlaces(query, cityInfo);
         if (result) {
-            const label = nameVariant !== stop.name ? ` (via "${nameVariant}")` : '';
-            const movedFrom = (stop.latitude && stop.longitude)
+            const movedFrom = stop.latitude && stop.longitude
                 ? Math.round(haversineKm(stop.latitude, stop.longitude, result.lat, result.lon) * 1000)
                 : null;
-            return { result, label, movedFrom };
+            const label = nameVariant !== stop.name ? ` (via "${nameVariant}")` : '';
+            return { result, movedFrom, label };
         }
         await sleep(100);
     }
@@ -155,9 +93,6 @@ const verifyWithGooglePlaces = async (stop, city, country, cityInfo) => {
 };
 
 // ── OSM: entrada principal de edificio ───────────────────────────────────────
-const isOpenSpaceStop = (stop) =>
-    /plaza|platz|plein|piazza|square|markt|march[eé]|mercado|jard[ií]n|jardin|park|parque|jardim|campo|pra[çc]a|cours|esplanade|alameda|dehesa|paseo/i.test(stop.name);
-
 const getOSMEntrance = async (lat, lon) => {
     const query = `[out:json][timeout:8];(nwr(around:150,${lat},${lon})["building"];nwr(around:150,${lat},${lon})["historic"];nwr(around:150,${lat},${lon})["tourism"];)->.pois;(node(w.pois)["entrance"~"main|yes|visitor|public"];node(r.pois)["entrance"~"main|yes|visitor|public"];);out body;`;
     try {
@@ -196,6 +131,7 @@ const getOSMEntrance = async (lat, lon) => {
     return null;
 };
 
+// ── OSM: centroide de parque / plaza ─────────────────────────────────────────
 const getOSMAreaCenter = async (lat, lon) => {
     const delta = 0.002;
     const query = `[out:json][timeout:8];(way["place"~"square|marketplace"](${lat - delta},${lon - delta},${lat + delta},${lon + delta});way["leisure"="park"](${lat - delta},${lon - delta},${lat + delta},${lon + delta}););out center;`;
@@ -219,11 +155,14 @@ const getOSMAreaCenter = async (lat, lon) => {
     } catch { return null; }
 };
 
+const isOpenSpace = (stop) =>
+    /plaza|platz|plein|piazza|square|markt|march[eé]|mercado|jard[ií]n|jardin|park|parque|jardim|campo|pra[çc]a|cours|esplanade|alameda|dehesa|paseo/i.test(stop.name);
+
 const refineCoordinates = async (stop, lat, lon) => {
-    if (isOpenSpaceStop(stop)) {
+    if (isOpenSpace(stop)) {
         const center = await getOSMAreaCenter(lat, lon);
         if (center) {
-            console.log(`       🗺️  OSM centroide área`);
+            console.log(`       🗺️  OSM centroide área (${isOpenSpace(stop) ? 'espacio abierto' : ''})`);
             return { lat: center.lat, lon: center.lon };
         }
     } else {
@@ -232,34 +171,11 @@ const refineCoordinates = async (stop, lat, lon) => {
             console.log(`       🚪 OSM entrada principal`);
             return { lat: entrance.lat, lon: entrance.lon };
         }
-        const snap = await snapToNearestStreet(lat, lon);
-        if (snap) {
-            console.log(`       🧲 snap acera OSRM`);
-            return { lat: snap.lat, lon: snap.lon };
-        }
     }
     return { lat, lon };
 };
 
-const snapToNearestStreet = async (lat, lon) => {
-    try {
-        const res = await fetch(
-            `https://routing.openstreetmap.de/routed-foot/nearest/v1/foot/${lon},${lat}?number=1`,
-            { headers: { 'User-Agent': 'BDAI-Travel-App/1.0' } }
-        );
-        if (res.ok) {
-            const d = await res.json();
-            if (d.code === 'Ok' && d.waypoints?.length) {
-                const [snapLon, snapLat] = d.waypoints[0].location;
-                const dist = haversineKm(lat, lon, snapLat, snapLon);
-                if (dist <= 0.12) return { lat: snapLat, lon: snapLon };
-            }
-        }
-    } catch {}
-    return null;
-};
-
-// ── Route optimization (NN + 2-opt + or-opt + OSRM polyline) ─────────────────
+// ── Optimización de ruta (NN + 2-opt + or-opt + OSRM polyline) ───────────────
 const buildRouteMatrix = (stops) => {
     const n = stops.length;
     const m = Array.from({ length: n }, () => new Array(n).fill(0));
@@ -381,43 +297,41 @@ const optimizeAndPolyline = async (tour) => {
     };
 };
 
+// ── cityInfo desde coordenadas conocidas de Soria ────────────────────────────
+// Centro histórico de Soria: Plaza Mayor / Concatedral de San Pedro
+const SORIA_CITY_INFO = {
+    lat: 41.7653,
+    lon: -2.4686,
+    radiusKm: 8,
+    city: 'Soria',
+    country: 'Spain',
+};
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-    console.log('\n🗺️  BDAI — Re-geocodificación global via Google Places Text Search');
+    console.log('\n🗺️  Fix Soria — Re-geocodificación via Google Places API v1');
     console.log('═'.repeat(64));
+    console.log(`   Centro: ${SORIA_CITY_INFO.lat}, ${SORIA_CITY_INFO.lon} | Radio: ${SORIA_CITY_INFO.radiusKm} km\n`);
 
     const { data: rows, error } = await supabase
         .from('tours_cache')
         .select('*')
+        .eq('city', CITY_SLUG)
         .eq('status', 'READY');
 
     if (error) { console.error('Error leyendo tours_cache:', error); process.exit(1); }
-    if (!rows.length) { console.log('No hay filas con status=READY.'); return; }
+    if (!rows?.length) { console.log(`No hay filas READY para ${CITY_SLUG}.`); return; }
 
-    const totalStops = rows.reduce((s, r) =>
-        s + (r.data || []).reduce((ss, t) => ss + (t.stops?.length || 0), 0), 0);
-    console.log(`\nFilas: ${rows.length} | Paradas totales: ${totalStops}\n`);
+    console.log(`Idiomas encontrados: ${rows.map(r => r.language).join(', ')}\n`);
 
-    const globalNotFound = [];
+    const notFound = [];
 
     for (const row of rows) {
         const tours    = row.data || [];
-        const citySlug = row.city;
         const language = row.language;
-        const refTour  = tours[0] || {};
-        const city     = refTour.city    || citySlug.split('_')[0];
-        const country  = refTour.country || citySlug.split('_').slice(1).join(' ');
 
-        console.log(`\n${'─'.repeat(64)}`);
-        console.log(`🏙️  ${citySlug} (${language}) — "${city}", "${country}"`);
-
-        // City center desde Nominatim (fuente de verdad, no desde coords existentes)
-        const cityInfo = await getCityInfo(city, country);
-        if (!cityInfo) {
-            console.log(`   ⚠️  Nominatim no devolvió city info. Saltando.`);
-            continue;
-        }
-        console.log(`   Centro: ${cityInfo.lat.toFixed(5)}, ${cityInfo.lon.toFixed(5)} | Radio: ${cityInfo.radiusKm.toFixed(1)} km`);
+        console.log(`${'─'.repeat(64)}`);
+        console.log(`🌐 Idioma: ${language} | Tours: ${tours.length}`);
 
         const existingPolylines = row.route_polylines || {};
         const updatedTours = [];
@@ -431,20 +345,19 @@ async function main() {
             for (const stop of stops) {
                 await sleep(200); // cuota Google Places
 
-                const found = await verifyWithGooglePlaces(stop, city, country, cityInfo);
+                const found = await verifyWithGooglePlaces(stop, SORIA_CITY_INFO.city, SORIA_CITY_INFO.country, SORIA_CITY_INFO);
 
                 if (found) {
                     const refined = await refineCoordinates(stop, found.result.lat, found.result.lon);
                     const finalLat = refined.lat;
                     const finalLon = refined.lon;
-                    const movedM = found.movedFrom ??
-                        Math.round(haversineKm(stop.latitude || 0, stop.longitude || 0, finalLat, finalLon) * 1000);
-                    const tag = movedM > 15 ? `⬆  ${movedM}m` : `≈ ok (${movedM}m)`;
-                    console.log(`     ✅ ${stop.name.substring(0, 40).padEnd(40)}${found.label}  ${tag}`);
+                    const movedM = found.movedFrom ?? Math.round(haversineKm(stop.latitude || 0, stop.longitude || 0, finalLat, finalLon) * 1000);
+                    const tag = movedM > 15 ? `⬆  movido ${movedM}m` : `≈ sin cambio (${movedM}m)`;
+                    console.log(`     ✅ ${stop.name.substring(0, 38).padEnd(38)}${found.label}  ${tag}`);
                     updatedStops.push({ ...stop, latitude: finalLat, longitude: finalLon });
                 } else {
-                    console.log(`     ❌ ${stop.name.substring(0, 40).padEnd(40)} NO ENCONTRADO — coords originales`);
-                    globalNotFound.push({ city: citySlug, lang: language, stop: stop.name });
+                    console.log(`     ❌ ${stop.name.substring(0, 38).padEnd(38)} NO ENCONTRADO — coords originales`);
+                    notFound.push({ lang: language, tour: tour.title, stop: stop.name });
                     updatedStops.push(stop);
                 }
             }
@@ -452,38 +365,38 @@ async function main() {
             process.stdout.write(`\n  🔄 Optimizando ruta...`);
             const prevDist = tour.distance || '?';
             const optimized = await optimizeAndPolyline({ ...tour, stops: updatedStops });
-            const polylineOk = optimized.routePolyline ? '✅' : '⚠️ sin polilínea';
+            const polylineOk = optimized.routePolyline ? '✅ polilínea' : '⚠️  sin polilínea';
             console.log(` ${optimized.distance} / ${optimized.duration}  (era ${prevDist}) | ${polylineOk}`);
+
             updatedTours.push(optimized);
         }
 
+        // Combinar polilíneas
         const routePolylines = { ...existingPolylines };
         updatedTours.forEach(t => { if (t.routePolyline) routePolylines[t.id] = t.routePolyline; });
 
-        process.stdout.write(`\n  💾 Guardando...`);
+        process.stdout.write(`\n  💾 Guardando en Supabase...`);
         const { error: updateErr } = await supabase
             .from('tours_cache')
-            .update({ data: updatedTours, route_polylines: routePolylines, updated_at: new Date().toISOString() })
-            .eq('city', citySlug)
+            .update({
+                data: updatedTours,
+                route_polylines: routePolylines,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('city', CITY_SLUG)
             .eq('language', language);
-        console.log(updateErr ? ` ❌ ${updateErr.message}` : ' ✅');
+
+        console.log(updateErr ? ` ❌ Error: ${updateErr.message}` : ' ✅ Guardado.');
     }
 
     console.log(`\n${'═'.repeat(64)}`);
     console.log('📊  RESUMEN\n');
-    if (globalNotFound.length === 0) {
+    if (notFound.length === 0) {
         console.log('✅  Todas las paradas verificadas por Google Places.');
     } else {
-        console.log(`⚠️  ${globalNotFound.length} parada(s) sin verificar (coords originales conservadas):\n`);
-        const byCityLang = {};
-        for (const nf of globalNotFound) {
-            const k = `${nf.city}/${nf.lang}`;
-            if (!byCityLang[k]) byCityLang[k] = [];
-            byCityLang[k].push(nf.stop);
-        }
-        for (const [k, stops] of Object.entries(byCityLang)) {
-            console.log(`   [${k}]`);
-            for (const s of stops) console.log(`     • ${s}`);
+        console.log(`❌  ${notFound.length} parada(s) no encontradas:\n`);
+        for (const nf of notFound) {
+            console.log(`   • [${nf.lang}] "${nf.tour}" → "${nf.stop}"`);
         }
     }
     console.log('\n✅  Proceso completado.\n');
