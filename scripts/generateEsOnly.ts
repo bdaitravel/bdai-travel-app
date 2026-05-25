@@ -73,7 +73,7 @@ async function seedCity(cityName: string, country: string): Promise<boolean> {
 
   // Invocar edge function tour-orchestrator-02
   log(cityName, '🚀 Invocando tour-orchestrator-02...');
-  const { error } = await edge.functions.invoke('tour-orchestrator-02', {
+  const { error } = await edge.functions.invoke('tour-orchestratror-02', {
     body: { city: cityName, country, language: 'es', slug }
   });
 
@@ -120,11 +120,13 @@ async function seedCity(cityName: string, country: string): Promise<boolean> {
 
 // ── Cities ──────────────────────────────────────────────────────────────────────
 const cities: { city: string; country: string }[] = [
-  { city: 'Aldeanueva de Ebro', country: 'Spain' },
   { city: 'Vitoria-Gasteiz',    country: 'Spain' },
+  { city: 'Aldeanueva de Ebro', country: 'Spain' },
   { city: 'Barcelona',          country: 'Spain' },
-  { city: 'San Sebastián',      country: 'Spain' },
   { city: 'Viana',              country: 'Spain' },
+  { city: 'San Sebastián',      country: 'Spain' },
+  { city: 'Bilbao',             country: 'Spain' },
+  { city: 'Palma de Mallorca',  country: 'Spain' },
 ];
 
 // ── Run ─────────────────────────────────────────────────────────────────────────

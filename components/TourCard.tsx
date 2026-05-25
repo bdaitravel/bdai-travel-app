@@ -166,10 +166,20 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
 
 export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
-    const currentStop = tour.stops[currentStopIndex] as Stop;
     const { gpsStatus } = useAppStore();
-
     const [claimedStops, setClaimedStops] = useState<Set<string>>(new Set());
+
+    const currentStop = tour?.stops?.[currentStopIndex] as Stop | undefined;
+
+    if (!currentStop) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 text-center p-8">
+                <p className="text-white/60 text-lg">Este tour no tiene paradas disponibles.</p>
+                <button onClick={onBack} className="mt-4 px-6 py-2 rounded-full bg-white/10 text-white text-sm">Volver</button>
+            </div>
+        );
+    }
+
     const rewardClaimed = claimedStops.has(currentStop.id);
 
     const handleCheckIn = async () => {
