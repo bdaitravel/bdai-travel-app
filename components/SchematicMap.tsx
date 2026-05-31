@@ -319,7 +319,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
                 markersRef.current.push(marker);
             });
         }
-    }, [validStops]); // Only recreate when validStops changes
+    }, [validStops, routePolyline]);
 
     // Update active state of markers
     useEffect(() => {

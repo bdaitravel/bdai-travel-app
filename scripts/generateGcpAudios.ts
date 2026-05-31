@@ -103,10 +103,10 @@ async function main() {
   const uniqueCities = Array.from(new Set(allTours.map((t: any) => t.city)));
   console.log("Ciudades en la base de datos:", uniqueCities);
 
-  const targetCities = uniqueCities.filter(c => c.includes('soria') || c.includes('logrono') || c.includes('logroño'));
-  
+  const targetCities = uniqueCities.filter(c => c.includes('barcelona') || c.includes('sevilla') || c.includes('valencia'));
+
   if (targetCities.length === 0) {
-    console.log("No se encontraron tours para Soria o Logroño.");
+    console.log("No se encontraron tours para Barcelona, Sevilla o Valencia.");
     return;
   }
 
