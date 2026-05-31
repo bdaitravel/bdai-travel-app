@@ -9,6 +9,23 @@ interface HomeViewProps {
   appDesc: Record<string, string>;
 }
 
+const FeatureCard: React.FC<{
+  icon: string,
+  title: string,
+  desc: string,
+  color: string
+}> = ({ icon, title, desc, color }) => (
+  <div className="p-5 bg-white/5 border border-white/5 rounded-2xl flex items-start gap-5 shadow-lg animate-fade-in">
+    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white shadow-xl shrink-0 mt-0.5`}>
+      <i className={`fas ${icon} text-base`}></i>
+    </div>
+    <div className="flex-1">
+      <h4 className="text-white font-black text-sm uppercase tracking-tight mb-1.5">{title}</h4>
+      <p className="text-[11px] text-slate-400 font-medium leading-normal opacity-90">{desc}</p>
+    </div>
+  </div>
+);
+
 export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
   const { userProfile: user, setShowOnboarding } = useAppStore();
   const { 
@@ -75,7 +92,34 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
         </div>
       </div>
 
-      <TravelServices mode="HOME" lang={user.language} onCitySelect={handleTravelServiceSelect} />
+      <div className="space-y-8 pb-32 px-6">
+        <section className="space-y-4">
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-1 h-3 bg-purple-600 rounded-full"></div>
+            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">guía de inicio</h4>
+          </div>
+          <div className="space-y-3">
+            <FeatureCard 
+              icon="fa-search" 
+              title={t('onboardingExploreTitle')} 
+              desc={t('onboardingExploreDesc')} 
+              color="from-purple-600 to-indigo-900"
+            />
+            <FeatureCard 
+              icon="fa-map-marked-alt" 
+              title={t('onboardingTravelTitle')} 
+              desc={t('onboardingTravelDesc')} 
+              color="from-cyan-600 to-blue-900"
+            />
+            <FeatureCard 
+              icon="fa-trophy" 
+              title={t('onboardingEarnTitle')} 
+              desc={t('onboardingEarnDesc')} 
+              color="from-yellow-500 to-orange-700"
+            />
+          </div>
+        </section>
+      </div>
     </div>
   );
 };

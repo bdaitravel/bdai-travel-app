@@ -153,8 +153,8 @@ export default function App() {
         {showNav && (
           <div className="fixed bottom-0 left-0 right-0 z-[1000] px-6 pb-safe-iphone mb-6 flex justify-center pointer-events-none">
             <nav className="bg-[#0a0f1e]/90 backdrop-blur-2xl border border-white/5 px-2 py-4 flex justify-around items-center w-full max-w-sm md:max-w-lg lg:max-w-2xl rounded-[2.5rem] pointer-events-auto shadow-2xl">
-              <NavButton icon="fa-trophy" label={t('navElite')} isActive={location.pathname === '/leaderboard'} onClick={() => navigate('/leaderboard')} />
-              <NavButton icon="fa-compass" label={t('navHub')} isActive={location.pathname === '/tools'} onClick={() => navigate('/tools')} />
+              <NavButton icon="fa-trophy" label={t('navRanking')} isActive={location.pathname === '/leaderboard'} onClick={() => navigate('/leaderboard')} />
+              <NavButton icon="fa-compass" label={t('navTOP')} isActive={location.pathname === '/tools'} onClick={() => navigate('/tools')} />
               <button onClick={() => navigate('/home')} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${location.pathname === '/home' || location.pathname === '/' ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>
               <NavButton icon="fa-id-card" label={t('navVisa')} isActive={location.pathname === '/profile'} onClick={() => navigate('/profile')} />
               <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={location.pathname === '/shop'} onClick={() => navigate('/shop')} />

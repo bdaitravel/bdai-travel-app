@@ -15,6 +15,7 @@ export const CITY_TRANSLATIONS: Record<string, any> = {
   "granada": { es: "Granada", en: "Granada", fr: "Grenade", de: "Granada", it: "Granada", pt: "Granada", ro: "Granada", zh: "格拉纳达", ja: "グラナダ", ru: "Гранада", ar: "غرناطة", hi: "ग्रेनेडा", ko: "그라나다", tr: "Granada", pl: "Grenada", nl: "Granada", ca: "Granada", eu: "Granada", vi: "Granada", th: "กรานาดา" },
   "malaga": { es: "Málaga", en: "Malaga", fr: "Malaga", de: "Malaga", it: "Malaga", pt: "Malaga", ro: "Malaga", zh: "马拉加", ja: "マラガ", ru: "Малага", ar: "مالقة", hi: "मलागा", ko: "말라가", tr: "Malaga", pl: "Malaga", nl: "Malaga", ca: "Màlaga", eu: "Malaga", vi: "Malaga", th: "มาลากา" },
   "palma": { es: "Palma", en: "Palma", fr: "Palma", de: "Palma", it: "Palma", pt: "Palma", ro: "Palma", zh: "帕尔马", ja: "パルマ", ru: "Пальма", ar: "بالما", hi: "पालमा", ko: "팔마", tr: "Palma", pl: "Palma", nl: "Palma", ca: "Palma", eu: "Palma", vi: "Palma", th: "ปัลมา" },
+  "palma-de-mallorca": { es: "Palma", en: "Palma", fr: "Palma", de: "Palma", it: "Palma", pt: "Palma", ro: "Palma", zh: "帕尔马", ja: "パルマ", ru: "Пальма", ar: "بالما", hi: "पालما", ko: "팔마", tr: "Palma", pl: "Palma", nl: "Palma", ca: "Palma", eu: "Palma", vi: "Palma", th: "ปัลมา" },
   "bilbao": { es: "Bilbao", en: "Bilbao", fr: "Bilbao", de: "Bilbao", it: "Bilbao", pt: "Bilbau", ro: "Bilbao", zh: "毕尔巴鄂", ja: "ビルバオ", ru: "Бильбао", ar: "بلباو", hi: "बिल्बाओ", ko: "빌바오", tr: "Bilbao", pl: "Bilbao", nl: "Bilbao", ca: "Bilbao", eu: "Bilbo", vi: "Bilbao", th: "บิลบาโอ" },
   "ronda": { es: "Ronda", en: "Ronda", fr: "Ronda", de: "Ronda", it: "Ronda", pt: "Ronda", ro: "Ronda", zh: "隆达", ja: "ロンダ", ru: "Ронда", ar: "روندا", hi: "रोंडा", ko: "론다", tr: "Ronda", pl: "Ronda", nl: "Ronda", ca: "Ronda", eu: "Ronda", vi: "Ronda", th: "รอนดา" },
   "cadaques": { es: "Cadaqués", en: "Cadaques", fr: "Cadaques", de: "Cadaques", it: "Cadaques", pt: "Cadaqués", ro: "Cadaques", zh: "卡达克斯", ja: "カダケス", ru: "Кадакес", ar: "كاديكيس", hi: "काडाक्वेस", ko: "카다케스", tr: "Cadaqués", pl: "Cadaqués", nl: "Cadaqués", ca: "Cadaqués", eu: "Cadaqués", vi: "Cadaqués", th: "กาดาเกส" },
@@ -145,7 +146,7 @@ export const formatCountryName = (rawCountry: string | null, lang: string): stri
 };
 
 const CITY_NAME_MAP_RAW: Record<string, string> = {
-  mad: "Madrid", bcn: "Barcelona", vlc: "Valencia", svq: "Seville", grx: "Granada", agp: "Málaga", pmi: "Palma", bio: "Bilbao", ron: "Ronda", cad: "Cadaqués", alb: "Albarracín", cud: "Cudillero", ter: "Teruel", sor: "Soria", ube: "Úbeda", cac: "Cáceres", cor: "Córdoba", cdz: "Cádiz", len: "León", gij: "Gijón", log: "Logroño",
+  mad: "Madrid", bcn: "Barcelona", vlc: "Valencia", svq: "Sevilla", grx: "Granada", agp: "Málaga", pmi: "Palma de Mallorca", bio: "Bilbao", ron: "Ronda", cad: "Cadaqués", alb: "Albarracín", cud: "Cudillero", ter: "Teruel", sor: "Soria", ube: "Úbeda", cac: "Cáceres", cor: "Córdoba", cdz: "Cádiz", len: "León", gij: "Gijón", log: "Logroño",
   par: "Paris", lon: "London", ber: "Berlin", rom: "Rome", ams: "Amsterdam", prg: "Prague", vie: "Vienna", ath: "Athens", lis: "Lisbon", bud: "Budapest",
   nyc: "New York", mex: "Mexico City", bue: "Buenos Aires", rio: "Rio de Janeiro", bog: "Bogotá", lim: "Lima", scl: "Santiago", yyz: "Toronto", chi: "Chicago", sfo: "San Francisco",
   tyo: "Tokyo", sel: "Seoul", bkk: "Bangkok", pek: "Beijing", sin: "Singapore", dxb: "Dubai", bom: "Mumbai", ist: "Istanbul", hkg: "Hong Kong", han: "Hanoi",
@@ -213,64 +214,29 @@ export const TravelServices = ({
   onCitySelect: (name: string, country?: string) => void;
 }) => {
   const t = translations[lang] || translations.en;
-  const [activeTab, setActiveTab] = useState<string>('europa');
 
   // ✅ FIX: handleCitySelection now correctly calls onCitySelect with rawName AND countryKey
   const handleCitySelection = (rawName: string, countryKey: string) => {
     onCitySelect(rawName, countryKey);
   };
 
-  if (mode === 'HUB') {
-    return (
-      <div className="space-y-10 pb-48 px-6 animate-fade-in">
-        <header>
-          <h3 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">{t.navHub} HUB</h3>
-          <p className="text-[8px] font-black text-purple-400 uppercase tracking-[0.4em] mt-2">Global Intel Database</p>
-        </header>
-        <section className="space-y-6">
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-            {['europa', 'america', 'asia', 'africa', 'oceania'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-2.5 rounded-xl text-[8px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${
-                  activeTab === tab
-                    ? 'bg-purple-600 border-purple-500 text-white shadow-lg'
-                    : 'bg-white/5 border-white/10 text-white/40'
-                }`}
-              >
-                {CONTINENT_TRANSLATIONS[tab]?.[lang] || tab}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 gap-3">
-            {(WORLD_DATA as any)[activeTab].map((city: any, i: number) => (
-              <CityMiniCard
-                key={city.cityKey}
-                rawName={CITY_NAME_MAP_RAW[city.cityKey] || city.cityKey}
-                lang={lang}
-                countryKey={city.countryKey}
-                onSelect={handleCitySelection}  // ✅ FIX: pass handleCitySelection directly
-                colorIdx={i}
-              />
-            ))}
-          </div>
-        </section>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-12 pb-32 px-6 animate-fade-in">
+    <div className="space-y-12 pb-32 px-6 animate-fade-in transition-all">
       <header>
         <h3 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
-          {t.discoverTitle} <span className="text-purple-400">{formatCountryName("spain", lang)}</span>
+          {mode === 'HUB' ? `${t.navTOP} HUB` : <>{t.discoverTitle} <span className="text-purple-400">{formatCountryName("spain", lang)}</span></>}
         </h3>
-        <p className="text-[8px] font-black text-purple-400 uppercase tracking-[0.4em] mt-2">{t.expertGuide}</p>
+        <p className="text-[8px] font-black text-purple-400 uppercase tracking-[0.4em] mt-2">
+          {mode === 'HUB' ? 'Intel Database' : t.expertGuide}
+        </p>
       </header>
+      
       <div className="space-y-10">
         <section className="space-y-4">
-          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">{t.sectionPopular}</h4>
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-1 h-4 bg-purple-600 rounded-full"></div>
+            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.sectionPopular}</h4>
+          </div>
           <div className="grid grid-cols-1 gap-3">
             {SPAIN_DATA.capitales.map((city, i) => (
               <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={handleCitySelection} colorIdx={i} />
@@ -280,16 +246,24 @@ export const TravelServices = ({
             ))}
           </div>
         </section>
+
         <section className="space-y-4">
-          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">{t.sectionVillages}</h4>
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.sectionVillages}</h4>
+          </div>
           <div className="grid grid-cols-1 gap-3">
             {SPAIN_DATA.pueblos.map((city, i) => (
               <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={handleCitySelection} colorIdx={i + 8} />
             ))}
           </div>
         </section>
+
         <section className="space-y-4">
-          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">{t.sectionHidden}</h4>
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-1 h-4 bg-amber-500 rounded-full"></div>
+            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.sectionHidden}</h4>
+          </div>
           <div className="grid grid-cols-1 gap-3">
             {SPAIN_DATA.joyas.map((city, i) => (
               <CityMiniCard key={city.cityKey} rawName={CITY_NAME_MAP_RAW[city.cityKey]} lang={lang} countryKey="spain" onSelect={handleCitySelection} colorIdx={i + 12} />
