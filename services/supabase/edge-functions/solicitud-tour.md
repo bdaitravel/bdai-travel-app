@@ -21,7 +21,7 @@ serve(async (req: Request) => {
       return new Response('Faltan campos obligatorios: city, country', { status: 400 });
     }
 
-    const subject = `BDAI — Nuevo tour solicitado, ${city}, ${country}`;
+    const subject = `BDAI — Nuevo tour solicitado, ${city}, ${language}`;
 
     const htmlBody = `
       <div style="font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; border-radius: 16px; max-width: 600px; border: 1px solid #1e293b;">
