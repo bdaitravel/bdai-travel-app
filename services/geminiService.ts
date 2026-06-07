@@ -56,11 +56,12 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
 export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<CitySearchResult[]> => {
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
             contents: `The user typed: "${input}" in language "${userLanguage}" and is looking for a city or town to visit.
 
 RULES:
-- Correct any typos (e.g. "florensia" → Florence, "barcelon" → Barcelona, "madri" → Madrid).
+- Correct obvious typos, but DO NOT be too aggressive. Some users search for very small villages (e.g. "Quel", "Turruncún", "Muro de Aguas").
+- Small villages are JUST AS IMPORTANT as big cities. Do not replace a valid village name with a major city just because they sound similar.
 - Recognize city/town names in ANY language and translate to English internally.
 - CRITICAL: If the city name exists in multiple countries, return ALL of them.
 - Return between 1 and 5 results, most famous/relevant first.
