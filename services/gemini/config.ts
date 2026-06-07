@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
 // ── Singleton: una sola instancia para todo el módulo ──────────────────────
-export const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+export const ai = new GoogleGenAI({ apiKey });
 
 // ── Clases de error propias ────────────────────────────────────────────────
 export class QuotaError extends Error {

@@ -187,6 +187,7 @@ export const useCity = () => {
           setSearchOptions(merged.length > 0 ? merged : null);
         } catch (e) {
           console.error("Search protocol error:", e);
+          toast("Error en el buscador inteligente (AI).", "error");
           // Los resultados locales siguen visibles; no limpiar
         } finally {
           setIsSearching(false);

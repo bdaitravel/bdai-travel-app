@@ -60,8 +60,8 @@ export const normalizeCityWithAI = async (input: string, userLanguage: string): 
             contents: `The user typed: "${input}" in language "${userLanguage}" and is looking for a city or town to visit.
 
 RULES:
-- Correct obvious typos, but DO NOT be too aggressive. Some users search for very small villages (e.g. "Quel", "Turruncún", "Muro de Aguas").
-- Small villages are JUST AS IMPORTANT as big cities. Do not replace a valid village name with a major city just because they sound similar.
+- If the input exactly matches a known town or village name (no matter how small), ALWAYS include it.
+- Never replace a small village (e.g. "Quel", "Turruncún", "Tudelilla") with a major city if the input matches the village.
 - Recognize city/town names in ANY language and translate to English internally.
 - CRITICAL: If the city name exists in multiple countries, return ALL of them.
 - Return between 1 and 5 results, most famous/relevant first.
