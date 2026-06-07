@@ -2,26 +2,33 @@ import React, { useEffect, useRef, useState } from 'react';
 import type * as LeafletLib from 'leaflet';
 import { logger } from '../lib/logger';
 import { Stop } from '../types';
+import { useAppStore } from '../store/useAppStore';
+import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings';
+import { Capacitor } from '@capacitor/core';
 
 const L = (window as Window & { L: typeof LeafletLib }).L;
 const STOP_CONFIG: Record<string, { icon: string, color: string }> = {
-    historical: { icon: 'fa-landmark', color: '#FF3B30' },
-    history: { icon: 'fa-landmark', color: '#FF3B30' },
-    monument: { icon: 'fa-monument', color: '#FF3B30' },
-    food: { icon: 'fa-utensils', color: '#FF9500' },
-    gastronomy: { icon: 'fa-utensils', color: '#FF9500' },
-    restaurant: { icon: 'fa-utensils', color: '#FF9500' },
-    art: { icon: 'fa-palette', color: '#FF2D55' },
-    museum: { icon: 'fa-building-columns', color: '#FF2D55' },
-    nature: { icon: 'fa-leaf', color: '#34C759' },
-    parks: { icon: 'fa-leaf', color: '#34C759' },
-    garden: { icon: 'fa-leaf', color: '#34C759' },
-    photo: { icon: 'fa-camera', color: '#007AFF' },
-    culture: { icon: 'fa-masks-theater', color: '#AF52DE' },
-    theater: { icon: 'fa-masks-theater', color: '#AF52DE' },
-    architecture: { icon: 'fa-archway', color: '#5856D6' },
-    religious: { icon: 'fa-church', color: '#5856D6' },
-    church: { icon: 'fa-church', color: '#5856D6' }
+    // Official categories (matching Insignias exactly)
+    history: { icon: 'fa-landmark', color: '#f59e0b' },
+    art: { icon: 'fa-palette', color: '#ec4899' },
+    food: { icon: 'fa-utensils', color: '#f97316' },
+    nature: { icon: 'fa-leaf', color: '#22c55e' },
+    photo: { icon: 'fa-camera', color: '#3b82f6' },
+    culture: { icon: 'fa-masks-theater', color: '#a855f7' },
+    architecture: { icon: 'fa-building', color: '#06b6d4' },
+    special: { icon: 'fa-star', color: '#eab308' },
+    
+    // Aliases to avoid breaking existing generated tours
+    historical: { icon: 'fa-landmark', color: '#f59e0b' },
+    monument: { icon: 'fa-landmark', color: '#f59e0b' }, // Fallback para "monument" usando el icono de historia
+    gastronomy: { icon: 'fa-utensils', color: '#f97316' },
+    restaurant: { icon: 'fa-utensils', color: '#f97316' },
+    museum: { icon: 'fa-palette', color: '#ec4899' },
+    parks: { icon: 'fa-leaf', color: '#22c55e' },
+    garden: { icon: 'fa-leaf', color: '#22c55e' },
+    theater: { icon: 'fa-masks-theater', color: '#a855f7' },
+    religious: { icon: 'fa-building', color: '#06b6d4' },
+    church: { icon: 'fa-building', color: '#06b6d4' }
 };
 
 // Helper to decode Google Polyline algorithm
@@ -67,7 +74,29 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
 
     const [isAutoFollowing, setIsAutoFollowing] = useState(true);
     const [walkingTime, setWalkingTime] = useState<number | null>(null);
+    const [showPermissionModal, setShowPermissionModal] = useState(false);
+    const { gpsStatus } = useAppStore();
     const tl = TEXTS[language] || TEXTS.es;
+
+    const handleCrosshairClick = () => {
+        if (gpsStatus === 'denied' || gpsStatus === 'unavailable') {
+            setShowPermissionModal(true);
+        } else {
+            setIsAutoFollowing(!isAutoFollowing);
+        }
+    };
+
+    const openNativeSettings = () => {
+        if (Capacitor.isNativePlatform()) {
+            NativeSettings.open({
+                optionAndroid: AndroidSettings.ApplicationDetails,
+                optionIOS: IOSSettings.App
+            }).catch(console.error);
+        } else {
+            alert(language === 'es' ? "Ve a los ajustes de tu navegador para permitir la ubicación." : "Go to your browser settings to allow location.");
+        }
+        setShowPermissionModal(false);
+    };
 
     // Validar paradas antes de usarlas
     const validStops = React.useMemo(() => {
@@ -396,13 +425,35 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
             <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-2">
                 <button onClick={() => mapInstanceRef.current?.zoomIn()} className="w-11 h-11 rounded-xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-plus text-sm"></i></button>
                 <button onClick={() => mapInstanceRef.current?.zoomOut()} className="w-11 h-11 rounded-xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-minus text-sm"></i></button>
-                <button onClick={() => setIsAutoFollowing(!isAutoFollowing)} className={`w-11 h-11 rounded-xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-sm`}></i></button>
+                <button onClick={handleCrosshairClick} className={`w-11 h-11 rounded-xl shadow-2xl flex items-center justify-center transition-all border-2 ${isAutoFollowing ? 'bg-purple-600 text-white border-purple-400' : 'bg-slate-900 text-slate-400 border-white/10'}`}><i className={`fas ${isAutoFollowing ? 'fa-location-crosshairs' : 'fa-hand-pointer'} text-sm`}></i></button>
                 <button onClick={() => { if (currentStop) mapInstanceRef.current?.flyTo([currentStop.latitude, currentStop.longitude], 18); setIsAutoFollowing(false); }} className="w-11 h-11 rounded-xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-bullseye text-sm"></i></button>
             </div>
             {walkingTime !== null && isAutoFollowing && (
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-10 z-[450] bg-purple-600 text-white px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl border-2 border-purple-400 flex items-center gap-2 animate-bounce">
                     <i className="fas fa-person-walking"></i>
                     <span>{walkingTime} min {tl.dist} {currentStop?.name || ''}</span>
+                </div>
+            )}
+            
+            {showPermissionModal && (
+                <div className="absolute inset-0 z-[500] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in text-white font-sans">
+                    <div className="bg-slate-900 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border-2 border-white/10 flex flex-col items-center text-center">
+                        <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30">
+                            <i className="fas fa-location-slash text-3xl text-purple-400"></i>
+                        </div>
+                        <h3 className="text-xl font-black mb-2">{language === 'es' ? 'Permisos de Ubicación' : 'Location Permissions'}</h3>
+                        <p className="text-slate-400 mb-8 leading-relaxed text-sm">
+                            {language === 'es' ? 'Para poder mostrar tu ubicación y validar tu posición en las paradas, necesitamos acceder a tu GPS. Por favor, actívalo en los Ajustes.' : 'In order to show your location and validate your position, we need access to your GPS. Please enable it in Settings.'}
+                        </p>
+                        <div className="flex flex-col gap-3 w-full">
+                            <button onClick={openNativeSettings} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl transition-colors">
+                                {language === 'es' ? 'Ir a Ajustes' : 'Go to Settings'}
+                            </button>
+                            <button onClick={() => setShowPermissionModal(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl transition-colors">
+                                {language === 'es' ? 'Cancelar' : 'Cancel'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

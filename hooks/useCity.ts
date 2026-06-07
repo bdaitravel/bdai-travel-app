@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useDebounce } from '../lib/useDebounce';
 import {
-    generateToursForCity, normalizeCityWithAI, fetchRoutePolyline
+    normalizeCityWithAI, fetchRoutePolyline
 } from '../services/geminiService';
 import {
     supabase, checkIfCityCached, normalizeKey, updateRoutePolyline,
@@ -97,34 +97,25 @@ export const useCity = () => {
             return;
           }
 
-          setLoadingMessage(t.generating);
-
-          const generated = await generateToursForCity(
-            cleanName,
-            selection.countryEn || selection.country,
-            { ...user, language: lang } as any,
-            (tour) => {
-              setTours(prev => {
-                const existingIdx = prev.findIndex(t => t.id === tour.id);
-                if (existingIdx !== -1) {
-                  const updated = [...prev];
-                  updated[existingIdx] = tour;
-                  return updated;
-                }
-                return [...prev, tour];
-              });
-            }
-          );
-
-          if (generated && generated.length > 0) {
-            setTours(generated);
-            navigate(`/city/${slug}`);
-            setIsLoading(false);
-          } else {
-            toast("La generación ha tardado demasiado o excedió el límite de Supabase. Por favor, reintenta.", 'error');
-            setSearchVal(cleanName);
-            setIsLoading(false);
+          // Tour no cacheado: enviar solicitud por email en lugar de generar
+          try {
+            await supabase.functions.invoke('solicitud-tour', {
+              body: {
+                city: cleanName,
+                country: selection.countryEn || selection.country,
+                language: lang,
+                slug,
+                userEmail: user.email || 'Anónimo'
+              }
+            });
+          } catch (emailErr) {
+            console.error('Error enviando solicitud de tour:', emailErr);
           }
+
+          toast(t.tourRequested || "We've received your request! We'll notify you when the tour is ready.", 'info');
+          setSearchVal('');
+          setIsLoading(false);
+          return;
 
         } catch (e: any) {
           console.error("Selection error:", e);

@@ -56,6 +56,8 @@ El código fuente de cada función vive en un fichero `.md` de este repositorio 
 | `tour-orchestratror-02` | `services/supabase/edge-functions/tour-orchestrator-02.md` |
 | `tour-worker-ai-02` | `services/supabase/edge-functions/tour-worker-ai-02.md` |
 | `tour-worker-gis-02` | `services/supabase/edge-functions/tour-worker-gis-02.md` |
+| `solicitud-tour` | `services/supabase/edge-functions/solicitud-tour.md` |
+| `notify-error` | `services/supabase/edge-functions/notify-error.md` |
 
 ### Webhooks de Supabase (Database Webhooks)
 
@@ -67,6 +69,24 @@ Configurados en Supabase Dashboard → Database → Webhooks:
 | Trigger GIS Worker 02 | `generation_jobs` | UPDATE | `tour-worker-gis-02` |
 
 El filtro por `status` lo aplica cada función internamente, no el webhook.
+
+### Flujo de solicitud de tours (actual)
+
+**Antes** (pipeline `-02`): cuando un usuario buscaba una ciudad sin caché, el frontend llamaba a `generateToursForCity()` que invocaba el orquestador `tour-orchestratror-02`, se suscribía a Realtime + polling y esperaba hasta 6.5 minutos a que el pipeline AI+GIS completase la generación.
+
+**Ahora**: cuando un usuario busca una ciudad sin caché, el frontend invoca la Edge Function `solicitud-tour` que envía un email de notificación a `DAISY_EMAIL` con los datos de la solicitud (ciudad, país, idioma, slug, email del usuario). El usuario ve un toast confirmando que se ha registrado su solicitud. **No se genera el tour automáticamente.**
+
+```
+Usuario busca ciudad → ¿Existe en tours_cache?
+  ├── SÍ → Cargar tours desde caché (igual que antes)
+  └── NO → Invocar solicitud-tour → Email a DAISY_EMAIL → Toast al usuario
+```
+
+El asunto del email sigue el formato: `BDAI — Nuevo tour solicitado, {city}, {country}`
+
+**Secrets necesarios para `solicitud-tour`**: `SMTP_HOSTNAME`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `DAISY_EMAIL`
+
+**Nota**: el pipeline de generación `-02` sigue existiendo y funcional para uso desde scripts (ej: `generateEsOnly.ts`), pero ya no se dispara desde el frontend.
 
 ---
 

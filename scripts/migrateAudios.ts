@@ -49,31 +49,53 @@ const encodeToMp3 = (pcmData: Uint8Array, sampleRate = 24000): Uint8Array => {
 };
 
 async function migrate() {
-    console.log('Fetching audio_cache records...');
-    const { data: records, error } = await supabase.from('audio_cache').select('*');
-    if (error || !records) {
-        console.error('Error fetching records:', error);
-        return;
+    console.log('Fetching all files from Supabase Storage bucket "audios"...');
+    
+    // Función recursiva para listar todos los archivos
+    async function listAllFiles(bucketName: string, prefix: string = ''): Promise<string[]> {
+        const files: string[] = [];
+        const { data, error } = await supabase.storage.from(bucketName).list(prefix, { limit: 1000 });
+        
+        if (error || !data) {
+            console.error(`Error listing prefix '${prefix}' in bucket '${bucketName}':`, error);
+            return files;
+        }
+
+        for (const item of data) {
+            if (item.name === '.emptyFolderPlaceholder') continue;
+            
+            const currentPath = prefix ? `${prefix}/${item.name}` : item.name;
+            
+            // Las carpetas en Supabase storage.list() normalmente no tienen id ni metadata
+            if (!item.id || !item.metadata) {
+                const subFiles = await listAllFiles(bucketName, currentPath);
+                files.push(...subFiles);
+            } else {
+                files.push(currentPath);
+            }
+        }
+        return files;
     }
+
+    const allFiles = await listAllFiles('audios');
+    const wavFiles = allFiles.filter(file => file.toLowerCase().endsWith('.wav'));
+
+    console.log(`Found ${wavFiles.length} .wav files in storage to migrate.`);
 
     let originalTotalSize = 0;
     let newTotalSize = 0;
     let migratedCount = 0;
-    
-    console.log(`Found ${records.length} records in audio_cache.`);
 
-    for (const record of records) {
-        if (!record.url || !record.url.endsWith('.wav')) {
-            continue;
-        }
-
+    for (const oldFilePath of wavFiles) {
         try {
-            console.log(`Migrating: ${record.language} / ${record.city}`);
+            console.log(`Migrating storage file: ${oldFilePath}`);
             
+            const { data: { publicUrl: oldUrl } } = supabase.storage.from('audios').getPublicUrl(oldFilePath);
+
             // 1. Download WAV
-            const response = await fetch(record.url);
+            const response = await fetch(oldUrl);
             if (!response.ok) {
-                console.error(`Failed to download ${record.url}`);
+                console.error(`Failed to download ${oldUrl}`);
                 continue;
             }
             
@@ -90,13 +112,7 @@ async function migrate() {
             newTotalSize += newSize;
 
             // 4. Determine new filename and path
-            const urlObj = new URL(record.url);
-            // Example URL: https://[project].supabase.co/storage/v1/object/public/audios/madrid/es/171234567.wav
-            const pathParts = urlObj.pathname.split('/audios/');
-            if (pathParts.length < 2) continue;
-            
-            const oldFilePath = decodeURIComponent(pathParts[1]);
-            const newFilePath = oldFilePath.replace('.wav', '.mp3');
+            const newFilePath = oldFilePath.substring(0, oldFilePath.length - 4) + '.mp3';
 
             // 5. Upload MP3
             const { data: uploadData, error: uploadError } = await supabase.storage
@@ -111,17 +127,16 @@ async function migrate() {
                 continue;
             }
 
-            const { data: { publicUrl } } = supabase.storage.from('audios').getPublicUrl(newFilePath);
+            const { data: { publicUrl: newUrl } } = supabase.storage.from('audios').getPublicUrl(newFilePath);
 
-            // 6. Update Database
+            // 6. Update Database if there's any reference to this old URL
             const { error: updateError } = await supabase
                 .from('audio_cache')
-                .update({ url: publicUrl })
-                .eq('text_hash', record.text_hash)
-                .eq('language', record.language);
+                .update({ url: newUrl })
+                .eq('url', oldUrl);
 
             if (updateError) {
-                console.error(`Failed to update DB: ${updateError.message}`);
+                console.error(`Failed to update DB for ${oldUrl}: ${updateError.message}`);
                 continue;
             }
 
@@ -132,7 +147,7 @@ async function migrate() {
             console.log(`✓ Converted: ${originalSize} bytes -> ${newSize} bytes (${savedPercent}% smaller)`);
             migratedCount++;
         } catch (e) {
-            console.error(`Error processing record ${record.id}:`, e);
+            console.error(`Error processing file ${oldFilePath}:`, e);
         }
     }
 
@@ -149,7 +164,7 @@ async function migrate() {
         console.log(`New Audio Size (MP3): ${nMB} MB`);
         console.log(`🏆 Total Space Saved: ${sMB} MB (${percentage}%)`);
     } else {
-        console.log(`No WAV files found to migrate.`);
+        console.log(`No WAV files found in storage to migrate.`);
     }
 }
 
