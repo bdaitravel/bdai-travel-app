@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-// Importamos nodemailer de forma compatible con Deno 2
 import nodemailer from "https://esm.sh/nodemailer@6.9.13";
 
 const SMTP_HOSTNAME = Deno.env.get("SMTP_HOSTNAME") || "";
@@ -10,18 +9,31 @@ const DAISY_EMAIL = Deno.env.get("DAISY_EMAIL") || "";
 
 serve(async (req: Request) => {
   try {
+    console.log(`[solicitud-tour] Request: ${req.method}`);
+
     if (req.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
     }
 
     const payload = await req.json();
-    const { city, country, language, slug, userEmail } = payload;
+    console.log(`[solicitud-tour] Payload keys: ${Object.keys(payload).join(', ')}`);
+
+    const record = payload?.record;
+
+    if (!record) {
+      console.error('[solicitud-tour] No record en payload. Payload completo:', JSON.stringify(payload));
+      return new Response('No record in payload', { status: 400 });
+    }
+
+    console.log(`[solicitud-tour] Record: city=${record.city}, country=${record.country}`);
+
+    const { city, country, language, slug, user_email: userEmail } = record;
 
     if (!city || !country) {
       return new Response('Faltan campos obligatorios: city, country', { status: 400 });
     }
 
-    const subject = `BDAI — Nuevo tour solicitado, ${city}, ${language}`;
+    const subject = `BDAI — Nuevo tour solicitado: ${city}, ${language}`;
 
     const htmlBody = `
       <div style="font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; border-radius: 16px; max-width: 600px; border: 1px solid #1e293b;">
@@ -41,21 +53,15 @@ serve(async (req: Request) => {
       </div>
     `;
 
-    // Configuración de Nodemailer
     const transporter = nodemailer.createTransport({
       host: SMTP_HOSTNAME,
       port: SMTP_PORT,
       secure: SMTP_PORT === 465,
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS,
-      },
-      tls: {
-        rejectUnauthorized: true 
-      }
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+      tls: { rejectUnauthorized: true }
     });
 
-    console.log(`Enviando mail de solicitud de tour vía ${SMTP_HOSTNAME}:${SMTP_PORT}...`);
+    console.log(`[solicitud-tour] Enviando mail vía ${SMTP_HOSTNAME}:${SMTP_PORT}...`);
 
     await transporter.sendMail({
       from: `"BDAI System" <${SMTP_USER}>`,
@@ -71,7 +77,7 @@ serve(async (req: Request) => {
     });
 
   } catch (err) {
-    console.error('[solicitud-tour] Error en el worker:', err.message);
+    console.error('[solicitud-tour] Error:', err.message, err.stack);
     return new Response(`Error: ${err.message}`, { status: 500 });
   }
 });

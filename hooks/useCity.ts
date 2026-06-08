@@ -97,20 +97,15 @@ export const useCity = () => {
             return;
           }
 
-          // Tour no cacheado: enviar solicitud por email en lugar de generar
-          try {
-            await supabase.functions.invoke('solicitud-tour', {
-              body: {
-                city: cleanName,
-                country: selection.countryEn || selection.country,
-                language: lang,
-                slug,
-                userEmail: user.email || 'Anónimo'
-              }
-            });
-          } catch (emailErr) {
-            console.error('Error enviando solicitud de tour:', emailErr);
-          }
+          // Tour no cacheado: registrar solicitud (el webhook dispara el email)
+          const { error: reqError } = await supabase.from('tour_requests').insert({
+            city: cleanName,
+            country: selection.countryEn || selection.country,
+            language: lang,
+            slug,
+            user_email: user.email || 'Anónimo'
+          });
+          if (reqError) console.error('Error registrando solicitud de tour:', reqError);
 
           toast(t.tourRequested || "We've received your request! We'll notify you when the tour is ready.", 'info');
           setSearchVal('');
