@@ -178,6 +178,7 @@ export interface CitySearchResult {
   fullName: string;
   name?: string;
   isCached?: boolean;
+  isSuggestion?: boolean;
 }
 
 export interface CityInfo {

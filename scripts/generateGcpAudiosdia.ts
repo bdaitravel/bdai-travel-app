@@ -44,7 +44,7 @@ const edge = createClient(SUPABASE_URL, ANON_KEY,                { auth: { persi
 
 // ─── LÍMITES Y PRIORIDADES ───────────────────────────────────────────────────
 
-const DAILY_LIMIT_CHARS = 27000;
+const DAILY_LIMIT_CHARS = 29000;
 const LANG_PRIORITY = ['es', 'en', 'ca', 'fr'];
 
 // ─── CLI args ─────────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ async function processCity(citySlug: string, lang: string): Promise<[number, num
     // Comprobar límite
     const charCount = stop.description.length;
     if (globalCharsSynthesized + charCount > DAILY_LIMIT_CHARS) {
-      console.log(`     🛑 Límite de 27k caracteres alcanzado. Saltando el resto.`);
+      console.log(`     🛑 Límite de 29k caracteres alcanzado. Saltando el resto.`);
       return [ok, total];
     }
 
@@ -168,7 +168,7 @@ async function processCity(citySlug: string, lang: string): Promise<[number, num
 
 async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  BDAI — Generador de Audios DIARIO (Límite: 27.000 chars)    ');
+  console.log('  BDAI — Generador de Audios DIARIO (Límite: 29.000 chars)    ');
   if (DRY_RUN) console.log('  🔍 MODO: DRY RUN');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 

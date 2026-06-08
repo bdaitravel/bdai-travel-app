@@ -5,6 +5,61 @@ interface ToursCacheSlimRow { city: string; language: string; }
 import { normalizeKey } from '../supabaseClient';
 import { slugToDisplayName } from '../../lib/slugToDisplayName';
 
+interface NominatimResult {
+    name: string;
+    type: string;
+    addresstype: string;
+    address: {
+        city?: string;
+        town?: string;
+        village?: string;
+        hamlet?: string;
+        country?: string;
+        country_code?: string;
+    };
+}
+
+const NOMINATIM_PLACE_TYPES = new Set(['city', 'town', 'village', 'hamlet', 'municipality', 'administrative', 'suburb', 'quarter']);
+
+const COUNTRY_CODE_TO_EN: Record<string, string> = {
+    es: 'Spain', fr: 'France', de: 'Germany', it: 'Italy', pt: 'Portugal',
+    gb: 'United Kingdom', us: 'United States', mx: 'Mexico', ar: 'Argentina',
+    co: 'Colombia', pe: 'Peru', cl: 'Chile', ve: 'Venezuela', ec: 'Ecuador',
+};
+
+export const searchMunicipalitiesNominatim = async (query: string, language = 'es'): Promise<CitySearchResult[]> => {
+    if (!query || query.length < 2) return [];
+    const normalizedQuery = query.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&countrycodes=es&format=json&limit=5&addressdetails=1&accept-language=${language}`,
+            { headers: { 'User-Agent': 'bdai-travel-app/1.0', 'Referer': 'https://www.bdai.travel/' }, signal: controller.signal }
+        );
+        clearTimeout(tid);
+        if (!res.ok) return [];
+        const data: NominatimResult[] = await res.json();
+
+        const seen = new Set<string>();
+        return data
+            .filter(r => NOMINATIM_PLACE_TYPES.has(r.type) || NOMINATIM_PLACE_TYPES.has(r.addresstype))
+            .map(r => {
+                const cityName = r.address?.city || r.address?.town || r.address?.village || r.address?.hamlet || r.name;
+                const countryCode = (r.address?.country_code || 'ES').toUpperCase();
+                const countryLocal = r.address?.country || 'España';
+                const countryEn = COUNTRY_CODE_TO_EN[(r.address?.country_code || 'es').toLowerCase()] || 'Spain';
+                const slug = normalizeKey(cityName, countryEn);
+                const normalizedName = cityName.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+                const isSuggestion = !normalizedName.includes(normalizedQuery) && !normalizedQuery.includes(normalizedName);
+                return { name: cityName, city: cityName, cityLocal: cityName, country: countryLocal, countryEn, countryCode, slug, isCached: false, isSuggestion, fullName: cityName };
+            })
+            .filter(r => { if (seen.has(r.slug)) return false; seen.add(r.slug); return true; });
+    } catch {
+        return [];
+    }
+};
+
 export const checkIfCityCached = async (city: string, slug: string, language = 'es'): Promise<boolean> => {
     if (!slug) return false;
     const lang = language || 'es';

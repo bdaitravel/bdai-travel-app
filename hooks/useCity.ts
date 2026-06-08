@@ -7,7 +7,7 @@ import {
 } from '../services/geminiService';
 import {
     supabase, checkIfCityCached, normalizeKey, updateRoutePolyline,
-    searchCitiesInCache
+    searchCitiesInCache, searchMunicipalitiesNominatim
 } from '../services/supabaseClient';
 import { toast } from '../components/Toast';
 import { Tour } from '../types';
@@ -138,6 +138,24 @@ export const useCity = () => {
         }
     };
 
+    // Merge por slug manteniendo orden: cacheados primero, luego por coincidencia exacta
+    const mergeAndSort = (base: any[], incoming: any[]): any[] => {
+        const merged = [...base];
+        for (const item of incoming) {
+            const idx = merged.findIndex(r => r.slug === item.slug);
+            if (idx !== -1) {
+                merged[idx] = { ...merged[idx], ...item };
+            } else {
+                merged.push(item);
+            }
+        }
+        return merged.sort((a, b) => {
+            const aScore = (a.isCached ? 0 : 2) + (a.isSuggestion ? 1 : 0);
+            const bScore = (b.isCached ? 0 : 2) + (b.isSuggestion ? 1 : 0);
+            return aScore - bScore;
+        });
+    };
+
     // ── Fase 1: Supabase instantánea (150ms) ─────────────────────────────────
     const doLocalSearch = useDebounce(async (val: string) => {
         if (val.length < 2) {
@@ -150,6 +168,25 @@ export const useCity = () => {
         localResultsRef.current = cached;
         if (cached.length > 0) setSearchOptions(cached);
     }, 150);
+
+    // ── Fase 1.5: Nominatim municipios España (300ms) ─────────────────────────
+    const doNominatimSearch = useDebounce(async (val: string) => {
+        if (val.length < 2) return;
+        const lang = user.language || 'es';
+        try {
+            const nominatimResults = await searchMunicipalitiesNominatim(val, lang);
+            if (nominatimResults.length === 0) return;
+            const enriched = await Promise.all(nominatimResults.map(async (r) => ({
+                ...r,
+                isCached: await checkIfCityCached(r.city, r.slug, lang)
+            })));
+            const merged = mergeAndSort(localResultsRef.current, enriched);
+            localResultsRef.current = merged;
+            setSearchOptions(merged.length > 0 ? merged : null);
+        } catch {
+            // silencioso — la Fase 2 AI sigue en marcha como respaldo
+        }
+    }, 300);
 
     // ── Fase 2: Gemini en paralelo (1000ms) ──────────────────────────────────
     const doAiSearch = useDebounce(async (val: string) => {
@@ -173,22 +210,11 @@ export const useCity = () => {
             };
           }));
 
-          // Merge: los resultados de caché van primero. Si la IA tiene el mismo slug,
-          // enriquece la entrada local con nombre correcto (acentos) y flag.
-          const merged = [...localResultsRef.current];
-          for (const aiResult of enriched) {
-            const localIdx = merged.findIndex(r => r.slug === aiResult.slug);
-            if (localIdx !== -1) {
-              merged[localIdx] = { ...merged[localIdx], ...aiResult };
-            } else {
-              merged.push(aiResult);
-            }
-          }
+          const merged = mergeAndSort(localResultsRef.current, enriched);
           setSearchOptions(merged.length > 0 ? merged : null);
         } catch (e) {
           console.error("Search protocol error:", e);
           toast("Error en el buscador inteligente (AI).", "error");
-          // Los resultados locales siguen visibles; no limpiar
         } finally {
           setIsSearching(false);
         }
@@ -203,8 +229,9 @@ export const useCity = () => {
             return;
         }
         setIsSearching(true);
-        doLocalSearch(val); // responde en <150ms
-        doAiSearch(val);    // enriquece en 5-20s
+        doLocalSearch(val);       // Fase 1: caché Supabase, ~150ms
+        doNominatimSearch(val);   // Fase 1.5: Nominatim España, ~300ms
+        doAiSearch(val);          // Fase 2: AI Gemini, ~5-20s
     };
 
     return {

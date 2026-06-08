@@ -80,6 +80,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
                       )}
                     </div>
                     <div className="truncate">
+                      {opt.isSuggestion && (
+                        <span className="text-[7px] font-black text-yellow-500/70 uppercase tracking-widest block mb-0.5">¿quisiste decir?</span>
+                      )}
                       <span className="text-white font-black uppercase text-[11px] block">{opt.cityLocal || opt.fullName}</span>
                       <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.country}</span>
                     </div>
