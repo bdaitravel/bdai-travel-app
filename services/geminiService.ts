@@ -56,7 +56,7 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
 export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<CitySearchResult[]> => {
     return handleAiCall(async () => {
         const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
+            model: "gemini-2.5-flash",
             contents: `The user typed: "${input}" in language "${userLanguage}" and is looking for a city or town to visit.
 
 RULES:
