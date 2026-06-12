@@ -225,7 +225,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
   const handleShareRank = async () => {
     const message = pt('shareRankMessage').replace('{rank}', user.rank).replace('{miles}', user.miles.toLocaleString());
-    if (navigator.share) { try { await navigator.share({ title: 'BDAI Rank', text: message, url: 'https://www.bdai.travel' }); } catch (e) {} }
+    if (navigator.share) { try { await navigator.share({ title: 'BDAI Rank', text: message, url: 'https://app.bdai.travel' }); } catch (e) {} }
     else { navigator.clipboard.writeText(message); setShowToast(true); setTimeout(() => setShowToast(false), 3000); }
   };
 

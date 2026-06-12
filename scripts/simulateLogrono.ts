@@ -67,7 +67,7 @@ async function fetchGooglePlaces(): Promise<RawPlace[]> {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': PLACES_API_KEY,
       'X-Goog-FieldMask': 'places.id,places.displayName,places.location,places.rating,places.userRatingCount,places.types',
-      'Referer': 'https://www.bdai.travel/'
+      'Referer': 'https://app.bdai.travel/'
     },
     body: JSON.stringify(body)
   });

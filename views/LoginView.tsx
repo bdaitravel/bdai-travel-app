@@ -22,8 +22,9 @@ export const LoginView: React.FC = () => {
     const { t, handleLangChange } = useTranslation();
 
     return (
-        <div className="h-full w-full flex flex-col items-center justify-center p-10 relative bg-[#020617]">
-            <div className="text-center flex flex-col items-center mb-10 mt-[-15dvh] animate-fade-in">
+        <div className="min-h-full w-full flex flex-col items-center p-6 sm:p-10 bg-[#020617] overflow-y-auto overflow-x-hidden">
+            <div className="flex-[0.5] min-h-[2rem]"></div>
+            <div className="text-center flex flex-col items-center mb-10 animate-fade-in">
             <BdaiLogo className="w-32 h-32 mb-4 animate-pulse-logo" />
             <h1 className="text-6xl font-black lowercase tracking-tighter text-white/95 leading-none">bdai</h1>
             <p className="text-[10px] font-medium text-purple-400 mt-2 lowercase opacity-80">better destinations by ai</p>
@@ -70,7 +71,9 @@ export const LoginView: React.FC = () => {
             </div>
             )}
 
-            <div className="absolute bottom-10 left-0 right-0 px-8 flex flex-col items-center">
+            <div className="flex-1 min-h-[2rem]"></div>
+
+            <div className="w-full px-8 flex flex-col items-center pb-8 pt-4">
             <div className="relative group">
                 <select value={user.language} onChange={(e) => handleLangChange(e.target.value)} disabled={isLoading}
                 className="appearance-none bg-white/5 border border-white/10 rounded-full px-6 py-2 text-[8px] font-black uppercase tracking-widest text-slate-400 outline-none focus:border-purple-500/40 transition-all cursor-pointer pr-10">

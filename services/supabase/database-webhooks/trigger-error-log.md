@@ -45,10 +45,10 @@ Antes de activar este webhook, asegúrate de que existen estos dos secrets en Su
   "record": {
     "id": "uuid-generado",
     "error_message": "[AUTO] Cannot read properties of undefined (reading 'map')",
-    "context": "url: https://www.bdai.travel/#/city/logrono\nagent: Mozilla/5.0...\ncomponent_stack: at CityDetailView...\njs_stack: TypeError: Cannot read...",
+    "context": "url: https://app.bdai.travel/#/city/logrono\nagent: Mozilla/5.0...\ncomponent_stack: at CityDetailView...\njs_stack: TypeError: Cannot read...",
     "user_email": "anonymous",
     "language": "es",
-    "url": "https://www.bdai.travel/#/city/logrono",
+    "url": "https://app.bdai.travel/#/city/logrono",
     "created_at": "2026-05-01T10:23:45.000Z"
   }
 }

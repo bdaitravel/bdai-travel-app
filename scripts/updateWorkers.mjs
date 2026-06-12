@@ -20,7 +20,7 @@ contentAi = contentAi.replace(/const gRes = await fetch\(\r?\n\s*`https:\/\/gene
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 
-                    'Referer': 'https://www.bdai.travel/',
+                    'Referer': 'https://app.bdai.travel/',
                     'Authorization': \`Bearer \${accessToken}\`
                 },`);
                 

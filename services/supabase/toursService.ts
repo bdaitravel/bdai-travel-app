@@ -35,7 +35,7 @@ export const searchMunicipalitiesNominatim = async (query: string, language = 'e
         const tid = setTimeout(() => controller.abort(), 5000);
         const res = await fetch(
             `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&countrycodes=es&format=json&limit=5&addressdetails=1&accept-language=${language}`,
-            { headers: { 'User-Agent': 'bdai-travel-app/1.0', 'Referer': 'https://www.bdai.travel/' }, signal: controller.signal }
+            { headers: { 'User-Agent': 'bdai-travel-app/1.0', 'Referer': 'https://app.bdai.travel/' }, signal: controller.signal }
         );
         clearTimeout(tid);
         if (!res.ok) return [];

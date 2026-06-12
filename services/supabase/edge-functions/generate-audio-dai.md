@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Referer': 'https://www.bdai.travel/' 
+        'Referer': 'https://app.bdai.travel/' 
       },
       body: JSON.stringify(googleReq),
       signal: AbortSignal.timeout(120_000) // 120s timeout para evitar cuelgues

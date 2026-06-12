@@ -325,10 +325,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, us
     const currentStep = steps[step];
 
     return (
-        <div className="fixed inset-0 z-[10000] bg-[#020617]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 overflow-hidden animate-fade-in">
+        <div className="fixed inset-0 z-[10000] bg-[#020617]/95 backdrop-blur-xl flex flex-col items-center p-6 overflow-y-auto overflow-x-hidden animate-fade-in">
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-[#020617] to-[#020617]"></div>
             
-            <div className="w-full max-w-md flex flex-col items-center relative z-10 h-full max-h-[850px] justify-center">
+            <div className="w-full max-w-md flex flex-col items-center relative z-10 min-h-full justify-center py-4">
                 <div className="bg-slate-900/80 border border-white/10 p-8 rounded-[3rem] shadow-2xl backdrop-blur-2xl w-full flex flex-col items-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5">
                         <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 ease-out" style={{ width: `${((step + 1) / steps.length) * 100}%` }}></div>

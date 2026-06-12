@@ -1050,7 +1050,7 @@ Deno.serve(async (req) => {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Referer': 'https://www.bdai.travel/' 
+                        'Referer': 'https://app.bdai.travel/' 
                     },
                     body: JSON.stringify(googleReq)
                 });

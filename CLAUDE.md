@@ -80,4 +80,4 @@ Tailwind CSS is loaded via **CDN in `index.html`** — there is no `tailwind.con
 - **Audio caching uses SHA-256 hashing** of normalised text to deduplicate across sessions.
 - **Grounding (Google Search) is rate-limited** to 1400 req/day in `tour-worker-ai`; above that the system degrades gracefully without grounding.
 - **`tryExtractTours()`** is used instead of `response_mime_type: "application/json"` because JSON mode is incompatible with Gemini's Google Search grounding tool.
-- **Capacitor `Referer` header**: Edge Function calls to Google APIs include `'Referer': 'https://www.bdai.travel/'` to pass Google Cloud API key restrictions.
+- **Capacitor `Referer` header**: Edge Function calls to Google APIs include `'Referer': 'https://app.bdai.travel/'` to pass Google Cloud API key restrictions.

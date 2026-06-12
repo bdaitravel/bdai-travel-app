@@ -283,7 +283,7 @@ const fetchGooglePlaces = async (lat: number, lon: number, radiusM: number = 180
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': PLACES_API_KEY,
                 'X-Goog-FieldMask': 'places.id,places.displayName,places.location,places.rating,places.userRatingCount,places.types',
-                'Referer': 'https://www.bdai.travel/'
+                'Referer': 'https://app.bdai.travel/'
             },
             body: JSON.stringify(body)
         });
@@ -675,7 +675,7 @@ serve(async (req) => {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 
-                    'Referer': 'https://www.bdai.travel/',
+                    'Referer': 'https://app.bdai.travel/',
                     'Authorization': `Bearer ${accessToken}`
                 },
                 body: JSON.stringify({

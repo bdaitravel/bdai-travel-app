@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         // Autenticación Bearer Token usando la Service Account OAuth2
         'Authorization': `Bearer ${accessToken}`,
-        'Referer': 'https://www.bdai.travel/' 
+        'Referer': 'https://app.bdai.travel/' 
       },
       body: JSON.stringify(googleReq),
       signal: AbortSignal.timeout(120_000) 

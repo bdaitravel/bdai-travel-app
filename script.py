@@ -70,7 +70,7 @@ old_fetch = """const gRes = await fetch(
             https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=,
             {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Referer': 'https://www.bdai.travel/' },"""
+                headers: { 'Content-Type': 'application/json', 'Referer': 'https://app.bdai.travel/' },"""
 
 new_fetch = """const accessToken = await getGcpAccessToken();
         const gRes = await fetch(
@@ -80,7 +80,7 @@ new_fetch = """const accessToken = await getGcpAccessToken();
                 headers: { 
                     'Content-Type': 'application/json', 
                     'Authorization': Bearer ,
-                    'Referer': 'https://www.bdai.travel/' 
+                    'Referer': 'https://app.bdai.travel/' 
                 },"""
 
 ai = ai.replace(old_fetch, new_fetch)

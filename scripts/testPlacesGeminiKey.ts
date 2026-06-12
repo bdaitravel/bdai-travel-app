@@ -11,7 +11,7 @@ async function test() {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Referer': 'https://www.bdai.travel/'
+        'Referer': 'https://app.bdai.travel/'
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: "Respond in 3 words: Yes it works." }] }]

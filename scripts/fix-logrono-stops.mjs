@@ -36,7 +36,7 @@ const searchPlaces = async (query) => {
             'Content-Type': 'application/json',
             'X-Goog-Api-Key': PLACES_API_KEY,
             'X-Goog-FieldMask': 'places.displayName,places.location,places.formattedAddress',
-            'Referer': 'https://www.bdai.travel/',
+            'Referer': 'https://app.bdai.travel/',
         },
         body: JSON.stringify({
             textQuery: query,

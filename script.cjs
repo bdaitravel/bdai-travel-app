@@ -63,7 +63,7 @@ const oldFetch = `const gRes = await fetch(
             \`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=\${GEMINI_API_KEY}\`,
             {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Referer': 'https://www.bdai.travel/' },`;
+                headers: { 'Content-Type': 'application/json', 'Referer': 'https://app.bdai.travel/' },`;
 
 const newFetch = `const accessToken = await getGcpAccessToken();
         const gRes = await fetch(
@@ -73,7 +73,7 @@ const newFetch = `const accessToken = await getGcpAccessToken();
                 headers: { 
                     'Content-Type': 'application/json', 
                     'Authorization': \`Bearer \${accessToken}\`,
-                    'Referer': 'https://www.bdai.travel/' 
+                    'Referer': 'https://app.bdai.travel/' 
                 },`;
 
 ai = ai.replace(oldFetch, newFetch);

@@ -383,7 +383,7 @@ serve(async (req) => {
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Referer': 'https://www.bdai.travel/' },
+                headers: { 'Content-Type': 'application/json', 'Referer': 'https://app.bdai.travel/' },
                 body: JSON.stringify({
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
                     systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },

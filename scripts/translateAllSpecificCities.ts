@@ -90,7 +90,7 @@ ${JSON.stringify(slim)}`;
     headers: { 
       'Content-Type': 'application/json', 
       'Authorization': `Bearer ${accessToken}`,
-      'Referer': 'https://www.bdai.travel/' 
+      'Referer': 'https://app.bdai.travel/' 
     },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],

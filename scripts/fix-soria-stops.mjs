@@ -49,7 +49,7 @@ const searchGooglePlaces = async (query, cityInfo) => {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': PLACES_API_KEY,
                 'X-Goog-FieldMask': 'places.displayName,places.location',
-                'Referer': 'https://www.bdai.travel/',
+                'Referer': 'https://app.bdai.travel/',
             },
             body: JSON.stringify({
                 textQuery: query,
