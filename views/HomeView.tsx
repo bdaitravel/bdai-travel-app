@@ -7,6 +7,7 @@ import { useTranslation } from '../hooks/useTranslation';
 
 interface HomeViewProps {
   appDesc: Record<string, string>;
+  tourDelayDesc: Record<string, { line1: string, line2: string }>;
 }
 
 const FeatureCard: React.FC<{
@@ -26,7 +27,7 @@ const FeatureCard: React.FC<{
   </div>
 );
 
-export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ appDesc, tourDelayDesc }) => {
   const { userProfile: user, setShowOnboarding } = useAppStore();
   const { 
     searchVal, 
@@ -54,6 +55,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
         <p className="text-[11px] font-medium text-purple-400 mt-2 lowercase opacity-80 mb-4">better destinations by ai</p>
         <p className="text-xs text-slate-400 max-w-[280px] mx-auto mb-6 leading-relaxed font-medium">
           {appDesc[user.language] || appDesc['en']}
+        </p>
+
+        <p className="text-xs text-slate-400 max-w-[280px] mx-auto mb-6 leading-relaxed italic font-bold">
+          {(tourDelayDesc[user.language] || tourDelayDesc['es']).line1}
+          <br/>
+          <span className="opacity-90">{(tourDelayDesc[user.language] || tourDelayDesc['es']).line2}</span>
         </p>
         
         <div className="w-full relative">
