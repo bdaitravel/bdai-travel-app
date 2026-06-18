@@ -27,6 +27,7 @@ export const useCity = () => {
     const [searchVal, setSearchVal] = useState('');
     const [searchOptions, setSearchOptions] = useState<any[] | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+    const [lastRequestedCity, setLastRequestedCity] = useState<string | null>(null);
 
     // Ref para que doAiSearch acceda a los resultados locales actuales sin closure stale
     const localResultsRef = useRef<any[]>([]);
@@ -107,7 +108,7 @@ export const useCity = () => {
           });
           if (reqError) console.error('Error registrando solicitud de tour:', reqError);
 
-          toast(t.tourRequested || "We've received your request! We'll notify you when the tour is ready.", 'info');
+          setLastRequestedCity(cleanName);
           setSearchVal('');
           setIsLoading(false);
           return;
@@ -217,6 +218,7 @@ export const useCity = () => {
 
     const handleCitySearch = (val: string) => {
         setSearchVal(val);
+        setLastRequestedCity(null); // limpiar el mensaje de solicitud al iniciar una nueva búsqueda
         if (val.length < 2) {
             localResultsRef.current = [];
             setSearchOptions(null);
@@ -234,6 +236,7 @@ export const useCity = () => {
         setSearchVal,
         searchOptions,
         isSearching,
+        lastRequestedCity,
         processCitySelection,
         handleTravelServiceSelect,
         handleCitySearch

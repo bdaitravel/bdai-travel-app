@@ -57,6 +57,7 @@ El código fuente de cada función vive en un fichero `.md` de este repositorio 
 | `tour-worker-ai-02` | `services/supabase/edge-functions/tour-worker-ai-02.md` |
 | `tour-worker-gis-02` | `services/supabase/edge-functions/tour-worker-gis-02.md` |
 | `solicitud-tour` | `services/supabase/edge-functions/solicitud-tour.md` |
+| `notify-tour-ready` | `services/supabase/edge-functions/notify-tour-ready.md` |
 | `notify-error` | `services/supabase/edge-functions/notify-error.md` |
 
 ### Webhooks de Supabase (Database Webhooks)
@@ -67,6 +68,8 @@ Configurados en Supabase Dashboard → Database → Webhooks:
 |---|---|---|---|
 | Trigger AI Worker 02 | `generation_jobs` | INSERT | `tour-worker-ai-02` |
 | Trigger GIS Worker 02 | `generation_jobs` | UPDATE | `tour-worker-gis-02` |
+| Trigger Tour Request | `tour_requests` | INSERT | `solicitud-tour` |
+| Trigger Notify Tour Ready | `tours_cache` | INSERT, UPDATE | `notify-tour-ready` |
 
 El filtro por `status` lo aplica cada función internamente, no el webhook.
 
@@ -74,21 +77,46 @@ El filtro por `status` lo aplica cada función internamente, no el webhook.
 
 **Antes** (pipeline `-02`): cuando un usuario buscaba una ciudad sin caché, el frontend llamaba a `generateToursForCity()` que invocaba el orquestador `tour-orchestratror-02`, se suscribía a Realtime + polling y esperaba hasta 6.5 minutos a que el pipeline AI+GIS completase la generación.
 
-**Ahora**: cuando un usuario busca una ciudad sin caché, el frontend invoca la Edge Function `solicitud-tour` que envía un email de notificación a `DAISY_EMAIL` con los datos de la solicitud (ciudad, país, idioma, slug, email del usuario). El usuario ve un toast confirmando que se ha registrado su solicitud. **No se genera el tour automáticamente.**
+**Ahora**: cuando un usuario busca una ciudad sin caché, el frontend hace un `INSERT` en la tabla `tour_requests` (ciudad, país, idioma, slug, email del usuario). El Database Webhook `Trigger Tour Request` dispara la Edge Function `solicitud-tour`, que envía el email a `DAISY_EMAIL`. El usuario ve un **banner inline** en la HomeView confirmando la solicitud. **No se genera el tour automáticamente.**
 
 ```
 Usuario busca ciudad → ¿Existe en tours_cache?
   ├── SÍ → Cargar tours desde caché (igual que antes)
-  └── NO → Invocar solicitud-tour → Email a DAISY_EMAIL → Toast al usuario
+  └── NO → INSERT en tour_requests → Webhook → solicitud-tour → Email a DAISY_EMAIL → Banner inline
 ```
 
-El asunto del email sigue el formato: `BDAI — Nuevo tour solicitado, {city}, {country}`
+El asunto del email sigue el formato: `BDAI — Nuevo tour solicitado: {city}, {language}`
 
 **Secrets necesarios para `solicitud-tour`**: `SMTP_HOSTNAME`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `DAISY_EMAIL`
 
 **Nota**: el pipeline de generación `-02` sigue existiendo y funcional para uso desde scripts (ej: `generateEsOnly.ts`), pero ya no se dispara desde el frontend.
 
 ---
+
+## Sistema de notificación de tours disponibles
+
+Cuando un tour pasa a `status: 'READY'` en `tours_cache` (por pipeline automático **o por inserción manual**), el webhook `Trigger Notify Tour Ready` dispara la función `notify-tour-ready`.
+
+**Flujo:**
+1. Consulta `tour_requests` donde `slug = record.city` AND `notified_at IS NULL`
+2. Deduplica por `user_email` (mismo usuario que pidió la ciudad 2 veces → 1 solo email)
+3. Envía email desde `SMTP_USER` con asunto: `✅ Tu tour de {city} ya está disponible`
+4. Marca todas las filas con `notified_at = now()` para evitar reenvíos
+5. Las filas con `user_email = 'Anónimo'` o sin email se marcan igualmente (sin email enviado)
+
+**Campo necesario en `tour_requests`:**
+Para que la base de datos soporte este flujo, se requirió ejecutar este SQL:
+```sql
+ALTER TABLE tour_requests
+  ADD COLUMN IF NOT EXISTS notified_at TIMESTAMPTZ DEFAULT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_tour_requests_slug_notified
+  ON tour_requests (slug, notified_at)
+  WHERE notified_at IS NULL;
+```
+
+---
+
 
 ## Script de pre-seeding: `generateEsOnly.ts`
 

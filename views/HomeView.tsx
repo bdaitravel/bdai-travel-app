@@ -7,7 +7,6 @@ import { useTranslation } from '../hooks/useTranslation';
 
 interface HomeViewProps {
   appDesc: Record<string, string>;
-  tourDelayDesc: Record<string, { line1: string, line2: string }>;
 }
 
 const FeatureCard: React.FC<{
@@ -27,12 +26,13 @@ const FeatureCard: React.FC<{
   </div>
 );
 
-export const HomeView: React.FC<HomeViewProps> = ({ appDesc, tourDelayDesc }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
   const { userProfile: user, setShowOnboarding } = useAppStore();
   const { 
     searchVal, 
     searchOptions, 
     isSearching, 
+    lastRequestedCity,
     processCitySelection, 
     handleTravelServiceSelect, 
     handleCitySearch 
@@ -57,11 +57,16 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc, tourDelayDesc }) =>
           {appDesc[user.language] || appDesc['en']}
         </p>
 
-        <p className="text-xs text-slate-400 max-w-[280px] mx-auto mb-6 leading-relaxed italic font-bold">
-          {(tourDelayDesc[user.language] || tourDelayDesc['es']).line1}
-          <br/>
-          <span className="opacity-90">{(tourDelayDesc[user.language] || tourDelayDesc['es']).line2}</span>
-        </p>
+        {lastRequestedCity && (
+          <div className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 max-w-[300px] mx-auto mb-6 animate-fade-in">
+            <i className="fas fa-hourglass-half text-amber-400 text-xs mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-300/90 leading-relaxed">
+              Se ha solicitado la creación de{' '}
+              <span className="font-black text-amber-200">{lastRequestedCity}</span>.
+              {' '}Este proceso puede tardar entre 1 minuto y 1 día 😉
+            </p>
+          </div>
+        )}
         
         <div className="w-full relative">
           <div className="flex gap-2">

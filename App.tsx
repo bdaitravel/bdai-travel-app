@@ -52,14 +52,7 @@ const APP_DESC: Record<string, string> = {
   th: "ค้นพบเมืองด้วยเส้นทางท่องเที่ยวเฉพาะตัวที่สร้างโดย AI ไม่มีจุดหยุดซ้ำ มีแต่ประสบการณ์แท้จริงและสถานที่ซ่อนเร้น",
 };
 
-const TOUR_DELAY_DESC: Record<string, { line1: string, line2: string }> = {
-  es: { line1: "Si el tour de tu ciudad ya existe, aparece al instante.", line2: "*Si no, mejor planifica con algo de antelación, la creación puede tardar entre 1 minuto y 1 día 😉" },
-  en: { line1: "If the tour of your city already exists, it appears instantly.", line2: "*If not, better plan ahead, creation can take between 1 minute and 1 day 😉" },
-  fr: { line1: "Si la visite de votre ville existe déjà, elle apparaît instantanément.", line2: "*Sinon, mieux vaut planifier à l'avance, la création peut prendre entre 1 minute et 1 jour 😉" },
-  de: { line1: "Wenn die Tour deiner Stadt bereits existiert, erscheint sie sofort.", line2: "*Wenn nicht, plane besser im Voraus, die Erstellung kann zwischen 1 Minute und 1 Tag dauern 😉" },
-  it: { line1: "Se il tour della tua città esiste già, appare all'istante.", line2: "*Se no, meglio pianificare in anticipo, la creazione può richiedere da 1 minuto a 1 giorno 😉" },
-  pt: { line1: "Se o tour da sua cidade já existir, aparecerá instantaneamente.", line2: "*Se não, é melhor planear com antecedência, a criação pode demorar entre 1 minuto e 1 dia 😉" }
-};
+
 
 const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
   <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all flex-1 ${isActive ? 'text-purple-500 scale-105' : 'text-slate-500 opacity-40'}`}>
@@ -141,7 +134,7 @@ export default function App() {
         <div className={`flex-1 overflow-y-auto no-scrollbar relative ${isTourActive ? 'pb-0' : 'pb-36'}`}>
           <Routes>
             <Route path="/login" element={user.isLoggedIn ? <Navigate to="/home" /> : <LoginView />} />
-            <Route path="/home" element={user.isLoggedIn ? <HomeView appDesc={APP_DESC} tourDelayDesc={TOUR_DELAY_DESC} /> : <Navigate to="/login" />} />
+            <Route path="/home" element={user.isLoggedIn ? <HomeView appDesc={APP_DESC} /> : <Navigate to="/login" />} />
             <Route path="/city/:slug" element={user.isLoggedIn ? <CityDetailView /> : <Navigate to="/login" />} />
             <Route path="/tour/:tourId/stop/:stopIdx" element={user.isLoggedIn ? <TourActiveView /> : <Navigate to="/login" />} />
 

@@ -1,5 +1,22 @@
 # Documentación de Tablas de Supabase
 
+## Tabla: `tour_requests`
+*Registro de ciudades solicitadas por usuarios cuando no existe tour en caché. Sirve como lista de notificación pendiente.*
+
+| Campo | Tipo | Formato | Descripción |
+| :--- | :--- | :--- | :--- |
+| `id` | string | uuid | Identificador único. &lt;pk/&gt; |
+| `city` | string | text | Nombre de la ciudad solicitada (formato original, con tildes). |
+| `country` | string | text | País en inglés. |
+| `language` | string | text | Idioma del usuario en el momento de la solicitud. |
+| `slug` | string | text | Clave normalizada (`ciudad_pais`) que enlaza con `tours_cache.city`. |
+| `user_email` | string | text | Email del usuario. `'Anónimo'` si no disponible. |
+| `created_at` | string | timestamp | Fecha de la solicitud. |
+| `notified_at` | string | timestamp | Fecha en que se envió el email de "tour disponible". `NULL` mientras no se haya notificado. |
+
+---
+
+
 Este documento refleja el **estado exacto y en tiempo real** de las tablas configuradas en la base de datos de Supabase, extraído directamente utilizando la API interna.
 
 ## Tabla: `generation_jobs`
