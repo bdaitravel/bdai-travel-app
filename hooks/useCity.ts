@@ -35,13 +35,33 @@ export const useCity = () => {
     const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
         const lang = langCode || user.language || 'es';
         const t = translations[lang] || translations.en;
-        setIsLoading(true);
-        setSearchOptions(null);
-        setSearchVal('');
-
+        
         const cleanName = selection.name?.split(',')[0].trim() || selection.city;
         const slug = (selection.slug || normalizeKey(cleanName, selection.countryEn || selection.country))
           .replace(/-/g, '_').toLowerCase();
+
+        // ── Bypass del Loading Screen si ya sabemos que NO hay caché ──
+        if (selection.isCached === false && !forceRefresh) {
+          setSearchOptions(null);
+          setSearchVal('');
+          
+          const { error: reqError } = await supabase.from('tour_requests').insert({
+            city: cleanName,
+            country: selection.countryEn || selection.country,
+            language: lang,
+            slug,
+            user_email: user.email || 'Anónimo'
+          });
+          if (reqError) console.error('Error registrando solicitud de tour:', reqError);
+
+          setLastRequestedCity(cleanName);
+          return;
+        }
+
+        // Si tenemos que buscar en caché (o no estamos seguros), mostramos el loader general
+        setIsLoading(true);
+        setSearchOptions(null);
+        setSearchVal('');
 
         const backfillMissingPolylines = (tours: Tour[], citySlug: string, l: string): void => {
           const toursMissingPolyline = tours.filter(t => !t.routePolyline && t.stops?.length >= 2);
