@@ -12,48 +12,11 @@ const jsonHeaders = {
   'Content-Type': 'application/json',
 };
 
-// ── MP3 Encoder (carga lazy en primera petición) ────────────────────────
-let Mp3Encoder: any = null;
-let mp3Available = false;
-let mp3Checked = false;
-
-async function ensureMp3Encoder(): Promise<void> {
-  if (mp3Checked) return;
-  mp3Checked = true;
-  try {
-    const mod = await import("npm:lamejs@1.2.1");
-    Mp3Encoder = mod?.Mp3Encoder || mod?.default?.Mp3Encoder;
-    if (Mp3Encoder) {
-      new Mp3Encoder(1, 24000, 64);
-      mp3Available = true;
-      console.log("✅ lamejs cargado — modo MP3 activo");
-    }
-  } catch (e: any) {
-    console.warn("⚠️ MP3 no disponible, usando WAV:", e?.message || e);
-    mp3Available = false;
-  }
-}
-
-function encodePcmToMp3(pcmData: Uint8Array, sampleRate = 24000, bitrate = 64): Uint8Array {
-  const int16 = new Int16Array(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength / 2);
-  const encoder = new Mp3Encoder(1, sampleRate, bitrate);
-  const maxSamples = 1152;
-  const chunks: Int8Array[] = [];
-  for (let i = 0; i < int16.length; i += maxSamples) {
-    const buf = encoder.encodeBuffer(int16.subarray(i, i + maxSamples));
-    if (buf.length > 0) chunks.push(buf);
-  }
-  const flush = encoder.flush();
-  if (flush.length > 0) chunks.push(flush);
-  const totalLen = chunks.reduce((a, c) => a + c.length, 0);
-  const result = new Uint8Array(totalLen);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength), offset);
-    offset += chunk.length;
-  }
-  return result;
-}
+// ── NOTA: La edge function siempre genera WAV. ────────────────────────────
+// MP3 encoding (lamejs) falla en el runtime de Deno/Supabase Edge Functions.
+// La conversión WAV → MP3 se delega al script migrateAudios.ts en Node.js,
+// donde @breezystack/lamejs funciona correctamente.
+// Beneficio: esta función es más rápida (sin cold-start de lamejs, sin encoding).
 
 function addWavHeader(pcmData: Uint8Array): Uint8Array {
   const numChannels = 1;
@@ -136,9 +99,6 @@ Deno.serve(async (req) => {
 
   console.log("--- NUEVA PETICIÓN DE AUDIO RECIBIDA (GCP SA) ---");
   try {
-    await ensureMp3Encoder();
-    console.log(`Modo encoding: ${mp3Available ? 'MP3 (64kbps)' : 'WAV'}`);
-
     const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     if (!serviceKey) {
       throw new Error("ERROR CRÍTICO: Falta la llave Service Role.");
@@ -240,26 +200,10 @@ Deno.serve(async (req) => {
 
     const rawPcm = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
 
-    let audioBuffer: Uint8Array;
-    let fileExt: string;
-    let contentType: string;
-
-    if (mp3Available) {
-      try {
-        audioBuffer = encodePcmToMp3(rawPcm);
-        fileExt = "mp3";
-        contentType = "audio/mpeg";
-      } catch (encErr: any) {
-        console.error("❌ Error en MP3 encoding, usando WAV:", encErr?.message);
-        audioBuffer = addWavHeader(rawPcm);
-        fileExt = "wav";
-        contentType = "audio/wav";
-      }
-    } else {
-      audioBuffer = addWavHeader(rawPcm);
-      fileExt = "wav";
-      contentType = "audio/wav";
-    }
+    // Siempre WAV — la conversión a MP3 la hace migrateAudios.ts en Node.js
+    const audioBuffer = addWavHeader(rawPcm);
+    const fileExt = "wav";
+    const contentType = "audio/wav";
 
     const safeCity = city.toLowerCase().replace(/[^a-z0-9]/g, '');
     const fileName = `${safeCity}/${lang}/${Date.now()}.${fileExt}`;

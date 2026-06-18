@@ -68,9 +68,10 @@ const twoOpt = (order, m) => {
     while (improved) {
         improved = false;
         for (let i = 0; i < n - 2; i++)
-            for (let j = i + 2; j < n - 1; j++) {
-                const cur = m[route[i]][route[i + 1]] + m[route[j]][route[j + 1]];
-                const nw = m[route[i]][route[j]] + m[route[i + 1]][route[j + 1]];
+            for (let j = i + 2; j < n; j++) {
+                if (j === n - 1 && i === 0) continue;
+                const cur = m[route[i]][route[i + 1]] + m[route[j]][route[(j + 1) % n]];
+                const nw = m[route[i]][route[j]] + m[route[i + 1]][route[(j + 1) % n]];
                 if (nw < cur - 0.001) {
                     route = [...route.slice(0, i + 1), ...route.slice(i + 1, j + 1).reverse(), ...route.slice(j + 1)];
                     improved = true;
@@ -185,9 +186,9 @@ for (const row of found) {
     }
 
     console.log(`\n[4/4] Guardando en Supabase...`);
-    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/tours_cache?city=eq.${city}&language=eq.${language}`, {
-        method: 'PATCH', headers: SB_HEADERS,
-        body: JSON.stringify({ data: updatedTours, route_polylines: newPolylines, updated_at: new Date().toISOString() }),
+    // removed
+        // removed
+        // removed
     });
     if (updateRes.ok || updateRes.status === 204)
         console.log(`  ✅ Guardado. Recarga la app para ver el nuevo orden.`);

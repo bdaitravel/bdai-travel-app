@@ -342,7 +342,7 @@ const orOptImprove = (order: number[], distMatrix: number[][]): number[] => {
     return route;
 };
 
-// Regla 2 (complemento): 2-opt local search para deshacer cruces
+// Regla 2 (complemento): 2-opt local search sin arista fantasma (abierto)
 const twoOptImprove = (order: number[], distMatrix: number[][]): number[] => {
     const n = order.length;
     if (n < 4) return order;
@@ -353,11 +353,9 @@ const twoOptImprove = (order: number[], distMatrix: number[][]): number[] => {
     while (improved) {
         improved = false;
         for (let i = 0; i < n - 2; i++) {
-            for (let j = i + 2; j < n; j++) {
-                if (j === n - 1 && i === 0) continue; 
-
-                const currentDist = distMatrix[route[i]][route[i + 1]] + distMatrix[route[j]][route[(j + 1) % n]];
-                const newDist = distMatrix[route[i]][route[j]] + distMatrix[route[i + 1]][route[(j + 1) % n]];
+            for (let j = i + 2; j < n - 1; j++) {
+                const currentDist = distMatrix[route[i]][route[i + 1]] + distMatrix[route[j]][route[j + 1]];
+                const newDist = distMatrix[route[i]][route[j]] + distMatrix[route[i + 1]][route[j + 1]];
 
                 if (newDist < currentDist - 0.001) { 
                     const reversed = route.slice(i + 1, j + 1).reverse();
