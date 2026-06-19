@@ -100,7 +100,6 @@ serve(async (req: Request) => {
       let subjectStr = `✅ Tu tour de ${cityName} ya está disponible`;
       let titleStr = "🗺️ Tu tour está listo";
       let descStr  = "El tour que solicitaste ya ha sido creado y está disponible en la app.";
-      let btnAppStr = "Abrir BDAI (Móvil) →";
       let btnWebStr = "Abrir BDAI Web";
       let footerStr = "Este es un correo automático del sistema de BDAI. No respondas a este email.";
 
@@ -108,35 +107,30 @@ serve(async (req: Request) => {
         subjectStr = `✅ Your ${cityName} tour is now available`;
         titleStr = "🗺️ Your tour is ready";
         descStr  = "The tour you requested has been created and is now available in the app.";
-        btnAppStr = "Open BDAI (Mobile) →";
         btnWebStr = "Open BDAI Web";
         footerStr = "This is an automated email from the BDAI system. Please do not reply.";
       } else if (isFr) {
         subjectStr = `✅ Votre visite de ${cityName} est disponible`;
         titleStr = "🗺️ Votre visite est prête";
         descStr  = "La visite que vous avez demandée a été créée et est maintenant disponible dans l'application.";
-        btnAppStr = "Ouvrir BDAI (Mobile) →";
         btnWebStr = "Ouvrir BDAI Web";
         footerStr = "Ceci est un e-mail automatique du système BDAI. Veuillez ne pas répondre.";
       } else if (isDe) {
         subjectStr = `✅ Deine ${cityName} Tour ist verfügbar`;
         titleStr = "🗺️ Deine Tour ist bereit";
         descStr  = "Die von Ihnen angeforderte Tour wurde erstellt und ist jetzt in der App verfügbar.";
-        btnAppStr = "BDAI öffnen (Handy) →";
         btnWebStr = "BDAI Web öffnen";
         footerStr = "Dies ist eine automatische E-Mail des BDAI-Systems. Bitte nicht antworten.";
       } else if (isIt) {
         subjectStr = `✅ Il tuo tour di ${cityName} è disponibile`;
         titleStr = "🗺️ Il tuo tour è pronto";
         descStr  = "Il tour che hai richiesto è stato creato ed è ora disponibile nell'app.";
-        btnAppStr = "Apri BDAI (Mobile) →";
         btnWebStr = "Apri BDAI Web";
         footerStr = "Questa è un'email automatica del sistema BDAI. Per favore non rispondere.";
       } else if (isPt) {
         subjectStr = `✅ O teu tour de ${cityName} já está disponível`;
         titleStr = "🗺️ O teu tour está pronto";
         descStr  = "O tour que você solicitou foi criado e já está disponível no aplicativo.";
-        btnAppStr = "Abrir BDAI (Mobile) →";
         btnWebStr = "Abrir BDAI Web";
         footerStr = "Este é um email automático do sistema BDAI. Por favor, não responda.";
       }
@@ -156,11 +150,6 @@ serve(async (req: Request) => {
             </p>
           </div>
           <div style="margin-bottom: 30px;">
-            <a href="intent://app.bdai.travel#Intent;scheme=https;end" 
-               style="display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none;
-                      padding: 14px 28px; border-radius: 12px; font-weight: bold; font-size: 14px; margin-right: 10px; margin-bottom: 10px;">
-              ${btnAppStr}
-            </a>
             <a href="${appUrl}" 
                style="display: inline-block; background: #334155; color: #f8fafc; text-decoration: none;
                       padding: 12px 24px; border-radius: 12px; font-weight: bold; font-size: 13px;">
