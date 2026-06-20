@@ -22,6 +22,20 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Forzar Java 21 globalmente para todos los módulos y plugins
+    tasks.withType(JavaCompile).configureEach {
+        javaCompiler = javaToolchains.compilerFor {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    // Asegurar que Kotlin también use la misma toolchain
+    pluginManager.withPlugin('org.jetbrains.kotlin.android') {
+        kotlin {
+            jvmToolchain(21)
+        }
+    }
 }
 
 task clean(type: Delete) {

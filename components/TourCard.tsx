@@ -185,21 +185,26 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
     const handleCheckIn = async () => {
         if (IS_IN_RANGE) {
             setClaimedStops(prev => new Set(prev).add(currentStop.id));
-            const updatedUser = { ...user };
-            const type = currentStop.type?.toLowerCase();
-            const earnedMiles = currentStop.photoSpot?.milesReward || 10;
-            updatedUser.miles = (updatedUser.miles || 0) + earnedMiles;
-            if (type === 'historical') updatedUser.historyPoints = (updatedUser.historyPoints || 0) + 1;
-            else if (type === 'food') updatedUser.foodPoints = (updatedUser.foodPoints || 0) + 1;
-            else if (type === 'art') updatedUser.artPoints = (updatedUser.artPoints || 0) + 1;
-            else if (type === 'nature') updatedUser.naturePoints = (updatedUser.naturePoints || 0) + 1;
-            else if (type === 'photo') updatedUser.photoPoints = (updatedUser.photoPoints || 0) + 1;
-            else if (type === 'culture') updatedUser.culturePoints = (updatedUser.culturePoints || 0) + 1;
-            else if (type === 'architecture') updatedUser.archPoints = (updatedUser.archPoints || 0) + 1;
-            const prevBadgeCount = (user.badges || []).length;
-            updatedUser.badges = checkBadges(updatedUser);
-            if (updatedUser.badges.length > prevBadgeCount) hapticSuccess();
-            onUpdateUser(updatedUser);
+            
+            const isAlreadyCompleted = user.completedTours?.includes(tour.id);
+
+            if (!isAlreadyCompleted) {
+                const updatedUser = { ...user };
+                const type = currentStop.type?.toLowerCase();
+                const earnedMiles = currentStop.photoSpot?.milesReward || 10;
+                updatedUser.miles = (updatedUser.miles || 0) + earnedMiles;
+                if (type === 'historical') updatedUser.historyPoints = (updatedUser.historyPoints || 0) + 1;
+                else if (type === 'food') updatedUser.foodPoints = (updatedUser.foodPoints || 0) + 1;
+                else if (type === 'art') updatedUser.artPoints = (updatedUser.artPoints || 0) + 1;
+                else if (type === 'nature') updatedUser.naturePoints = (updatedUser.naturePoints || 0) + 1;
+                else if (type === 'photo') updatedUser.photoPoints = (updatedUser.photoPoints || 0) + 1;
+                else if (type === 'culture') updatedUser.culturePoints = (updatedUser.culturePoints || 0) + 1;
+                else if (type === 'architecture') updatedUser.archPoints = (updatedUser.archPoints || 0) + 1;
+                const prevBadgeCount = (user.badges || []).length;
+                updatedUser.badges = checkBadges(updatedUser);
+                if (updatedUser.badges.length > prevBadgeCount) hapticSuccess();
+                onUpdateUser(updatedUser);
+            }
         } else {
             toast(`${tl.tooFar}: ${distToTarget}m`, "error");
         }
@@ -288,6 +293,14 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
 
     const handleFinishTour = async () => {
         hapticHeavy();
+
+        const isAlreadyCompleted = user.completedTours?.includes(tour.id);
+
+        if (isAlreadyCompleted) {
+            setShowCompletion(true);
+            return;
+        }
+
         const newStamp: VisaStamp = {
             city: tour.city,
             country: tour.country || "",
@@ -402,7 +415,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                                 <div className="flex-1 text-right"><p className="text-[8px] font-black text-slate-400 uppercase mb-1">Destination</p><p className="text-2xl font-black uppercase tracking-tighter leading-none text-purple-600">{tour.city.substring(0, 3).toUpperCase()}</p></div>
                             </div>
                             <div className="grid grid-cols-2 gap-4 pt-4 relative">
-                                <div className="text-left"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.rewardTotal}</p><p className="text-xl font-black text-slate-900">+{totalMiles} mi</p></div>
+                                <div className="text-left"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.rewardTotal}</p><p className="text-xl font-black text-slate-900">{user.completedTours?.includes(tour.id) ? "0 mi" : `+${totalMiles} mi`}</p></div>
                                 <div className="text-right"><p className="text-[7px] font-black text-slate-400 uppercase mb-1">{tl.approved}</p><i className="fas fa-check-circle text-green-500 text-xl"></i></div>
                                 <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform rotate-12 -translate-y-4">
                                     <i className="fas fa-stamp text-8xl"></i>

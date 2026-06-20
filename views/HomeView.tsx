@@ -35,7 +35,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
     lastRequestedCity,
     processCitySelection, 
     handleTravelServiceSelect, 
-    handleCitySearch 
+    handleCitySearch,
+    triggerImmediateSearch
   } = useCity();
   const { t } = useTranslation();
 
@@ -72,14 +73,15 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
           <div className="flex gap-2">
             <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none font-bold text-sm shadow-inner flex items-center justify-between">
               <input type="text" value={searchVal} onChange={(e) => handleCitySearch(e.target.value)} 
+                onKeyDown={(e) => { if (e.key === 'Enter') triggerImmediateSearch(); }}
                 placeholder={t('searchPlaceholder')} className="bg-transparent border-none outline-none w-full" />
               {isSearching && <i className="fas fa-spinner fa-spin text-purple-500 text-xs"></i>}
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20 transition-transform active:scale-90"><i className="fas fa-search"></i></div>
+            <button onClick={triggerImmediateSearch} className="w-14 h-14 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20 transition-transform active:scale-90"><i className="fas fa-search"></i></button>
           </div>
 
           {searchOptions && searchOptions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-4 space-y-2 bg-[#0a0f1e]/98 backdrop-blur-3xl border border-white/5 p-3 rounded-[2rem] shadow-2xl animate-slide-up z-[8000]">
+            <div className="absolute left-0 right-0 top-full mt-4 space-y-2 bg-[#0a0f1e]/98 backdrop-blur-md border border-white/5 p-3 rounded-[2rem] shadow-2xl animate-slide-up z-[8000]">
               {searchOptions.map((opt, i) => (
                 <button key={i} onClick={() => processCitySelection(opt, user.language)} 
                   className="w-full p-4 bg-white/[0.03] rounded-xl flex items-center justify-between border border-white/5 active:bg-purple-600/10 transition-all text-left">

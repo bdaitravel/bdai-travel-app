@@ -1,7 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
-import { useDebounce } from '../lib/useDebounce';
 import {
     normalizeCityWithAI, fetchRoutePolyline
 } from '../services/geminiService';
@@ -29,8 +28,14 @@ export const useCity = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [lastRequestedCity, setLastRequestedCity] = useState<string | null>(null);
 
-    // Ref para que doAiSearch acceda a los resultados locales actuales sin closure stale
-    const localResultsRef = useRef<any[]>([]);
+    const searchTermRef = useRef<string>('');
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        };
+    }, []);
 
     const processCitySelection = async (selection: any, langCode: string, forceRefresh = false) => {
         const lang = langCode || user.language || 'es';
@@ -172,83 +177,98 @@ export const useCity = () => {
         });
     };
 
-    // ── Fase 1: Supabase instantánea (150ms) ─────────────────────────────────
-    const doLocalSearch = useDebounce(async (val: string) => {
-        if (val.length < 2) {
-            localResultsRef.current = [];
-            setSearchOptions(null);
-            return;
-        }
+    const executeSearchProtocol = async (val: string) => {
+        if (searchTermRef.current !== val) return;
+        
+        setIsSearching(true);
         const lang = user.language || 'es';
+        
+        // Fase 1: Caché Local (instantáneo)
         const cached = await searchCitiesInCache(val, lang);
-        localResultsRef.current = cached;
-        if (cached.length > 0) setSearchOptions(cached);
-    }, 150);
+        if (searchTermRef.current !== val) return;
+        
+        setSearchOptions(cached.length > 0 ? cached : null);
 
-    // ── Fase 1.5: Nominatim municipios España (300ms) ─────────────────────────
-    const doNominatimSearch = useDebounce(async (val: string) => {
-        if (val.length < 2) return;
-        const lang = user.language || 'es';
-        try {
-            const nominatimResults = await searchMunicipalitiesNominatim(val, lang);
-            if (nominatimResults.length === 0) return;
-            const enriched = await Promise.all(nominatimResults.map(async (r) => ({
-                ...r,
-                isCached: await checkIfCityCached(r.city, r.slug, lang)
-            })));
-            const merged = mergeAndSort(localResultsRef.current, enriched);
-            localResultsRef.current = merged;
-            setSearchOptions(merged.length > 0 ? merged : null);
-        } catch {
-            // silencioso — la Fase 2 AI sigue en marcha como respaldo
+        // Fase 2: Nominatim e IA en paralelo
+        const nominatimPromise = searchMunicipalitiesNominatim(val, lang)
+            .then(async (nominatimResults) => {
+                if (nominatimResults.length === 0 || searchTermRef.current !== val) return;
+                const enriched = await Promise.all(nominatimResults.map(async (r) => ({
+                    ...r,
+                    isCached: await checkIfCityCached(r.city, r.slug, lang)
+                })));
+                if (searchTermRef.current !== val) return;
+                setSearchOptions(prev => {
+                    const merged = mergeAndSort(prev || [], enriched);
+                    return merged.length > 0 ? merged : null;
+                });
+            }).catch(() => {});
+
+        const aiPromise = normalizeCityWithAI(val, lang)
+            .then(async (aiResults) => {
+                if (aiResults.length === 0 || searchTermRef.current !== val) return;
+                const enriched = await Promise.all(aiResults.map(async (res) => {
+                    const slug = res.slug.replace(/-/g, '_').toLowerCase();
+                    const isCached = await checkIfCityCached(res.city, slug, lang);
+                    return {
+                        name: res.city,
+                        city: res.city,
+                        cityLocal: res.cityLocal,
+                        country: res.country,
+                        countryEn: res.countryEn,
+                        countryCode: res.countryCode,
+                        slug,
+                        isCached,
+                        fullName: res.cityLocal || res.city,
+                        isSuggestion: false
+                    };
+                }));
+                if (searchTermRef.current !== val) return;
+                setSearchOptions(prev => {
+                    const merged = mergeAndSort(prev || [], enriched);
+                    return merged.length > 0 ? merged : null;
+                });
+            }).catch((e) => {
+                console.error("Search protocol error:", e);
+                if (searchTermRef.current === val) {
+                    toast("Error en el buscador inteligente (AI).", "error");
+                }
+            });
+
+        await Promise.allSettled([nominatimPromise, aiPromise]);
+        
+        if (searchTermRef.current === val) {
+            setIsSearching(false);
         }
-    }, 300);
-
-    // ── Fase 2: Gemini en paralelo (1000ms) ──────────────────────────────────
-    const doAiSearch = useDebounce(async (val: string) => {
-        if (val.length < 2) { setIsSearching(false); return; }
-        const lang = user.language || 'es';
-        try {
-          const aiResults = await normalizeCityWithAI(val, lang);
-          const enriched = await Promise.all(aiResults.map(async (res) => {
-            const slug = res.slug.replace(/-/g, '_').toLowerCase();
-            const isCached = await checkIfCityCached(res.city, slug, lang);
-            return {
-              name: res.city,
-              city: res.city,
-              cityLocal: res.cityLocal,
-              country: res.country,
-              countryEn: res.countryEn,
-              countryCode: res.countryCode,
-              slug,
-              isCached,
-              fullName: res.cityLocal || res.city
-            };
-          }));
-
-          const merged = mergeAndSort(localResultsRef.current, enriched);
-          setSearchOptions(merged.length > 0 ? merged : null);
-        } catch (e) {
-          console.error("Search protocol error:", e);
-          toast("Error en el buscador inteligente (AI).", "error");
-        } finally {
-          setIsSearching(false);
-        }
-    }, 1000);
+    };
 
     const handleCitySearch = (val: string) => {
         setSearchVal(val);
-        setLastRequestedCity(null); // limpiar el mensaje de solicitud al iniciar una nueva búsqueda
+        searchTermRef.current = val;
+        setLastRequestedCity(null);
+
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
         if (val.length < 2) {
-            localResultsRef.current = [];
             setSearchOptions(null);
             setIsSearching(false);
             return;
         }
+
         setIsSearching(true);
-        doLocalSearch(val);       // Fase 1: caché Supabase, ~150ms
-        doNominatimSearch(val);   // Fase 1.5: Nominatim España, ~300ms
-        doAiSearch(val);          // Fase 2: AI Gemini, ~5-20s
+        debounceTimerRef.current = setTimeout(() => {
+            executeSearchProtocol(val);
+        }, 1200);
+    };
+
+    const triggerImmediateSearch = () => {
+        const val = searchVal.trim();
+        if (val.length < 2) return;
+        
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        
+        searchTermRef.current = val;
+        executeSearchProtocol(val);
     };
 
     return {
@@ -259,6 +279,7 @@ export const useCity = () => {
         lastRequestedCity,
         processCitySelection,
         handleTravelServiceSelect,
-        handleCitySearch
+        handleCitySearch,
+        triggerImmediateSearch
     };
 };
