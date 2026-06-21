@@ -210,6 +210,11 @@ export const useCity = () => {
                 const enriched = await Promise.all(aiResults.map(async (res) => {
                     const slug = res.slug.replace(/-/g, '_').toLowerCase();
                     const isCached = await checkIfCityCached(res.city, slug, lang);
+                    
+                    const normalizedQuery = val.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+                    const normalizedCity = (res.cityLocal || res.city).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+                    const isSuggestion = !normalizedCity.includes(normalizedQuery) && !normalizedQuery.includes(normalizedCity);
+
                     return {
                         name: res.city,
                         city: res.city,
@@ -220,7 +225,7 @@ export const useCity = () => {
                         slug,
                         isCached,
                         fullName: res.cityLocal || res.city,
-                        isSuggestion: false
+                        isSuggestion
                     };
                 }));
                 if (searchTermRef.current !== val) return;
@@ -235,7 +240,7 @@ export const useCity = () => {
                 }
             });
 
-        await Promise.allSettled([nominatimPromise, aiPromise]);
+        await Promise.all([nominatimPromise, aiPromise]);
         
         if (searchTermRef.current === val) {
             setIsSearching(false);

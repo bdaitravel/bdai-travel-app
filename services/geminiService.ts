@@ -1,5 +1,5 @@
 import { Type } from "@google/genai";
-import { Tour, Stop, UserProfile, TourCache, CitySearchResult } from '../types';
+import { Tour, UserProfile, CitySearchResult } from '../types';
 
 interface GeminiCityRaw {
     cityEn: string;
@@ -19,15 +19,10 @@ interface ToursRealtimePayload {
 }
 import { normalizeKey, supabase } from './supabaseClient';
 import { ai, handleAiCall, QuotaError } from './gemini/config';
-import { getCityInfo, processTourStops } from '../lib/gisService';
 export { fetchRoutePolyline } from '../lib/routingService';
-import { optimizeStopOrder } from '../lib/routingService';
 import { logger } from '../lib/logger';
 
 export { QuotaError };
-
-// ── Tipos auxiliares ───────────────────────────────────────────────────────
-type CityTier = 'SMALL' | 'MEDIUM' | 'LARGE';
 
 // ── Traduce o normaliza la búsqueda del usuario ───────────────────────────
 export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
@@ -52,57 +47,22 @@ export const translateSearchQuery = async (input: string): Promise<{ english: st
     });
 };
 
-// ── Normaliza el nombre de ciudad con IA ──────────────────────────────────
+// ── Normaliza el nombre de ciudad con IA (vía edge function search-city) ──
 export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<CitySearchResult[]> => {
-    return handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `The user typed: "${input}" in language "${userLanguage}" and is looking for a city or town to visit.
-
-RULES:
-- If the input exactly matches a known town or village name (no matter how small), ALWAYS include it.
-- Never replace a small village (e.g. "Quel", "Turruncún", "Tudelilla") with a major city if the input matches the village.
-- Recognize city/town names in ANY language and translate to English internally.
-- CRITICAL: If the city name exists in multiple countries, return ALL of them.
-- Return between 1 and 5 results, most famous/relevant first.
-- NEVER return only 1 result if the name exists in multiple places.
-
-For each result return:
-- "cityEn": Official city name in ENGLISH ONLY.
-- "cityLocal": City name translated to "${userLanguage}".
-- "country": Country name in "${userLanguage}".
-- "countryEn": Country name in ENGLISH ONLY.
-- "countryCode": 2-letter ISO country code in UPPERCASE.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            cityEn: { type: Type.STRING },
-                            cityLocal: { type: Type.STRING },
-                            country: { type: Type.STRING },
-                            countryEn: { type: Type.STRING },
-                            countryCode: { type: Type.STRING },
-                        },
-                        required: ["cityEn", "cityLocal", "country", "countryEn", "countryCode"]
-                    }
-                }
-            }
-        });
-
-        const raw = JSON.parse(response.text || '[]');
-        return raw.map((r: GeminiCityRaw) => ({
-            city: r.cityEn,
-            cityLocal: r.cityLocal || r.cityEn,
-            country: r.country,
-            countryEn: r.countryEn,
-            countryCode: r.countryCode,
-            slug: normalizeKey(r.cityEn, r.countryEn),
-            fullName: r.cityLocal || r.cityEn
-        }));
+    const { data, error } = await supabase.functions.invoke('search-city', {
+        body: { input, language: userLanguage }
     });
+    if (error) throw error;
+    const raw: GeminiCityRaw[] = data?.results || [];
+    return raw.map((r) => ({
+        city: r.cityEn,
+        cityLocal: r.cityLocal || r.cityEn,
+        country: r.country,
+        countryEn: r.countryEn,
+        countryCode: r.countryCode,
+        slug: normalizeKey(r.cityEn, r.countryEn),
+        fullName: r.cityLocal || r.cityEn
+    }));
 };
 
 // ── Helper: leer tours desde caché de Supabase ────────────────────────────

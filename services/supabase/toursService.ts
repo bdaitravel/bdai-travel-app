@@ -90,30 +90,31 @@ export const searchCitiesInCache = async (query: string, language = 'es'): Promi
             .select('city, language')
             .ilike('city', `%${normalizedQuery}%`)
             .eq('status', 'READY')
-            .eq('language', language)
-            .limit(8);
+            .limit(50);
 
         if (error) throw error;
 
-        const seen = new Set<string>();
-        return (data || []).reduce((acc: CitySearchResult[], curr: ToursCacheSlimRow) => {
-            if (!seen.has(curr.city)) {
-                seen.add(curr.city);
-                const { city, country, countryCode, fullName } = slugToDisplayName(curr.city);
-                acc.push({
-                    name: city,
-                    city,
-                    cityLocal: city,
-                    country,
-                    countryEn: country,
-                    countryCode,
-                    fullName,
-                    isCached: true,
-                    slug: curr.city,
-                });
-            }
-            return acc;
-        }, []);
+        // Agrupar por slug para saber qué idiomas tiene cada ciudad
+        const cityLanguages = new Map<string, Set<string>>();
+        for (const row of (data || [])) {
+            if (!cityLanguages.has(row.city)) cityLanguages.set(row.city, new Set());
+            cityLanguages.get(row.city)!.add(row.language);
+        }
+
+        return Array.from(cityLanguages.entries()).slice(0, 8).map(([slug, langs]) => {
+            const { city, country, countryCode, fullName } = slugToDisplayName(slug);
+            return {
+                name: city,
+                city,
+                cityLocal: city,
+                country,
+                countryEn: country,
+                countryCode,
+                fullName,
+                isCached: langs.has(language),
+                slug,
+            };
+        });
     } catch (e) {
         return [];
     }

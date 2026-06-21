@@ -73,7 +73,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
           <div className="flex gap-2">
             <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white outline-none font-bold text-sm shadow-inner flex items-center justify-between">
               <input type="text" value={searchVal} onChange={(e) => handleCitySearch(e.target.value)} 
-                onKeyDown={(e) => { if (e.key === 'Enter') triggerImmediateSearch(); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.keyCode === 13) triggerImmediateSearch(); }}
                 placeholder={t('searchPlaceholder')} className="bg-transparent border-none outline-none w-full" />
               {isSearching && <i className="fas fa-spinner fa-spin text-purple-500 text-xs"></i>}
             </div>
