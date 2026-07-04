@@ -6,9 +6,9 @@ import { TourCard } from '../components/TourCard';
 import { formatCityName } from '../components/TravelServices';
 import { useAppStore } from '../store/useAppStore';
 import { useCity } from '../hooks/useCity';
-import { supabase } from '../services/supabaseClient';
+import { fetchCityToursMerged } from '../services/supabaseClient';
 import { tourCacheService } from '../lib/tourCacheService';
-import { Tour } from '../types';
+import { translations } from '../data/translations';
 
 export const CityDetailView: React.FC = () => {
   const {
@@ -27,6 +27,10 @@ export const CityDetailView: React.FC = () => {
   // Slug de la URL es la fuente de verdad — no dependemos del estado de Zustand
   const slug = slugFromUrl || selectedCityInfo?.slug || '';
 
+  const t = translations[user.language] || translations.en;
+  const normalTours = tours.filter(tr => !tr.isSponsored);
+  const sponsoredTours = tours.filter(tr => tr.isSponsored);
+
   // Si llegamos a esta vista sin tours en memoria (ej. recarga, vuelta de background
   // en Chrome mobile, o pérdida de sessionStorage), los recuperamos directamente de
   // tours_cache usando el slug de la URL. La URL es siempre la fuente de verdad.
@@ -39,21 +43,13 @@ export const CityDetailView: React.FC = () => {
       // lang fuera del try para que catch pueda usarlo en el fallback offline
       const lang = user.language || 'es';
       try {
-        const { data } = await supabase
-          .from('tours_cache')
-          .select('data, route_polylines')
-          .eq('city', slug)
-          .eq('language', lang)
-          .maybeSingle();
+        // Carga unificada: tours_cache + sponsored_tours (misma query de siempre
+        // para los normales; los patrocinados se añaden al final del array)
+        const { tours: mergedTours } = await fetchCityToursMerged(slug, lang);
 
-        if (data?.data && data.data.length > 0) {
-          const savedPolylines: Record<string, string> = data.route_polylines || {};
-          const toursWithPolylines = (data.data as Tour[]).map((tour: Tour) => ({
-            ...tour,
-            routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
-          }));
-          tourCacheService.saveTours(slug, lang, toursWithPolylines);
-          setTours(toursWithPolylines);
+        if (mergedTours.length > 0) {
+          tourCacheService.saveTours(slug, lang, mergedTours);
+          setTours(mergedTours);
         } else {
           // Supabase sin datos — intentar copia local antes de volver al home
           const offline = tourCacheService.loadTours(slug, lang);
@@ -123,18 +119,46 @@ export const CityDetailView: React.FC = () => {
         )}
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
-        {tours.map((tour, idx) => (
-          <TourCard
-            key={`${tour.id}-${idx}`}
-            tour={tour}
-            onSelect={() => {
-              setActiveTour(tour);
-              navigate(`/tour/${tour.id}/stop/0`);
-            }}
-            language={user.language}
-          />
-        ))}
+      <div className="pb-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {normalTours.map((tour, idx) => (
+            <TourCard
+              key={`${tour.id}-${idx}`}
+              tour={tour}
+              onSelect={() => {
+                setActiveTour(tour);
+                navigate(`/tour/${tour.id}/stop/0`);
+              }}
+              language={user.language}
+            />
+          ))}
+        </div>
+
+        {/* Sección de tours patrocinados: solo existe en municipios que los tengan */}
+        {sponsoredTours.length > 0 && (
+          <>
+            <div className="flex items-center gap-4 mt-10 mb-8">
+              <div className="flex-1 h-px bg-[#f6c604]/60"></div>
+              <span className="text-[#f6c604] text-[9px] font-black uppercase tracking-[0.3em]">
+                {t.sponsoredSection || 'PATROCINADO'}
+              </span>
+              <div className="flex-1 h-px bg-[#f6c604]/60"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sponsoredTours.map((tour, idx) => (
+                <TourCard
+                  key={`${tour.id}-${idx}`}
+                  tour={tour}
+                  onSelect={() => {
+                    setActiveTour(tour);
+                    navigate(`/tour/${tour.id}/stop/0`);
+                  }}
+                  language={user.language}
+                />
+              ))}
+            </div>
+          </>
+        )}
         {/* futura mejora, actualmente no implantado: sección de comunidad por ciudad */}
         {/* {slug && <CityCommunity citySlug={slug} user={user} />} */}
       </div>

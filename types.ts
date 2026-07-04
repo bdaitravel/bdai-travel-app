@@ -129,6 +129,14 @@ export interface B2BPartner {
   milesCost: number;
 }
 
+// Datos del negocio en paradas de tours patrocinados. `benefit` es la oferta
+// que se desbloquea tras el check-in GPS en la parada.
+export interface BusinessInfo {
+  type: 'cafe' | 'restaurant' | 'shop';
+  address?: string;
+  benefit?: string;
+}
+
 export interface Stop {
   id: string;
   name: string;
@@ -141,6 +149,7 @@ export interface Stop {
   coordinateSource?: 'osm_entrance' | 'google_places' | 'nominatim' | 'photon';
   photoSpot?: PhotoSpot;
   b2bPartner?: B2BPartner;
+  business?: BusinessInfo;
 }
 
 export interface Tour {
@@ -155,6 +164,7 @@ export interface Tour {
   theme: string;
   stops: Stop[];
   isEssential?: boolean;
+  isSponsored?: boolean;
   routePolyline?: string;
   routeMode?: RouteMode;
 }

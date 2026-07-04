@@ -98,6 +98,23 @@ Este documento refleja el **estado exacto y en tiempo real** de las tablas confi
 
 ---
 
+## Tabla: `sponsored_tours`
+*Tours patrocinados (paradas de negocios locales) creados manualmente por contrato comercial. Ciclo de vida independiente de `tours_cache`: el pipeline `-02` nunca escribe aquí. RLS: el cliente solo lee filas activas y en vigencia; escritura reservada a `service_role`.*
+
+| Campo | Tipo | Formato | Descripción / Relación |
+| :--- | :--- | :--- | :--- |
+| `city_slug` | string | text | Slug de la ciudad (ej. `agoncillo_spain`). <pk/> |
+| `language` | string | text | Idioma del contenido. <pk/> Fallback recomendado en cliente: `es`. |
+| `data` | N/A | jsonb | Array `Tour[]` con `isSponsored: true`. IDs con sufijo `sp` (ej. `agoncillo_spain_es_sp0`). |
+| `active` | boolean | boolean | Interruptor de publicación. `false` = oculto sin borrar (fin de contrato). |
+| `sponsor_name` | string | text | Nombre comercial del patrocinador (facturación/auditoría). |
+| `starts_at` | string | timestamp | Inicio de vigencia del contrato. |
+| `ends_at` | string | timestamp | Fin de vigencia. `NULL` = sin caducidad. |
+| `created_at` | string | timestamp | Fecha de creación. |
+| `updated_at` | string | timestamp | Última modificación (trigger automático). |
+
+---
+
 ## Tabla: `audio_cache`
 *Caché de Text-to-Speech (TTS) que almacena audios (migrado a formato MP3) para evitar costes y latencia regenerando locuciones de la IA.*
 

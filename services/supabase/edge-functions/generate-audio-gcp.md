@@ -41,6 +41,116 @@ function addWavHeader(pcmData: Uint8Array): Uint8Array {
   return result;
 }
 
+// ── Fragmentación de texto ────────────────────────────────────────────────
+// Gemini TTS falla de forma intermitente (finishReason: "OTHER", sin audio) y
+// la probabilidad de fallo crece con la longitud del texto: con ~1150+ chars
+// falla casi siempre. No es un límite duro (textos de 1647 chars a veces
+// funcionan) ni depende del contenido. Mitigación: fragmentar a máx. 800 chars
+// por párrafos/frases, sintetizar cada fragmento con reintentos y concatenar.
+function splitTextIntoChunks(text: string, maxLength = 800): string[] {
+  const paragraphs = text.split('\n');
+  const chunks: string[] = [];
+  let currentChunk = "";
+
+  for (const paragraph of paragraphs) {
+    const trimmedP = paragraph.trim();
+    if (!trimmedP) continue;
+
+    if ((currentChunk ? currentChunk.length + 1 : 0) + trimmedP.length <= maxLength) {
+      currentChunk = currentChunk ? `${currentChunk}\n${trimmedP}` : trimmedP;
+    } else {
+      if (currentChunk) {
+        chunks.push(currentChunk);
+        currentChunk = "";
+      }
+
+      if (trimmedP.length > maxLength) {
+        const sentences = trimmedP.split(/(?<=\.\s+)/);
+        for (const sentence of sentences) {
+          const trimmedS = sentence.trim();
+          if (!trimmedS) continue;
+
+          if ((currentChunk ? currentChunk.length + 1 : 0) + trimmedS.length <= maxLength) {
+            currentChunk = currentChunk ? `${currentChunk} ${trimmedS}` : trimmedS;
+          } else {
+            if (currentChunk) {
+              chunks.push(currentChunk);
+            }
+            currentChunk = trimmedS;
+          }
+        }
+      } else {
+        currentChunk = trimmedP;
+      }
+    }
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
+// ── Síntesis de un fragmento con reintentos ───────────────────────────────
+async function synthesizeChunk(apiUrl: string, accessToken: string, ttsChunkText: string, googleLangCode: string, targetVoice: string): Promise<Uint8Array> {
+  const googleReq: any = {
+    contents: [{ role: "user", parts: [{ text: ttsChunkText }] }],
+    generationConfig: {
+       responseModalities: ["AUDIO"],
+       speechConfig: {
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: targetVoice } },
+          languageCode: googleLangCode
+       }
+    }
+  };
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // Autenticación Bearer Token usando la Service Account OAuth2
+      'Authorization': `Bearer ${accessToken}`,
+      'Referer': 'https://app.bdai.travel/'
+    },
+    body: JSON.stringify(googleReq),
+    signal: AbortSignal.timeout(120_000)
+  });
+
+  if (!response.ok) {
+      const errTxt = await response.text();
+      console.error("❌ Error Google API:", response.status, errTxt);
+      throw new Error(`Google API respondió con status ${response.status}`);
+  }
+
+  const resJson = await response.json();
+  const audioBase64 = resJson.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)?.inlineData?.data;
+
+  if (!audioBase64) {
+      const finishReason = resJson.candidates?.[0]?.finishReason || 'desconocido';
+      console.error(`Respuesta Google sin audio (finishReason: ${finishReason})`);
+      throw new Error(`No se recibió audio de Google (finishReason: ${finishReason})`);
+  }
+
+  return Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
+}
+
+async function synthesizeChunkWithRetry(apiUrl: string, accessToken: string, ttsChunkText: string, googleLangCode: string, targetVoice: string, maxAttempts = 3): Promise<Uint8Array> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await synthesizeChunk(apiUrl, accessToken, ttsChunkText, googleLangCode, targetVoice);
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`⚠️ Fragmento falló (intento ${attempt}/${maxAttempts}): ${err.message}`);
+      if (attempt < maxAttempts) {
+        await new Promise(r => setTimeout(r, attempt * 2000));
+      }
+    }
+  }
+  throw lastError;
+}
+
 // ── GCP Service Account Auth ──────────────────────────────────────────────
 let gcpAccessToken = "";
 let gcpTokenExpiration = 0;
@@ -157,48 +267,30 @@ Deno.serve(async (req) => {
     const targetVoice = "Kore"; 
 
     const isSpanish = lang === 'es' || lang.startsWith('es-');
-    const ttsText = isSpanish
-        ? `[Locutora española de España, acento castellano peninsular, entonación de Madrid]\n\n${cleanText}`
-        : cleanText;
 
-    const googleReq: any = {
-      contents: [{ role: "user", parts: [{ text: ttsText }] }],
-      generationConfig: {
-         responseModalities: ["AUDIO"],
-         speechConfig: { 
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: targetVoice } },
-            languageCode: googleLangCode
-         }
-      }
-    };
+    // Fragmentar el texto y sintetizar cada fragmento con reintentos.
+    // El prefijo de voz para español se aplica a CADA fragmento para que el
+    // acento no cambie a mitad del audio.
+    const textChunks = splitTextIntoChunks(cleanText, 800);
+    console.log(`📄 Texto de ${cleanText.length} chars fragmentado en ${textChunks.length} bloque(s).`);
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        // Autenticación Bearer Token usando la Service Account OAuth2
-        'Authorization': `Bearer ${accessToken}`,
-        'Referer': 'https://app.bdai.travel/' 
-      },
-      body: JSON.stringify(googleReq),
-      signal: AbortSignal.timeout(120_000) 
-    });
-
-    if (!response.ok) {
-        const errTxt = await response.text();
-        console.error("❌ Error Google API:", response.status, errTxt);
-        throw new Error(`Google API respondió con status ${response.status}`);
+    const pcmChunks: Uint8Array[] = [];
+    for (const chunk of textChunks) {
+      const ttsChunkText = isSpanish
+          ? `[Locutora española de España, acento castellano peninsular, entonación de Madrid]\n\n${chunk}`
+          : chunk;
+      const chunkPcm = await synthesizeChunkWithRetry(apiUrl, accessToken, ttsChunkText, googleLangCode, targetVoice);
+      pcmChunks.push(chunkPcm);
     }
 
-    const resJson = await response.json();
-    const audioBase64 = resJson.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)?.inlineData?.data;
-    
-    if (!audioBase64) {
-        console.error("Respuesta Google sin audio:", JSON.stringify(resJson));
-        throw new Error('No se recibió audio de Google');
+    // Concatenar todos los fragmentos de PCM en un único buffer
+    const totalPcmLength = pcmChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const rawPcm = new Uint8Array(totalPcmLength);
+    let pcmOffset = 0;
+    for (const chunk of pcmChunks) {
+      rawPcm.set(chunk, pcmOffset);
+      pcmOffset += chunk.length;
     }
-
-    const rawPcm = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
 
     // Siempre WAV — la conversión a MP3 la hace migrateAudios.ts en Node.js
     const audioBuffer = addWavHeader(rawPcm);

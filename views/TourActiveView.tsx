@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { ActiveTourCard } from '../components/TourCard';
 import { useAppStore } from '../store/useAppStore';
-import { syncUserProfile, supabase } from '../services/supabaseClient';
+import { syncUserProfile, fetchCityToursMerged } from '../services/supabaseClient';
 import { tourCacheService } from '../lib/tourCacheService';
 import { BdaiLogo } from '../components/BdaiLogo';
 import { Tour } from '../types';
@@ -60,26 +60,20 @@ export const TourActiveView: React.FC = () => {
       const { slug, lang, tourIdx } = parseTourId(tourId);
 
       const applyTours = (rawTours: Tour[]) => {
-        const tour = rawTours[tourIdx] ?? rawTours[0];
+        // Buscar por id exacto primero: los tours patrocinados usan sufijo "sp"
+        // (ej. agoncillo_spain_es_sp0) cuyo índice no es numérico. Fallback al
+        // índice parseado — comportamiento original para tours normales.
+        const tour = rawTours.find(t => t.id === tourId) ?? rawTours[tourIdx] ?? rawTours[0];
         setActiveTours(rawTours);
         setCurrentTour(tour);
         setCurrentStopIndex(idx);
       };
 
       try {
-        const { data } = await supabase
-          .from('tours_cache')
-          .select('data, route_polylines')
-          .eq('city', slug)
-          .eq('language', lang)
-          .maybeSingle();
+        // Carga unificada: tours_cache (query original) + sponsored_tours al final
+        const { tours } = await fetchCityToursMerged(slug, lang);
 
-        if (data?.data && data.data.length > 0) {
-          const savedPolylines: Record<string, string> = data.route_polylines || {};
-          const tours = (data.data as Tour[]).map((t: Tour) => ({
-            ...t,
-            routePolyline: savedPolylines[t.id] ?? t.routePolyline
-          }));
+        if (tours.length > 0) {
           tourCacheService.saveTours(slug, lang, tours);
           applyTours(tours);
         } else {

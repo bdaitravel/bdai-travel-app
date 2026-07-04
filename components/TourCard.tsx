@@ -18,7 +18,12 @@ interface TourCardTexts {
     distance: string; duration: string; nearbyAlert: string; jumpTo: string; rewardMiles: string;
     visaId: string; boardingPass: string; approved: string; rewardTotal: string; rankUp: string;
     fixLocation?: string; locationFixed?: string; gpsBlocked?: string; gpsSearching?: string; gpsUnavailable?: string; shareText: string;
+    // Tours patrocinados
+    sponsored: string; benefit: string; benefitLocked: string; stopsLabel: string;
 }
+
+// Amarillo corporativo del logo BDAI — acento de los tours patrocinados
+const SPONSOR_YELLOW = '#f6c604';
 
 interface UserLocation { lat: number; lng: number; }
 
@@ -56,7 +61,10 @@ const TEXTS: Record<string, TourCardTexts> = {
         gpsBlocked: "Activa la ubicación en los ajustes del dispositivo para hacer check-in GPS",
         gpsSearching: "Buscando señal GPS...",
         gpsUnavailable: "GPS no disponible en este dispositivo",
-        shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️"
+        shareText: "¡He completado la Masterclass de {city} en bdai! +250 millas acumuladas. 🌍✈️",
+        sponsored: "Patrocinado", benefit: "Beneficio",
+        benefitLocked: "Haz check-in GPS en el local para desbloquear el beneficio",
+        stopsLabel: "Paradas"
     },
     en: {
         start: "Launch", stop: "Stop", of: "of", daiShot: "Dai Tip", angleLabel: "Dai Angle:",
@@ -71,16 +79,19 @@ const TEXTS: Record<string, TourCardTexts> = {
         gpsBlocked: "Enable location access in device settings for GPS check-in",
         gpsSearching: "Looking for GPS signal...",
         gpsUnavailable: "GPS not available on this device",
-        shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️"
+        shareText: "I just finished the {city} Masterclass on bdai! +250 miles earned. 🌍✈️",
+        sponsored: "Sponsored", benefit: "Benefit",
+        benefitLocked: "GPS check-in at the venue required to unlock the benefit",
+        stopsLabel: "Stops"
     },
-    fr: { start: "Lancer", stop: "Arrêt", of: "sur", daiShot: "Conseil Dai", angleLabel: "Angle Dai :", photoTipFallback: "Cherchez une perspective latérale pour capturer la profondeur de la structure.", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Précédent", next: "Suivant", meters: "m", itinerary: "Itinéraire", finish: "Terminer le Tour", congrats: "Tour Terminé!", stampDesc: "Nouveau tampon gagné", shareIg: "Générer Visa Social (+100)", close: "Fermer", tooFar: "GPS Incertain", checkIn: "Check-in GPS", checkedIn: "Vérifié", distance: "Distance", duration: "Durée", nearbyAlert: "Arrêt Proche", jumpTo: "Aller ici", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "CARTE D'EMBARQUEMENT", approved: "APPROUVÉ", rewardTotal: "Récompense totale", rankUp: "Rang mis à jour", shareText: "Je viens de terminer la Masterclass {city} sur bdai ! +250 miles gagnés. 🌍✈️" },
-    it: { start: "Lancia", stop: "Fermata", of: "di", daiShot: "Consiglio Dai", angleLabel: "Angolo Dai:", photoTipFallback: "Cerca una prospettiva laterale per catturare la profondità.", capture: "Log Dati", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Itinerario", finish: "Finire Tour", congrats: "Tour Completato!", stampDesc: "Nuovo timbro guadagnato", shareIg: "Genera Visto Social (+100)", close: "Chiudi", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificato", distance: "Distanza", duration: "Durata", nearbyAlert: "Fermata Vicina", jumpTo: "Salta qui", rewardMiles: "+50 MIGLIA", visaId: "VISTO", boardingPass: "CARTA D'IMBARCO", approved: "APPROVATO", rewardTotal: "Ricompensa totale", rankUp: "Rango aggiornato", shareText: "Ho appena finito la Masterclass {city} su bdai! +250 miglia guadagnate. 🌍✈️" },
-    pt: { start: "Lançar", stop: "Parada", of: "de", daiShot: "Dica Dai", angleLabel: "Ângulo Dai:", photoTipFallback: "Procure uma perspectiva lateral para captar a profundidade.", capture: "Log Dados", rewardReceived: "Sincronizado", prev: "Voltar", next: "Próximo", meters: "m", itinerary: "Itinerário", finish: "Finalizar Tour", congrats: "Tour Completado!", stampDesc: "Novo selo ganho", shareIg: "Gerar Visto Social (+100)", close: "Fechar", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificado", distance: "Distância", duration: "Duração", nearbyAlert: "Parada Próxima", jumpTo: "Pular para aqui", rewardMiles: "+50 MILHAS", visaId: "VISTO", boardingPass: "CARTÃO DE EMBARQUE", approved: "APROVADO", rewardTotal: "Recompensa total", rankUp: "Ranking atualizado", shareText: "Acabei de completar a Masterclass de {city} no bdai! +250 milhas acumuladas. 🌍✈️" },
-    de: { start: "Start", stop: "Halt", of: "von", daiShot: "Dai-Tipp", angleLabel: "Dai-Winkel:", photoTipFallback: "Suchen Sie nach einer Seitenperspektive, um die Tiefe einzufangen.", capture: "Log Daten", rewardReceived: "Synchronisiert", prev: "Zurück", next: "Weiter", meters: "m", itinerary: "Route", finish: "Tour beenden", congrats: "Tour abgeschlossen!", stampDesc: "Neuer Stempel erhalten", shareIg: "Social Visa generieren (+100)", close: "Schließen", tooFar: "GPS Unsicher", checkIn: "GPS Check-in", checkedIn: "Verifiziert", distance: "Distanz", duration: "Dauer", nearbyAlert: "Halt in der Nähe", jumpTo: "Hierher springen", rewardMiles: "+50 MEILEN", visaId: "VISUM", boardingPass: "BORDKARTE", approved: "GENEHMIGT", rewardTotal: "Gesamtbelohnung", rankUp: "Rang aktualisiert", shareText: "Ich habe gerade die {city} Masterclass auf bdai abgeschlossen! +250 Meilen gesammelt. 🌍✈️" },
-    zh: { start: "开始", stop: "站点", of: "/", daiShot: "戴的提示", angleLabel: "拍摄角度:", photoTipFallback: "寻找侧面视角以捕捉结构的深度。", capture: "记录数据", rewardReceived: "已同步", prev: "返回", next: "下一步", meters: "米", itinerary: "行程", finish: "结束之旅", congrats: "之旅已完成！", stampDesc: "获得新印章", shareIg: "生成社交签证 (+100)", close: "关闭", tooFar: "GPS 不确定", checkIn: "GPS 签到", checkedIn: "已验证", distance: "距离", duration: "时长", nearbyAlert: "附近站点", jumpTo: "跳到这里", rewardMiles: "+50 里程", visaId: "签证", boardingPass: "登机牌", approved: "已批准", rewardTotal: "总奖励", rankUp: "等级已更新", shareText: "我刚刚在 bdai 完成了 {city} 大师课！赚取了 250 里程。🌍✈️" },
-    ja: { start: "開始", stop: "スポット", of: "/", daiShot: "Daiのヒント", angleLabel: "Daiアングル:", photoTipFallback: "奥行きを捉えるために、側面からの視点を探してください。", capture: "ログ保存", rewardReceived: "同期済み", prev: "戻る", next: "次へ", meters: "m", itinerary: "行程", finish: "ツアー終了", congrats: "ツアー完了！", stampDesc: "新しいスタンプを獲得", shareIg: "ソーシャルビザ生成 (+100)", close: "閉じる", tooFar: "GPS 不安定", checkIn: "GPS チェックイン", checkedIn: "確認済み", distance: "距離", duration: "時間", nearbyAlert: "近くのスポット", jumpTo: "ここへ移動", rewardMiles: "+50 マイル", visaId: "ビザ", boardingPass: "搭乗券", approved: "承認済み", rewardTotal: "合計報酬", rankUp: "ランク更新", shareText: "bdai で {city} のマスタークラスを完了しました！250 マイル獲得。🌍✈️" },
-    ru: { start: "Начать", stop: "Остановка", of: "из", daiShot: "Совет Dai", angleLabel: "Ракурс Dai:", photoTipFallback: "Ищите боковую перспективу, чтобы передать глубину.", capture: "Записать данные", rewardReceived: "Синхронизировано", prev: "Назад", next: "Далее", meters: "м", itinerary: "Маршрут", finish: "Завершить тур", congrats: "Тур завершен!", stampDesc: "Новая марка получена", shareIg: "Создать визу (+100)", close: "Закрыть", tooFar: "GPS неточен", checkIn: "GPS регистрация", checkedIn: "Проверено", distance: "Расстояние", duration: "Длительность", nearbyAlert: "Рядом", jumpTo: "Перейти сюда", rewardMiles: "+50 МИЛЬ", visaId: "ВИЗА", boardingPass: "ПОСАДОЧНЫЙ ТАЛОН", approved: "ОДОБРЕНО", rewardTotal: "Итог", rankUp: "Ранг обновлен", shareText: "Я завершил мастер-класс в {city} на bdai! +250 миль. 🌍✈️" },
-    ar: { start: "إطلاق", stop: "محطة", of: "من", daiShot: "نصيحة داي", angleLabel: "زاوية داي:", photoTipFallback: "ابحث عن منظور جانبي لالتقاط عمق الهيكل.", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "السابق", next: "التالي", meters: "م", itinerary: "المسار", finish: "إنهاء الجولة", congrats: "اكتملت الجولة!", stampDesc: "لقد حصلت على ختم جديد", shareIg: "إنشاء تأشيرة اجتماعية (+100)", close: "إغلاق", tooFar: "GPS غير مؤكد", checkIn: "تسجيل GPS", checkedIn: "متحقق", distance: "المسافة", duration: "المدة", nearbyAlert: "محطة قريبة", jumpTo: "قفز إلى هنا", rewardMiles: "+50 ميل", visaId: "تأشيرة", boardingPass: "بطاقة صعود", approved: "معتمد", rewardTotal: "إجمالي المكافأة", rankUp: "تم تحديث الرتبة", shareText: "لقد أنهيت للتو ماستركلاس {city} على bdai! تم جمع 250 ميلاً. 🌍✈️" }
+    fr: { start: "Lancer", stop: "Arrêt", of: "sur", daiShot: "Conseil Dai", angleLabel: "Angle Dai :", photoTipFallback: "Cherchez une perspective latérale pour capturer la profondeur de la structure.", capture: "Log Données", rewardReceived: "Synchronisé", prev: "Précédent", next: "Suivant", meters: "m", itinerary: "Itinéraire", finish: "Terminer le Tour", congrats: "Tour Terminé!", stampDesc: "Nouveau tampon gagné", shareIg: "Générer Visa Social (+100)", close: "Fermer", tooFar: "GPS Incertain", checkIn: "Check-in GPS", checkedIn: "Vérifié", distance: "Distance", duration: "Durée", nearbyAlert: "Arrêt Proche", jumpTo: "Aller ici", rewardMiles: "+50 MILES", visaId: "VISA", boardingPass: "CARTE D'EMBARQUEMENT", approved: "APPROUVÉ", rewardTotal: "Récompense totale", rankUp: "Rang mis à jour", shareText: "Je viens de terminer la Masterclass {city} sur bdai ! +250 miles gagnés. 🌍✈️", sponsored: "Sponsorisé", benefit: "Avantage", benefitLocked: "Check-in GPS sur place requis pour débloquer l'avantage", stopsLabel: "Arrêts" },
+    it: { start: "Lancia", stop: "Fermata", of: "di", daiShot: "Consiglio Dai", angleLabel: "Angolo Dai:", photoTipFallback: "Cerca una prospettiva laterale per catturare la profondità.", capture: "Log Dati", rewardReceived: "Sincronizzato", prev: "Indietro", next: "Avanti", meters: "m", itinerary: "Itinerario", finish: "Finire Tour", congrats: "Tour Completato!", stampDesc: "Nuovo timbro guadagnato", shareIg: "Genera Visto Social (+100)", close: "Chiudi", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificato", distance: "Distanza", duration: "Durata", nearbyAlert: "Fermata Vicina", jumpTo: "Salta qui", rewardMiles: "+50 MIGLIA", visaId: "VISTO", boardingPass: "CARTA D'IMBARCO", approved: "APPROVATO", rewardTotal: "Ricompensa totale", rankUp: "Rango aggiornato", shareText: "Ho appena finito la Masterclass {city} su bdai! +250 miglia guadagnate. 🌍✈️", sponsored: "Sponsorizzato", benefit: "Vantaggio", benefitLocked: "Check-in GPS sul posto necessario per sbloccare il vantaggio", stopsLabel: "Fermate" },
+    pt: { start: "Lançar", stop: "Parada", of: "de", daiShot: "Dica Dai", angleLabel: "Ângulo Dai:", photoTipFallback: "Procure uma perspectiva lateral para captar a profundidade.", capture: "Log Dados", rewardReceived: "Sincronizado", prev: "Voltar", next: "Próximo", meters: "m", itinerary: "Itinerário", finish: "Finalizar Tour", congrats: "Tour Completado!", stampDesc: "Novo selo ganho", shareIg: "Gerar Visto Social (+100)", close: "Fechar", tooFar: "GPS Incerto", checkIn: "Check-in GPS", checkedIn: "Verificado", distance: "Distância", duration: "Duração", nearbyAlert: "Parada Próxima", jumpTo: "Pular para aqui", rewardMiles: "+50 MILHAS", visaId: "VISTO", boardingPass: "CARTÃO DE EMBARQUE", approved: "APROVADO", rewardTotal: "Recompensa total", rankUp: "Ranking atualizado", shareText: "Acabei de completar a Masterclass de {city} no bdai! +250 milhas acumuladas. 🌍✈️", sponsored: "Patrocinado", benefit: "Benefício", benefitLocked: "Faça check-in GPS no local para desbloquear o benefício", stopsLabel: "Paradas" },
+    de: { start: "Start", stop: "Halt", of: "von", daiShot: "Dai-Tipp", angleLabel: "Dai-Winkel:", photoTipFallback: "Suchen Sie nach einer Seitenperspektive, um die Tiefe einzufangen.", capture: "Log Daten", rewardReceived: "Synchronisiert", prev: "Zurück", next: "Weiter", meters: "m", itinerary: "Route", finish: "Tour beenden", congrats: "Tour abgeschlossen!", stampDesc: "Neuer Stempel erhalten", shareIg: "Social Visa generieren (+100)", close: "Schließen", tooFar: "GPS Unsicher", checkIn: "GPS Check-in", checkedIn: "Verifiziert", distance: "Distanz", duration: "Dauer", nearbyAlert: "Halt in der Nähe", jumpTo: "Hierher springen", rewardMiles: "+50 MEILEN", visaId: "VISUM", boardingPass: "BORDKARTE", approved: "GENEHMIGT", rewardTotal: "Gesamtbelohnung", rankUp: "Rang aktualisiert", shareText: "Ich habe gerade die {city} Masterclass auf bdai abgeschlossen! +250 Meilen gesammelt. 🌍✈️", sponsored: "Gesponsert", benefit: "Vorteil", benefitLocked: "GPS-Check-in vor Ort erforderlich, um den Vorteil freizuschalten", stopsLabel: "Stopps" },
+    zh: { start: "开始", stop: "站点", of: "/", daiShot: "戴的提示", angleLabel: "拍摄角度:", photoTipFallback: "寻找侧面视角以捕捉结构的深度。", capture: "记录数据", rewardReceived: "已同步", prev: "返回", next: "下一步", meters: "米", itinerary: "行程", finish: "结束之旅", congrats: "之旅已完成！", stampDesc: "获得新印章", shareIg: "生成社交签证 (+100)", close: "关闭", tooFar: "GPS 不确定", checkIn: "GPS 签到", checkedIn: "已验证", distance: "距离", duration: "时长", nearbyAlert: "附近站点", jumpTo: "跳到这里", rewardMiles: "+50 里程", visaId: "签证", boardingPass: "登机牌", approved: "已批准", rewardTotal: "总奖励", rankUp: "等级已更新", shareText: "我刚刚在 bdai 完成了 {city} 大师课！赚取了 250 里程。🌍✈️", sponsored: "赞助", benefit: "福利", benefitLocked: "需在店内完成GPS签到才能解锁福利", stopsLabel: "站点" },
+    ja: { start: "開始", stop: "スポット", of: "/", daiShot: "Daiのヒント", angleLabel: "Daiアングル:", photoTipFallback: "奥行きを捉えるために、側面からの視点を探してください。", capture: "ログ保存", rewardReceived: "同期済み", prev: "戻る", next: "次へ", meters: "m", itinerary: "行程", finish: "ツアー終了", congrats: "ツアー完了！", stampDesc: "新しいスタンプを獲得", shareIg: "ソーシャルビザ生成 (+100)", close: "閉じる", tooFar: "GPS 不安定", checkIn: "GPS チェックイン", checkedIn: "確認済み", distance: "距離", duration: "時間", nearbyAlert: "近くのスポット", jumpTo: "ここへ移動", rewardMiles: "+50 マイル", visaId: "ビザ", boardingPass: "搭乗券", approved: "承認済み", rewardTotal: "合計報酬", rankUp: "ランク更新", shareText: "bdai で {city} のマスタークラスを完了しました！250 マイル獲得。🌍✈️", sponsored: "スポンサー", benefit: "特典", benefitLocked: "特典の解除には店舗でのGPSチェックインが必要です", stopsLabel: "スポット" },
+    ru: { start: "Начать", stop: "Остановка", of: "из", daiShot: "Совет Dai", angleLabel: "Ракурс Dai:", photoTipFallback: "Ищите боковую перспективу, чтобы передать глубину.", capture: "Записать данные", rewardReceived: "Синхронизировано", prev: "Назад", next: "Далее", meters: "м", itinerary: "Маршрут", finish: "Завершить тур", congrats: "Тур завершен!", stampDesc: "Новая марка получена", shareIg: "Создать визу (+100)", close: "Закрыть", tooFar: "GPS неточен", checkIn: "GPS регистрация", checkedIn: "Проверено", distance: "Расстояние", duration: "Длительность", nearbyAlert: "Рядом", jumpTo: "Перейти сюда", rewardMiles: "+50 МИЛЬ", visaId: "ВИЗА", boardingPass: "ПОСАДОЧНЫЙ ТАЛОН", approved: "ОДОБРЕНО", rewardTotal: "Итог", rankUp: "Ранг обновлен", shareText: "Я завершил мастер-класс в {city} на bdai! +250 миль. 🌍✈️", sponsored: "Спонсировано", benefit: "Бонус", benefitLocked: "Для получения бонуса нужна GPS-регистрация на месте", stopsLabel: "Остановки" },
+    ar: { start: "إطلاق", stop: "محطة", of: "من", daiShot: "نصيحة داي", angleLabel: "زاوية داي:", photoTipFallback: "ابحث عن منظور جانبي لالتقاط عمق الهيكل.", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "السابق", next: "التالي", meters: "م", itinerary: "المسار", finish: "إنهاء الجولة", congrats: "اكتملت الجولة!", stampDesc: "لقد حصلت على ختم جديد", shareIg: "إنشاء تأشيرة اجتماعية (+100)", close: "إغلاق", tooFar: "GPS غير مؤكد", checkIn: "تسجيل GPS", checkedIn: "متحقق", distance: "المسافة", duration: "المدة", nearbyAlert: "محطة قريبة", jumpTo: "قفز إلى هنا", rewardMiles: "+50 ميل", visaId: "تأشيرة", boardingPass: "بطاقة صعود", approved: "معتمد", rewardTotal: "إجمالي المكافأة", rankUp: "تم تحديث الرتبة", shareText: "لقد أنهيت للتو ماستركلاس {city} على bdai! تم جمع 250 ميلاً. 🌍✈️", sponsored: "برعاية", benefit: "ميزة", benefitLocked: "يلزم تسجيل الوصول عبر GPS في المكان لفتح الميزة", stopsLabel: "محطات" }
 };
 
 const STOP_ICONS: Record<string, string> = {
@@ -123,38 +134,51 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
 
     if (!tour) return null;
 
+    // Rama patrocinada: mismos layouts, acento amarillo corporativo en vez de morado
+    const sponsored = !!tour.isSponsored;
+
     return (
-        <div onClick={handleLaunch} className="group bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden p-8 mb-0 cursor-pointer relative active:scale-[0.98] transition-all hover:border-purple-500/40 shadow-2xl flex flex-col h-full w-full">
+        <div onClick={handleLaunch} className={`group bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden p-8 mb-0 cursor-pointer relative active:scale-[0.98] transition-all ${sponsored ? 'hover:border-[#f6c604]/40' : 'hover:border-purple-500/40'} shadow-2xl flex flex-col h-full w-full`}>
             {isLaunching && (
-                <div className="absolute inset-0 bg-purple-600/20 backdrop-blur-[2px] z-10 flex items-center justify-center animate-fade-in">
+                <div className={`absolute inset-0 ${sponsored ? 'bg-[#f6c604]/20' : 'bg-purple-600/20'} backdrop-blur-[2px] z-10 flex items-center justify-center animate-fade-in`}>
                     <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                 </div>
             )}
             <div className="flex flex-col flex-1">
-                {tour.theme && (
-                    <div className="inline-block bg-purple-600/20 border border-purple-500/30 text-purple-400 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 self-start">
-                        {tour.theme}
+                {(tour.theme || sponsored) && (
+                    <div className={`inline-block ${sponsored ? 'bg-[#f6c604]/20 border-[#f6c604]/40 text-[#f6c604]' : 'bg-purple-600/20 border-purple-500/30 text-purple-400'} border text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 self-start`}>
+                        {sponsored ? tl.sponsored : tour.theme}
                     </div>
                 )}
-                <h3 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight group-hover:text-purple-400 transition-colors">{tour.title}</h3>
+                <h3 className={`text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight ${sponsored ? 'group-hover:text-[#f6c604]' : 'group-hover:text-purple-400'} transition-colors`}>{tour.title}</h3>
                 <p className="text-slate-400 text-xs leading-relaxed line-clamp-3 mb-4 font-medium flex-1">{tour.description}</p>
 
                 <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
                     <div className="flex gap-4">
-                        <div className="flex flex-col">
-                            <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.duration}</span>
-                            <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.duration}</span>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.distance}</span>
-                            <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.distance}</span>
-                        </div>
+                        {sponsored ? (
+                            // Sin ruta: no hay duración ni distancia, solo nº de paradas
+                            <div className="flex flex-col">
+                                <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.stopsLabel}</span>
+                                <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.stops?.length || 0}</span>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex flex-col">
+                                    <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.duration}</span>
+                                    <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.duration}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.distance}</span>
+                                    <span className="text-white font-black text-xs uppercase tracking-tighter">{tour.distance}</span>
+                                </div>
+                            </>
+                        )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className={`${isLaunching ? 'text-purple-400 animate-pulse' : 'text-purple-500'} font-black text-[10px] uppercase tracking-widest`}>
+                        <span className={`${sponsored ? (isLaunching ? 'text-[#f6c604] animate-pulse' : 'text-[#f6c604]') : (isLaunching ? 'text-purple-400 animate-pulse' : 'text-purple-500')} font-black text-[10px] uppercase tracking-widest`}>
                             {isLaunching ? 'Syncing...' : tl.start}
                         </span>
-                        <div className={`w-11 h-11 aspect-square rounded-2xl flex items-center justify-center shadow-xl transition-all shrink-0 ${isLaunching ? 'bg-purple-600 text-white animate-spin' : 'bg-white text-slate-950 group-hover:bg-purple-500 group-hover:text-white'}`}>
+                        <div className={`w-11 h-11 aspect-square rounded-2xl flex items-center justify-center shadow-xl transition-all shrink-0 ${isLaunching ? (sponsored ? 'bg-[#f6c604] text-slate-950 animate-spin' : 'bg-purple-600 text-white animate-spin') : (sponsored ? 'bg-white text-slate-950 group-hover:bg-[#f6c604] group-hover:text-slate-950' : 'bg-white text-slate-950 group-hover:bg-purple-500 group-hover:text-white')}`}>
                             <i className={`fas ${isLaunching ? 'fa-spinner' : 'fa-play'} text-[10px] ${!isLaunching && 'ml-0.5'}`}></i>
                         </div>
                     </div>
@@ -166,6 +190,9 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
 
 export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
+    // Tour patrocinado: sin audio, sin numeración de parada, botón Beneficio
+    // (desbloqueado tras check-in GPS) en lugar de Consejo Dai
+    const isSponsoredTour = !!tour?.isSponsored;
     const { gpsStatus } = useAppStore();
     const [claimedStops, setClaimedStops] = useState<Set<string>>(new Set());
 
@@ -359,13 +386,15 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
             {showPhotoTip && (
                 <div className="fixed inset-0 z-[9500] flex items-center justify-center p-6 animate-fade-in">
                     <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowPhotoTip(false)}></div>
-                    <div className="bg-slate-900 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative z-10 border border-purple-500/30">
-                        <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-purple-500/20">
-                            <i className="fas fa-camera text-2xl text-white"></i>
+                    <div className={`bg-slate-900 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative z-10 border ${isSponsoredTour ? 'border-[#f6c604]/40' : 'border-purple-500/30'}`}>
+                        <div className={`w-16 h-16 ${isSponsoredTour ? 'bg-[#f6c604] shadow-[#f6c604]/20' : 'bg-purple-600 shadow-purple-500/20'} rounded-2xl flex items-center justify-center mb-6 shadow-lg`}>
+                            <i className={`fas ${isSponsoredTour ? 'fa-gem text-slate-950' : 'fa-camera text-white'} text-2xl`}></i>
                         </div>
-                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">{tl.daiShot}</h3>
-                        <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-6">{tl.angleLabel} {currentStop.photoSpot?.angle || tl.photoTipFallback}</p>
-                        <p className="text-slate-400 text-sm leading-relaxed mb-8 italic">"{currentStop.photoSpot?.secretLocation || tl.photoTipFallback}"</p>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">{isSponsoredTour ? tl.benefit : tl.daiShot}</h3>
+                        {!isSponsoredTour && (
+                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-6">{tl.angleLabel} {currentStop.photoSpot?.angle || tl.photoTipFallback}</p>
+                        )}
+                        <p className="text-slate-400 text-sm leading-relaxed mb-8 italic">"{isSponsoredTour ? (currentStop.business?.benefit || '') : (currentStop.photoSpot?.secretLocation || tl.photoTipFallback)}"</p>
                         <button onClick={() => setShowPhotoTip(false)} className="w-full py-4 bg-white text-slate-950 rounded-2xl font-black uppercase text-[10px] tracking-widest">{tl.close}</button>
                     </div>
                 </div>
@@ -443,15 +472,18 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                             <i className={`fas ${STOP_ICONS[currentStop.type?.toLowerCase()] || 'fa-location-dot'} text-xs`}></i>
                         </div>
                         <div className="flex flex-col text-left truncate">
-                            <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">
-                                {tl.stop} {currentStopIndex + 1}
-                            </p>
+                            {!isSponsoredTour && (
+                                <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">
+                                    {tl.stop} {currentStopIndex + 1}
+                                </p>
+                            )}
                             <h2 className="text-[10px] font-black text-slate-900 uppercase truncate leading-tight">{currentStop.name}</h2>
                         </div>
                     </div>
                     <i className="fas fa-list-ul text-[10px] text-slate-400 ml-2 shrink-0"></i>
                 </button>
 
+                {!isSponsoredTour && (<>
                 <div className="relative">
                     <button
                         onClick={() => setShowSpeedMenu(!showSpeedMenu)}
@@ -492,6 +524,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                 >
                     {isAudioLoading ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${audioPlayingId === currentStop.name ? 'fa-stop' : 'fa-play'} text-xs`}></i>}
                 </button>
+                </>)}
             </div>
 
             <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
@@ -535,9 +568,19 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                     <span>{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
                     {distToTarget !== null && !rewardClaimed && <span className="text-[7px] opacity-60 font-bold leading-none">{distToTarget}{tl.meters}</span>}
                 </button>
-                <button onClick={() => setShowPhotoTip(true)} className="flex-1 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest border bg-slate-900 text-white border-slate-800 shadow-xl flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-all">
-                    <i className="fas fa-camera text-xs"></i>
-                    <span>{tl.daiShot}</span>
+                <button
+                    onClick={() => {
+                        // El beneficio solo se desbloquea tras el check-in GPS en la parada
+                        if (isSponsoredTour && !rewardClaimed) {
+                            toast(tl.benefitLocked, "error");
+                            return;
+                        }
+                        setShowPhotoTip(true);
+                    }}
+                    className={`flex-1 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest border shadow-xl flex flex-col items-center justify-center gap-0.5 active:scale-95 transition-all ${isSponsoredTour && rewardClaimed ? 'bg-[#f6c604] text-slate-950 border-[#f6c604]' : 'bg-slate-900 text-white border-slate-800'}`}
+                >
+                    <i className={`fas ${isSponsoredTour ? (rewardClaimed ? 'fa-gem' : 'fa-lock') : 'fa-camera'} text-xs`}></i>
+                    <span>{isSponsoredTour ? tl.benefit : tl.daiShot}</span>
                 </button>
                 {currentStopIndex === tour.stops.length - 1 ? (
                     <button onClick={handleFinishTour} className="flex-[1.5] py-3 bg-green-600 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl active:scale-[0.98] flex flex-col items-center justify-center gap-0.5">

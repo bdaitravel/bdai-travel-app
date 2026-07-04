@@ -14,7 +14,8 @@ export const cityLookup: Record<string, Record<string, string>> = {
 };
 
 export const translations: Record<string, any> = {
-  en: { 
+  en: {
+    sponsoredSection: "SPONSORED",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "your@email.com", 
     requestAccess: "REQUEST CODE", verifyCode: "VERIFY CODE", enterCode: "Enter 8-digit code", 
     searchPlaceholder: "search city...", generating: "MINTING VISA...",
@@ -48,7 +49,8 @@ export const translations: Record<string, any> = {
     noToursFound: "Unfortunately, this destination does not have enough verified stops to build a tour.",
     tourRequested: "We've received your request! We'll prepare the tour and notify you when it's ready."
   },
-  es: { 
+  es: {
+    sponsoredSection: "PATROCINADO",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "tu@email.com", 
     requestAccess: "SOLICITAR CÓDIGO", verifyCode: "VERIFICAR", enterCode: "Introduce código 8 dígitos", 
     searchPlaceholder: "busca ciudad...", generating: "GENERANDO VISA...",
@@ -82,7 +84,8 @@ export const translations: Record<string, any> = {
     noToursFound: "Por desgracia, este destino no cuenta con suficientes paradas verificadas para crear un tour.",
     tourRequested: "¡Hemos recibido tu solicitud! Prepararemos el tour y te avisaremos cuando esté listo."
   },
-  fr: { 
+  fr: {
+    sponsoredSection: "SPONSORISÉ",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "votre@email.com", 
     requestAccess: "DEMANDER CODE", verifyCode: "VÉRIFIER", enterCode: "Entrez le code à 8 chiffres", 
     searchPlaceholder: "chercher ville...", generating: "CRÉATION VISA...",
@@ -106,7 +109,8 @@ export const translations: Record<string, any> = {
     noToursFound: "Malheureusement, cette destination ne dispose pas de suffisamment d'arrêts vérifiés pour créer un circuit.",
     tourRequested: "Nous avons reçu votre demande ! Nous préparerons le circuit et vous avertirons quand il sera prêt."
   },
-  de: { 
+  de: {
+    sponsoredSection: "GESPONSERT",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "deine@email.com", 
     requestAccess: "CODE ANFORDERN", verifyCode: "BESTÄTIGEN", enterCode: "8-stelligen Code eingeben", 
     searchPlaceholder: "stadt suchen...", generating: "VISA ERSTELLEN...",
@@ -130,7 +134,8 @@ export const translations: Record<string, any> = {
     noToursFound: "Leider hat dieses Ziel nicht genügend verifizierte Stopps, um eine Tour zu erstellen.",
     tourRequested: "Wir haben Ihre Anfrage erhalten! Wir bereiten die Tour vor und benachrichtigen Sie, wenn sie fertig ist."
   },
-  it: { 
+  it: {
+    sponsoredSection: "SPONSORIZZATO",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "tua@email.com", 
     requestAccess: "RICHIEDI CODICE", verifyCode: "VERIFICA", enterCode: "Inserisci codice 8 cifre", 
     searchPlaceholder: "cerca città...", generating: "CREAZIONE VISA...",
@@ -154,7 +159,8 @@ export const translations: Record<string, any> = {
     noToursFound: "Purtroppo, questa destinazione non ha abbastanza tappe verificate per creare un tour.",
     tourRequested: "Abbiamo ricevuto la tua richiesta! Prepareremo il tour e ti avviseremo quando sarà pronto."
   },
-  pt: { 
+  pt: {
+    sponsoredSection: "PATROCINADO",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "seu@email.com", 
     requestAccess: "PEDIR CÓDIGO", verifyCode: "VERIFICAR", enterCode: "Digite o código de 8 dígitos", 
     searchPlaceholder: "buscar cidade...", generating: "CRIANDO VISA...",
@@ -178,7 +184,8 @@ export const translations: Record<string, any> = {
     noToursFound: "Infelizmente, este destino não possui paradas verificadas suficientes para criar um passeio.",
     tourRequested: "Recebemos sua solicitação! Prepararemos o passeio e avisaremos quando estiver pronto."
   },
-  nl: { 
+  nl: {
+    sponsoredSection: "GESPONSORD",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "uw@email.com", 
     requestAccess: "CODE AANVRAGEN", verifyCode: "VERIFIËREN", enterCode: "Voer 8-cijferige code in", 
     searchPlaceholder: "zoek stad...", generating: "VISA MAKEN...",
@@ -200,7 +207,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "BEGREPEN! LATEN WE BEGINNEN MET VERKENNEN",
     badge_pioneer_desc: "Voltooi je eerste stop", badge_streak_desc: "3-daagse activiteitenreeks",
   },
-  ro: { 
+  ro: {
+    sponsoredSection: "SPONSORIZAT",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "email@tau.com", 
     requestAccess: "SOLICITĂ COD", verifyCode: "VERIFICĂ", enterCode: "Cod 8 cifre", 
     searchPlaceholder: "caută oraș...", generating: "GENERARE VISA...",
@@ -222,7 +230,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "AM ÎNȚELES! SĂ ÎNCEPEM SĂ EXPLORĂM",
     badge_pioneer_desc: "Finalizează prima ta oprire", badge_streak_desc: "Serie de activități de 3 zile",
   },
-  pl: { 
+  pl: {
+    sponsoredSection: "SPONSOROWANE",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "twoj@email.com", 
     requestAccess: "POPROŚ O KOD", verifyCode: "WERYFIKUJ", enterCode: "Wpisz 8-cyfrowy kod", 
     searchPlaceholder: "szukaj miasta...", generating: "TWORZENIE WIZY...",
@@ -244,7 +253,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "ROZUMIEM! ZACZNIJMY ODKRYWAĆ",
     badge_pioneer_desc: "Ukończ swój pierwszy przystanek", badge_streak_desc: "3-dniowa seria aktywności",
   },
-  sv: { 
+  sv: {
+    sponsoredSection: "SPONSRAD",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
     requestAccess: "BEGÄR KOD", verifyCode: "VERIFIERA", enterCode: "Ange 8-siffrig kod", 
     searchPlaceholder: "sök stad...", generating: "SKAPAR VISA...",
@@ -266,7 +276,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "FÖRSTÅTT! LÅT OSS BÖRJA UTFORSKA",
     badge_pioneer_desc: "Slutför ditt första stopp", badge_streak_desc: "3-dagars aktivitetsstreak",
   },
-  da: { 
+  da: {
+    sponsoredSection: "SPONSORERET",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
     requestAccess: "ANMOD OM KODE", verifyCode: "BEKRÆFT", enterCode: "Indtast 8-cifret kode", 
     searchPlaceholder: "søg by...", generating: "OPRETTER VISA...",
@@ -288,7 +299,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "FORSTÅET! LAD OS BEGYNDE AT UDFORSKE",
     badge_pioneer_desc: "Gennemfør dit første stop", badge_streak_desc: "3-dages aktivitetsstribe",
   },
-  fi: { 
+  fi: {
+    sponsoredSection: "SPONSOROITU",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "sinun@email.com", 
     requestAccess: "PYYDÄ KOODI", verifyCode: "VAHVISTA", enterCode: "Syötä 8-numeroinen koodi", 
     searchPlaceholder: "etsi kaupunki...", generating: "LUODAAN VISA...",
@@ -310,7 +322,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "YMMÄRRETTY! ALOITETAAN TUTKIMINEN",
     badge_pioneer_desc: "Suorita ensimmäinen pysähdyksesi", badge_streak_desc: "3 päivän aktiivisuusputki",
   },
-  no: { 
+  no: {
+    sponsoredSection: "SPONSET",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "din@email.com", 
     requestAccess: "BE OM KODE", verifyCode: "BEKREFT", enterCode: "Skriv 8-siffrig kode", 
     searchPlaceholder: "søk by...", generating: "OPPRETTER VISA...",
@@ -332,7 +345,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "FORSTÅTT! LA OSS BEGYNNE Å UTFORSKE",
     badge_pioneer_desc: "Fullfør ditt første stopp", badge_streak_desc: "3-dagers aktivitetsrekke",
   },
-  ru: { 
+  ru: {
+    sponsoredSection: "СПОНСИРОВАНО",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "vashe@email.com", 
     requestAccess: "ПОЛУЧИТЬ КОД", verifyCode: "ПРОВЕРИТЬ", enterCode: "Введите 8-значный код", 
     searchPlaceholder: "поиск города...", generating: "СОЗДАНИЕ ВИЗЫ...",
@@ -354,7 +368,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "ПОНЯТНО! ДАВАЙТЕ НАЧНЕМ ИССЛЕДОВАТЬ",
     badge_pioneer_desc: "Завершите свою первую остановку", badge_streak_desc: "3-дневная серия активности",
   },
-  zh: { 
+  zh: {
+    sponsoredSection: "赞助内容",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "您的电子邮件", 
     requestAccess: "获取验证码", verifyCode: "验证", enterCode: "输入8位验证码", 
     searchPlaceholder: "搜索城市...", generating: "生成签证...",
@@ -376,7 +391,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "明白了！让我们开始探索吧",
     badge_pioneer_desc: "完成您的第一站", badge_streak_desc: "3天活动连胜",
   },
-  ja: { 
+  ja: {
+    sponsoredSection: "スポンサー",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "メールアドレス", 
     requestAccess: "コードを請求", verifyCode: "確認", enterCode: "8桁のコードを入力", 
     searchPlaceholder: "都市を検索...", generating: "ビザ作成中...",
@@ -398,7 +414,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "了解しました！探索を始めましょう",
     badge_pioneer_desc: "最初のストップを完了する", badge_streak_desc: "3日間の活動連続",
   },
-  ko: { 
+  ko: {
+    sponsoredSection: "스폰서",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "이메일 주소", 
     requestAccess: "코드 요청", verifyCode: "확인", enterCode: "8자리 코드 입력", 
     searchPlaceholder: "도시 검색...", generating: "비자 생성 중...",
@@ -420,7 +437,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "알겠습니다! 탐색을 시작합시다",
     badge_pioneer_desc: "첫 번째 정류장 완료", badge_streak_desc: "3일 연속 활동",
   },
-  ar: { 
+  ar: {
+    sponsoredSection: "برعاية",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "بريدك الإلكتروني", 
     requestAccess: "طلب الرمز", verifyCode: "تحقق", enterCode: "أدخل الرمز المكون من 8 أرقام", 
     searchPlaceholder: "بحث عن مدينة...", generating: "جاري إنشاء التأشيرة...",
@@ -442,7 +460,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "فهمت! لنبدأ الاستكشاف",
     badge_pioneer_desc: "أكمل محطتك الأولى", badge_streak_desc: "سلسلة نشاط لمدة 3 أيام",
   },
-  hi: { 
+  hi: {
+    sponsoredSection: "प्रायोजित",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "आपका ईमेल", 
     requestAccess: "कोड मांगें", verifyCode: "सत्यापित करें", enterCode: "8-अंकीय कोड डालें", 
     searchPlaceholder: "शहर खोजें...", generating: "वीज़ा बना रहा है...",
@@ -464,7 +483,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "समझ गया! आइए अन्वेषण शुरू करें",
     badge_pioneer_desc: "अपना पहला स्टॉप पूरा करें", badge_streak_desc: "3-दिवसीय गतिविधि स्ट्रीक",
   },
-  th: { 
+  th: {
+    sponsoredSection: "สปอนเซอร์",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "อีเมลของคุณ", 
     requestAccess: "ขอรหัส", verifyCode: "ยืนยัน", enterCode: "ใส่รหัส 8 หลัก", 
     searchPlaceholder: "ค้นหาเมือง...", generating: "กำลังสร้างวีซ่า...",
@@ -486,7 +506,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "เข้าใจแล้ว! มาเริ่มสำรวจกันเถอะ",
     badge_pioneer_desc: "ทำจุดแวะพักแรกของคุณให้สมบูรณ์", badge_streak_desc: "สตรีคกิจกรรม 3 วัน",
   },
-  vi: { 
+  vi: {
+    sponsoredSection: "ĐƯỢC TÀI TRỢ",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "email@cua.ban", 
     requestAccess: "YÊU CẦU MÃ", verifyCode: "XÁC MINH", enterCode: "Nhập mã 8 số", 
     searchPlaceholder: "Tìm thành phố...", generating: "ĐANG TẠO VISA...",
@@ -508,7 +529,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "ĐÃ HIỂU! HÃY BẮT ĐẦU KHÁM PHÁ",
     badge_pioneer_desc: "Hoàn thành điểm dừng đầu tiên của bạn", badge_streak_desc: "Chuỗi hoạt động 3 ngày",
     },
-  ca: { 
+  ca: {
+    sponsoredSection: "PATROCINAT",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "el@teu.email", 
     requestAccess: "DEMANAR CODI", verifyCode: "VERIFICAR", enterCode: "Introdueix el codi de 8 dígits", 
     searchPlaceholder: "cerca ciutat...", generating: "GENERANT VISA...",
@@ -530,7 +552,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "ENTÈS! ANEM A EXPLORAR",
     badge_pioneer_desc: "Completa la teva primera parada", badge_streak_desc: "Ratxa de 3 dies actiu",
   },
-  eu: { 
+  eu: {
+    sponsoredSection: "BABESTUA",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "zure@emaila.com", 
     requestAccess: "KODEA ESKATU", verifyCode: "EGIAZTATU", enterCode: "Sartu 8 digituko kodea", 
     searchPlaceholder: "bilatu hiria...", generating: "VISA SORTZEN...",
@@ -552,7 +575,8 @@ export const translations: Record<string, any> = {
     onboardingGotIt: "ULERTUTA! HAS GAITEZEN ESPLORATZEN",
     badge_pioneer_desc: "Zure lehen geldialdia osatu", badge_streak_desc: "3 eguneko jarduera jarraia",
   },
-  tr: { 
+  tr: {
+    sponsoredSection: "SPONSORLU",
     headerTitle: "bdai", subTitle: "better destinations by ai", emailPlaceholder: "senin@email.com", 
     requestAccess: "KOD İSTE", verifyCode: "DOĞRULA", enterCode: "8 haneli kodu girin", 
     searchPlaceholder: "şehir ara...", generating: "VİZE OLUŞTURULUYOR...",

@@ -6,7 +6,7 @@ import {
 } from '../services/geminiService';
 import {
     supabase, checkIfCityCached, normalizeKey, updateRoutePolyline,
-    searchCitiesInCache, searchMunicipalitiesNominatim
+    searchCitiesInCache, searchMunicipalitiesNominatim, fetchCityToursMerged
 } from '../services/supabaseClient';
 import { toast } from '../components/Toast';
 import { Tour } from '../types';
@@ -69,7 +69,8 @@ export const useCity = () => {
         setSearchVal('');
 
         const backfillMissingPolylines = (tours: Tour[], citySlug: string, l: string): void => {
-          const toursMissingPolyline = tours.filter(t => !t.routePolyline && t.stops?.length >= 2);
+          // Los patrocinados no tienen ruta: nunca calcular polylines para ellos
+          const toursMissingPolyline = tours.filter(t => !t.isSponsored && !t.routePolyline && t.stops?.length >= 2);
           if (toursMissingPolyline.length === 0) return;
 
           (async () => {
@@ -101,25 +102,14 @@ export const useCity = () => {
               .eq('city', slug).eq('language', lang);
           }
 
-          const { data: existing } = await supabase
-            .from('tours_cache')
-            .select('data, route_polylines')
-            .eq('city', slug)
-            .eq('language', lang)
-            .maybeSingle();
+          const { tours: mergedTours, hasNormal } = await fetchCityToursMerged(slug, lang);
 
-          if (existing && existing.data && existing.data.length > 0) {
-            const savedPolylines: Record<string, string> = existing.route_polylines || {};
-            const toursWithPolylines = (existing.data as Tour[]).map((tour: Tour) => ({
-              ...tour,
-              routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
-            }));
-
-            tourCacheService.saveTours(slug, lang, toursWithPolylines);
-            setTours(toursWithPolylines);
+          if (hasNormal) {
+            tourCacheService.saveTours(slug, lang, mergedTours);
+            setTours(mergedTours);
             navigate(`/city/${slug}`);
             setIsLoading(false);
-            backfillMissingPolylines(toursWithPolylines, slug, lang);
+            backfillMissingPolylines(mergedTours, slug, lang);
             return;
           }
 

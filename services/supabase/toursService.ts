@@ -120,6 +120,70 @@ export const searchCitiesInCache = async (query: string, language = 'es'): Promi
     }
 };
 
+// ── Tours patrocinados ────────────────────────────────────────────────────────
+// Viven en la tabla `sponsored_tours` (ciclo de vida independiente: el pipeline
+// -02 sobreescribe tours_cache.data en cada regeneración y los borraría).
+// `sponsored_tours.city_slug` usa el MISMO slug que `tours_cache.city` (salida
+// de normalizeKey), por lo que la unión es una segunda query por la misma clave.
+// La RLS de la tabla ya filtra por `active` y vigencia del contrato.
+
+export const getSponsoredTours = async (slug: string, language: string): Promise<Tour[]> => {
+    if (!slug) return [];
+    const lang = (language || 'es').toLowerCase();
+    try {
+        let { data } = await supabase
+            .from('sponsored_tours')
+            .select('data')
+            .eq('city_slug', slug)
+            .eq('language', lang)
+            .maybeSingle();
+
+        // Los negocios locales suelen tener contenido solo en 'es' al principio
+        if (!data?.data && lang !== 'es') {
+            const res = await supabase
+                .from('sponsored_tours')
+                .select('data')
+                .eq('city_slug', slug)
+                .eq('language', 'es')
+                .maybeSingle();
+            data = res.data;
+        }
+
+        if (!data?.data) return [];
+        // Garantizar el flag aunque el JSONB no lo trajera
+        return (data.data as Tour[]).map(t => ({ ...t, isSponsored: true }));
+    } catch (e) {
+        console.warn('Sponsored tours lookup failed', e);
+        return [];
+    }
+};
+
+/**
+ * Carga unificada de tours de una ciudad: tours_cache + sponsored_tours en
+ * paralelo, con polylines aplicadas. Los patrocinados van siempre al final.
+ * `hasNormal` permite al llamador decidir el flujo de "ciudad sin caché".
+ */
+export const fetchCityToursMerged = async (slug: string, language: string): Promise<{ tours: Tour[], hasNormal: boolean }> => {
+    const lang = (language || 'es').toLowerCase();
+    const [cacheRes, sponsored] = await Promise.all([
+        supabase
+            .from('tours_cache')
+            .select('data, route_polylines')
+            .eq('city', slug)
+            .eq('language', lang)
+            .maybeSingle(),
+        getSponsoredTours(slug, lang)
+    ]);
+
+    const savedPolylines: Record<string, string> = cacheRes.data?.route_polylines || {};
+    const normal = ((cacheRes.data?.data as Tour[]) || []).map(tour => ({
+        ...tour,
+        routePolyline: savedPolylines[tour.id] ?? tour.routePolyline
+    }));
+
+    return { tours: [...normal, ...sponsored], hasNormal: normal.length > 0 };
+};
+
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{ data: Tour[], langFound: string, cityName: string } | null> => {
     const slug = normalizeKey(city, country);
     if (!slug) return null;
