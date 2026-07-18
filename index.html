@@ -52,6 +52,7 @@
         -webkit-tap-highlight-color: transparent;
         margin: 0;
         padding: 0;
+        height: 100vh; /* fallback para WebViews sin soporte de dvh */
         height: 100dvh;
         width: 100vw;
         overflow: hidden;
@@ -83,6 +84,21 @@
       }
       .animate-fade-in {
         animation: fadeIn 0.4s ease-out;
+      }
+
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-slide-up {
+        animation: slideUp 0.4s ease-out backwards;
+      }
+      .animate-fade-in-up {
+        animation: slideUp 0.4s ease-out backwards;
+      }
+
+      .top-safe-iphone {
+        top: env(safe-area-inset-top, 20px);
       }
 
       @keyframes pulse-logo {

@@ -115,6 +115,21 @@ Este documento refleja el **estado exacto y en tiempo real** de las tablas confi
 
 ---
 
+## Tabla: `sponsored_events`
+*Analítica de tours patrocinados. INSERT-only para el cliente (sin SELECT — protege emails); lectura solo con `service_role` desde el Dashboard. Queries de informe en `scripts/create_sponsored_events.sql`.*
+
+| Campo | Tipo | Formato | Descripción / Relación |
+| :--- | :--- | :--- | :--- |
+| `id` | string | uuid | Identificador del evento. <pk/> |
+| `city_slug` | string | text | Mismo slug que `sponsored_tours.city_slug`. |
+| `tour_id` | string | text | ID del tour patrocinado (ej. `agoncillo_spain_es_sp0`). |
+| `stop_id` | string | text | ID de la parada (el local) donde ocurrió el evento. |
+| `event_type` | string | text | `check_in` (GPS verificado en el local) o `benefit_open` (modal del beneficio abierto). |
+| `user_email` | string | text | Email del usuario o `anonymous`. Personas únicas = `COUNT(DISTINCT user_email)`. |
+| `created_at` | string | timestamp | Momento del evento. |
+
+---
+
 ## Tabla: `audio_cache`
 *Caché de Text-to-Speech (TTS) que almacena audios (migrado a formato MP3) para evitar costes y latencia regenerando locuciones de la IA.*
 

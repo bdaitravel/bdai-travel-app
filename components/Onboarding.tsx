@@ -345,7 +345,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, us
                         {currentStep.subtitle}
                     </p>
                     
-                    <div className="w-full mt-8 p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] relative flex-1 min-h-[180px] flex flex-col justify-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                    <div className="w-full mt-8 p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] relative min-h-[180px] flex flex-col justify-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
                         <div className="text-slate-300 text-sm font-medium leading-relaxed text-center space-y-3">
                             {currentStep.content.split('\n').map((paragraph: string, idx: number) => (
                                 <p key={idx}>{paragraph}</p>

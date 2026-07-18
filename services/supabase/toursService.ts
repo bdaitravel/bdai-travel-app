@@ -184,6 +184,32 @@ export const fetchCityToursMerged = async (slug: string, language: string): Prom
     return { tours: [...normal, ...sponsored], hasNormal: normal.length > 0 };
 };
 
+/**
+ * Registra un evento de analítica de tours patrocinados (check-in GPS o
+ * apertura del beneficio). Fire-and-forget: nunca bloquea ni rompe la UX.
+ * La tabla `sponsored_events` es INSERT-only para el cliente (RLS);
+ * la lectura/agregación se hace desde el Dashboard con service_role.
+ */
+export const logSponsoredEvent = async (
+    citySlug: string,
+    tourId: string,
+    stopId: string,
+    eventType: 'check_in' | 'benefit_open',
+    userEmail?: string
+): Promise<void> => {
+    try {
+        await supabase.from('sponsored_events').insert({
+            city_slug: citySlug,
+            tour_id: tourId,
+            stop_id: stopId,
+            event_type: eventType,
+            user_email: userEmail || 'anonymous'
+        });
+    } catch (e) {
+        console.warn('Sponsored event log failed (non-critical):', e);
+    }
+};
+
 export const getCachedTours = async (city: string, country: string, language: string): Promise<{ data: Tour[], langFound: string, cityName: string } | null> => {
     const slug = normalizeKey(city, country);
     if (!slug) return null;

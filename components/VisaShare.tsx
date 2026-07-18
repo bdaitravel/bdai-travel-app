@@ -55,10 +55,10 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 animate-fade-in">
-      <div 
+    <div className="fixed inset-0 z-[10000] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center p-6 overflow-y-auto no-scrollbar animate-fade-in">
+      <div
         ref={visaRef}
-        className={`w-full max-w-[320px] aspect-[9/16] ${theme.bg} rounded-[2.5rem] p-8 flex flex-col relative overflow-hidden shadow-2xl`}
+        className={`w-full max-w-[320px] aspect-[9/16] ${theme.bg} rounded-[2.5rem] p-8 flex flex-col relative overflow-hidden shadow-2xl shrink-0 mt-auto`}
       >
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
@@ -115,7 +115,7 @@ export const VisaShare: React.FC<VisaShareProps> = ({ user, cityName, milesEarne
         </div>
       </div>
 
-      <div className="mt-10 w-full max-w-[320px] space-y-3">
+      <div className="mt-10 mb-auto w-full max-w-[320px] space-y-3 shrink-0">
         <button 
           onClick={handleShare}
           disabled={isGenerating}

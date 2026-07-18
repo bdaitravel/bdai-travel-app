@@ -235,6 +235,64 @@ Los POIs se dividen en Tier 1 (top 40%), Tier 2 (siguiente 35%), Tier 3 (resto) 
 
 ---
 
+## Tours patrocinados (`sponsored_tours`)
+
+### Concepto
+
+Un tour patrocinado es un conjunto de **paradas de negocios locales** (cafeterías, restaurantes, tiendas) creado a mano por contrato comercial. No tiene ruta, ni duración/distancia, ni audio: el usuario pulsa una parada, el mapa le indica cómo llegar, hace check-in GPS (≤50m, misma mecánica que el tour normal) y eso desbloquea el **Beneficio** del local.
+
+### Tabla `sponsored_tours` — ciclo de vida independiente
+
+**Nunca guardar tours patrocinados en `tours_cache`**: el pipeline `-02` sobreescribe `data` completo en cada regeneración y los borraría. Viven en su propia tabla (SQL en `scripts/create_sponsored_tours.sql`):
+
+| Campo | Uso |
+|---|---|
+| `city_slug` + `language` | PK. `city_slug` usa el **mismo slug** que `tours_cache.city` (salida de `normalizeKey`) — así se unen ambas fuentes por la misma clave. |
+| `data` | JSONB `Tour[]`, cada tour con `isSponsored: true`. |
+| `active` | Interruptor: `false` oculta sin borrar (fin de contrato). |
+| `starts_at` / `ends_at` | Vigencia del contrato. La RLS solo expone filas activas y en vigencia. |
+| `sponsor_name` | Nombre comercial para facturación/auditoría. |
+
+RLS: SELECT público filtrado por `active` + vigencia; **sin políticas de escritura** (solo `service_role` desde Dashboard/scripts).
+
+### Convención de IDs
+
+`{slug}_{lang}_sp{n}` (tour) y `{slug}_{lang}_sp{n}_stop{m}` (parada). El sufijo `sp` no es decorativo: `parseTourId()` en `TourActiveView` parsea `slug_lang_idx` y con `sp0` obtiene `NaN`, por eso la rehidratación busca el tour **por id exacto** en el array fusionado antes de caer al índice.
+
+### Carga unificada — un solo punto de entrada
+
+`fetchCityToursMerged(slug, lang)` en `services/supabase/toursService.ts` es la **única** vía de carga de tours de ciudad: hace en paralelo la query original a `tours_cache` y `getSponsoredTours()` (con fallback de idioma a `es`), y devuelve `{ tours, hasNormal }` con los patrocinados al final. La usan los tres puntos de carga: `useCity.processCitySelection`, `CityDetailView` (rehidratación) y `TourActiveView` (rehidratación). La copia offline (`tourCacheService.saveTours`) persiste el array ya fusionado, así que el modo offline funciona sin código extra.
+
+`hasNormal` preserva la regla original: ciudad sin tours normales → flujo de solicitud + email, aunque tenga patrocinados.
+
+### Reglas de UI (todas detrás de `tour.isSponsored`)
+
+- **Acento amarillo corporativo `#f6c604`** (el del logo) en lugar del morado: borde hover, chip, título hover, "Lanzar" y botón play de la card. Separador amarillo con etiqueta `sponsoredSection` (traducida en los 24 idiomas de `data/translations.ts`) que **solo se renderiza si el municipio tiene patrocinados**.
+- **Badge "Patrocinado" obligatorio** en la card (requisito legal LSSI art. 20 / DSA: la comunicación comercial debe identificarse explícitamente — el color solo no basta).
+- Card sin duración/distancia: muestra nº de paradas.
+- Vista activa: sin botón de audio ni selector de velocidad; cabecera solo con el nombre del local (sin "Parada N").
+- Botón **"Beneficio"** (icono `fa-gem`) sustituye a "Consejo Dai": bloqueado (candado + toast `benefitLocked`) hasta hacer check-in GPS en esa parada; el texto vive en `Stop.business.benefit`.
+- Check-in GPS y gamificación (millas, puntos) idénticos al tour normal.
+
+### Tipado
+
+`Tour.isSponsored?: boolean` y `Stop.business?: { type: 'cafe'|'restaurant'|'shop'; address?: string; benefit?: string }`. **No tocar la unión `Stop.type`** (alimenta iconos y puntos): la parada de un bar sigue siendo `type: 'food'`.
+
+### Analítica (`sponsored_events`)
+
+Tabla INSERT-only para el cliente (SQL en `scripts/create_sponsored_events.sql`; sin SELECT para proteger emails). `logSponsoredEvent()` en `toursService.ts` registra fire-and-forget:
+
+- `check_in` — al verificar el check-in GPS en una parada patrocinada
+- `benefit_open` — al abrir el modal del beneficio
+
+Métricas (personas únicas = `COUNT(DISTINCT user_email)`, pulsaciones = `COUNT(*)`) se consultan desde el SQL Editor con las queries incluidas en el script.
+
+### Regla de oro
+
+**El tour normal no se toca.** Cualquier cambio de este sistema debe ser aditivo: ramas condicionales detrás de `isSponsored`, funciones nuevas en lugar de modificar las existentes, y las clases/textos de la rama normal deben quedar byte a byte como estaban. QA del módulo: `qa/08_SPONSORED.md`.
+
+---
+
 ## Normas para agentes AI
 
 - **Nunca modificar datos en Supabase** (tours_cache, generation_jobs, users) sin confirmación explícita del usuario.

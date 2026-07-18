@@ -56,9 +56,9 @@ export const ReportBugModal: React.FC<ReportBugModalProps> = ({ onClose, languag
     };
 
     return (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
-            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose}></div>
-            <div className="bg-slate-900 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative z-10 border border-slate-700">
+        <div className="fixed inset-0 z-[10000] flex justify-center p-6 overflow-y-auto no-scrollbar">
+            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose}></div>
+            <div className="bg-slate-900 w-full max-w-sm my-auto shrink-0 h-fit rounded-[2.5rem] p-8 shadow-2xl relative z-10 border border-slate-700">
                 {sent ? (
                     <div className="text-center py-8 animate-fade-in">
                         <i className="fas fa-check-circle text-5xl text-emerald-500 mb-4"></i>

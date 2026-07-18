@@ -77,8 +77,8 @@ export const ShareableBadge: React.FC<ShareableBadgeProps> = ({ rank, miles, bad
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md z-[999999]">
-      <div className="w-full max-w-[340px] flex flex-col items-center">
+    <div className="fixed inset-0 flex justify-center p-6 overflow-y-auto no-scrollbar bg-black/80 backdrop-blur-md z-[999999]">
+      <div className="w-full max-w-[340px] flex flex-col items-center my-auto shrink-0 h-fit">
         
         {/* The Shareable Card */}
         <div 

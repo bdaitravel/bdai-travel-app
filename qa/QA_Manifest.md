@@ -20,6 +20,7 @@ Cada módulo es un fichero independiente en este mismo directorio para facilitar
 | 05 | **Pasaporte & Gamificación** | [05_PASSPORT.md](05_PASSPORT.md) | Perfil, visados, insignias, rangos, compartir rank |
 | 06 | **Intel Hub, Ranking & Tienda** | [06_INTEL.md](06_INTEL.md) | Intel global, leaderboard, shop, comunidad |
 | 07 | **Infraestructura & Seguridad** | [07_INFRA.md](07_INFRA.md) | Navegación, estado Zustand, errores, RLS, Capacitor |
+| 08 | **Tours Patrocinados** | [08_SPONSORED.md](08_SPONSORED.md) | Separador amarillo, badge, check-in GPS → Beneficio, analítica, RLS |
 
 ---
 
@@ -51,7 +52,7 @@ Cada módulo es un fichero independiente en este mismo directorio para facilitar
 ## 🔄 Flujo de Ejecución Recomendado
 
 ```
-01_AUTH → 02_I18N → 03_EXPLORE → 04_TOURS → 05_PASSPORT → 06_INTEL → 07_INFRA
+01_AUTH → 02_I18N → 03_EXPLORE → 04_TOURS → 05_PASSPORT → 06_INTEL → 07_INFRA → 08_SPONSORED
 ```
 
 > Los módulos dependen del anterior: sin login (01) no se puede probar nada; sin idioma (02) no se verifican traducciones en el resto.
@@ -69,4 +70,5 @@ Cada módulo es un fichero independiente en este mismo directorio para facilitar
 | 05_PASSPORT | 16 | 4 | 7 | 5 |
 | 06_INTEL | 11 | 2 | 5 | 4 |
 | 07_INFRA | 14 | 5 | 5 | 4 |
-| **TOTAL** | **100** | **28** | **41** | **31** |
+| 08_SPONSORED | 18 | 11 | 7 | 0 |
+| **TOTAL** | **118** | **39** | **48** | **31** |

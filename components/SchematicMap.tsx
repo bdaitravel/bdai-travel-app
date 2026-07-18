@@ -436,8 +436,8 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
             )}
             
             {showPermissionModal && (
-                <div className="absolute inset-0 z-[500] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in text-white font-sans">
-                    <div className="bg-slate-900 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border-2 border-white/10 flex flex-col items-center text-center">
+                <div className="absolute inset-0 z-[500] bg-black/60 backdrop-blur-sm flex justify-center p-6 overflow-y-auto no-scrollbar animate-fade-in text-white font-sans">
+                    <div className="bg-slate-900 rounded-[2rem] p-8 max-w-sm w-full my-auto shrink-0 h-fit shadow-2xl border-2 border-white/10 flex flex-col items-center text-center">
                         <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30">
                             <i className="fas fa-location-slash text-3xl text-purple-400"></i>
                         </div>

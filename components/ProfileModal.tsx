@@ -65,8 +65,8 @@ const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => strin
     const canDelete = emailMatches && countdownDone && !isDeleting;
 
     return (
-        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md" style={{ zIndex: 999999 }}>
-            <div className="w-full max-w-[340px] bg-slate-900 border-2 border-red-500/50 rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl shadow-red-500/20">
+        <div className="fixed inset-0 z-[999999] flex justify-center p-6 overflow-y-auto no-scrollbar bg-black/90 backdrop-blur-md" style={{ zIndex: 999999 }}>
+            <div className="w-full max-w-[340px] my-auto shrink-0 h-fit bg-slate-900 border-2 border-red-500/50 rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl shadow-red-500/20">
                 <div className="w-16 h-16 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center mb-4">
                     <i className="fas fa-skull text-2xl text-red-500"></i>
                 </div>

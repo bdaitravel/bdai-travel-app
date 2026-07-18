@@ -74,14 +74,14 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
             ))}
         </div>
 
-        <div className={`flex justify-center items-end gap-3 mb-16 px-6 h-80 relative ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex justify-center items-end gap-3 mb-16 px-6 min-h-[20rem] relative ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
             {top3[1] && (
                 <div className="flex flex-col items-center w-28 animate-slide-up" style={{ animationDelay: '0.2s' }}>
                     <div className="relative mb-4 cursor-pointer" onClick={() => onUserClick(top3[1])}>
-                        <img src={top3[1].avatar} className="w-18 h-18 rounded-[2rem] border-2 border-slate-400/50 object-cover shadow-2xl relative z-10" />
+                        <img src={top3[1].avatar} className="w-20 h-20 rounded-[2rem] border-2 border-slate-400/50 object-cover shadow-2xl relative z-10" />
                         <div className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-slate-400 text-slate-950 flex items-center justify-center text-[11px] font-black border-4 border-slate-950 z-20 shadow-lg">2</div>
                     </div>
-                    <div className="w-full h-28 bg-white/5 border border-white/10 rounded-t-[2rem] flex flex-col items-center justify-center p-3 backdrop-blur-md shadow-2xl">
+                    <div className="w-full min-h-[7rem] bg-white/5 border border-white/10 rounded-t-[2rem] flex flex-col items-center justify-center p-3 backdrop-blur-md shadow-2xl">
                         <div className="flex items-center gap-1 mb-1 max-w-full">
                             <p className="text-[10px] font-black truncate text-slate-200">{top3[1].name}</p>
                             <FlagImg country={top3[1].country} />
@@ -96,7 +96,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
                         <img src={top3[0].avatar} className="w-24 h-24 rounded-[2.5rem] border-4 border-yellow-500 object-cover shadow-[0_0_40px_rgba(234,179,8,0.4)] relative z-10" />
                         <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full bg-yellow-500 text-yellow-950 flex items-center justify-center text-sm font-black border-4 border-slate-950 z-20 shadow-xl">1</div>
                     </div>
-                    <div className="w-full h-40 bg-gradient-to-b from-purple-600/30 to-slate-900/80 border border-purple-500/40 rounded-t-[2.5rem] flex flex-col items-center justify-center p-4 backdrop-blur-2xl shadow-2xl">
+                    <div className="w-full min-h-[10rem] bg-gradient-to-b from-purple-600/30 to-slate-900/80 border border-purple-500/40 rounded-t-[2.5rem] flex flex-col items-center justify-center p-4 backdrop-blur-2xl shadow-2xl">
                         <div className="flex items-center justify-center gap-2 mb-1 w-full">
                             <p className="text-xs font-black truncate text-white">{top3[0].name}</p>
                             <FlagImg country={top3[0].country} />
@@ -108,10 +108,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
             {top3[2] && (
                 <div className="flex flex-col items-center w-28 animate-slide-up" style={{ animationDelay: '0.3s' }}>
                     <div className="relative mb-4 cursor-pointer" onClick={() => onUserClick(top3[2])}>
-                        <img src={top3[2].avatar} className="w-18 h-18 rounded-[2rem] border-2 border-amber-700/50 object-cover shadow-2xl relative z-10" />
+                        <img src={top3[2].avatar} className="w-20 h-20 rounded-[2rem] border-2 border-amber-700/50 object-cover shadow-2xl relative z-10" />
                         <div className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-amber-700 text-amber-100 flex items-center justify-center text-[11px] font-black border-4 border-slate-950 z-20 shadow-lg">3</div>
                     </div>
-                    <div className="w-full h-20 bg-white/5 border border-white/10 rounded-t-[2rem] flex flex-col items-center justify-center p-3 backdrop-blur-md shadow-2xl">
+                    <div className="w-full min-h-[5rem] bg-white/5 border border-white/10 rounded-t-[2rem] flex flex-col items-center justify-center p-3 backdrop-blur-md shadow-2xl">
                         <div className="flex items-center gap-1 mb-1 max-w-full">
                             <p className="text-[10px] font-black truncate text-slate-200">{top3[2].name}</p>
                             <FlagImg country={top3[2].country} />

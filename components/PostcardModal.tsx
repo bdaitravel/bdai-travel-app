@@ -24,10 +24,10 @@ export const PostcardModal: React.FC<any> = ({ city, interests, language, onClos
     useEffect(() => { const load = async () => { const res = await generateCityPostcard(city, interests); setImage(res); setLoading(false); }; load(); }, [city]);
     const handleShare = async () => { if (image && navigator.share) { const blob = await (await fetch(image)).blob(); const file = new File([blob], `postcard-${city}.png`, { type: 'image/png' }); navigator.share({ title: `Postal de ${city}`, files: [file] }).catch(console.error); } };
     return (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 animate-fade-in">
-            <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl" onClick={onClose}></div>
-            <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden shadow-2xl relative z-10 flex flex-col animate-slide-up">
-                <div className="aspect-[9/16] bg-slate-200 relative">
+        <div className="fixed inset-0 z-[2000] flex justify-center p-6 overflow-y-auto no-scrollbar animate-fade-in">
+            <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl" onClick={onClose}></div>
+            <div className="bg-white rounded-[3rem] w-full max-w-sm my-auto overflow-hidden shadow-2xl relative z-10 flex flex-col shrink-0 h-fit animate-slide-up">
+                <div className="aspect-[9/16] min-h-[320px] bg-slate-200 relative">
                     {loading ? <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 gap-4"><i className="fas fa-wand-magic-sparkles text-4xl animate-pulse text-purple-600"></i><p className="text-[10px] font-black uppercase tracking-widest">{t.loading}</p></div> : image ? <img src={image} className="w-full h-full object-cover" alt="AI Postcard" /> : <div className="absolute inset-0 flex items-center justify-center text-slate-500">{t.error}</div>}
                 </div>
                 <div className="p-8 text-center bg-white">

@@ -89,13 +89,13 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl animate-fade-in">
+    <div className="fixed inset-0 z-[10000] flex flex-col items-center p-6 overflow-y-auto no-scrollbar bg-slate-950/90 backdrop-blur-xl animate-fade-in">
       
       {/* CAPTURE ZONE */}
       <div 
         ref={visaRef}
         data-visa-container
-        className="w-full max-w-[340px] aspect-[4/5] rounded-[3rem] bg-slate-950 border-4 border-slate-900 shadow-2xl relative overflow-hidden flex flex-col p-8 select-none"
+        className="w-full max-w-[340px] aspect-[4/5] rounded-[3rem] bg-slate-950 border-4 border-slate-900 shadow-2xl relative overflow-hidden flex flex-col p-8 select-none shrink-0 mt-auto"
         style={{ fontFamily: "'Outfit', sans-serif" }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-purple-950 opacity-90"></div>
@@ -156,7 +156,7 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
       </div>
 
       {/* CONTROLS */}
-      <div className="mt-10 w-full max-w-[340px] space-y-4">
+      <div className="mt-10 w-full max-w-[340px] space-y-4 shrink-0">
         <div className="grid grid-cols-2 gap-3">
           <button 
             onClick={handleShare}
@@ -184,7 +184,7 @@ export const ShareableVisa: React.FC<ShareableVisaProps> = ({
         </button>
       </div>
 
-      <p className="absolute bottom-8 text-[8px] font-black text-slate-700 uppercase tracking-[0.4em]">
+      <p className="mt-6 mb-auto text-[8px] font-black text-slate-700 uppercase tracking-[0.4em] shrink-0">
         Better Destinations by AI // {new Date().getFullYear()}
       </p>
     </div>

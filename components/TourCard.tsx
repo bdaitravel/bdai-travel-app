@@ -3,7 +3,7 @@ import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '
 import { SchematicMap } from './SchematicMap';
 import { toast } from './Toast';
 import { generateAudio } from '../services/geminiService';
-import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges } from '../services/supabaseClient';
+import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges, logSponsoredEvent } from '../services/supabaseClient';
 import { VisaShare } from './VisaShare';
 import { audioManager } from '../services/audioManager';
 import { hapticLight, hapticHeavy, hapticSuccess } from '../lib/haptics';
@@ -212,7 +212,18 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
     const handleCheckIn = async () => {
         if (IS_IN_RANGE) {
             setClaimedStops(prev => new Set(prev).add(currentStop.id));
-            
+
+            // Analítica de patrocinados: check-in verificado en el local
+            if (isSponsoredTour) {
+                logSponsoredEvent(
+                    normalizeKey(tour.city, tour.country),
+                    tour.id,
+                    currentStop.id,
+                    'check_in',
+                    user.email
+                );
+            }
+
             const isAlreadyCompleted = user.completedTours?.includes(tour.id);
 
             if (!isAlreadyCompleted) {
@@ -384,9 +395,9 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
     return (
         <div className="fixed inset-0 bg-slate-50 flex flex-col z-[5000] overflow-hidden">
             {showPhotoTip && (
-                <div className="fixed inset-0 z-[9500] flex items-center justify-center p-6 animate-fade-in">
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowPhotoTip(false)}></div>
-                    <div className={`bg-slate-900 w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative z-10 border ${isSponsoredTour ? 'border-[#f6c604]/40' : 'border-purple-500/30'}`}>
+                <div className="fixed inset-0 z-[9500] flex justify-center p-6 overflow-y-auto no-scrollbar animate-fade-in">
+                    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowPhotoTip(false)}></div>
+                    <div className={`bg-slate-900 w-full max-w-sm my-auto shrink-0 h-fit rounded-[2.5rem] p-8 shadow-2xl relative z-10 border ${isSponsoredTour ? 'border-[#f6c604]/40' : 'border-purple-500/30'}`}>
                         <div className={`w-16 h-16 ${isSponsoredTour ? 'bg-[#f6c604] shadow-[#f6c604]/20' : 'bg-purple-600 shadow-purple-500/20'} rounded-2xl flex items-center justify-center mb-6 shadow-lg`}>
                             <i className={`fas ${isSponsoredTour ? 'fa-gem text-slate-950' : 'fa-camera text-white'} text-2xl`}></i>
                         </div>
@@ -423,9 +434,9 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
             )}
 
             {showCompletion && (
-                <div className="fixed inset-0 z-[9900] flex items-center justify-center p-6 animate-fade-in">
-                    <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-2xl"></div>
-                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl relative z-10 flex flex-col overflow-hidden text-slate-900 border-4 border-slate-900 animate-slide-up">
+                <div className="fixed inset-0 z-[9900] flex justify-center p-6 overflow-y-auto no-scrollbar animate-fade-in">
+                    <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl"></div>
+                    <div className="bg-white w-full max-w-sm my-auto shrink-0 h-fit rounded-[2.5rem] shadow-2xl relative z-10 flex flex-col overflow-hidden text-slate-900 border-4 border-slate-900 animate-slide-up">
                         <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
                             <div className="flex flex-col">
                                 <span className="text-[7px] font-black uppercase tracking-[0.3em] opacity-50">{tl.boardingPass}</span>
@@ -574,6 +585,16 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                         if (isSponsoredTour && !rewardClaimed) {
                             toast(tl.benefitLocked, "error");
                             return;
+                        }
+                        // Analítica de patrocinados: apertura del beneficio
+                        if (isSponsoredTour) {
+                            logSponsoredEvent(
+                                normalizeKey(tour.city, tour.country),
+                                tour.id,
+                                currentStop.id,
+                                'benefit_open',
+                                user.email
+                            );
                         }
                         setShowPhotoTip(true);
                     }}
