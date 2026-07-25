@@ -30,7 +30,7 @@ export const Shop: React.FC<{ user: UserProfile, onPurchase: (reward: number) =>
 
     return (
         <div className="pb-44 animate-fade-in bg-[#020617] min-h-full">
-            <header className="bg-gradient-to-b from-purple-900/40 to-slate-950 p-10 rounded-b-[4rem] border-b border-purple-500/20 shadow-2xl">
+            <header className="bg-gradient-to-b from-purple-900/40 to-slate-950 p-10 pt-safe-iphone rounded-b-[4rem] border-b border-purple-500/20 shadow-2xl">
                 <h2 className={`text-4xl font-black text-white tracking-tighter uppercase ${user.language === 'ar' ? 'text-right' : ''}`}>{t.title}</h2>
                 <p className={`text-purple-400 text-[9px] font-black uppercase tracking-[0.4em] mb-4 ${user.language === 'ar' ? 'text-right' : ''}`}>{t.subtitle}</p>
             </header>

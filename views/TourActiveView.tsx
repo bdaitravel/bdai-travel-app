@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { ActiveTourCard } from '../components/TourCard';
 import { useAppStore } from '../store/useAppStore';
-import { syncUserProfile, fetchCityToursMerged } from '../services/supabaseClient';
+import { queueProfileSync, fetchCityToursMerged } from '../services/supabaseClient';
 import { tourCacheService } from '../lib/tourCacheService';
+import { clearLastRoute } from '../lib/lastRouteStorage';
 import { BdaiLogo } from '../components/BdaiLogo';
 import { Tour } from '../types';
 
@@ -105,7 +106,7 @@ export const TourActiveView: React.FC = () => {
 
   const updateUserAndSync = (u: any) => {
     setUserProfile(u);
-    if (u.isLoggedIn) syncUserProfile(u);
+    if (u.isLoggedIn) queueProfileSync(u);
   };
 
   // Pantalla de carga mientras Zustand rehidrata desde storage o hacemos fetch a Supabase
@@ -136,8 +137,8 @@ export const TourActiveView: React.FC = () => {
       onBack={() => navigate(`/city/${selectedCityInfo?.slug || ''}`)} 
       userLocation={userLocation} 
       onTourComplete={() => {
-        // Limpiar la ruta guardada al completar el tour
-        localStorage.removeItem('bdai_last_tour_route');
+        // Limpiar la ruta guardada al completar el tour (no restaurar dentro de uno ya acabado)
+        clearLastRoute();
         setVisaToShare({ 
           cityName: activeTour.city, 
           miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) 

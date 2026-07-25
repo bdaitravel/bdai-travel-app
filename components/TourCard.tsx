@@ -3,12 +3,13 @@ import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '
 import { SchematicMap } from './SchematicMap';
 import { toast } from './Toast';
 import { generateAudio } from '../services/geminiService';
-import { syncUserProfile, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges, logSponsoredEvent } from '../services/supabaseClient';
+import { queueProfileSync, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges, logSponsoredEvent } from '../services/supabaseClient';
 import { VisaShare } from './VisaShare';
 import { audioManager } from '../services/audioManager';
 import { hapticLight, hapticHeavy, hapticSuccess } from '../lib/haptics';
 import { tourCacheService } from '../lib/tourCacheService';
 import { useAppStore } from '../store/useAppStore';
+import { calculateDistanceMeters } from '../lib/geoUtils';
 
 interface TourCardTexts {
     start: string; stop: string; of: string; daiShot: string; angleLabel: string;
@@ -102,21 +103,6 @@ const STOP_ICONS: Record<string, string> = {
     photo: 'fa-camera',
     culture: 'fa-landmark',
     architecture: 'fa-archway'
-};
-
-const calculateDistance = (lat1: number | string, lon1: number | string, lat2: number | string, lon2: number | string) => {
-    const R = 6371000;
-    const l1 = typeof lat1 === 'string' ? parseFloat(lat1) : lat1;
-    const ln1 = typeof lon1 === 'string' ? parseFloat(lon1) : lon1;
-    const l2 = typeof lat2 === 'string' ? parseFloat(lat2) : lat2;
-    const ln2 = typeof lon2 === 'string' ? parseFloat(lon2) : lon2;
-    if (isNaN(l1) || isNaN(ln1) || isNaN(l2) || isNaN(ln2)) return Infinity;
-    const dLat = (l2 - l1) * Math.PI / 180;
-    const dLon = (ln2 - ln1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(l1 * Math.PI / 180) * Math.cos(l2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
 export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = 'es' }) => {
@@ -289,7 +275,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
 
     const distToTarget = useMemo(() => {
         if (!userLocation || !currentStop) return null;
-        return Math.round(calculateDistance(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
+        return Math.round(calculateDistanceMeters(userLocation.lat, userLocation.lng, currentStop.latitude, currentStop.longitude));
     }, [userLocation, currentStop]);
 
     const IS_IN_RANGE = distToTarget !== null && distToTarget <= 50;
@@ -322,7 +308,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
         const updatedUser = { ...user, audioSpeed: speed };
         onUpdateUser(updatedUser);
         if (user.isLoggedIn) {
-            syncUserProfile(updatedUser);
+            queueProfileSync(updatedUser);
         }
         setShowSpeedMenu(false);
     };
@@ -352,7 +338,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
             completedTours: [...(user.completedTours || []), tour.id]
         };
         onUpdateUser(updatedUser);
-        if (user.isLoggedIn) await syncUserProfile(updatedUser);
+        if (user.isLoggedIn) queueProfileSync(updatedUser);
         setShowCompletion(true);
     };
 
@@ -379,7 +365,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
             const remoteUrl = await generateAudio(text, user.language, tour.city);
             if (!remoteUrl) { audioManager.stop(); return; }
             const audioUrl = await tourCacheService.getOrCacheAudioUrl(remoteUrl);
-            await audioManager.play(audioUrl, stopName, user.audioSpeed || 1.0);
+            await audioManager.play(audioUrl, stopName, user.audioSpeed || 1.0, tour.city);
         } catch (e) {
             console.error("Audio error:", e);
             audioManager.stop();

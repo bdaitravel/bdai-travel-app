@@ -334,6 +334,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete, language, us
                         <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 ease-out" style={{ width: `${((step + 1) / steps.length) * 100}%` }}></div>
                     </div>
 
+                    <button
+                        onClick={onComplete}
+                        aria-label="Close"
+                        className="absolute top-6 right-6 z-10 w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-400 flex items-center justify-center active:scale-90 hover:bg-white/10 hover:text-white transition-all"
+                    >
+                        <i className="fas fa-times"></i>
+                    </button>
+
                     <div className="mt-4 mb-2 animate-slide-up" key={`icon-${step}`}>
                         {currentStep.icon}
                     </div>

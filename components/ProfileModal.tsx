@@ -2,7 +2,7 @@ import ReactDOM from 'react-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, LANGUAGES, AVATARS, APP_BADGES } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
-import { syncUserProfile, supabase } from '../services/supabaseClient';
+import { queueProfileSync, supabase } from '../services/supabaseClient';
 import { tourCacheService } from '../lib/tourCacheService';
 import { translations } from '../data/translations';
 import { LegalModal } from './LegalModal';
@@ -197,20 +197,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       reader.onloadend = () => {
           const b64 = reader.result as string;
           setFormData(prev => ({ ...prev, avatar: b64 }));
-          if (!isEditing && onUpdateUser) { const u = { ...user, avatar: b64 }; onUpdateUser(u); syncUserProfile(u); }
+          if (!isEditing && onUpdateUser) { const u = { ...user, avatar: b64 }; onUpdateUser(u); queueProfileSync(u); }
       };
       reader.readAsDataURL(file);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
       setIsSyncing(true);
-      try {
-          const age = new Date().getFullYear() - new Date(formData.birthday).getFullYear();
-          const updatedUser = { ...user, ...formData, name: `${formData.firstName} ${formData.lastName}`.trim(), age };
-          await syncUserProfile(updatedUser);
-          if (onUpdateUser) onUpdateUser(updatedUser);
-          setIsEditing(false);
-      } catch (e) {} finally { setIsSyncing(false); }
+      // Optimista: el perfil local ya está a salvo (Preferences en nativo) y el próximo login
+      // hace flush de cualquier pendiente antes de leer de Supabase, así que no hace falta
+      // bloquear la UI esperando a la red — queueProfileSync reintenta en segundo plano.
+      const age = new Date().getFullYear() - new Date(formData.birthday).getFullYear();
+      const updatedUser = { ...user, ...formData, name: `${formData.firstName} ${formData.lastName}`.trim(), age };
+      if (onUpdateUser) onUpdateUser(updatedUser);
+      queueProfileSync(updatedUser);
+      setIsEditing(false);
+      setIsSyncing(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -237,7 +239,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
         </div>
       )}
 
-      <div className="w-full max-w-sm px-4 pt-12">
+      <div className="w-full max-w-sm px-4 pt-safe-iphone">
         <div className="flex justify-between items-center mb-6 w-full px-2">
             <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-red-500/20">
                 <i className="fas fa-sign-out-alt"></i> {pt('logout')}

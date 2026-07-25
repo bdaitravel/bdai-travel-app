@@ -57,6 +57,12 @@
   - **Resultado esperado:** La tarjeta inferior actualiza título y breve descripción. El mapa hace "flyTo" al marcador correspondiente
   - **Observaciones:**
 
+- [ ] 🔴 TC-04-007b: La línea de ruta se recalcula al cambiar de parada sin moverse
+  - **Precondición:** Tour activo, GPS activo, usuario físicamente quieto (sin desplazarse)
+  - **Pasos:** 1. Anotar la ruta morada (marching ants) trazada hacia la parada actual → 2. Pulsar "Siguiente" sin moverse del sitio → 3. Esperar y observar el mapa (no hace falta esperar 15s)
+  - **Resultado esperado:** La línea de ruta se recalcula prácticamente al instante hacia la NUEVA parada (el marcador de destino ya lo hacía; la línea antes se quedaba apuntando a la parada anterior hasta que pasaban 15s o el usuario se movía >25m — bug corregido en `SchematicMap.tsx`)
+  - **Observaciones:**
+
 - [ ] 🟡 TC-04-008: Mostrar "Dai Tip" / Curiosidad
   - **Precondición:** En la primera parada
   - **Pasos:** 1. Pulsar botón amarillo o icono de "Dai Tip"
@@ -103,6 +109,18 @@
   - **Resultado esperado:** El reproductor (Wavesurfer o HTML5 nativo) debe reflejar el avance temporal correctamente.
   - **Observaciones:**
 
+- [ ] 🟡 TC-04-014b: Controles en pantalla de bloqueo / notificación (Media Session)
+  - **Precondición:** Audio de una parada en reproducción (APK Android o navegador compatible)
+  - **Pasos:** 1. Bloquear la pantalla o minimizar la app → 2. Observar la notificación multimedia / pantalla de bloqueo
+  - **Resultado esperado:** Aparecen controles nativos con el nombre de la parada como título, la ciudad como subtítulo y el logo de bdai como imagen; el botón de pausa/play funciona desde ahí
+  - **Observaciones:**
+
+- [ ] 🟢 TC-04-014c: Pausar y reanudar desde los controles nativos mantiene la posición
+  - **Precondición:** Audio en reproducción, controles nativos visibles
+  - **Pasos:** 1. Pulsar pausa desde la notificación/pantalla de bloqueo → 2. Esperar unos segundos → 3. Pulsar play desde el mismo control
+  - **Resultado esperado:** El audio se reanuda desde el punto donde se pausó, no desde el principio
+  - **Observaciones:**
+
 ---
 
 ## E. GPS Check-in (Mecánica Core)
@@ -129,4 +147,34 @@
   - **Precondición:** Con GPS real (o mock) acercándose al punto
   - **Pasos:** 1. Mover coordenadas en Sensor Tools
   - **Resultado esperado:** Al moverse, el texto "Distance: X.XX km" debe actualizarse en tiempo cuasi-real debajo del mapa o panel.
+  - **Observaciones:**
+
+---
+
+## F. GPS por Niveles de Precisión (Ahorro de Batería)
+
+> Componente: `hooks/useGeolocation.ts`. Lejos de la parada activa (>200m) usa precisión de red (`enableHighAccuracy: false`, bajo consumo); a <150m escalona a GPS de precisión real para validar el check-in de ≤50m. Se pausa por completo al pasar la app a segundo plano.
+
+- [ ] 🔴 TC-04-019: El check-in sigue funcionando igual que antes (±50m)
+  - **Precondición:** Tour activo, spoofear ubicación a las coordenadas exactas de una parada
+  - **Pasos:** 1. Tocar check-in
+  - **Resultado esperado:** Se valida igual que siempre — el cambio de niveles de precisión no debe alterar el umbral de validación, solo cuándo se pide precisión alta
+  - **Observaciones:**
+
+- [ ] 🟡 TC-04-020: Transición a precisión alta al acercarse a una parada
+  - **Precondición:** Tour activo, spoofear ubicación a >500m de la parada actual
+  - **Pasos:** 1. Mover progresivamente las coordenadas (Sensors tab) hasta cruzar los ~150m de la parada activa
+  - **Resultado esperado:** El indicador de distancia se sigue actualizando en todo momento (aunque más lento/menos preciso mientras está lejos); al cruzar el umbral, el check-in se vuelve validable con normalidad
+  - **Observaciones:**
+
+- [ ] 🟢 TC-04-021: Vuelta a bajo consumo al alejarse tras el check-in
+  - **Precondición:** Check-in ya hecho en la parada actual, siguiente parada a más de 200m
+  - **Pasos:** 1. Avanzar a la siguiente parada → 2. Alejar las coordenadas mockeadas más de 200m
+  - **Resultado esperado:** No debe haber ningún error ni bloqueo; el comportamiento de la app es transparente para el usuario (esto se verifica principalmente revisando que no haya excepciones en consola, ya que el ahorro de batería no es visible en la UI)
+  - **Observaciones:**
+
+- [ ] 🔴 TC-04-022: GPS se detiene al minimizar la app durante un tour (APK)
+  - **Precondición:** APK instalada, tour activo con GPS en marcha
+  - **Pasos:** 1. Minimizar la app (botón Home) → 2. Comprobar en los ajustes de batería/ubicación de Android que la app deja de reportar uso de GPS activo → 3. Reabrir la app
+  - **Resultado esperado:** El GPS se detiene mientras está en segundo plano y se reanuda automáticamente (en modo bajo consumo) al volver a primer plano, sin necesidad de recargar el tour
   - **Observaciones:**

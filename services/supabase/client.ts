@@ -1,4 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 
 // Placeholder Database type for projects without generated Supabase types.
 // All table/view/function access returns `any`-valued rows, preserving existing
@@ -48,9 +50,23 @@ console.error = (...args) => {
     originalConsoleError(...args);
 };
 
+// Sin esta opción, supabase-js guarda el token de sesión (refresh token incluido) en el
+// `localStorage` del WebView de Android por defecto — el mismo almacenamiento que el sistema
+// puede purgar bajo presión de memoria/almacenamiento (ver `storageProvider.ts`). Si eso ocurre,
+// o si el WebView se reinicia y tarda en releer el token, el arranque en frío puede ver una
+// sesión vacía o inconsistente y disparar el flujo de "usuario nuevo" para alguien que ya existe
+// (perfil reseteado + ventana de bienvenida reaparecida). En nativo usamos Preferences en su lugar.
+const nativeAuthStorage = {
+    getItem: (key: string) => Preferences.get({ key }).then(r => r.value),
+    setItem: (key: string, value: string) => Preferences.set({ key, value }),
+    removeItem: (key: string) => Preferences.remove({ key }),
+};
+
 export let supabase: SupabaseClientType;
 try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey) as SupabaseClientType;
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: Capacitor.isNativePlatform() ? { storage: nativeAuthStorage } : undefined
+    }) as SupabaseClientType;
 } catch (e) {
     console.error("Critical Supabase Init Error:", e);
     const createMockQuery = (): MockQueryBuilder => {

@@ -287,7 +287,7 @@ export const AdminPanel: React.FC<{ user: UserProfile, onBack: () => void }> = (
     };
 
     return (
-        <div className="fixed inset-0 z-[200] bg-slate-950 flex flex-col p-8 overflow-hidden font-sans">
+        <div className="fixed inset-0 z-[200] bg-slate-950 flex flex-col p-8 pt-safe-iphone overflow-hidden font-sans">
             <header className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Admin Panel</h2>

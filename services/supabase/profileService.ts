@@ -98,26 +98,38 @@ export const completeTourBonus = (profile: UserProfile, cityId: string): UserPro
     return updatedProfile;
 };
 
+// Construye el payload snake_case que espera `upsert_profile_rpc`.
+// Compartido por `syncUserProfile` (creación inmediata) y `profileSyncQueue` (cola con retry).
+export const buildProfilePayload = (profile: UserProfile) => ({
+    id: profile.id, email: profile.email, username: profile.username,
+    first_name: profile.firstName, last_name: profile.lastName,
+    name: profile.name || `${profile.firstName} ${profile.lastName}`.trim(),
+    miles: profile.miles, language: profile.language, avatar: profile.avatar, rank: profile.rank,
+    culture_points: profile.culturePoints, food_points: profile.foodPoints,
+    photo_points: profile.photoPoints, history_points: profile.historyPoints,
+    nature_points: profile.naturePoints, art_points: profile.artPoints,
+    arch_points: profile.archPoints, interests: profile.interests,
+    accessibility: profile.accessibility, is_public: profile.isPublic,
+    bio: profile.bio, age: profile.age, birthday: profile.birthday,
+    city: profile.city, country: profile.country, stats: profile.stats,
+    visited_cities: profile.visitedCities, completed_tours: profile.completedTours,
+    badges: profile.badges, stamps: profile.stamps, captured_moments: profile.capturedMoments,
+    audio_speed: profile.audioSpeed || 1.0,
+    updated_at: new Date().toISOString()
+});
+
+// Sync inmediato y bloqueante — solo para la creación del perfil al primer login
+// (el llamador necesita que la fila exista antes de continuar). Para cualquier otra
+// actualización, usar `queueProfileSync` de `profileSyncQueue.ts` (con retry + cola offline).
 export const syncUserProfile = async (profile: UserProfile) => {
-    if (!profile || !profile.email) return;
-    try {
-        const payload = {
-            id: profile.id, email: profile.email, username: profile.username,
-            first_name: profile.firstName, last_name: profile.lastName,
-            name: profile.name || `${profile.firstName} ${profile.lastName}`.trim(),
-            miles: profile.miles, language: profile.language, avatar: profile.avatar, rank: profile.rank,
-            culture_points: profile.culturePoints, food_points: profile.foodPoints,
-            photo_points: profile.photoPoints, history_points: profile.historyPoints,
-            nature_points: profile.naturePoints, art_points: profile.artPoints,
-            arch_points: profile.archPoints, interests: profile.interests,
-            accessibility: profile.accessibility, is_public: profile.isPublic,
-            bio: profile.bio, age: profile.age, birthday: profile.birthday,
-            city: profile.city, country: profile.country, stats: profile.stats,
-            visited_cities: profile.visitedCities, completed_tours: profile.completedTours,
-            badges: profile.badges, stamps: profile.stamps, captured_moments: profile.capturedMoments,
-            audio_speed: profile.audioSpeed || 1.0,
-            updated_at: new Date().toISOString()
-        };
-        await supabase.rpc('upsert_profile_rpc', { p_payload: payload });
-    } catch (e) { console.error("❌ Sync Error:", e); }
+    if (!profile || !profile.email) {
+        console.error("❌ syncUserProfile: perfil sin email, no se puede sincronizar", profile);
+        return;
+    }
+    const payload = buildProfilePayload(profile);
+    const { error } = await supabase.rpc('upsert_profile_rpc', { p_payload: payload });
+    if (error) {
+        console.error("❌ Sync Error:", error);
+        throw error;
+    }
 };

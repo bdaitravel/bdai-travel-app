@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { translations } from '../data/translations';
 import { useAppStore } from '../store/useAppStore';
-import { syncUserProfile } from '../services/supabaseClient';
+import { queueProfileSync } from '../services/supabaseClient';
 
 export const useTranslation = () => {
     const { userProfile, setUserProfile, setActiveTours } = useAppStore();
@@ -17,7 +17,7 @@ export const useTranslation = () => {
         setIsSyncingLang(code !== userProfile.language);
         const updatedUser = { ...userProfile, language: code };
         setUserProfile(updatedUser);
-        if (updatedUser.isLoggedIn) syncUserProfile(updatedUser);
+        if (updatedUser.isLoggedIn) queueProfileSync(updatedUser);
         setActiveTours([]);
         setTimeout(() => setIsSyncingLang(false), 500);
     };

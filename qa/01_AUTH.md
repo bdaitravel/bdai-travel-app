@@ -81,6 +81,18 @@
   - **Resultado esperado:** Se muestra el `BdaiLogo` con `animate-pulse` sobre fondo `#020617`
   - **Observaciones:**
 
+- [ ] 🔴 TC-01-021: Sesión sobrevive a que Android mate el proceso en segundo plano (APK)
+  - **Precondición:** APK instalada, usuario logueado y en mitad de un tour (`/tour/:tourId/stop/:stopIdx`)
+  - **Pasos:** 1. Minimizar la app → 2. Forzar el reciclado del proceso (activar "No conservar actividades" en Opciones de desarrollador de Android, o simplemente esperar con otras apps pesadas abiertas) → 3. Volver a abrir la app desde el selector de recientes
+  - **Resultado esperado:** La app recupera la sesión sin pedir login de nuevo y sin pasar por la ventana de bienvenida; si estaba en un tour, `TourActiveView` se autorehidrata en la misma parada (ver `qa/09_PROFILE_SYNC.md`). No debe verse una pantalla de login ni de bienvenida de por medio
+  - **Observaciones:**
+
+- [ ] 🟡 TC-01-022: Reabrir la app tras varias horas en segundo plano no fuerza login
+  - **Precondición:** Usuario logueado, app en segundo plano varias horas (tiempo suficiente para que el access token expire)
+  - **Pasos:** 1. Reabrir la app
+  - **Resultado esperado:** El SDK refresca el token automáticamente en segundo plano; el usuario sigue dentro de la app sin ver `/login` ni la ventana de bienvenida
+  - **Observaciones:**
+
 ---
 
 ## D. Logout
@@ -105,4 +117,46 @@
   - **Precondición:** Modal de eliminación abierto
   - **Pasos:** 1. Pulsar "Cancelar"
   - **Resultado esperado:** Se cierra el modal, se permanece en el perfil sin cambios
+  - **Observaciones:**
+
+---
+
+## F. Ventana de Bienvenida (Onboarding)
+
+> Componente: `components/Onboarding.tsx` · Se activa desde `hooks/useAuth.ts` (`handleLoginSuccess`, solo en la rama de creación de perfil nuevo) o manualmente desde el botón "?" en `HomeView.tsx`.
+
+- [ ] 🔴 TC-01-015: La bienvenida solo aparece la primera vez (alta de usuario)
+  - **Precondición:** Email sin perfil previo en `profiles`
+  - **Pasos:** 1. Completar login (OTP o Google) por primera vez con ese email
+  - **Resultado esperado:** Se muestra la ventana de bienvenida completa (7 pasos)
+  - **Observaciones:**
+
+- [ ] 🔴 TC-01-016: La bienvenida NO reaparece en logins posteriores
+  - **Precondición:** Usuario ya existente (con perfil en `profiles`), que ya vio la bienvenida antes
+  - **Pasos:** 1. Cerrar sesión → 2. Volver a iniciar sesión con el mismo email → 3. Repetir 3-4 veces
+  - **Resultado esperado:** Nunca vuelve a aparecer automáticamente, en ninguno de los intentos
+  - **Observaciones:**
+
+- [ ] 🔴 TC-01-017: La bienvenida NO reaparece tras un refresco de token
+  - **Precondición:** Usuario logueado con la app abierta durante >1h (o forzar `await supabase.auth.refreshSession()` desde la consola)
+  - **Pasos:** 1. Dejar la sesión activa el tiempo suficiente para un `TOKEN_REFRESHED` (o forzarlo manualmente) → 2. Observar la app
+  - **Resultado esperado:** No aparece la bienvenida ni se recarga el perfil (ver también `qa/09_PROFILE_SYNC.md` TC-09-005)
+  - **Observaciones:**
+
+- [ ] 🟡 TC-01-018: Botón "?" reabre la bienvenida bajo demanda
+  - **Precondición:** Usuario logueado en `/home`
+  - **Pasos:** 1. Pulsar el icono "?" de la cabecera
+  - **Resultado esperado:** Se abre la ventana de bienvenida completa desde el paso 1
+  - **Observaciones:**
+
+- [ ] 🟡 TC-01-019: Botón "X" cierra la bienvenida sin completar los pasos
+  - **Precondición:** Ventana de bienvenida abierta (desde alta nueva o desde el botón "?"), en cualquier paso intermedio (ej. paso 3 de 7)
+  - **Pasos:** 1. Pulsar la "X" en la esquina superior derecha de la tarjeta
+  - **Resultado esperado:** La ventana se cierra inmediatamente sin necesidad de pulsar "Siguiente" hasta el final; el usuario vuelve a `/home` con normalidad
+  - **Observaciones:**
+
+- [ ] 🟢 TC-01-020: Navegación manual entre pasos con los puntos indicadores
+  - **Precondición:** Ventana de bienvenida abierta
+  - **Pasos:** 1. Pulsar directamente uno de los puntos de progreso (no el primero ni el actual)
+  - **Resultado esperado:** Salta directamente a ese paso sin recorrer los intermedios
   - **Observaciones:**

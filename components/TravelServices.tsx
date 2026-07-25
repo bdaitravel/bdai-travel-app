@@ -221,7 +221,7 @@ export const TravelServices = ({
   };
 
   return (
-    <div className="space-y-12 pb-32 px-6 animate-fade-in transition-all">
+    <div className="space-y-12 pb-32 px-6 pt-safe-iphone animate-fade-in transition-all">
       <header>
         <h3 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
           {mode === 'HUB' ? `${t.navTOP} HUB` : <>{t.discoverTitle} <span className="text-purple-400">{formatCountryName("spain", lang)}</span></>}

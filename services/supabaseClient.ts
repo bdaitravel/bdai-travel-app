@@ -1,6 +1,7 @@
 // Export components from specific files
 export { supabase } from './supabase/client';
 export * from './supabase/profileService';
+export * from './supabase/profileSyncQueue';
 export * from './supabase/rankingService';
 export * from './supabase/toursService';
 export * from './supabase/audioService';

@@ -70,7 +70,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
     const fullPathRef = useRef<LeafletLib.Polyline | null>(null);
     const activeLineRef = useRef<LeafletLib.Polyline | null>(null);
     const geofenceCirclesRef = useRef<LeafletLib.Circle[]>([]);
-    const lastRoutingRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
+    const lastRoutingRef = useRef<{ lat: number; lng: number; time: number; targetLat: number; targetLng: number } | null>(null);
 
     const [isAutoFollowing, setIsAutoFollowing] = useState(true);
     const [walkingTime, setWalkingTime] = useState<number | null>(null);
@@ -177,7 +177,15 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
                     const now = Date.now();
                     let shouldFetchRouting = false;
 
-                    if (!lastRoutingRef.current) {
+                    const targetChanged = !lastRoutingRef.current ||
+                        lastRoutingRef.current.targetLat !== currentStop.latitude ||
+                        lastRoutingRef.current.targetLng !== currentStop.longitude;
+
+                    if (!lastRoutingRef.current || targetChanged) {
+                        // Cambiar de parada (Siguiente/Anterior/Saltar) debe recalcular la ruta
+                        // ya mismo, sin esperar al debounce de tiempo/distancia — si no, se
+                        // queda mostrando la ruta hacia la parada anterior indefinidamente
+                        // mientras el usuario no se mueva ni pasen los 15s.
                         shouldFetchRouting = true;
                     } else {
                         const timeElapsed = now - lastRoutingRef.current.time;
@@ -189,7 +197,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
                     }
 
                     if (shouldFetchRouting) {
-                        lastRoutingRef.current = { lat: userLocation.lat, lng: userLocation.lng, time: now };
+                        lastRoutingRef.current = { lat: userLocation.lat, lng: userLocation.lng, time: now, targetLat: currentStop.latitude, targetLng: currentStop.longitude };
 
                         const fetchRouting = async () => {
                             // Prioridad 1: Ruta pública OpenStreetMap

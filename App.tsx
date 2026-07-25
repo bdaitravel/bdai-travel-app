@@ -1,26 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Leaderboard } from './components/Leaderboard';
-import { ProfileModal } from './components/ProfileModal';
-import { Shop } from './components/Shop';
-import { TravelServices } from './components/TravelServices';
 import { BdaiLogo } from './components/BdaiLogo';
-import { AdminPanel } from './components/AdminPanel';
-import { Onboarding } from './components/Onboarding';
-import { VisaShare } from './components/VisaShare';
 
 import { LoginView } from './views/LoginView';
 import { HomeView } from './views/HomeView';
-import { CityDetailView } from './views/CityDetailView';
-import { TourActiveView } from './views/TourActiveView';
+
+// Code-splitting: estas vistas no hacen falta en el primer arranque (login/home), así que se
+// cargan bajo demanda. Reduce el JS a parsear/ejecutar en el arranque en frío — relevante para
+// batería/CPU en gama media-baja, que es donde se reportan la mayoría de bugs de esta app.
+const CityDetailView = lazy(() => import('./views/CityDetailView').then(m => ({ default: m.CityDetailView })));
+const TourActiveView = lazy(() => import('./views/TourActiveView').then(m => ({ default: m.TourActiveView })));
+const Leaderboard = lazy(() => import('./components/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const ProfileModal = lazy(() => import('./components/ProfileModal').then(m => ({ default: m.ProfileModal })));
+const Shop = lazy(() => import('./components/Shop').then(m => ({ default: m.Shop })));
+const TravelServices = lazy(() => import('./components/TravelServices').then(m => ({ default: m.TravelServices })));
+const AdminPanel = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
+const VisaShare = lazy(() => import('./components/VisaShare').then(m => ({ default: m.VisaShare })));
 
 import { useAppStore } from './store/useAppStore';
 import { useTranslation } from './hooks/useTranslation';
 import { useGeolocation } from './hooks/useGeolocation';
 import { tourCacheService } from './lib/tourCacheService';
+import { saveLastRoute } from './lib/lastRouteStorage';
 import { useAuth } from './hooks/useAuth';
 import { useCity } from './hooks/useCity';
-import { supabase, getGlobalRanking, syncUserProfile } from './services/supabaseClient';
+import { supabase, getGlobalRanking, queueProfileSync } from './services/supabaseClient';
 import { LeaderboardEntry } from './types';
 
 declare global {
@@ -54,6 +59,12 @@ const APP_DESC: Record<string, string> = {
 
 
 
+const RouteLoadingFallback = () => (
+  <div className="w-full h-full flex items-center justify-center py-24">
+    <BdaiLogo className="w-10 h-10 animate-pulse opacity-60" />
+  </div>
+);
+
 const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
   <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all flex-1 ${isActive ? 'text-purple-500 scale-105' : 'text-slate-500 opacity-40'}`}>
     <i className={`fas ${icon} text-lg`}></i>
@@ -85,16 +96,11 @@ export default function App() {
     setVisaToShare(null);
   }, [location.pathname, setIsLoading, setVisaToShare]);
 
-  // Guardar la ruta del tour activo en localStorage para Android state restoration.
-  // Si el proceso es matado y recreado por Android, useAuth la restaurará en el login.
+  // Guardar la última ruta para restauración de estado en Android: si el proceso es matado
+  // y recreado, Capacitor no conserva el hash de la URL y siempre recarga en la base — sin
+  // esto se aterriza en /home pase lo que pase. useAuth la restaura tras el login.
   useEffect(() => {
-    if (location.pathname.startsWith('/tour/')) {
-      localStorage.setItem('bdai_last_tour_route', location.pathname);
-      localStorage.setItem('bdai_last_tour_route_ts', String(Date.now()));
-    } else if (location.pathname === '/home' || location.pathname === '/login' || location.pathname === '/') {
-      localStorage.removeItem('bdai_last_tour_route');
-      localStorage.removeItem('bdai_last_tour_route_ts');
-    }
+    saveLastRoute(location.pathname);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -104,7 +110,7 @@ export default function App() {
 
   const updateUserAndSync = (updatedUser: any) => {
     setUser(updatedUser);
-    if (updatedUser.isLoggedIn) syncUserProfile(updatedUser);
+    if (updatedUser.isLoggedIn) queueProfileSync(updatedUser);
   };
 
   if (isVerifyingSession) {
@@ -132,24 +138,34 @@ export default function App() {
 
       <div className="flex-1 flex flex-col relative h-full">
         <div className={`flex-1 overflow-y-auto no-scrollbar relative ${isTourActive ? 'pb-0' : 'pb-36'}`}>
-          <Routes>
-            <Route path="/login" element={user.isLoggedIn ? <Navigate to="/home" /> : <LoginView />} />
-            <Route path="/home" element={user.isLoggedIn ? <HomeView appDesc={APP_DESC} /> : <Navigate to="/login" />} />
-            <Route path="/city/:slug" element={user.isLoggedIn ? <CityDetailView /> : <Navigate to="/login" />} />
-            <Route path="/tour/:tourId/stop/:stopIdx" element={user.isLoggedIn ? <TourActiveView /> : <Navigate to="/login" />} />
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Routes>
+              <Route path="/login" element={user.isLoggedIn ? <Navigate to="/home" /> : <LoginView />} />
+              <Route path="/home" element={user.isLoggedIn ? <HomeView appDesc={APP_DESC} /> : <Navigate to="/login" />} />
+              <Route path="/city/:slug" element={user.isLoggedIn ? <CityDetailView /> : <Navigate to="/login" />} />
+              <Route path="/tour/:tourId/stop/:stopIdx" element={user.isLoggedIn ? <TourActiveView /> : <Navigate to="/login" />} />
 
-            <Route path="/leaderboard" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div> : <Navigate to="/login" />} />
-            <Route path="/profile" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
-            <Route path="/profile/visa/:cityName" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
-            <Route path="/profile/badge/:badgeId" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
-            <Route path="/shop" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Shop user={user} onPurchase={() => {}} /></div> : <Navigate to="/login" />} />
-            <Route path="/tools" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><TravelServices mode="HUB" lang={user.language} onCitySelect={handleTravelServiceSelect} /></div> : <Navigate to="/login" />} />
-            <Route path="/admin" element={user.isLoggedIn ? <AdminPanel user={user} onBack={() => navigate('/profile')} /> : <Navigate to="/login" />} />
-            <Route path="/" element={<Navigate to={user.isLoggedIn ? "/home" : "/login"} />} />
-          </Routes>
+              <Route path="/leaderboard" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div> : <Navigate to="/login" />} />
+              <Route path="/profile" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
+              <Route path="/profile/visa/:cityName" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
+              <Route path="/profile/badge/:badgeId" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
+              <Route path="/shop" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Shop user={user} onPurchase={() => {}} /></div> : <Navigate to="/login" />} />
+              <Route path="/tools" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><TravelServices mode="HUB" lang={user.language} onCitySelect={handleTravelServiceSelect} /></div> : <Navigate to="/login" />} />
+              <Route path="/admin" element={user.isLoggedIn ? <AdminPanel user={user} onBack={() => navigate('/profile')} /> : <Navigate to="/login" />} />
+              <Route path="/" element={<Navigate to={user.isLoggedIn ? "/home" : "/login"} />} />
+            </Routes>
+          </Suspense>
 
-          {showOnboarding && <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />}
-          {visaToShare && <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />}
+          {showOnboarding && (
+            <Suspense fallback={null}>
+              <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />
+            </Suspense>
+          )}
+          {visaToShare && (
+            <Suspense fallback={null}>
+              <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />
+            </Suspense>
+          )}
         </div>
 
         {showNav && (

@@ -60,7 +60,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ currentUser, entries, 
   };
 
   return (
-    <div className="w-full h-full pb-24 animate-fade-in flex flex-col pt-12 bg-slate-950 overflow-y-auto no-scrollbar">
+    <div className="w-full h-full pb-24 animate-fade-in flex flex-col pt-safe-iphone bg-slate-950 overflow-y-auto no-scrollbar">
         <div className="text-center mb-8 px-6">
             <h2 className="text-5xl font-black text-white lowercase tracking-tighter mb-2">{t.title}</h2>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-purple-400 opacity-60">{t.subtitle}</p>

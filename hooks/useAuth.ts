@@ -3,32 +3,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { supabase, getUserProfileByEmail, syncUserProfile, validateEmailFormat, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
+import { supabase, getUserProfileByEmail, syncUserProfile, queueProfileSync, flushPendingProfileSync, initProfileSyncQueue, validateEmailFormat, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
 import { useAppStore, GUEST_PROFILE } from '../store/useAppStore';
 import { toast } from '../components/Toast';
 import { hapticSuccess } from '../lib/haptics';
 import { UserProfile } from '../types';
+import { getLastRoute } from '../lib/lastRouteStorage';
 
 // URL de callback para la app nativa Android/iOS
 const NATIVE_REDIRECT_URL = 'travel.bdai.app://login-callback';
 
-// TTL de 24h para rutas guardadas — evita restaurar tours de días anteriores
-const ROUTE_TTL_MS = 24 * 60 * 60 * 1000;
-
-// Devuelve la ruta del tour guardada si existe y no ha expirado
-const getSavedTourRoute = (): string | null => {
-  try {
-    const raw = localStorage.getItem('bdai_last_tour_route');
-    const ts = localStorage.getItem('bdai_last_tour_route_ts');
-    if (!raw || !ts) return null;
-    if (Date.now() - parseInt(ts, 10) > ROUTE_TTL_MS) {
-      localStorage.removeItem('bdai_last_tour_route');
-      localStorage.removeItem('bdai_last_tour_route_ts');
-      return null;
-    }
-    return raw;
-  } catch { return null; }
-};
 // URL de callback para la versión web
 const WEB_REDIRECT_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -52,7 +36,18 @@ export const useAuth = (autoInit: boolean = false) => {
 
     const handleLoginSuccess = async (supabaseUser: any) => {
         try {
-            const profile = await getUserProfileByEmail(supabaseUser.email || '');
+            // Empujar primero cualquier cambio pendiente de una sesión anterior (app cerrada
+            // antes de sincronizar) para que el pull de perfil que sigue no lo pise.
+            await flushPendingProfileSync();
+            let profile = await getUserProfileByEmail(supabaseUser.email || '');
+            if (!profile) {
+                // No dar por hecho que es un usuario nuevo a la primera: un hipo de red o una
+                // propagación lenta del JWT justo tras el login pueden devolver un falso negativo.
+                // Tratarlo como alta nueva de forma prematura resetearía el perfil real a los
+                // valores por defecto y volvería a mostrar la bienvenida a un usuario existente.
+                await new Promise(resolve => setTimeout(resolve, 700));
+                profile = await getUserProfileByEmail(supabaseUser.email || '');
+            }
             if (profile) {
                 const updatedProfile: UserProfile = {
                     ...profile,
@@ -64,15 +59,18 @@ export const useAuth = (autoInit: boolean = false) => {
                         if (newBadges.length > 0) hapticSuccess();
                         return [...(profile.badges || []), ...newBadges];
                     })(),
-                    stats: { 
-                        ...profile.stats, 
-                        sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1 
+                    stats: {
+                        ...profile.stats,
+                        sessionsStarted: (profile.stats?.sessionsStarted || 0) + 1
                     }
                 };
                 setUser(updatedProfile);
+                // Persistir el rango/insignias/sesión recalculados en el login (antes se quedaban solo en local).
+                queueProfileSync(updatedProfile);
                 if (location.pathname === '/login' || location.pathname === '/') {
-                    // Si Android mató el proceso, restaurar la última parada del tour
-                    const savedRoute = getSavedTourRoute();
+                    // Si Android mató el proceso, restaurar la pantalla en la que estaba
+                    // (tienda, pasaporte, clasificación, tour...), no solo /home.
+                    const savedRoute = await getLastRoute();
                     navigate(savedRoute || '/home');
                 }
             } else {
@@ -101,22 +99,25 @@ export const useAuth = (autoInit: boolean = false) => {
     useEffect(() => {
         if (!autoInit) return;
 
-        const checkAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
-                    handleLoginSuccess(session.user);
-                }
-            } catch (e) { console.error("Auth init error", e); } 
-            finally { setIsVerifyingSession(false); }
-        };
+        initProfileSyncQueue();
 
+        // `onAuthStateChange` ya emite un evento `INITIAL_SESSION` con la sesión actual justo
+        // al suscribirse, así que no hace falta un `getSession()` manual aparte: antes se
+        // duplicaba la consulta del perfil (una desde aquí y otra desde el propio evento) en
+        // cada arranque en frío, gastando red/batería por nada.
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-            if (session?.user) {
-                handleLoginSuccess(session.user);
+            // Solo recargar el perfil desde Supabase en un login real. `TOKEN_REFRESHED`
+            // ocurre cada ~1h con la sesión activa y, si no se filtra, machaca con el perfil
+            // remoto cualquier edición local que aún no se haya sincronizado.
+            if (session?.user && (_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION')) {
+                handleLoginSuccess(session.user).finally(() => setIsVerifyingSession(false));
             } else if (_event === 'SIGNED_OUT') {
                 setUser(GUEST_PROFILE);
                 navigate('/login');
+                setIsVerifyingSession(false);
+            } else {
+                // INITIAL_SESSION sin sesión (nunca ha iniciado sesión) u otros eventos
+                setIsVerifyingSession(false);
             }
         });
 
@@ -177,9 +178,8 @@ export const useAuth = (autoInit: boolean = false) => {
             });
         }
 
-        checkAuth();
-        return () => { 
-            subscription.unsubscribe(); 
+        return () => {
+            subscription.unsubscribe();
             if (deepLinkCleanup) deepLinkCleanup();
         };
     }, []);
@@ -248,25 +248,18 @@ export const useAuth = (autoInit: boolean = false) => {
         setIsLoading(true);
         setLoadingMessage("DECRYPTING ACCESS...");
         try {
-            const { data, error } = await supabase.auth.verifyOtp({ 
-                email, token: otpToken, type: 'email' 
+            const { error } = await supabase.auth.verifyOtp({
+                email, token: otpToken, type: 'email'
             });
             if (error) throw error;
-            if (data.user) {
-                const profile = await getUserProfileByEmail(email);
-                if (profile) {
-                    setUser({ ...profile, isLoggedIn: true });
-                } else {
-                    const newProfile = { ...GUEST_PROFILE, email, id: data.user.id, isLoggedIn: true };
-                    await syncUserProfile(newProfile);
-                    setUser(newProfile);
-                }
-                navigate('/home');
-            }
-        } catch (e: any) { 
-            toast(e.message || "Código inválido o expirado.", 'error'); 
-        } finally { 
-            setIsLoading(false); 
+            // No se toca el perfil aquí: verifyOtp deja la sesión activa, lo que dispara
+            // onAuthStateChange('SIGNED_IN') → handleLoginSuccess, que carga/crea el perfil,
+            // recalcula rank/badges y navega. Antes esta función duplicaba esa lógica de forma
+            // inconsistente (sin recalcular rank/badges) y competía con el propio listener.
+        } catch (e: any) {
+            toast(e.message || "Código inválido o expirado.", 'error');
+        } finally {
+            setIsLoading(false);
         }
     };
 

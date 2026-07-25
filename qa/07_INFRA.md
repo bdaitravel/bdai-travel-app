@@ -57,6 +57,17 @@
   - **Resultado esperado:** Inyecta código web actualizado sin fallar plugins natives de geolocalización.
   - **Observaciones:**
 
+- [ ] 🟡 TC-07-010: Navegación funciona tras el code-splitting por ruta (`App.tsx`)
+  - **Precondición:** Build de producción (`npm run build` + `npm run preview`), no modo dev
+  - **Pasos:** 1. Navegar por todas las rutas principales una a una: `/home`, `/city/:slug`, `/tour/.../stop/...`, `/leaderboard`, `/profile` (+ `/profile/visa/...` y `/profile/badge/...`), `/shop`, `/tools`, `/admin` → 2. Abrir el onboarding (botón "?") → 3. Compartir un visado
+  - **Resultado esperado:** Cada vista carga correctamente bajo demanda (breve `BdaiLogo` pulsante mientras descarga el chunk la primera vez), sin pantalla en blanco ni errores de "chunk load failed" en consola
+  - **Observaciones:**
+
+- [ ] 🟢 TC-07-011: Chunk principal reducido tras code-splitting
+  - **Pasos:** 1. Ejecutar `npm run build` → 2. Revisar el tamaño de `dist/assets/index-*.js`
+  - **Resultado esperado:** El chunk principal debe quedar notablemente por debajo del tamaño previo a introducir `React.lazy()` en `App.tsx` (referencia: bajó de ~993 KB a ~748 KB al añadirlo); las vistas menos usadas (`AdminPanel`, `Shop`, `Leaderboard`, etc.) deben aparecer como ficheros `.js` separados
+  - **Observaciones:**
+
 ---
 
 ## D. Estabilidad UI en Factores de Forma (Mobile-First)
