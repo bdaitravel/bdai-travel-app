@@ -1,3 +1,19 @@
+# Edge Function: `generate-audio-gcp`
+
+Autenticación: **Service Account de GCP** (OAuth2/JWT), tal y como estaba desplegada en Supabase antes de que se probara (y se revirtiera) el cambio a `GEMINI_API_KEY` directa. El código de abajo es exactamente el que está en producción (último cambio hace 23 días a fecha de esta nota).
+
+## Quién la usa
+
+- **Cliente en vivo**: `TourCard.tsx` → `geminiService.ts::generateAudio()` — botón ▶️ cuando una parada no tiene audio cacheado (caso raro, ya que `generate-tour-audios` pre-genera el audio de toda ciudad nueva automáticamente).
+- **Script manual**: `scripts/generategcpallaudios.ts` (y `scripts/generateGcpAudiosdia.ts`, `scripts/generateAllAudios.ts`, `scripts/runCityPipeline.ts`) — todos invocan esta función por su nombre vía Supabase, sin autenticación propia contra Google (la auth vive solo aquí dentro).
+
+## Relación con `generate-tour-audios`
+
+`generate-tour-audios` (el pipeline automático que genera audio en cuanto un tour pasa a `status: 'READY'`, ver `services/supabase/edge-functions/generate-tour-audios.md`) **ya no duplica esta lógica**: por cada parada pendiente invoca esta función (`supabaseClient.functions.invoke('generate-audio-gcp', { body: { text, language, city } })`), exactamente igual que hacen los scripts manuales (`generategcpallaudios.ts`, etc.). Esta es, por tanto, la **única** implementación real de la síntesis de audio + auth contra Google en todo el sistema — cambiar el método de auth aquí lo cambia automáticamente para todos sus llamadores (botón Play, scripts, y el pipeline automático), sin tener que tocar nada más.
+
+## Código
+
+```typescript
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { importPKCS8, SignJWT } from "npm:jose@5.2.0";
 
@@ -333,3 +349,4 @@ Deno.serve(async (req) => {
     });
   }
 });
+```

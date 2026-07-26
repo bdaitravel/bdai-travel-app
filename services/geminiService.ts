@@ -216,7 +216,7 @@ export const generateToursForCity = async (
 // ── Generación de Audio interactivo (Edge Function) ────────────────────────
 export const generateAudio = async (text: string, language: string, city: string): Promise<string | null> => {
     try {
-        const { data, error } = await supabase.functions.invoke('generate-audio-dai', {
+        const { data, error } = await supabase.functions.invoke('generate-audio-gcp', {
             body: { text, language, city }
         });
         if (error) throw error;

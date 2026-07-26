@@ -5,25 +5,35 @@
 
 ---
 
-## A. Generación de Tours (Edge Function)
+## A. Solicitud de Tours para Ciudad No Cacheada
 
-- [ ] 🔴 TC-04-001: Generar ruta de nueva ciudad (On-Demand)
-  - **Precondición:** Ciudad de prueba borrada de DB (ej. Logroño)
-  - **Pasos:** 1. Buscar "Logroño" → 2. Entrar a `/city/logrono_es`
-  - **Resultado esperado:** Inicia "Generating 3 exclusive AI routes...". Se muestra progreso. Tras unos 10-20s, se completa (check verde) y se muestran 3 tours en la UI (Iconic, Cultural, Hidden Gems)
+> **IMPORTANTE — flujo cambiado:** la app **ya no genera tours en vivo** al abrir una ciudad sin caché. Desde `hooks/useCity.ts` (`processCitySelection`), si la ciudad no tiene tours en `tours_cache` se hace un `INSERT` en `tour_requests` y se muestra un banner inline en `HomeView.tsx`; el webhook `Trigger Tour Request` dispara la Edge Function `solicitud-tour`, que envía un email a `DAISY_EMAIL` (ver `AGENTS.md`). La generación real ocurre después, de forma asíncrona, vía el pipeline `-02` o el script de pre-seeding `generateEsOnly.ts` — nunca disparada por el cliente.
+>
+> **Nota sobre `user_email: 'Anónimo'`:** el código tiene un fallback (`user.email || 'Anónimo'`) para cuando no hay email, pero **no es un caso real**: todas las rutas de la app que permiten llegar a este flujo (`/home`) están protegidas y exigen sesión iniciada (OTP o Google), que siempre aporta email. Es defensivo, no un escenario a probar manualmente — no dedicar un TC a forzarlo desde la UI.
+
+- [ ] 🔴 TC-04-001: Solicitar una ciudad sin tours muestra el banner de solicitud
+  - **Precondición:** Ciudad de prueba sin filas en `tours_cache` ni `sponsored_tours` (ej. Logroño eliminada previamente de ambas tablas)
+  - **Pasos:** 1. En `/home`, buscar "Logroño" → 2. Seleccionar el resultado
+  - **Resultado esperado:** NO navega a `/city/logrono_es` ni muestra progreso de generación. Se hace `INSERT` en `tour_requests` (`city`, `country`, `language`, `slug`, `user_email`) y aparece en Home un banner ámbar: "Se ha solicitado la creación de **Logroño**. Este proceso puede tardar entre 1 minuto y 1 día 😉". Si se tiene acceso al buzón de `DAISY_EMAIL`, comprobar además que llega el correo con asunto `BDAI — Nuevo tour solicitado: Logroño, es`
   - **Observaciones:**
 
-- [ ] 🔴 TC-04-002: Re-abrir ciudad con rutas cacheadas
-  - **Precondición:** Ciudad ya generada en TC-04-001 (Logroño)
-  - **Pasos:** 1. Volver a `/home` → 2. Recargar página → 3. Buscar "Logroño" de nuevo
-  - **Resultado esperado:** Carga instantáneamente desde Supabase DB, sin retraso de generación
+- [ ] 🟡 TC-04-001b: Repetir la búsqueda de la misma ciudad solicitada
+  - **Precondición:** Continuación de TC-04-001 (ya existe una fila en `tour_requests` para esa ciudad/idioma sin `notified_at`)
+  - **Pasos:** 1. Sin recargar, volver a buscar "Logroño" y seleccionarla de nuevo
+  - **Resultado esperado:** Se permite un nuevo `INSERT` (no hay restricción de unicidad) y el banner se actualiza mostrando de nuevo el mensaje; no debe haber error ni excepción en consola. Anotar si se considera deseable deduplicar aquí (hoy no se hace a nivel de UI, solo en `notify-tour-ready` a la hora de notificar)
   - **Observaciones:**
 
-- [ ] 🟡 TC-04-003: Degradación sin Grounding
-  - **Precondición:** Modificar Edge Function temporalmente para simular límite de cuota Google Search, o pedir una ciudad muy remota sin datos.
-  - **Pasos:** 1. Generar ciudad
-  - **Resultado esperado:** La generación funciona creando contenido genérico, indicando (si existe el feedback visual) que se usó fallback
+- [ ] 🔴 TC-04-002: Re-abrir ciudad con tours ya cacheados (pre-generados)
+  - **Precondición:** Ciudad con tours ya presentes en `tours_cache` (generada previamente vía pipeline `-02` / `generateEsOnly.ts`, o cualquier ciudad de producción ya poblada — p. ej. Madrid)
+  - **Pasos:** 1. Buscar "Madrid" en `/home` → 2. Seleccionar el resultado
+  - **Resultado esperado:** Navega directamente a `/city/madrid_es` cargando los tours desde Supabase (`fetchCityToursMerged`, `hasNormal: true`), sin banner de solicitud ni retraso
   - **Observaciones:**
+
+- [ ] 🟡 TC-04-003: Verificación del pipeline de generación en background (no es un TC de UI)
+  - **Precondición:** Acceso a `scripts/generateEsOnly.ts` y a las variables de entorno del pipeline `-02`
+  - **Pasos:** 1. Ejecutar `npx tsx scripts/generateEsOnly.ts` con una ciudad de prueba en la lista `cities` → 2. Revisar logs y el estado final en `generation_jobs`/`tours_cache`
+  - **Resultado esperado:** El job pasa por `PENDING_AI_02` → `PENDING_GIS_02` → `READY` (o `ERROR`/timeout tras 20 min de polling). Si Google Search grounding está degradado (cuota agotada), el worker AI sigue generando contenido sin grounding en vez de fallar
+  - **Observaciones:** Este caso ya no se puede disparar ni observar desde la app — requiere ejecutar el script directamente. Considerar moverlo a un futuro módulo de QA de infraestructura/pipeline si se ejecuta con regularidad
 
 ---
 

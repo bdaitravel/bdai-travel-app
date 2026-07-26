@@ -67,10 +67,10 @@ Cada módulo es un fichero independiente en este mismo directorio para facilitar
 | 01_AUTH | 22 | 9 | 8 | 5 |
 | 02_I18N | 15 | 3 | 7 | 5 |
 | 03_EXPLORE | 12 | 3 | 5 | 4 |
-| 04_TOURS | 25 | 9 | 9 | 7 |
+| 04_TOURS | 26 | 9 | 10 | 7 |
 | 05_PASSPORT | 16 | 4 | 7 | 5 |
 | 06_INTEL | 11 | 2 | 5 | 4 |
 | 07_INFRA | 16 | 5 | 6 | 5 |
 | 08_SPONSORED | 18 | 11 | 7 | 0 |
 | 09_PROFILE_SYNC | 18 | 11 | 7 | 0 |
-| **TOTAL** | **153** | **57** | **61** | **35** |
+| **TOTAL** | **154** | **57** | **62** | **35** |

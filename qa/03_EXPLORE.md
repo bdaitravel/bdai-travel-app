@@ -20,9 +20,9 @@
   - **Observaciones:**
 
 - [ ] 🟡 TC-03-003: Búsqueda de ciudad NO soportada (ej. Villarrobledo)
-  - **Precondición:** En `/home`
-  - **Pasos:** 1. Buscar una ciudad pequeña no listada (ej. "Villarrobledo")
-  - **Resultado esperado:** Si no tiene tours en DB y no lo resuelve el backend para OnDemand (actualmente deshabilitado/limitado), muestra feedback: "We are expanding! [Ciudad] will be available soon."
+  - **Precondición:** En `/home`, ciudad sin filas en `tours_cache` ni `sponsored_tours`
+  - **Pasos:** 1. Buscar una ciudad pequeña no listada (ej. "Villarrobledo") → 2. Seleccionar el resultado
+  - **Resultado esperado:** No navega a `/city/:slug`. Se hace `INSERT` en `tour_requests` y aparece en Home el banner ámbar inline: "Se ha solicitado la creación de **Villarrobledo**. Este proceso puede tardar entre 1 minuto y 1 día 😉" (mismo flujo que `qa/04_TOURS.md` TC-04-001 — ver ese fichero para el detalle completo del mecanismo de solicitud por email)
   - **Observaciones:**
 
 - [ ] 🟢 TC-03-004: Pulsar Enter en el buscador lanza la búsqueda
