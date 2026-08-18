@@ -95,6 +95,13 @@ const TEXTS: Record<string, TourCardTexts> = {
     ar: { start: "إطلاق", stop: "محطة", of: "من", daiShot: "نصيحة داي", angleLabel: "زاوية داي:", photoTipFallback: "ابحث عن منظور جانبي لالتقاط عمق الهيكل.", capture: "تسجيل البيانات", rewardReceived: "تمت المزامنة", prev: "السابق", next: "التالي", meters: "م", itinerary: "المسار", finish: "إنهاء الجولة", congrats: "اكتملت الجولة!", stampDesc: "لقد حصلت على ختم جديد", shareIg: "إنشاء تأشيرة اجتماعية (+100)", close: "إغلاق", tooFar: "GPS غير مؤكد", checkIn: "تسجيل GPS", checkedIn: "متحقق", distance: "المسافة", duration: "المدة", nearbyAlert: "محطة قريبة", jumpTo: "قفز إلى هنا", rewardMiles: "+50 ميل", visaId: "تأشيرة", boardingPass: "بطاقة صعود", approved: "معتمد", rewardTotal: "إجمالي المكافأة", rankUp: "تم تحديث الرتبة", shareText: "لقد أنهيت للتو ماستركلاس {city} على bdai! تم جمع 250 ميلاً. 🌍✈️", sponsored: "برعاية", benefit: "ميزة", benefitLocked: "يلزم تسجيل الوصول عبر GPS في المكان لفتح الميزة", stopsLabel: "محطات" }
 };
 
+const formatAudioTime = (seconds: number): string => {
+    if (!isFinite(seconds) || seconds < 0) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
 const STOP_ICONS: Record<string, string> = {
     historical: 'fa-fingerprint',
     food: 'fa-utensils',
@@ -271,7 +278,11 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
     }, []);
 
     const isAudioLoading = audioState.isLoading && audioState.stopName === currentStop?.name;
-    const audioPlayingId = audioState.isPlaying ? audioState.stopName : null;
+    const isActiveAudio = audioState.stopName === currentStop?.name;
+
+    const [isSeeking, setIsSeeking] = useState(false);
+    const [seekValue, setSeekValue] = useState(0);
+    const displayedTime = isSeeking ? seekValue : audioState.currentTime;
 
     const distToTarget = useMemo(() => {
         if (!userLocation || !currentStop) return null;
@@ -353,11 +364,18 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
         }
     };
 
-    const handlePlayAudio = async (stopName: string, text: string) => {
+    // Play/Pause: si el audio de esta parada ya está cargado en el reproductor (reproduciendo
+    // o en pausa), solo alterna estado sin perder la posición. Si es otra parada o no hay nada
+    // cargado, lo genera/descarga y arranca desde cero.
+    const handleTogglePlayPause = async (stopName: string, text: string) => {
         const currentState = audioManager.getState();
         if (currentState.isLoading) return;
-        if (currentState.isPlaying && currentState.stopName === stopName) {
-            audioManager.stop();
+        if (currentState.stopName === stopName) {
+            if (currentState.isPlaying) {
+                audioManager.pause();
+            } else {
+                audioManager.resume();
+            }
             return;
         }
         audioManager.setLoading(stopName);
@@ -370,6 +388,18 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
             console.error("Audio error:", e);
             audioManager.stop();
         }
+    };
+
+    const handleSeekStart = () => setIsSeeking(true);
+
+    const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSeekValue(parseFloat(e.target.value));
+    };
+
+    const handleSeekCommit = (e: React.SyntheticEvent<HTMLInputElement>) => {
+        const value = parseFloat((e.target as HTMLInputElement).value);
+        audioManager.seek(value);
+        setIsSeeking(false);
     };
 
     // ✅ FIX 2: handleBack para el audio antes de salir
@@ -480,49 +510,86 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                     <i className="fas fa-list-ul text-[10px] text-slate-400 ml-2 shrink-0"></i>
                 </button>
 
-                {!isSponsoredTour && (<>
-                <div className="relative">
+                {!isSponsoredTour && (
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-2xl p-1 shrink-0">
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                            className={`h-7 px-2 rounded-xl flex items-center justify-center transition-all active:scale-95 text-[9px] font-black ${showSpeedMenu ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400'
+                                }`}
+                        >
+                            {(audioState.playbackRate || 1).toFixed(2)}x
+                        </button>
+
+                        {showSpeedMenu && (
+                            <div
+                                ref={menuRef}
+                                className="absolute top-full right-0 mt-3 bg-slate-900 border border-white/10 rounded-[1.5rem] overflow-hidden shadow-2xl p-2 z-[9000] min-w-[120px] animate-fade-in"
+                            >
+                                <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-2 px-2 pt-1 text-center">Speed</p>
+                                <div className="grid grid-cols-2 gap-1">
+                                    {speeds.map((s) => (
+                                        <button
+                                            key={s}
+                                            onClick={() => handleSpeedChange(s)}
+                                            className={`py-2 rounded-xl text-[9px] font-black transition-all ${audioState.playbackRate === s
+                                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                                                : 'text-slate-400 hover:bg-white/5'
+                                                }`}
+                                        >
+                                            {s.toFixed(2)}x
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <button
-                        onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-                        className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center border transition-all active:scale-95 text-[9px] font-black ${showSpeedMenu ? 'bg-purple-600 border-purple-500 text-white shadow-lg' : 'bg-slate-50 border-slate-200 text-slate-400'
-                            }`}
+                        onClick={() => handleTogglePlayPause(currentStop.name, (currentStop.description || ""))}
+                        disabled={isAudioLoading}
+                        className="h-7 w-8 shrink-0 rounded-xl flex items-center justify-center transition-all active:scale-95 bg-purple-600 text-white disabled:opacity-70"
                     >
-                        {(audioState.playbackRate || 1).toFixed(2)}x
+                        {isAudioLoading
+                            ? <i className="fas fa-spinner fa-spin text-xs"></i>
+                            : <i className={`fas ${isActiveAudio && audioState.isPlaying ? 'fa-pause' : 'fa-play'} text-xs ${!(isActiveAudio && audioState.isPlaying) ? 'ml-0.5' : ''}`}></i>}
                     </button>
 
-                    {showSpeedMenu && (
-                        <div
-                            ref={menuRef}
-                            className="absolute top-full right-0 mt-3 bg-slate-900 border border-white/10 rounded-[1.5rem] overflow-hidden shadow-2xl p-2 z-[9000] min-w-[120px] animate-fade-in"
-                        >
-                            <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-2 px-2 pt-1 text-center">Speed</p>
-                            <div className="grid grid-cols-2 gap-1">
-                                {speeds.map((s) => (
-                                    <button
-                                        key={s}
-                                        onClick={() => handleSpeedChange(s)}
-                                        className={`py-2 rounded-xl text-[9px] font-black transition-all ${audioState.playbackRate === s
-                                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                                            : 'text-slate-400 hover:bg-white/5'
-                                            }`}
-                                    >
-                                        {s.toFixed(2)}x
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    <button
+                        onClick={stopAudio}
+                        disabled={!isActiveAudio}
+                        className={`h-7 w-8 shrink-0 rounded-xl flex items-center justify-center transition-all active:scale-95 ${isActiveAudio ? 'bg-red-500 text-white' : 'text-slate-300'}`}
+                    >
+                        <i className="fas fa-stop text-xs"></i>
+                    </button>
                 </div>
-
-                <button
-                    onClick={() => handlePlayAudio(currentStop.name, (currentStop.description || ""))}
-                    disabled={isAudioLoading}
-                    className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center shadow-lg transition-all ${audioPlayingId === currentStop.name ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'} disabled:opacity-70`}
-                >
-                    {isAudioLoading ? <i className="fas fa-spinner fa-spin text-xs"></i> : <i className={`fas ${audioPlayingId === currentStop.name ? 'fa-stop' : 'fa-play'} text-xs`}></i>}
-                </button>
-                </>)}
+                )}
             </div>
+
+            {!isSponsoredTour && (
+                <div className="bg-white border-b border-slate-100 px-4 pb-2.5 flex items-center gap-2.5 z-[6000] shrink-0">
+                    <span className="text-[9px] font-black text-slate-400 tabular-nums w-7 shrink-0 text-left">
+                        {formatAudioTime(isActiveAudio ? displayedTime : 0)}
+                    </span>
+                    <input
+                        type="range"
+                        min={0}
+                        max={audioState.duration || 0}
+                        step={0.1}
+                        value={isActiveAudio ? displayedTime : 0}
+                        disabled={!isActiveAudio || (audioState.duration || 0) <= 0}
+                        onPointerDown={handleSeekStart}
+                        onChange={handleSeekChange}
+                        onPointerUp={handleSeekCommit}
+                        onKeyUp={handleSeekCommit}
+                        className="flex-1 h-1.5 accent-purple-600 rounded-full disabled:opacity-30 cursor-pointer"
+                        aria-label={tl.stop}
+                    />
+                    <span className="text-[9px] font-black text-slate-400 tabular-nums w-7 shrink-0 text-right">
+                        {formatAudioTime(isActiveAudio ? audioState.duration : 0)}
+                    </span>
+                </div>
+            )}
 
             <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
                 <div className="h-[68vh] w-full sticky top-0 z-0">

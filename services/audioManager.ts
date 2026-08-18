@@ -6,6 +6,8 @@ type AudioState = {
   isLoading: boolean;
   stopName: string;
   playbackRate: number;
+  currentTime: number;
+  duration: number;
   onStateChange?: (state: AudioState) => void;
 };
 
@@ -18,6 +20,8 @@ class AudioManager {
     isLoading: false,
     stopName: '',
     playbackRate: 1.0,
+    currentTime: 0,
+    duration: 0,
   };
   private listeners: Set<Listener> = new Set();
   private currentPlayPromise: Promise<void> | null = null;
@@ -36,6 +40,20 @@ class AudioManager {
     this.audioElement.onerror = () => {
       console.error("Audio element error");
       this.stop();
+    };
+
+    // Progreso de reproducción para la barra de scrub — timeupdate dispara varias veces
+    // por segundo de forma nativa, suficiente para una UI fluida sin polling propio.
+    this.audioElement.ontimeupdate = () => {
+      this.state.currentTime = this.audioElement.currentTime;
+      this.notify();
+      this.updateMediaSessionPosition();
+    };
+
+    this.audioElement.onloadedmetadata = () => {
+      this.state.duration = this.audioElement.duration || 0;
+      this.notify();
+      this.updateMediaSessionPosition();
     };
 
     this.setupMediaSession();
@@ -68,6 +86,23 @@ class AudioManager {
     navigator.mediaSession.playbackState = state;
   }
 
+  // Sincroniza la posición con los controles nativos (pantalla de bloqueo/notificación),
+  // que en Android/iOS permiten arrastrar su propia barra de progreso.
+  private updateMediaSessionPosition() {
+    if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) return;
+    const duration = this.audioElement.duration;
+    if (!isFinite(duration) || duration <= 0) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration,
+        playbackRate: this.audioElement.playbackRate || 1,
+        position: Math.min(this.audioElement.currentTime, duration),
+      });
+    } catch {
+      // Algunos navegadores lanzan si los valores son inconsistentes durante un seek en curso
+    }
+  }
+
   private notify() {
     this.listeners.forEach((cb) => cb({ ...this.state }));
   }
@@ -96,6 +131,8 @@ class AudioManager {
     this.state.isPlaying = false;
     this.state.isLoading = false;
     this.state.stopName = '';
+    this.state.currentTime = 0;
+    this.state.duration = 0;
     this.notify();
     this.setMediaSessionPlaybackState('none');
   }
@@ -119,6 +156,19 @@ class AudioManager {
         this.setMediaSessionPlaybackState('playing');
       })
       .catch(e => console.error('Resume failed:', e));
+  }
+
+  // Mueve la reproducción a una posición concreta (barra de scrub). No cambia isPlaying:
+  // si estaba en pausa, sigue en pausa en la nueva posición.
+  seek(time: number) {
+    if (!this.audioElement.src) return;
+    const duration = this.audioElement.duration;
+    const clamped = isFinite(duration) && duration > 0
+      ? Math.max(0, Math.min(time, duration))
+      : Math.max(0, time);
+    this.audioElement.currentTime = clamped;
+    this.state.currentTime = clamped;
+    this.notify();
   }
 
   setLoading(stopName: string) {
