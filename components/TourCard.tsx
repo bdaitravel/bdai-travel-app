@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
 import { toast } from './Toast';
@@ -247,7 +248,24 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
     const [showSocialVisa, setShowSocialVisa] = useState(false);
     const [isFixing, setIsFixing] = useState(false);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+    const [speedMenuPos, setSpeedMenuPos] = useState<{ top: number; left: number } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const speedBtnRef = useRef<HTMLButtonElement>(null);
+    const SPEED_MENU_WIDTH = 140; // min-w-[120px] + p-2 (16px) del menú
+
+    // El menú se saca por portal a document.body: dentro del header, algunos WebView de Android
+    // pintan el <input type="range"> de la barra de audio en una capa por delante que ignora
+    // z-index, así que un menú anidado ahí nunca queda garantizado en primer plano.
+    // Se ancla por la izquierda (los controles viven al principio de la fila) y se acota (clamp)
+    // dentro del ancho de pantalla para que nunca se salga por ningún borde.
+    const handleToggleSpeedMenu = () => {
+        if (!showSpeedMenu && speedBtnRef.current) {
+            const rect = speedBtnRef.current.getBoundingClientRect();
+            const left = Math.min(rect.left, window.innerWidth - SPEED_MENU_WIDTH - 8);
+            setSpeedMenuPos({ top: rect.bottom + 8, left: Math.max(8, left) });
+        }
+        setShowSpeedMenu(prev => !prev);
+    };
 
     const isAdmin = user.email === 'travelbdai@gmail.com' || user.isAdmin;
 
@@ -283,6 +301,29 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
     const [isSeeking, setIsSeeking] = useState(false);
     const [seekValue, setSeekValue] = useState(0);
     const displayedTime = isSeeking ? seekValue : audioState.currentTime;
+    const scrubValue = isActiveAudio ? displayedTime : 0;
+    const scrubProgressPct = audioState.duration > 0 ? Math.min(100, Math.max(0, (scrubValue / audioState.duration) * 100)) : 0;
+
+    // Efecto "peek": el mapa es sticky y la ficha de descripción se revela al hacer scroll, pero
+    // tope en PEEK_MAX_REVEAL en vez de dejar que suba hasta comerse toda la pantalla — a partir de
+    // ahí, lo que seguimos scrolleando es el texto interior de la ficha (max-h + overflow propio).
+    const descScrollRef = useRef<HTMLDivElement>(null);
+    const PEEK_MAX_REVEAL = 200;
+
+    useEffect(() => {
+        const el = descScrollRef.current;
+        if (!el) return;
+        const clampScroll = () => {
+            if (el.scrollTop > PEEK_MAX_REVEAL) el.scrollTop = PEEK_MAX_REVEAL;
+        };
+        el.addEventListener('scroll', clampScroll, { passive: true });
+        return () => el.removeEventListener('scroll', clampScroll);
+    }, []);
+
+    // Cada parada nueva arranca con el mapa completo (peek recogido), no heredado de la anterior.
+    useEffect(() => {
+        descScrollRef.current?.scrollTo({ top: 0 });
+    }, [currentStopIndex]);
 
     const distToTarget = useMemo(() => {
         if (!userLocation || !currentStop) return null;
@@ -490,112 +531,125 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                 <VisaShare user={user} cityName={tour.city} milesEarned={totalMiles} onClose={() => setShowSocialVisa(false)} />
             )}
 
-            <div className="bg-white border-b border-slate-100 px-4 py-2 flex items-center justify-between z-[6000] pt-safe-iphone shrink-0 gap-2">
-                {/* ✅ FIX 2: stop audio antes de salir */}
-                <button onClick={handleBack} className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center shrink-0"><i className="fas fa-arrow-left text-xs"></i></button>
-                <button onClick={() => setShowItinerary(true)} className="flex-1 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-2xl flex items-center justify-between min-w-0">
-                    <div className="flex items-center gap-3 truncate">
-                        <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-                            <i className={`fas ${STOP_ICONS[currentStop.type?.toLowerCase()] || 'fa-location-dot'} text-xs`}></i>
-                        </div>
-                        <div className="flex flex-col text-left truncate">
-                            {!isSponsoredTour && (
-                                <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">
-                                    {tl.stop} {currentStopIndex + 1}
-                                </p>
-                            )}
-                            <h2 className="text-[10px] font-black text-slate-900 uppercase truncate leading-tight">{currentStop.name}</h2>
-                        </div>
-                    </div>
-                    <i className="fas fa-list-ul text-[10px] text-slate-400 ml-2 shrink-0"></i>
-                </button>
-
-                {!isSponsoredTour && (
-                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-2xl p-1 shrink-0">
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-                            className={`h-7 px-2 rounded-xl flex items-center justify-center transition-all active:scale-95 text-[9px] font-black ${showSpeedMenu ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400'
-                                }`}
-                        >
-                            {(audioState.playbackRate || 1).toFixed(2)}x
-                        </button>
-
-                        {showSpeedMenu && (
-                            <div
-                                ref={menuRef}
-                                className="absolute top-full right-0 mt-3 bg-slate-900 border border-white/10 rounded-[1.5rem] overflow-hidden shadow-2xl p-2 z-[9000] min-w-[120px] animate-fade-in"
-                            >
-                                <p className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-2 px-2 pt-1 text-center">Speed</p>
-                                <div className="grid grid-cols-2 gap-1">
-                                    {speeds.map((s) => (
-                                        <button
-                                            key={s}
-                                            onClick={() => handleSpeedChange(s)}
-                                            className={`py-2 rounded-xl text-[9px] font-black transition-all ${audioState.playbackRate === s
-                                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                                                : 'text-slate-400 hover:bg-white/5'
-                                                }`}
-                                        >
-                                            {s.toFixed(2)}x
-                                        </button>
-                                    ))}
-                                </div>
+            <div className="bg-white border-b border-slate-100 px-4 pt-safe-iphone pb-2.5 z-[6000] shrink-0 space-y-2">
+                {/* ✅ FIX 2: stop audio antes de salir. items-stretch (por defecto): la flecha
+                    iguala su alto al del bloque de parada en vez de un tamaño fijo a mano. */}
+                <div className="flex gap-2 pt-2">
+                    <button onClick={handleBack} className="w-11 shrink-0 rounded-xl bg-slate-50 border border-slate-200 text-slate-950 flex items-center justify-center"><i className="fas fa-arrow-left text-xs"></i></button>
+                    <button onClick={() => setShowItinerary(true)} className="flex-1 bg-slate-50 border border-slate-100 py-2 px-3 rounded-2xl flex items-center justify-between gap-2 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+                                <i className={`fas ${STOP_ICONS[currentStop.type?.toLowerCase()] || 'fa-location-dot'} text-xs`}></i>
                             </div>
-                        )}
-                    </div>
-
-                    <button
-                        onClick={() => handleTogglePlayPause(currentStop.name, (currentStop.description || ""))}
-                        disabled={isAudioLoading}
-                        className="h-7 w-8 shrink-0 rounded-xl flex items-center justify-center transition-all active:scale-95 bg-purple-600 text-white disabled:opacity-70"
-                    >
-                        {isAudioLoading
-                            ? <i className="fas fa-spinner fa-spin text-xs"></i>
-                            : <i className={`fas ${isActiveAudio && audioState.isPlaying ? 'fa-pause' : 'fa-play'} text-xs ${!(isActiveAudio && audioState.isPlaying) ? 'ml-0.5' : ''}`}></i>}
-                    </button>
-
-                    <button
-                        onClick={stopAudio}
-                        disabled={!isActiveAudio}
-                        className={`h-7 w-8 shrink-0 rounded-xl flex items-center justify-center transition-all active:scale-95 ${isActiveAudio ? 'bg-red-500 text-white' : 'text-slate-300'}`}
-                    >
-                        <i className="fas fa-stop text-xs"></i>
+                            <div className="flex flex-col text-left min-w-0">
+                                {!isSponsoredTour && (
+                                    <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">
+                                        {tl.stop} {currentStopIndex + 1}
+                                    </p>
+                                )}
+                                <h2 className="text-[11px] font-black text-slate-900 uppercase leading-tight">{currentStop.name}</h2>
+                            </div>
+                        </div>
+                        <i className="fas fa-list-ul text-[10px] text-slate-400 ml-2 shrink-0"></i>
                     </button>
                 </div>
+
+                {/* Controles + barra en una sola fila: los botones al principio (lateral izquierdo)
+                    y la barra ocupando el resto, con el mismo alto de fila que los botones. */}
+                {!isSponsoredTour && (
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1 shrink-0">
+                            <button
+                                ref={speedBtnRef}
+                                onClick={handleToggleSpeedMenu}
+                                className={`h-8 px-2.5 rounded-lg flex items-center justify-center transition-all active:scale-95 text-[9px] font-black ${showSpeedMenu ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400'
+                                    }`}
+                            >
+                                {(audioState.playbackRate || 1).toFixed(2)}x
+                            </button>
+
+                            <button
+                                onClick={() => handleTogglePlayPause(currentStop.name, (currentStop.description || ""))}
+                                disabled={isAudioLoading}
+                                className="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95 bg-purple-600 text-white disabled:opacity-70"
+                            >
+                                {isAudioLoading
+                                    ? <i className="fas fa-spinner fa-spin text-xs"></i>
+                                    : <i className={`fas ${isActiveAudio && audioState.isPlaying ? 'fa-pause' : 'fa-play'} text-xs ${!(isActiveAudio && audioState.isPlaying) ? 'ml-0.5' : ''}`}></i>}
+                            </button>
+
+                            <button
+                                onClick={stopAudio}
+                                disabled={!isActiveAudio}
+                                className={`h-8 w-8 shrink-0 rounded-lg flex items-center justify-center transition-all active:scale-95 ${isActiveAudio ? 'bg-red-500 text-white' : 'text-slate-300'}`}
+                            >
+                                <i className="fas fa-stop text-xs"></i>
+                            </button>
+                        </div>
+
+                        <span className="text-[10px] font-black text-slate-400 tabular-nums w-8 shrink-0 text-left">
+                            {formatAudioTime(isActiveAudio ? displayedTime : 0)}
+                        </span>
+                        <input
+                            type="range"
+                            min={0}
+                            max={audioState.duration || 0}
+                            step={0.1}
+                            value={scrubValue}
+                            disabled={!isActiveAudio || (audioState.duration || 0) <= 0}
+                            onPointerDown={handleSeekStart}
+                            onChange={handleSeekChange}
+                            onPointerUp={handleSeekCommit}
+                            onKeyUp={handleSeekCommit}
+                            style={{ background: `linear-gradient(to right, #9333ea ${scrubProgressPct}%, #e2e8f0 ${scrubProgressPct}%)` }}
+                            // appearance-none: se dibuja el track/thumb 100% con CSS en vez del control nativo del
+                            // sistema — en Android WebView un <input type="range"> con estilo nativo (accent-color)
+                            // se pinta en su propia capa de composición por encima de todo, ignorando z-index.
+                            className="flex-1 h-2 rounded-full disabled:opacity-30 cursor-pointer appearance-none [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-600 [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-track]:bg-transparent [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-purple-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                            aria-label={tl.stop}
+                        />
+                        <span className="text-[10px] font-black text-slate-400 tabular-nums w-8 shrink-0 text-right">
+                            {formatAudioTime(isActiveAudio ? audioState.duration : 0)}
+                        </span>
+                    </div>
                 )}
             </div>
 
-            {!isSponsoredTour && (
-                <div className="bg-white border-b border-slate-100 px-4 pb-2.5 flex items-center gap-2.5 z-[6000] shrink-0">
-                    <span className="text-[9px] font-black text-slate-400 tabular-nums w-7 shrink-0 text-left">
-                        {formatAudioTime(isActiveAudio ? displayedTime : 0)}
-                    </span>
-                    <input
-                        type="range"
-                        min={0}
-                        max={audioState.duration || 0}
-                        step={0.1}
-                        value={isActiveAudio ? displayedTime : 0}
-                        disabled={!isActiveAudio || (audioState.duration || 0) <= 0}
-                        onPointerDown={handleSeekStart}
-                        onChange={handleSeekChange}
-                        onPointerUp={handleSeekCommit}
-                        onKeyUp={handleSeekCommit}
-                        className="flex-1 h-1.5 accent-purple-600 rounded-full disabled:opacity-30 cursor-pointer"
-                        aria-label={tl.stop}
-                    />
-                    <span className="text-[9px] font-black text-slate-400 tabular-nums w-7 shrink-0 text-right">
-                        {formatAudioTime(isActiveAudio ? audioState.duration : 0)}
-                    </span>
-                </div>
+            {showSpeedMenu && speedMenuPos && ReactDOM.createPortal(
+                <div
+                    ref={menuRef}
+                    style={{ position: 'fixed', top: speedMenuPos.top, left: speedMenuPos.left }}
+                    className="bg-white border border-slate-200 rounded-[1.5rem] overflow-hidden shadow-2xl p-2 z-[9999] min-w-[120px] animate-fade-in"
+                >
+                    <p className="text-[6px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2 pt-1 text-center">Speed</p>
+                    <div className="grid grid-cols-2 gap-1">
+                        {speeds.map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => handleSpeedChange(s)}
+                                className={`py-2 rounded-xl text-[9px] font-black transition-all ${audioState.playbackRate === s
+                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                                    : 'text-slate-500 hover:bg-slate-100'
+                                    }`}
+                            >
+                                {s.toFixed(2)}x
+                            </button>
+                        ))}
+                    </div>
+                </div>,
+                document.body
             )}
 
-            <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
-                <div className="h-[68vh] w-full sticky top-0 z-0">
+            {/* Peek: el mapa es sticky y la ficha se revela al arrastrar hacia arriba, igual que
+                antes — pero el scroll de esta página está topado a PEEK_MAX_REVEAL (el efecto
+                clampScroll de arriba), así nunca sube más allá de eso ni tapa toda la pantalla.
+                Una vez tocado el tope, seguir arrastrando desplaza el texto de dentro de la ficha
+                (su propio max-h + overflow), no la página. */}
+            <div ref={descScrollRef} className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
+                <div className="h-[calc(100%-70px)] w-full sticky top-0 z-0">
                     <SchematicMap stops={tour.stops} routePolyline={tour.routePolyline} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
                 </div>
-                <div className="px-6 pt-6 pb-6 space-y-5 bg-white rounded-t-[3.5rem] -mt-12 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)] z-10 relative">
+                <div className="px-6 pt-6 pb-6 space-y-5 bg-white rounded-t-[3.5rem] -mt-6 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)] z-10 relative">
                     {isAdmin && (
                         <button onClick={handleFixLocation} disabled={isFixing || !userLocation} className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[9px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
                             <i className={`fas ${isFixing ? 'fa-spinner fa-spin' : 'fa-map-marker-alt'}`}></i>
@@ -603,7 +657,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                         </button>
                     )}
 
-                    <div className="space-y-4 text-slate-500 text-base leading-relaxed font-medium">
+                    <div className="space-y-4 text-slate-500 text-base leading-relaxed font-medium max-h-[220px] overflow-y-auto no-scrollbar">
                         {(currentStop.description || "").split('\n\n').map((p: string, i: number) => <p key={i} className="animate-fade-in">{p}</p>)}
                     </div>
                 </div>
