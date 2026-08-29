@@ -126,6 +126,12 @@ export const searchCitiesInCache = async (query: string, language = 'es'): Promi
 // `sponsored_tours.city_slug` usa el MISMO slug que `tours_cache.city` (salida
 // de normalizeKey), por lo que la unión es una segunda query por la misma clave.
 // La RLS de la tabla ya filtra por `active` y vigencia del contrato.
+//
+// ⚠️ DESACTIVADO (ago-2026): esta función ya no tiene llamadores — se comentó
+// la invocación en `fetchCityToursMerged` (único punto de entrada de tours de
+// ciudad). Ver "Tours patrocinados — DESACTIVADO" en AGENTS.md para el motivo.
+// No borrar: el código y la tabla se conservan tal cual para reactivarlo
+// descomentando esa única línea el día que haya patrocinadores reales.
 
 export const getSponsoredTours = async (slug: string, language: string): Promise<Tour[]> => {
     if (!slug) return [];
@@ -162,6 +168,14 @@ export const getSponsoredTours = async (slug: string, language: string): Promise
  * Carga unificada de tours de una ciudad: tours_cache + sponsored_tours en
  * paralelo, con polylines aplicadas. Los patrocinados van siempre al final.
  * `hasNormal` permite al llamador decidir el flujo de "ciudad sin caché".
+ *
+ * ⚠️ DESACTIVADO (ago-2026): la carga de sponsored_tours está comentada a
+ * propósito — ver nota en AGENTS.md ("Tours patrocinados — DESACTIVADO").
+ * No es un bug: los dos municipios con filas en `sponsored_tours` tienen
+ * paradas de negocio inventadas (no hay contrato comercial real detrás), por
+ * lo que mostrarlas con el badge "Patrocinado" sería engañoso. No borrar
+ * `getSponsoredTours` ni la tabla: se deja para retomarlo el día que haya
+ * patrocinadores reales.
  */
 export const fetchCityToursMerged = async (slug: string, language: string): Promise<{ tours: Tour[], hasNormal: boolean }> => {
     const lang = (language || 'es').toLowerCase();
@@ -172,7 +186,8 @@ export const fetchCityToursMerged = async (slug: string, language: string): Prom
             .eq('city', slug)
             .eq('language', lang)
             .maybeSingle(),
-        getSponsoredTours(slug, lang)
+        // getSponsoredTours(slug, lang) — desactivado, ver nota arriba y en AGENTS.md
+        Promise.resolve([] as Tour[])
     ]);
 
     const savedPolylines: Record<string, string> = cacheRes.data?.route_polylines || {};

@@ -250,6 +250,14 @@ Los POIs se dividen en Tier 1 (top 40%), Tier 2 (siguiente 35%), Tier 3 (resto) 
 
 ## Tours patrocinados (`sponsored_tours`)
 
+### ⚠️ DESACTIVADO (ago-2026): carga comentada, no borrada
+
+A día de hoy el sistema **no está operativo en la práctica**: los dos municipios que tienen filas en `sponsored_tours` llevan paradas de negocio **inventadas**, sin contrato comercial real detrás. Mostrarlas con el badge "Patrocinado" (obligatorio por LSSI art. 20/DSA, ver más abajo) sería una comunicación comercial falsa — no hay patrocinador real al que atribuírsela — así que se ha desactivado la visualización mientras no haya patrocinadores reales.
+
+**Qué se tocó**: en `services/supabase/toursService.ts`, `fetchCityToursMerged()` ya no llama a `getSponsoredTours()` — la línea está comentada y sustituida por un array vacío. `getSponsoredTours()`, la tabla `sponsored_tours`, `sponsored_events`, la RLS y toda la UI condicionada a `isSponsored` (badge, acento amarillo, botón "Beneficio", etc., descritos más abajo) **se dejan intactos sin tocar**, solo dejan de recibir datos.
+
+**Para reactivarlo** el día que haya un contrato real: descomentar esa única línea en `fetchCityToursMerged()`. No hace falta tocar nada más — el resto del sistema (tabla, RLS, analítica, UI) sigue funcionando tal cual está documentado en el resto de esta sección.
+
 ### Concepto
 
 Un tour patrocinado es un conjunto de **paradas de negocios locales** (cafeterías, restaurantes, tiendas) creado a mano por contrato comercial. No tiene ruta, ni duración/distancia, ni audio: el usuario pulsa una parada, el mapa le indica cómo llegar, hace check-in GPS (≤50m, misma mecánica que el tour normal) y eso desbloquea el **Beneficio** del local.

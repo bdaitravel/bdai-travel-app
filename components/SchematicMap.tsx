@@ -7,6 +7,16 @@ import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-s
 import { Capacitor } from '@capacitor/core';
 
 const L = (window as Window & { L: typeof LeafletLib }).L;
+
+// Key gratuita de CARTO (carto.com/basemaps/apikey) — obligatoria desde que
+// CARTO retiró el acceso anónimo a sus teselas. Sin ella, CARTO devuelve una
+// tesela-imagen con el aviso "API KEY REQUIRED" en vez de servir el mapa.
+// Parámetro confirmado por email de CARTO (ago-2026): `key`, solo para el
+// servicio raster — el vectorial aún no la exige (CARTO avisará cuando cambie).
+const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY as string | undefined;
+const CARTO_TILE_URL = CARTO_API_KEY
+    ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`
+    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const STOP_CONFIG: Record<string, { icon: string, color: string }> = {
     // Official categories (matching Insignias exactly)
     history: { icon: 'fa-landmark', color: '#f59e0b' },
@@ -113,14 +123,23 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
 
         const map = L.map(mapContainerRef.current, {
             zoomControl: false,
-            attributionControl: false,
+            // Atribución obligatoria (condición del tier gratuito de CARTO y de la
+            // licencia ODbL de OpenStreetMap) — se deja el control nativo de Leaflet
+            // sin el prefijo "Leaflet" para que ocupe el mínimo posible cumpliendo
+            // el requisito. No quitar ni ocultar por CSS.
+            attributionControl: true,
             dragging: true,
             touchZoom: true,
             maxZoom: 19
         }).setView([0, 0], 15);
+        map.attributionControl.setPrefix(false);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19
+        L.tileLayer(CARTO_TILE_URL, {
+            maxZoom: 19,
+            // La ruta a pie (polilínea) se calcula con el servicio OSRM público de
+            // FOSSGIS (routing.openstreetmap.de, ver lib/routingService.ts) — su
+            // política de uso pide crédito visible igual que el resto de OSM.
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a> · Routing: <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a>'
         }).addTo(map);
 
         map.on('dragstart', () => setIsAutoFollowing(false));
