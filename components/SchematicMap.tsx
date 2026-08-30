@@ -133,6 +133,11 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
             maxZoom: 19
         }).setView([0, 0], 15);
         map.attributionControl.setPrefix(false);
+        // La ficha blanca de la parada (TourCard.tsx) se solapa -mt-6 (24px) sobre
+        // la esquina inferior del mapa, tapando casi toda la atribución. Se sube el
+        // control lo justo para que quede legible en la posición de reposo; al
+        // arrastrar la ficha hacia arriba puede volver a taparse, y eso es aceptable.
+        map.attributionControl.getContainer()?.style.setProperty('margin-bottom', '28px');
 
         L.tileLayer(CARTO_TILE_URL, {
             maxZoom: 19,
