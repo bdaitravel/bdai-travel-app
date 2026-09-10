@@ -243,6 +243,43 @@ export const useAuth = (autoInit: boolean = false) => {
         }
     };
 
+    // Mismo mecanismo que handleGoogleLogin (proveedor OAuth de Supabase +
+    // InAppBrowser de Capacitor + deep link de vuelta) — Apple ya está
+    // habilitado como proveedor en Supabase Dashboard (Services ID + clave
+    // configurados por el usuario, fuera del alcance de este repositorio).
+    const handleAppleLogin = async () => {
+        setIsLoading(true);
+        setLoadingMessage("CONNECTING TO APPLE...");
+        try {
+            if (isNative) {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'apple',
+                    options: {
+                        redirectTo: NATIVE_REDIRECT_URL,
+                        skipBrowserRedirect: true,
+                    }
+                });
+                if (error) throw error;
+                if (data.url) {
+                    setIsLoading(false);
+                    await Browser.open({
+                        url: data.url,
+                        presentationStyle: 'popover'
+                    });
+                }
+            } else {
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'apple',
+                    options: { redirectTo: WEB_REDIRECT_URL }
+                });
+                if (error) throw error;
+            }
+        } catch (e: any) {
+            toast(e.message || "Error al conectar con Apple.", 'error');
+            setIsLoading(false);
+        }
+    };
+
     const handleVerifyOtp = async () => {
         if (otpToken.length < 8) return;
         setIsLoading(true);
@@ -268,6 +305,6 @@ export const useAuth = (autoInit: boolean = false) => {
         email, setEmail,
         otpToken, setOtpToken,
         isVerifyingSession,
-        handleRequestOtp, handleGoogleLogin, handleVerifyOtp
+        handleRequestOtp, handleGoogleLogin, handleAppleLogin, handleVerifyOtp
     };
 };

@@ -7,6 +7,8 @@ import { tourCacheService } from '../lib/tourCacheService';
 import { clearLastRoute } from '../lib/lastRouteStorage';
 import { BdaiLogo } from '../components/BdaiLogo';
 import { Tour } from '../types';
+import { buildFreeModeTour } from '../services/supabase/toursService';
+import { translations } from '../data/translations';
 
 // El tourId tiene el formato "slug_lang_tourIdx" (ej: "logrono_es_0", "san_sebastian_es_1")
 // El slug puede contener guiones bajos internos, así que extraemos desde la derecha.
@@ -61,10 +63,27 @@ export const TourActiveView: React.FC = () => {
       const { slug, lang, tourIdx } = parseTourId(tourId);
 
       const applyTours = (rawTours: Tour[]) => {
+        // "Modo Libre" (id "{slug}_{lang}_free") es un agregado que solo existe
+        // en el cliente — no está entre rawTours, así que si el proceso se
+        // reinicia justo ahí hay que reconstruirlo igual que la primera vez
+        // (CityDetailView) en lugar de caer al .find()/fallback de abajo, que
+        // cargaría un tour real cualquiera por error.
+        let tour: Tour | undefined;
+        if (tourId.endsWith('_free')) {
+          const tt = translations[lang] || translations.en;
+          tour = buildFreeModeTour(
+            rawTours,
+            slug,
+            rawTours[0]?.country || '',
+            lang,
+            tt.freeModeTitle || translations.en.freeModeTitle,
+            tt.freeModeDescription || translations.en.freeModeDescription
+          ) ?? undefined;
+        }
         // Buscar por id exacto primero: los tours patrocinados usan sufijo "sp"
         // (ej. agoncillo_spain_es_sp0) cuyo índice no es numérico. Fallback al
         // índice parseado — comportamiento original para tours normales.
-        const tour = rawTours.find(t => t.id === tourId) ?? rawTours[tourIdx] ?? rawTours[0];
+        tour = tour ?? rawTours.find(t => t.id === tourId) ?? rawTours[tourIdx] ?? rawTours[0];
         setActiveTours(rawTours);
         setCurrentTour(tour);
         setCurrentStopIndex(idx);

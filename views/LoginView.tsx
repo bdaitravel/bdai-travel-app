@@ -1,22 +1,30 @@
 import React from 'react';
+import { Capacitor } from '@capacitor/core';
 import { BdaiLogo } from '../components/BdaiLogo';
 import { LANGUAGES } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
 import { useAppStore } from '../store/useAppStore';
 
+// Apple exige (normativa 4.8 de App Review) que si se ofrece un login social
+// de terceros (Google) también se ofrezca "Sign in with Apple" con el mismo
+// peso — la forma más simple de cumplirlo es mostrar solo Apple en iOS en
+// vez de los dos a la vez. Android y web siguen con Google como siempre.
+const isIOS = Capacitor.getPlatform() === 'ios';
+
 export const LoginView: React.FC = () => {
     const { userProfile: user, isLoading } = useAppStore();
-    const { 
-        loginPhase, 
-        setLoginPhase, 
-        email, 
-        setEmail, 
-        otpToken, 
-        setOtpToken, 
-        handleRequestOtp, 
-        handleGoogleLogin, 
-        handleVerifyOtp 
+    const {
+        loginPhase,
+        setLoginPhase,
+        email,
+        setEmail,
+        otpToken,
+        setOtpToken,
+        handleRequestOtp,
+        handleGoogleLogin,
+        handleAppleLogin,
+        handleVerifyOtp
     } = useAuth();
     
     const { t, handleLangChange } = useTranslation();
@@ -44,10 +52,17 @@ export const LoginView: React.FC = () => {
                 <span className="text-[7px] font-black text-slate-700 uppercase tracking-widest">{t('socialAccess')}</span>
                 <div className="h-px bg-white/5 flex-1"></div>
                 </div>
+                {isIOS ? (
+                <button onClick={handleAppleLogin} disabled={isLoading}
+                className="w-full h-14 bg-white/5 border border-white/10 text-white rounded-2xl font-black lowercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                <i className="fab fa-apple text-[12px] text-purple-400"></i>apple
+                </button>
+                ) : (
                 <button onClick={handleGoogleLogin} disabled={isLoading}
                 className="w-full h-14 bg-white/5 border border-white/10 text-white rounded-2xl font-black lowercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                 <i className="fab fa-google text-[10px] text-purple-400"></i>google
                 </button>
+                )}
             </div>
             ) : (
             <div className="w-full max-w-[280px] space-y-6 animate-fade-in">

@@ -13,7 +13,7 @@ const TourActiveView = lazy(() => import('./views/TourActiveView').then(m => ({ 
 const Leaderboard = lazy(() => import('./components/Leaderboard').then(m => ({ default: m.Leaderboard })));
 const ProfileModal = lazy(() => import('./components/ProfileModal').then(m => ({ default: m.ProfileModal })));
 const Shop = lazy(() => import('./components/Shop').then(m => ({ default: m.Shop })));
-const TravelServices = lazy(() => import('./components/TravelServices').then(m => ({ default: m.TravelServices })));
+const CityDiscoveryMap = lazy(() => import('./components/CityDiscoveryMap').then(m => ({ default: m.CityDiscoveryMap })));
 const AdminPanel = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
 const VisaShare = lazy(() => import('./components/VisaShare').then(m => ({ default: m.VisaShare })));
@@ -27,6 +27,7 @@ import { useAuth } from './hooks/useAuth';
 import { useCity } from './hooks/useCity';
 import { supabase, getGlobalRanking, queueProfileSync } from './services/supabaseClient';
 import { LeaderboardEntry } from './types';
+import { CityLocation } from './services/supabase/toursService';
 
 declare global {
   interface Window {
@@ -84,7 +85,20 @@ export default function App() {
   const location = useLocation();
   const { t, handleLangChange, isSyncingLang } = useTranslation();
   const { isVerifyingSession, setLoginPhase } = useAuth(true);
-  const { handleTravelServiceSelect } = useCity();
+  const { processCitySelection } = useCity();
+
+  // El mapa de descubrimiento (CityDiscoveryMap) ya tiene el slug exacto y
+  // fiable de city_locations — se navega con él directamente en vez de pasar
+  // por handleTravelServiceSelect(name, country), que reconstruye el slug a
+  // partir del nombre/país y falla cuando el país no se pudo derivar del slug
+  // original (~95 de 357 ciudades tienen country vacío por slugs de país de
+  // más de una palabra, ej. "cape_town_south_africa" — ver AGENTS.md).
+  const handleDiscoveryCitySelect = (city: CityLocation) => {
+    processCitySelection(
+      { city: city.name, name: city.name, country: city.country, countryEn: city.country, slug: city.slug },
+      user.language
+    );
+  };
 
   useGeolocation(location.pathname.startsWith('/tour/') ? 'active' : 'idle');
 
@@ -150,7 +164,7 @@ export default function App() {
               <Route path="/profile/visa/:cityName" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
               <Route path="/profile/badge/:badgeId" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
               <Route path="/shop" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Shop user={user} onPurchase={() => {}} /></div> : <Navigate to="/login" />} />
-              <Route path="/tools" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><TravelServices mode="HUB" lang={user.language} onCitySelect={handleTravelServiceSelect} /></div> : <Navigate to="/login" />} />
+              <Route path="/tools" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><CityDiscoveryMap onCitySelect={handleDiscoveryCitySelect} /></div> : <Navigate to="/login" />} />
               <Route path="/admin" element={user.isLoggedIn ? <AdminPanel user={user} onBack={() => navigate('/profile')} /> : <Navigate to="/login" />} />
               <Route path="/" element={<Navigate to={user.isLoggedIn ? "/home" : "/login"} />} />
             </Routes>

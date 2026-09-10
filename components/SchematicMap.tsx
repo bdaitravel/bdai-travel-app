@@ -5,18 +5,9 @@ import { Stop } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings';
 import { Capacitor } from '@capacitor/core';
+import { CARTO_TILE_URL, CARTO_ATTRIBUTION } from '../lib/cartoTiles';
 
 const L = (window as Window & { L: typeof LeafletLib }).L;
-
-// Key gratuita de CARTO (carto.com/basemaps/apikey) — obligatoria desde que
-// CARTO retiró el acceso anónimo a sus teselas. Sin ella, CARTO devuelve una
-// tesela-imagen con el aviso "API KEY REQUIRED" en vez de servir el mapa.
-// Parámetro confirmado por email de CARTO (ago-2026): `key`, solo para el
-// servicio raster — el vectorial aún no la exige (CARTO avisará cuando cambie).
-const CARTO_API_KEY = import.meta.env.VITE_CARTO_API_KEY as string | undefined;
-const CARTO_TILE_URL = CARTO_API_KEY
-    ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const STOP_CONFIG: Record<string, { icon: string, color: string }> = {
     // Official categories (matching Insignias exactly)
     history: { icon: 'fa-landmark', color: '#f59e0b' },
@@ -70,9 +61,14 @@ interface SchematicMapProps {
     language?: string;
     onStopSelect?: (index: number) => void;
     userLocation?: { lat: number; lng: number } | null;
+    // Modo Libre: no hay una ruta fija que conectar entre las paradas (son de
+    // varios tours sin orden), así que se omite la línea general (fullPathRef)
+    // — la guía de "cómo llegar" hasta la parada activa (activeLineRef) no se
+    // ve afectada, sigue calculándose igual sea cual sea el modo.
+    hideFullPath?: boolean;
 }
 
-export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline, currentStopIndex, language = 'es', onStopSelect, userLocation }) => {
+export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline, currentStopIndex, language = 'es', onStopSelect, userLocation, hideFullPath = false }) => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<LeafletLib.Map | null>(null);
     const markersRef = useRef<LeafletLib.Marker[]>([]);
@@ -85,6 +81,13 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
     const [isAutoFollowing, setIsAutoFollowing] = useState(true);
     const [walkingTime, setWalkingTime] = useState<number | null>(null);
     const [showPermissionModal, setShowPermissionModal] = useState(false);
+    // Tapa el mapa hasta que las teselas de la vista inicial terminen de cargar.
+    // Se ha visto la primera vez que se entra a un tour con las teselas
+    // descuadradas (Leaflet calcula mal el tamaño si el contenedor todavía se
+    // está montando/animando) hasta salir y volver a entrar — este overlay
+    // evita que se llegue a ver esa vista rota, y el invalidateSize forzado
+    // más abajo corrige la causa de raíz en vez de solo taparla.
+    const [isMapReady, setIsMapReady] = useState(false);
     const { gpsStatus } = useAppStore();
     const tl = TEXTS[language] || TEXTS.es;
 
@@ -139,16 +142,28 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
         // arrastrar la ficha hacia arriba puede volver a taparse, y eso es aceptable.
         map.attributionControl.getContainer()?.style.setProperty('margin-bottom', '28px');
 
-        L.tileLayer(CARTO_TILE_URL, {
+        const tileLayer = L.tileLayer(CARTO_TILE_URL, {
             maxZoom: 19,
-            // La ruta a pie (polilínea) se calcula con el servicio OSRM público de
-            // FOSSGIS (routing.openstreetmap.de, ver lib/routingService.ts) — su
-            // política de uso pide crédito visible igual que el resto de OSM.
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a> · Routing: <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a>'
+            attribution: CARTO_ATTRIBUTION
         }).addTo(map);
+        // 'load' se dispara cuando todas las teselas visibles han terminado de
+        // cargar — solo entonces se destapa el mapa (ver isMapReady arriba).
+        tileLayer.on('load', () => setIsMapReady(true));
+        // Salvaguarda: sin red, alguna tesela puede quedarse colgada sin
+        // disparar 'load' ni 'error' nunca — no dejar el spinner para siempre.
+        const readyFallback = setTimeout(() => setIsMapReady(true), 5000);
 
         map.on('dragstart', () => setIsAutoFollowing(false));
         mapInstanceRef.current = map;
+
+        // Fuerza el recálculo de tamaño poco después del montaje: si el
+        // contenedor todavía se está animando/montando (transición de entrada
+        // de la tarjeta), Leaflet puede pedir las teselas iniciales para un
+        // tamaño que no es el definitivo, y quedan descuadradas hasta el
+        // siguiente resize real. No depender solo del ResizeObserver de abajo,
+        // que no dispara si el tamaño final coincide con el inicial.
+        const raf = requestAnimationFrame(() => mapInstanceRef.current?.invalidateSize());
+        const settleTimer = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 300);
 
         const resizeObserver = new ResizeObserver(() => {
             if (mapInstanceRef.current) {
@@ -158,6 +173,9 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
         resizeObserver.observe(mapContainerRef.current);
 
         return () => {
+            cancelAnimationFrame(raf);
+            clearTimeout(settleTimer);
+            clearTimeout(readyFallback);
             resizeObserver.disconnect();
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.remove();
@@ -304,11 +322,22 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
         const map = mapInstanceRef.current;
         if (!map || !L || !isAutoFollowing || !currentStop) return;
 
-        if (userLocation?.lat && userLocation?.lng) {
+        // Si el GPS da una ubicación a decenas de km de la parada, no es que el
+        // usuario esté "muy lejos caminando" — es alguien mirando/probando el
+        // tour sin estar físicamente en la ciudad (o una localización de red
+        // imprecisa). Seguir esa posición real haría que el mapa "se fuera" a
+        // donde esté de verdad el usuario en vez de mostrar el tour. Por
+        // encima de ese umbral se trata igual que si no hubiera GPS: centrar
+        // en la parada. Por debajo (paseando de verdad), sigue como siempre.
+        const FAR_THRESHOLD_M = 40000; // mismo umbral que usa el cálculo de ruta más abajo
+        const hasNearbyLocation = userLocation?.lat && userLocation?.lng &&
+            map.distance([userLocation.lat, userLocation.lng], [currentStop.latitude, currentStop.longitude]) <= FAR_THRESHOLD_M;
+
+        if (hasNearbyLocation && userLocation) {
             // Just pan to user location smoothly to avoid zoom stuttering
             map.panTo([userLocation.lat, userLocation.lng], { animate: true });
         } else {
-            // Si no hay ubicación, centrar en la parada actual
+            // Sin ubicación (o demasiado lejos para ser la misma ciudad): centrar en la parada actual
             map.panTo([currentStop.latitude, currentStop.longitude], { animate: true });
         }
     }, [userLocation?.lat, userLocation?.lng, currentStop?.latitude, currentStop?.longitude, isAutoFollowing]);
@@ -327,20 +356,22 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
         geofenceCirclesRef.current = [];
 
         if (validStops.length > 0) {
-            let routePoints: [number, number][] = [];
-            if (routePolyline) {
-                routePoints = decodePolyline(routePolyline);
-            } else {
-                routePoints = validStops.map(s => [s.latitude, s.longitude] as [number, number]);
-            }
+            if (!hideFullPath) {
+                let routePoints: [number, number][] = [];
+                if (routePolyline) {
+                    routePoints = decodePolyline(routePolyline);
+                } else {
+                    routePoints = validStops.map(s => [s.latitude, s.longitude] as [number, number]);
+                }
 
-            fullPathRef.current = L.polyline(routePoints, {
-                color: routePolyline ? '#fcd34d' : 'white', // Ámbar si es real, Blanco si es fallback
-                weight: routePolyline ? 4 : 2,
-                opacity: routePolyline ? 0.6 : 0.2,
-                dashArray: routePolyline ? undefined : '5, 10',
-                lineJoin: 'round'
-            }).addTo(map);
+                fullPathRef.current = L.polyline(routePoints, {
+                    color: routePolyline ? '#fcd34d' : 'white', // Ámbar si es real, Blanco si es fallback
+                    weight: routePolyline ? 4 : 2,
+                    opacity: routePolyline ? 0.6 : 0.2,
+                    dashArray: routePolyline ? undefined : '5, 10',
+                    lineJoin: 'round'
+                }).addTo(map);
+            }
 
             validStops.forEach((stop: any, idx: number) => {
                 const stopType = (stop.type || 'architecture').toLowerCase();
@@ -380,7 +411,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
                 markersRef.current.push(marker);
             });
         }
-    }, [validStops, routePolyline]);
+    }, [validStops, routePolyline, hideFullPath]);
 
     // Update active state of markers
     useEffect(() => {
@@ -454,6 +485,11 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
     return (
         <div className="w-full h-full relative overflow-hidden bg-slate-950">
             <div ref={mapContainerRef} className="w-full h-full" />
+            {!isMapReady && (
+                <div className="absolute inset-0 z-[460] flex items-center justify-center bg-slate-950">
+                    <i className="fas fa-spinner fa-spin text-purple-400 text-2xl"></i>
+                </div>
+            )}
             <div className="absolute right-4 bottom-28 z-[450] flex flex-col gap-2">
                 <button onClick={() => mapInstanceRef.current?.zoomIn()} className="w-11 h-11 rounded-xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-plus text-sm"></i></button>
                 <button onClick={() => mapInstanceRef.current?.zoomOut()} className="w-11 h-11 rounded-xl bg-slate-900 text-slate-400 border-2 border-white/10 shadow-2xl flex items-center justify-center active:scale-90 transition-transform"><i className="fas fa-minus text-sm"></i></button>

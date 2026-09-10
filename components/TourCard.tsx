@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Tour, Stop, UserProfile, CapturedMoment, APP_BADGES, VisaStamp } from '../types';
 import { SchematicMap } from './SchematicMap';
+import { MapThumbnail } from './MapThumbnail';
 import { toast } from './Toast';
 import { generateAudio } from '../services/geminiService';
 import { queueProfileSync, completeTourBonus, updateTourStopLocation, normalizeKey, checkBadges, logSponsoredEvent } from '../services/supabaseClient';
@@ -31,7 +32,9 @@ interface UserLocation { lat: number; lng: number; }
 
 interface TourCardProps {
     tour: Tour;
-    onSelect: (tour: Tour) => void;
+    // Modo Libre necesita pedir el GPS antes de navegar (elige la parada más
+    // cercana) — onSelect puede tardar, por eso admite devolver una promesa.
+    onSelect: (tour: Tour) => void | Promise<void>;
     language?: string;
 }
 
@@ -117,19 +120,28 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
     const [isLaunching, setIsLaunching] = useState(false);
 
-    const handleLaunch = (e: React.MouseEvent) => {
+    const handleLaunch = async (e: React.MouseEvent) => {
         e.stopPropagation();
         setIsLaunching(true);
-        setTimeout(() => {
-            onSelect(tour);
-            setIsLaunching(false);
-        }, 300);
+        // Mínimo 300ms de spinner (transición visual de siempre) en paralelo con
+        // onSelect — en Modo Libre este último puede tardar unos segundos más
+        // porque pide el GPS antes de navegar (ver CityDetailView.tsx), y el
+        // spinner ya existente comunica esa espera en vez de parecer congelado.
+        await Promise.all([
+            Promise.resolve(onSelect(tour)),
+            new Promise(resolve => setTimeout(resolve, 300)),
+        ]);
+        setIsLaunching(false);
     };
 
     if (!tour) return null;
 
     // Rama patrocinada: mismos layouts, acento amarillo corporativo en vez de morado
     const sponsored = !!tour.isSponsored;
+    // Modo Libre tampoco tiene ruta fija (agregado de paradas de varios tours),
+    // así que comparte con patrocinados el mostrar nº de paradas en vez de
+    // duración/distancia — sin el acento amarillo, que es solo de patrocinados.
+    const noRouteStats = sponsored || !!tour.isFreeMode;
 
     return (
         <div onClick={handleLaunch} className={`group bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden p-8 mb-0 cursor-pointer relative active:scale-[0.98] transition-all ${sponsored ? 'hover:border-[#f6c604]/40' : 'hover:border-purple-500/40'} shadow-2xl flex flex-col h-full w-full`}>
@@ -139,6 +151,9 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
                 </div>
             )}
             <div className="flex flex-col flex-1">
+                {tour.isFreeMode && (
+                    <MapThumbnail stops={tour.stops} className="w-full h-32 rounded-2xl overflow-hidden mb-4 bg-slate-800" />
+                )}
                 {(tour.theme || sponsored) && (
                     <div className={`inline-block ${sponsored ? 'bg-[#f6c604]/20 border-[#f6c604]/40 text-[#f6c604]' : 'bg-purple-600/20 border-purple-500/30 text-purple-400'} border text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 self-start`}>
                         {sponsored ? tl.sponsored : tour.theme}
@@ -149,7 +164,7 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
 
                 <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
                     <div className="flex gap-4">
-                        {sponsored ? (
+                        {noRouteStats ? (
                             // Sin ruta: no hay duración ni distancia, solo nº de paradas
                             <div className="flex flex-col">
                                 <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{tl.stopsLabel}</span>
@@ -187,6 +202,11 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
     // Tour patrocinado: sin audio, sin numeración de parada, botón Beneficio
     // (desbloqueado tras check-in GPS) en lugar de Consejo Dai
     const isSponsoredTour = !!tour?.isSponsored;
+    // Modo Libre: descripción/audio/Consejo Dai/check-in GPS igual que un tour
+    // normal — la única diferencia es que no hay número de parada ni
+    // Atrás/Siguiente/Finalizar, porque el usuario elige libremente qué
+    // parada visitar (ver AGENTS.md "Modo Libre").
+    const isFreeMode = !!tour?.isFreeMode;
     const { gpsStatus } = useAppStore();
     const [claimedStops, setClaimedStops] = useState<Set<string>>(new Set());
 
@@ -542,7 +562,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                                 <i className={`fas ${STOP_ICONS[currentStop.type?.toLowerCase()] || 'fa-location-dot'} text-xs`}></i>
                             </div>
                             <div className="flex flex-col text-left min-w-0">
-                                {!isSponsoredTour && (
+                                {!isSponsoredTour && !isFreeMode && (
                                     <p className="text-[7px] font-black text-purple-600 uppercase leading-none mb-1">
                                         {tl.stop} {currentStopIndex + 1}
                                     </p>
@@ -647,7 +667,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                 (su propio max-h + overflow), no la página. */}
             <div ref={descScrollRef} className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 relative">
                 <div className="h-[calc(100%-70px)] w-full sticky top-0 z-0">
-                    <SchematicMap stops={tour.stops} routePolyline={tour.routePolyline} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} />
+                    <SchematicMap stops={tour.stops} routePolyline={tour.routePolyline} currentStopIndex={currentStopIndex} language={user.language} onStopSelect={(i: number) => onJumpTo(i)} userLocation={userLocation} hideFullPath={isFreeMode} />
                 </div>
                 <div className="px-6 pt-6 pb-6 space-y-5 bg-white rounded-t-[3.5rem] -mt-6 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)] z-10 relative">
                     {isAdmin && (
@@ -677,10 +697,12 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
             )}
 
             <div className="bg-white/90 backdrop-blur-2xl border-t border-slate-100 px-4 py-3 flex gap-2 z-[6000] pb-safe-iphone shrink-0">
-                <button onClick={() => { hapticLight(); onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest disabled:opacity-0 flex flex-col items-center justify-center gap-0.5">
-                    <i className="fas fa-arrow-left text-xs"></i>
-                    <span>{tl.prev}</span>
-                </button>
+                {!isFreeMode && (
+                    <button onClick={() => { hapticLight(); onPrev(); stopAudio(); }} disabled={currentStopIndex === 0} className="flex-1 py-3 rounded-2xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest disabled:opacity-0 flex flex-col items-center justify-center gap-0.5">
+                        <i className="fas fa-arrow-left text-xs"></i>
+                        <span>{tl.prev}</span>
+                    </button>
+                )}
                 <button onClick={handleCheckIn} disabled={rewardClaimed} className={`flex-1 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest border flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 ${rewardClaimed ? 'bg-green-100 text-green-600 border-green-200' : (IS_IN_RANGE ? 'bg-purple-600 text-white border-purple-500 shadow-lg' : 'bg-slate-50 text-slate-400 border-slate-200')}`}>
                     <i className={`fas ${rewardClaimed ? 'fa-check-circle' : 'fa-location-dot'} text-xs`}></i>
                     <span>{rewardClaimed ? tl.checkedIn : tl.checkIn}</span>
@@ -710,7 +732,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                     <i className={`fas ${isSponsoredTour ? (rewardClaimed ? 'fa-gem' : 'fa-lock') : 'fa-camera'} text-xs`}></i>
                     <span>{isSponsoredTour ? tl.benefit : tl.daiShot}</span>
                 </button>
-                {currentStopIndex === tour.stops.length - 1 ? (
+                {isFreeMode ? null : currentStopIndex === tour.stops.length - 1 ? (
                     <button onClick={handleFinishTour} className="flex-[1.5] py-3 bg-green-600 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-2xl active:scale-[0.98] flex flex-col items-center justify-center gap-0.5">
                         <i className="fas fa-flag-checkered text-xs"></i>
                         <span>{tl.finish}</span>

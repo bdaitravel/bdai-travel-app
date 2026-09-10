@@ -4,6 +4,16 @@ Este fichero documenta los sistemas más complejos del proyecto para que cualqui
 
 ---
 
+## Login social: Google en Android/web, Apple en iOS (ago-2026)
+
+Apple exige (normativa 4.8 de App Review) que si se ofrece un login social de terceros (Google) también se ofrezca "Sign in with Apple" con el mismo peso — así lo señaló un revisor al enviar la app. En vez de mostrar los dos botones a la vez, `views/LoginView.tsx` muestra **solo uno según la plataforma** (`Capacitor.getPlatform() === 'ios'`): Apple en iOS, Google en Android y web. El login principal (email + código OTP) no cambia, esto solo afecta al botón social opcional de debajo.
+
+`handleAppleLogin` en `hooks/useAuth.ts` es una copia casi literal de `handleGoogleLogin` (mismo flujo: `supabase.auth.signInWithOAuth({ provider: ... })` + `@capacitor/browser` como InAppBrowser + el mismo listener de deep link `travel.bdai.app://login-callback`, que ya era genérico y no específico de Google). **No hace falta tocar nada del proyecto nativo de Xcode** — reutiliza el mismo esquema de URL que ya registra Google.
+
+**Requisito externo, ya resuelto por el usuario**: el proveedor "Apple" tiene que estar habilitado en Supabase Dashboard → Authentication → Providers, con el Services ID + clave privada creados en Apple Developer Console. Sin eso, `handleAppleLogin` fallaría — ningún agente AI tiene acceso a esas cuentas para configurarlo.
+
+---
+
 ## Flujo real de creación de tours (proceso manual — vigente desde jul-2026)
 
 **No hay ningún orquestador, worker de IA ni worker de GIS en funcionamiento.** Los tours se crean a mano:
@@ -39,6 +49,7 @@ El código fuente de cada función vive en un fichero `.md` de este repositorio 
 | `generate-audio-gcp` | `services/supabase/edge-functions/generate-audio-gcp.md` |
 | `generate-tour-audios` | `services/supabase/edge-functions/generate-tour-audios.md` |
 | `reorder-city-tours` | `services/supabase/edge-functions/reorder-city-tours.md` (utilidad de uso único bajo demanda, no automática — ver nota al inicio del fichero) |
+| `sync-city-location` | `services/supabase/edge-functions/sync-city-location.md` |
 
 ### Webhooks de Supabase activos (Database Webhooks)
 
@@ -50,6 +61,7 @@ Configurados en Supabase Dashboard → Database → Webhooks:
 | Trigger Notify Tour Ready | `tours_cache` | INSERT, UPDATE | `notify-tour-ready` |
 | Trigger Audio Generation | `tours_cache` | INSERT, UPDATE | `generate-tour-audios` |
 | Trigger Error Log | `error_logs` | INSERT | `notify-error` |
+| Trigger Sync City Location | `tours_cache` | INSERT, UPDATE | `sync-city-location` |
 
 El filtro por `status` lo aplica cada función internamente, no el webhook.
 
@@ -245,6 +257,48 @@ Reglas especiales:
 ```
 
 Los POIs se dividen en Tier 1 (top 40%), Tier 2 (siguiente 35%), Tier 3 (resto) y se pasan como catálogo coordinado al prompt de Gemini.
+
+---
+
+## Mapa de descubrimiento de tours (`city_locations`)
+
+### ✅ ACTIVO (ago-2026) — desplegado y verificado en dispositivo físico
+
+La pestaña "tours" (`/tools`, antes `TravelServices` con una lista fija hardcodeada de ciudades sin relación con tours reales) es ahora `components/CityDiscoveryMap.tsx`: un mapa Leaflet/CARTO que geolocaliza al usuario (una sola lectura, no `watchPosition` — no hace falta seguimiento continuo para un radio de 50km), dibuja un círculo de 50km a su alrededor y pone un pin con el logo de bdai en cada ciudad con al menos un tour dentro de ese radio. Sin ubicación, se muestra el mapa completo con todas las ciudades con tour, sin círculo. `TravelServices.tsx` se deja intacto sin usar en ninguna ruta, por si se retoma su contenido más adelante.
+
+**Por qué hizo falta tocar Supabase**: no existía en ningún sitio el centro de una ciudad — `tours_cache` solo guarda coordenadas de paradas individuales dentro del JSON `data`, no un lat/lng de la ciudad. Se creó la tabla `city_locations` (357 filas tras el backfill inicial).
+
+**Piezas** (SQL ejecutado a mano por el usuario en el SQL Editor del Dashboard — ningún agente AI ha escrito en Supabase para esta funcionalidad, ni con el CLI ni con las herramientas MCP, solo lectura para verificar):
+| Pieza | Fichero | Qué hace |
+|---|---|---|
+| Tabla | `scripts/create_city_locations.sql` | `city_locations` (slug, name, country, lat, lng) + RLS de solo lectura pública. El cliente anónimo la consulta desde `getCityLocationsWithTours()` en `toursService.ts`. |
+| Backfill | `scripts/backfill_city_locations.sql` | Centroide de cada ciudad a partir de las paradas ya existentes en `tours_cache`. Idempotente (`ON CONFLICT DO NOTHING`). |
+| Edge Function | `services/supabase/edge-functions/sync-city-location.md` | Mantiene la tabla al día: primer tour `READY` de una ciudad nueva → calcula y guarda su centroide. Idempotente — no toca ciudades que ya tienen fila. |
+| Webhook | `services/supabase/database-webhooks/trigger-sync-city-location.md` | `tours_cache`, INSERT + UPDATE → `sync-city-location`. |
+| Corrección de países | `scripts/fix_city_locations_countries.sql` | Corrige `country`/`name` en las filas que quedaron con `country = ''` tras el backfill inicial (ver debajo). Ejecutado una vez sobre la tabla ya poblada. |
+
+**Resuelto — `country` vacío en ~95 de 357 filas del backfill inicial**: el mapa de país→nombre original solo tenía ~47 países y solo probaba el último token del slug como país, así que fallaba con países de más de una palabra (`cape_town_south_africa`, `dubai_united_arab_emirates`) y con varios de una palabra que ni estaban en la lista (`laos`, `senegal`, `fiji`...). Se amplió el mapa a ~98 países y la lógica de coincidencia a probar los últimos 3, 2 y 1 tokens (de más a menos específico) en los tres sitios que lo necesitan: `scripts/backfill_city_locations.sql` (para una instalación nueva desde cero), la copia Deno en `sync-city-location.md` (para ciudades nuevas a partir de ahora) y `lib/slugToDisplayName.ts` (usado en el resto de la app para mostrar nombres — tenía el mismo hueco de fondo, no introducido por esta funcionalidad). `scripts/fix_city_locations_countries.sql` corrigió las filas ya existentes con un `UPDATE` idempotente. Si en el futuro aparece una ciudad con `country` vacío, es que su país no está en ninguno de esos tres mapas — añadirlo a los tres a la vez.
+
+**Nota de diseño que sigue vigente pase lo que pase con lo anterior**: `CityDiscoveryMap` navega pasando el objeto `CityLocation` completo (con su `slug` real) a `App.tsx::handleDiscoveryCitySelect` → `processCitySelection`, **no** reconstruye el slug a partir de nombre+país como hacía el flujo antiguo de `TravelServices`/`handleTravelServiceSelect`. Aunque el mapa de países volviera a quedarse corto con algún país nuevo, la navegación de los pines no se rompería — solo el nombre/país mostrado si se llegara a usar `CityLocation.name`/`.country` en algún sitio.
+
+**Traducciones**: `discoverNearbyTitle`, `discoverNearbyRadius`, `discoverEnableLocation`, `discoverNoResults` en `data/translations.ts` solo están en `es`/`en` — el resto de los 20 idiomas cae al inglés vía el fallback de `useTranslation()` hasta que se traduzcan.
+
+**Sin verificar**: el flujo en iOS (`capacitor://localhost` como origen nativo) — solo se ha probado en Android por móvil físico USB.
+
+---
+
+## Modo Libre — tour agregado sin ruta fija (`isFreeMode`)
+
+Tarjeta adicional al final de la rejilla de tours normales en `CityDetailView.tsx` ("Modo Libre" / "Free Mode"). Junta **todas** las paradas de los free tours de la ciudad (excluyendo patrocinados, deduplicadas por `stop.id` si una parada aparece en más de un tour) en un único tour sintético que **nunca se guarda en Supabase** — se construye en el cliente con `buildFreeModeTour()` (`services/supabase/toursService.ts`).
+
+**Comportamiento**: se navega y se ve exactamente igual que un tour normal (mismo `ActiveTourCard`, misma descripción/audio/Consejo Dai/check-in GPS/millas por parada), con tres diferencias, todas detrás del flag `tour.isFreeMode`:
+- Sin número de parada en la cabecera (`!isSponsoredTour && !isFreeMode`).
+- Sin ruta dibujada entre paradas en el mapa — `SchematicMap` recibe `hideFullPath={isFreeMode}`, que omite `fullPathRef` (la línea blanca/ámbar que conecta todas las paradas en orden). La guía de "cómo llegar" hasta la parada activa (`activeLineRef`, tiempo caminando) no se toca — ya era genérica por parada, no depende de una ruta fija.
+- Sin botones Atrás/Siguiente/Finalizar en el pie — el usuario elige la siguiente parada tocando cualquier pin del mapa (mecanismo `onStopSelect`/`onJumpTo` ya existente, sin cambios). No hay noción de "tour completado": cada check-in da sus millas normales, sin bonus ni pantalla de felicidades al final (no tiene un final definido).
+
+**Id del tour sintético**: `{slug}_{lang}_free` (mismo patrón que el sufijo `sp{n}` de patrocinados). Importante: como este id no existe en `tours_cache`, la rehidratación de `TourActiveView.tsx` (para cuando Android mata el proceso mientras el usuario está en Modo Libre) tiene un caso especial — si `tourId` termina en `_free`, reconstruye el agregado con `buildFreeModeTour()` sobre los tours recién descargados, en vez de caer en el `.find()`/fallback por índice que usaría un tour real cualquiera por error.
+
+**Regla si se toca esto en el futuro**: `buildFreeModeTour()` es la única fuente de verdad para construir el agregado — se llama desde `CityDetailView.tsx` (creación) y `TourActiveView.tsx` (rehidratación). No duplicar esa lógica en un tercer sitio.
 
 ---
 

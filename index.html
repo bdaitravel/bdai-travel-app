@@ -109,6 +109,53 @@
       .animate-pulse-logo {
         animation: pulse-logo 3.5s ease-in-out infinite;
       }
+
+      /* Popup del pin de ciudad en CityDiscoveryMap.tsx — Leaflet los pinta
+         en blanco por defecto, se restyla al tema oscuro de bdai. */
+      .bdai-popup .leaflet-popup-content-wrapper {
+        background: #0f172a;
+        color: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .bdai-popup .leaflet-popup-tip {
+        background: #0f172a;
+      }
+      .bdai-popup .leaflet-popup-content {
+        margin: 12px 14px;
+      }
+      .bdai-popup .leaflet-popup-close-button {
+        color: rgba(255, 255, 255, 0.5) !important;
+      }
+      .bdai-popup-title {
+        font-weight: 900;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        margin-bottom: 2px;
+      }
+      .bdai-popup-count {
+        font-size: 10px;
+        color: #a78bfa;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+      }
+      .bdai-popup-go {
+        width: 100%;
+        background: #9333ea;
+        color: #fff;
+        font-weight: 900;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: none;
+        border-radius: 0.75rem;
+        padding: 8px 0;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body class="text-slate-100 antialiased selection:bg-purple-500/30">

@@ -1,3 +1,29 @@
+import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
+
+// Una sola lectura de posición (no watch) — para pantallas que solo necesitan
+// saber "más o menos dónde estás" en el momento en que se piden (ej. elegir
+// la parada más cercana al lanzar Modo Libre), no seguimiento continuo.
+export const getOneShotLocation = (timeoutMs: number = 6000): Promise<{ lat: number; lng: number } | null> =>
+    new Promise((resolve) => {
+        const opts = { enableHighAccuracy: false, timeout: timeoutMs, maximumAge: 60000 };
+
+        const run = async () => {
+            try {
+                if (Capacitor.isNativePlatform()) {
+                    let perm = await Geolocation.checkPermissions();
+                    if (perm.location !== 'granted') perm = await Geolocation.requestPermissions();
+                    if (perm.location !== 'granted') return resolve(null);
+                }
+                const pos = await Geolocation.getCurrentPosition(opts);
+                resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            } catch {
+                resolve(null);
+            }
+        };
+        run();
+    });
+
 // Distancia haversine entre dos coordenadas, en metros.
 export const calculateDistanceMeters = (
     lat1: number | string,

@@ -199,6 +199,105 @@ export const fetchCityToursMerged = async (slug: string, language: string): Prom
     return { tours: [...normal, ...sponsored], hasNormal: normal.length > 0 };
 };
 
+export interface CityLocation {
+    slug: string;
+    name: string;
+    country: string;
+    lat: number;
+    lng: number;
+}
+
+/**
+ * Ciudades con al menos un tour listo, con el centro de la ciudad ya calculado
+ * (tabla `city_locations` — ver AGENTS.md "Mapa de descubrimiento de tours").
+ * Solo contiene ciudades con tour: la tabla se rellena exclusivamente cuando
+ * una ciudad tiene su primer tour en status READY, así que no hace falta
+ * cruzarla con tours_cache en cada lectura.
+ */
+export const getCityLocationsWithTours = async (): Promise<CityLocation[]> => {
+    try {
+        const { data, error } = await supabase
+            .from('city_locations')
+            .select('slug, name, country, lat, lng');
+        if (error) throw error;
+        return (data as CityLocation[]) || [];
+    } catch (e) {
+        console.warn('getCityLocationsWithTours failed', e);
+        return [];
+    }
+};
+
+/**
+ * Número de tours listos por ciudad (slug → nº de tours) en un idioma dado —
+ * usado por el popup de CityDiscoveryMap.tsx para mostrar "3 tours" al pulsar
+ * un pin sin tener que consultar Supabase en cada click. Una sola query para
+ * todas las ciudades a la vez.
+ */
+export const getTourCountsByCity = async (language: string): Promise<Record<string, number>> => {
+    try {
+        const { data, error } = await supabase
+            .from('tours_cache')
+            .select('city, data')
+            .eq('language', language || 'es')
+            .eq('status', 'READY');
+        if (error) throw error;
+
+        const counts: Record<string, number> = {};
+        for (const row of (data || [])) {
+            const tours = (row.data as Tour[]) || [];
+            counts[row.city] = tours.filter(t => !t.isSponsored).length;
+        }
+        return counts;
+    } catch (e) {
+        console.warn('getTourCountsByCity failed', e);
+        return {};
+    }
+};
+
+/**
+ * "Modo Libre": agregado sintético (solo en memoria del cliente, nunca se
+ * guarda en Supabase) con todas las paradas de los free tours de una ciudad,
+ * sin ruta ni orden fijo. Dedupe por `stop.id` — si una parada aparece en
+ * varios tours (ej. un monumento en "Esencial" y en "Rincones"), se queda un
+ * solo pin. Usado tanto al construirlo la primera vez (CityDetailView) como
+ * al reconstruirlo tras un reinicio de la app (TourActiveView, ver AGENTS.md
+ * "Modo Libre" para el porqué de la rehidratación especial).
+ */
+export const buildFreeModeTour = (
+    tours: Tour[],
+    slug: string,
+    country: string,
+    language: string,
+    title: string,
+    description: string
+): Tour | null => {
+    const seen = new Set<string>();
+    const stops: Stop[] = [];
+    for (const tour of tours) {
+        if (tour.isSponsored) continue;
+        for (const stop of tour.stops || []) {
+            if (seen.has(stop.id)) continue;
+            seen.add(stop.id);
+            stops.push(stop);
+        }
+    }
+    if (stops.length === 0) return null;
+
+    return {
+        id: `${slug}_${language}_free`,
+        city: slug,
+        country,
+        title,
+        description,
+        duration: '',
+        distance: '',
+        difficulty: 'Easy',
+        theme: '',
+        stops,
+        isFreeMode: true,
+    };
+};
+
 /**
  * Registra un evento de analítica de tours patrocinados (check-in GPS o
  * apertura del beneficio). Fire-and-forget: nunca bloquea ni rompe la UX.

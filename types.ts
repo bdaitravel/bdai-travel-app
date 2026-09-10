@@ -165,6 +165,10 @@ export interface Tour {
   stops: Stop[];
   isEssential?: boolean;
   isSponsored?: boolean;
+  // "Modo Libre": agregado sintético (solo en cliente, nunca en Supabase) con
+  // todas las paradas de los free tours de una ciudad, sin ruta fija ni orden
+  // — ver CityDetailView.tsx::buildFreeModeTour / AGENTS.md.
+  isFreeMode?: boolean;
   routePolyline?: string;
   routeMode?: RouteMode;
 }

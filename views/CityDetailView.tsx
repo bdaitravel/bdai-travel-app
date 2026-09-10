@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { TourCard } from '../components/TourCard';
 // futura mejora, actualmente no implantado
@@ -7,8 +7,12 @@ import { formatCityName } from '../components/TravelServices';
 import { useAppStore } from '../store/useAppStore';
 import { useCity } from '../hooks/useCity';
 import { fetchCityToursMerged } from '../services/supabaseClient';
+import { buildFreeModeTour } from '../services/supabase/toursService';
 import { tourCacheService } from '../lib/tourCacheService';
 import { translations } from '../data/translations';
+import { haversineKm } from '../lib/gisService';
+import { getOneShotLocation } from '../lib/geoUtils';
+import { Tour } from '../types';
 
 export const CityDetailView: React.FC = () => {
   const {
@@ -30,6 +34,41 @@ export const CityDetailView: React.FC = () => {
   const t = translations[user.language] || translations.en;
   const normalTours = tours.filter(tr => !tr.isSponsored);
   const sponsoredTours = tours.filter(tr => tr.isSponsored);
+
+  // "Modo Libre": agregado de todas las paradas de los free tours de la ciudad,
+  // sin ruta ni orden — ver AGENTS.md y buildFreeModeTour en toursService.ts.
+  const freeModeTour = useMemo(
+    () => buildFreeModeTour(
+      normalTours,
+      slug,
+      normalTours[0]?.country || '',
+      user.language,
+      t.freeModeTitle || translations.en.freeModeTitle,
+      t.freeModeDescription || translations.en.freeModeDescription
+    ),
+    [normalTours, slug, user.language]
+  );
+
+  // Al entrar en Modo Libre no hay una parada "oficial" por la que empezar
+  // (el usuario elige libremente), pero ActiveTourCard sí necesita una parada
+  // activa para pintar su panel — así que se abre en la más cercana a donde
+  // esté el usuario. El store solo tiene userLocation fresco durante un tour
+  // activo (useGeolocation solo hace watch en rutas /tour/..., ver App.tsx),
+  // así que aquí, en la ficha de la ciudad, no sirve — se pide una lectura de
+  // GPS puntual justo al pulsar "Lanzar" en vez de fiarse de ese valor.
+  const handleFreeModeSelect = async (tour: Tour) => {
+    setActiveTour(tour);
+    const loc = await getOneShotLocation(5000);
+    let startIndex = 0;
+    if (loc) {
+      let bestDist = Infinity;
+      tour.stops.forEach((s, i) => {
+        const d = haversineKm(loc.lat, loc.lng, s.latitude, s.longitude);
+        if (d < bestDist) { bestDist = d; startIndex = i; }
+      });
+    }
+    navigate(`/tour/${tour.id}/stop/${startIndex}`);
+  };
 
   // Si llegamos a esta vista sin tours en memoria (ej. recarga, vuelta de background
   // en Chrome mobile, o pérdida de sessionStorage), los recuperamos directamente de
@@ -132,6 +171,14 @@ export const CityDetailView: React.FC = () => {
               language={user.language}
             />
           ))}
+          {freeModeTour && (
+            <TourCard
+              key={freeModeTour.id}
+              tour={freeModeTour}
+              onSelect={handleFreeModeSelect}
+              language={user.language}
+            />
+          )}
         </div>
 
         {/* Sección de tours patrocinados: solo existe en municipios que los tengan */}
