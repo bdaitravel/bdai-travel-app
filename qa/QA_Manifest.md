@@ -22,6 +22,7 @@ Cada módulo es un fichero independiente en este mismo directorio para facilitar
 | 07 | **Infraestructura & Seguridad** | [07_INFRA.md](07_INFRA.md) | Navegación, estado Zustand, errores, RLS, Capacitor |
 | 08 | **Tours Patrocinados** | [08_SPONSORED.md](08_SPONSORED.md) | Separador amarillo, badge, check-in GPS → Beneficio, analítica, RLS |
 | 09 | **Sincronización de Perfil (Android nativo)** | [09_PROFILE_SYNC.md](09_PROFILE_SYNC.md) | Push inmediato, pull solo en login, cola offline, seguridad RPC |
+| 10 | **Login Anónimo, Completar Perfil, Username y Ranking** | [10_ANONYMOUS_AUTH.md](10_ANONYMOUS_AUTH.md) | Alta anónima automática, vincular Apple/Google, prompt +10 millas, username único/bloqueo, Ranking Global solo vinculados, guard `/admin`, GDPR anónimo, Sign in with Apple |
 
 ---
 
@@ -53,10 +54,10 @@ Cada módulo es un fichero independiente en este mismo directorio para facilitar
 ## 🔄 Flujo de Ejecución Recomendado
 
 ```
-01_AUTH → 02_I18N → 03_EXPLORE → 04_TOURS → 05_PASSPORT → 06_INTEL → 07_INFRA → 08_SPONSORED → 09_PROFILE_SYNC
+01_AUTH → 02_I18N → 03_EXPLORE → 04_TOURS → 05_PASSPORT → 06_INTEL → 07_INFRA → 08_SPONSORED → 09_PROFILE_SYNC → 10_ANONYMOUS_AUTH
 ```
 
-> Los módulos dependen del anterior: sin login (01) no se puede probar nada; sin idioma (02) no se verifican traducciones en el resto.
+> Los módulos dependen del anterior: sin login (01) no se puede probar nada; sin idioma (02) no se verifican traducciones en el resto. El módulo 10 se ejecuta al final porque reinterpreta varios casos de 01 y 09 (ver su sección I).
 
 ---
 
@@ -73,4 +74,5 @@ Cada módulo es un fichero independiente en este mismo directorio para facilitar
 | 07_INFRA | 16 | 5 | 6 | 5 |
 | 08_SPONSORED | 18 | 11 | 7 | 0 |
 | 09_PROFILE_SYNC | 18 | 11 | 7 | 0 |
-| **TOTAL** | **154** | **57** | **62** | **35** |
+| 10_ANONYMOUS_AUTH | 23 | 12 | 8 | 3 |
+| **TOTAL** | **177** | **69** | **70** | **38** |

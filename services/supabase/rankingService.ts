@@ -21,9 +21,13 @@ export const calculateTravelerRank = (miles: number): TravelerRank => {
 
 export const getGlobalRanking = async (): Promise<LeaderboardEntry[]> => {
     try {
+        // Ranking global reservado a cuentas vinculadas (Apple/Google/email): un perfil anónimo
+        // se puede recrear gratis en segundos, así que dejarlo competir aquí sería trivial de
+        // inflar y le resta valor comparativo al ranking.
         const { data } = await supabase
             .from('profiles')
             .select('id, username, miles, avatar, country, badges, rank')
+            .eq('is_anonymous', false)
             .order('miles', { ascending: false })
             .limit(50);
         return (data || []).map((d: ProfileRankingRow, i: number) => ({

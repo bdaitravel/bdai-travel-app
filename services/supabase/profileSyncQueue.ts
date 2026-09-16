@@ -96,8 +96,8 @@ const triggerFlush = () => {
  * Usar para cualquier cambio salvo la creación inicial del perfil (ver `syncUserProfile`).
  */
 export const queueProfileSync = (profile: UserProfile): void => {
-    if (!profile || !profile.email) {
-        console.error('queueProfileSync: perfil sin email, no se puede encolar', profile);
+    if (!profile || !profile.id) {
+        console.error('queueProfileSync: perfil sin id, no se puede encolar', profile);
         return;
     }
     const payload = buildProfilePayload(profile);

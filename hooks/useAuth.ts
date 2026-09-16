@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { supabase, getUserProfileByEmail, syncUserProfile, queueProfileSync, flushPendingProfileSync, initProfileSyncQueue, validateEmailFormat, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
+import { supabase, getUserProfileByEmail, getUserProfileById, getNextGuestUsername, syncUserProfile, queueProfileSync, flushPendingProfileSync, initProfileSyncQueue, validateEmailFormat, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
 import { useAppStore, GUEST_PROFILE } from '../store/useAppStore';
 import { toast } from '../components/Toast';
 import { hapticSuccess } from '../lib/haptics';
@@ -39,19 +39,37 @@ export const useAuth = (autoInit: boolean = false) => {
             // Empujar primero cualquier cambio pendiente de una sesión anterior (app cerrada
             // antes de sincronizar) para que el pull de perfil que sigue no lo pise.
             await flushPendingProfileSync();
-            let profile = await getUserProfileByEmail(supabaseUser.email || '');
-            if (!profile) {
-                // No dar por hecho que es un usuario nuevo a la primera: un hipo de red o una
-                // propagación lenta del JWT justo tras el login pueden devolver un falso negativo.
-                // Tratarlo como alta nueva de forma prematura resetearía el perfil real a los
-                // valores por defecto y volvería a mostrar la bienvenida a un usuario existente.
-                await new Promise(resolve => setTimeout(resolve, 700));
+
+            // Sesión anónima (Guideline 5.1.1(v) de Apple: se crea sola al primer arranque, sin
+            // email ni ningún dato personal — así el usuario nunca ve una pantalla de registro
+            // obligatoria para acceder a los tours).
+            const isAnonymous = !!supabaseUser.is_anonymous;
+
+            // Buscar SIEMPRE primero por id (nunca cambia, ni al vincular Apple/Google a una
+            // sesión anónima — Supabase mantiene el mismo user.id, solo añade la identidad).
+            // Importante: justo tras vincular, el evento SIGNED_IN llega con is_anonymous=false
+            // y el email ya relleno — si aquí se buscara por email en vez de por id, no
+            // encontraría la fila anónima existente (su email en Supabase aún es null hasta que
+            // se sincronice) y se crearía un perfil nuevo vacío, perdiendo millas/medallas/tours.
+            let profile = await getUserProfileById(supabaseUser.id);
+
+            if (!profile && !isAnonymous) {
+                // Red de seguridad para logins reales (email/Apple/Google): un hipo de red o una
+                // propagación lenta del JWT justo tras el login pueden devolver un falso negativo
+                // en la búsqueda por id. Tratarlo como alta nueva de forma prematura resetearía
+                // el perfil real a los valores por defecto y volvería a mostrar la bienvenida a
+                // un usuario existente. (No aplica a anónimas: su id es nuevo de verdad.)
                 profile = await getUserProfileByEmail(supabaseUser.email || '');
+                if (!profile) {
+                    await new Promise(resolve => setTimeout(resolve, 700));
+                    profile = await getUserProfileByEmail(supabaseUser.email || '');
+                }
             }
             if (profile) {
                 const updatedProfile: UserProfile = {
                     ...profile,
                     isLoggedIn: true,
+                    isAnonymous,
                     rank: calculateTravelerRank(profile.miles),
                     badges: (() => {
                         const existingIds = new Set((profile.badges || []).map(b => b.id));
@@ -74,12 +92,18 @@ export const useAuth = (autoInit: boolean = false) => {
                     navigate(savedRoute || '/home');
                 }
             } else {
-                const newProfile: UserProfile = { 
-                    ...GUEST_PROFILE, 
-                    email: supabaseUser.email || '', 
-                    id: supabaseUser.id, 
-                    isLoggedIn: true, 
-                    stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 } 
+                // Username único garantizado por secuencia en Postgres — reemplaza el
+                // 'traveler' fijo de GUEST_PROFILE, que chocaría entre sí en cuanto hubiera
+                // más de un usuario nuevo (anónimo o real).
+                const defaultUsername = await getNextGuestUsername();
+                const newProfile: UserProfile = {
+                    ...GUEST_PROFILE,
+                    email: supabaseUser.email || '',
+                    id: supabaseUser.id,
+                    username: defaultUsername,
+                    isLoggedIn: true,
+                    isAnonymous,
+                    stats: { ...GUEST_PROFILE.stats, sessionsStarted: 1 }
                 };
                 newProfile.rank = calculateTravelerRank(newProfile.miles);
                 newProfile.badges = checkBadges(newProfile);
@@ -115,8 +139,20 @@ export const useAuth = (autoInit: boolean = false) => {
                 setUser(GUEST_PROFILE);
                 navigate('/login');
                 setIsVerifyingSession(false);
+            } else if (_event === 'INITIAL_SESSION' && !session) {
+                // Primer arranque real (nunca hubo sesión, ni siquiera anónima, en este
+                // dispositivo). En vez de forzar login, se crea sola una sesión anónima
+                // (Guideline 5.1.1(v) de Apple): el 'SIGNED_IN' que dispara esto vuelve a
+                // entrar por la rama de arriba y llama a handleLoginSuccess con
+                // is_anonymous=true. Si falla (ej. sin red, o el proveedor anónimo no está
+                // habilitado en Supabase), se cae de vuelta a la pantalla de login manual.
+                supabase.auth.signInAnonymously().then(({ error }) => {
+                    if (error) {
+                        console.error('No se pudo iniciar sesión anónima:', error);
+                        setIsVerifyingSession(false);
+                    }
+                });
             } else {
-                // INITIAL_SESSION sin sesión (nunca ha iniciado sesión) u otros eventos
                 setIsVerifyingSession(false);
             }
         });
@@ -223,10 +259,13 @@ export const useAuth = (autoInit: boolean = false) => {
                 if (error) throw error;
                 if (data.url) {
                     setIsLoading(false);
-                    // Abrir en el InAppBrowser de Capacitor (se queda dentro de la app)
-                    await Browser.open({ 
+                    // Abrir en el InAppBrowser de Capacitor (se queda dentro de la app).
+                    // 'fullscreen' en vez de 'popover': en iPad, 'popover' requiere un ancla
+                    // (width/height/sourceView) para su UIPopoverPresentationController — sin
+                    // ella el navegador no llega a presentarse y el login se queda colgado.
+                    await Browser.open({
                         url: data.url,
-                        presentationStyle: 'popover'
+                        presentationStyle: 'fullscreen'
                     });
                 }
             } else {
@@ -262,9 +301,10 @@ export const useAuth = (autoInit: boolean = false) => {
                 if (error) throw error;
                 if (data.url) {
                     setIsLoading(false);
+                    // 'fullscreen' por el mismo motivo que en handleGoogleLogin (ver comentario ahí).
                     await Browser.open({
                         url: data.url,
-                        presentationStyle: 'popover'
+                        presentationStyle: 'fullscreen'
                     });
                 }
             } else {
@@ -279,6 +319,39 @@ export const useAuth = (autoInit: boolean = false) => {
             setIsLoading(false);
         }
     };
+
+    // Sube de categoría la sesión anónima activa a una cuenta real, sin perder el historial:
+    // Supabase añade la identidad de Apple/Google a la MISMA fila (mismo user.id), no crea una
+    // nueva. Si ese email/Apple ID ya tiene una cuenta en otro dispositivo, Supabase devuelve
+    // error (no se puede "fusionar" dos historiales distintos) — se informa al usuario.
+    const handleLinkIdentity = async (provider: 'apple' | 'google') => {
+        setIsLoading(true);
+        setLoadingMessage(`LINKING ${provider.toUpperCase()}...`);
+        try {
+            const { data, error } = await supabase.auth.linkIdentity({
+                provider,
+                options: {
+                    redirectTo: isNative ? NATIVE_REDIRECT_URL : WEB_REDIRECT_URL,
+                    skipBrowserRedirect: true,
+                }
+            });
+            if (error) throw error;
+            if (data?.url) {
+                if (isNative) {
+                    setIsLoading(false);
+                    await Browser.open({ url: data.url, presentationStyle: 'fullscreen' });
+                } else {
+                    window.location.assign(data.url);
+                }
+            }
+        } catch (e: any) {
+            toast(e.message || `No se pudo vincular con ${provider}. Puede que ya tengas una cuenta con ese ${provider === 'apple' ? 'Apple ID' : 'email de Google'} — inicia sesión con ella en su lugar.`, 'error');
+            setIsLoading(false);
+        }
+    };
+
+    const handleLinkApple = () => handleLinkIdentity('apple');
+    const handleLinkGoogle = () => handleLinkIdentity('google');
 
     const handleVerifyOtp = async () => {
         if (otpToken.length < 8) return;
@@ -305,6 +378,7 @@ export const useAuth = (autoInit: boolean = false) => {
         email, setEmail,
         otpToken, setOtpToken,
         isVerifyingSession,
-        handleRequestOtp, handleGoogleLogin, handleAppleLogin, handleVerifyOtp
+        handleRequestOtp, handleGoogleLogin, handleAppleLogin, handleVerifyOtp,
+        handleLinkApple, handleLinkGoogle
     };
 };

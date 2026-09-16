@@ -1,8 +1,12 @@
 import ReactDOM from 'react-dom';
 import React, { useState, useEffect, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { UserProfile, LANGUAGES, AVATARS, APP_BADGES } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
-import { queueProfileSync, supabase } from '../services/supabaseClient';
+import { queueProfileSync, supabase, setUsername, UsernameTakenError, getNextGuestUsername } from '../services/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
+import { toast } from './Toast';
+import { AppleLogo } from './AppleLogo';
 import { tourCacheService } from '../lib/tourCacheService';
 import { translations } from '../data/translations';
 import { LegalModal } from './LegalModal';
@@ -61,7 +65,12 @@ const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => strin
         return () => clearTimeout(t);
     }, [countdown]);
 
-    const emailMatches = emailInput.trim().toLowerCase() === user.email.trim().toLowerCase();
+    // Perfil anónimo: no hay email que escribir para confirmar, así que se pide la
+    // palabra fija DELETE/ELIMINAR en su lugar (según idioma, para que instrucción y
+    // palabra a escribir coincidan).
+    const deleteWord = user.language === 'es' ? 'eliminar' : 'delete';
+    const confirmTarget = user.email ? user.email.trim().toLowerCase() : deleteWord;
+    const emailMatches = emailInput.trim().toLowerCase() === confirmTarget;
     const canDelete = emailMatches && countdownDone && !isDeleting;
 
     return (
@@ -72,8 +81,10 @@ const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => strin
                 </div>
                 <h3 className="text-white font-black text-base uppercase tracking-widest mb-3">{pt('deleteConfirmTitle')}</h3>
                 <p className="text-slate-400 text-xs mb-5 leading-relaxed">{pt('deleteConfirmText')}</p>
-                <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest mb-2 w-full text-left">{pt('deleteConfirmInstruction')}</p>
-                <input type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder={user.email}
+                <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest mb-2 w-full text-left">
+                    {user.email ? pt('deleteConfirmInstruction') : (user.language === 'es' ? 'Escribe ELIMINAR para confirmar:' : 'Type DELETE to confirm:')}
+                </p>
+                <input type={user.email ? 'email' : 'text'} value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder={user.email || deleteWord.toUpperCase()}
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white text-xs mb-1 focus:outline-none focus:border-red-500 transition-colors"
                     disabled={isDeleting} autoComplete="off" />
                 {emailInput.length > 0 && !emailMatches && (
@@ -94,7 +105,10 @@ const DeleteConfirmModal: React.FC<{ user: UserProfile; pt: (k: string) => strin
     );
 };
 
+const isIOS = Capacitor.getPlatform() === 'ios';
+
 export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpdateUser, onLogout, onOpenAdmin, language, onLangChange }) => {
+  const { handleLinkApple, handleLinkGoogle } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const { cityName, badgeId } = useParams();
@@ -104,14 +118,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   const [formData, setFormData] = useState({
       firstName: user.firstName || '', lastName: user.lastName || '', username: user.username || 'traveler',
       city: user.city || '', country: user.country || '', avatar: user.avatar || AVATARS[0],
-      birthday: user.birthday || '1995-01-01', language: user.language || 'es'
+      birthday: user.birthday || '1995-01-01', language: user.language || 'es', gender: user.gender || 'unspecified'
   });
 
   useEffect(() => {
     setFormData({
       firstName: user.firstName || '', lastName: user.lastName || '', username: user.username || 'traveler',
       city: user.city || '', country: user.country || '', avatar: user.avatar || AVATARS[0],
-      birthday: user.birthday || '1995-01-01', language: user.language || 'es'
+      birthday: user.birthday || '1995-01-01', language: user.language || 'es', gender: user.gender || 'unspecified'
     });
   }, [user]);
 
@@ -163,8 +177,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
     const globalDict = translations[lang] || translations['en'];
     
     const extra: Record<string, Record<string, string>> = {
-        es: { locked: "BLOQUEADO", unlockReq: "Requisito:", milesReq: "Millas restantes:", confirmShare: "Compartir", cancel: "Cerrar", image: "Guardar Imagen", share: "Compartir Enlace", backToPassport: "Volver al Pasaporte", statusVerified: "Estado: Verificado", missionAccomplished: "MISIÓN CUMPLIDA", locationIdentity: "Identidad de Ubicación", protocolReward: "Recompensa", currentRank: "Rango Actual", digitalAuth: "Autenticación", verified: "VERIFICADO", totalDistance: "Distancia Total", minting: "GENERANDO...", transmitting: "TRANSMITIENDO...", readyToShare: "LISTO PARA COMPARTIR" },
-        en: { locked: "LOCKED", unlockReq: "Requirement:", milesReq: "Miles remaining:", confirmShare: "Share", cancel: "Close", image: "Save Image", share: "Share Link", backToPassport: "Back to Passport", statusVerified: "Status: Verified", missionAccomplished: "MISSION ACCOMPLISHED", locationIdentity: "Location Identity", protocolReward: "Protocol Reward", currentRank: "Current Rank", digitalAuth: "Autenticación", verified: "VERIFIED", totalDistance: "Total Distance", minting: "MINTING...", transmitting: "TRANSMITTING...", readyToShare: "READY TO SHARE" },
+        es: { locked: "BLOQUEADO", unlockReq: "Requisito:", milesReq: "Millas restantes:", confirmShare: "Compartir", cancel: "Cerrar", image: "Guardar Imagen", share: "Compartir Enlace", backToPassport: "Volver al Pasaporte", statusVerified: "Estado: Verificado", missionAccomplished: "MISIÓN CUMPLIDA", locationIdentity: "Identidad de Ubicación", protocolReward: "Recompensa", currentRank: "Rango Actual", digitalAuth: "Autenticación", verified: "VERIFICADO", totalDistance: "Distancia Total", minting: "GENERANDO...", transmitting: "TRANSMITIENDO...", readyToShare: "LISTO PARA COMPARTIR", anonBannerTitle: "Progreso guardado solo en este dispositivo", anonBannerText: "Tus millas, insignias y ciudades visitadas viven únicamente en este móvil. Si desinstalas la app o cambias de dispositivo, se perderán para siempre. Vincula tu cuenta para guardarlas de forma segura.", linkApple: "Vincular con Apple", linkGoogle: "Vincular con Google", gender: "Sexo", male: "Hombre", female: "Mujer", unspecified: "Prefiero no decirlo" },
+        en: { locked: "LOCKED", unlockReq: "Requirement:", milesReq: "Miles remaining:", confirmShare: "Share", cancel: "Close", image: "Save Image", share: "Share Link", backToPassport: "Back to Passport", statusVerified: "Status: Verified", missionAccomplished: "MISSION ACCOMPLISHED", locationIdentity: "Location Identity", protocolReward: "Protocol Reward", currentRank: "Current Rank", digitalAuth: "Autenticación", verified: "VERIFIED", totalDistance: "Total Distance", minting: "MINTING...", transmitting: "TRANSMITTING...", readyToShare: "READY TO SHARE", anonBannerTitle: "Progress saved only on this device", anonBannerText: "Your miles, badges and visited cities live only on this phone. If you uninstall the app or switch devices, they will be lost forever. Link your account to keep them safe.", linkApple: "Link with Apple", linkGoogle: "Link with Google", gender: "Gender", male: "Male", female: "Female", unspecified: "Prefer not to say" },
         fr: { locked: "VERROUILLÉ", unlockReq: "Exigence :", milesReq: "Miles restants :", confirmShare: "Partager", cancel: "Fermer" },
         de: { locked: "GESPERRT", unlockReq: "Anforderung:", milesReq: "Verbleibende Meilen:", confirmShare: "Teilen", cancel: "Schließen" },
         it: { locked: "BLOCCATO", unlockReq: "Requisito:", milesReq: "Miglia rimanenti:", confirmShare: "Condividi", cancel: "Chiudi" },
@@ -202,13 +216,37 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
       setIsSyncing(true);
+      // El username solo se puede fijar UNA vez: mientras no esté bloqueado, cada guardado
+      // intenta reservarlo (vía RPC con índice único en Supabase, no un simple check-then-write
+      // en el cliente, que tendría ventana de carrera con otro usuario guardando a la vez).
+      if (!user.usernameLocked) {
+          const confirmed = window.confirm(
+              user.language === 'es'
+                  ? `Tu nombre de usuario quedará fijado como @${formData.username} y no podrás cambiarlo después. ¿Continuar?`
+                  : `Your username will be set to @${formData.username} and cannot be changed afterwards. Continue?`
+          );
+          if (!confirmed) { setIsSyncing(false); return; }
+          try {
+              await setUsername(formData.username);
+          } catch (e) {
+              if (e instanceof UsernameTakenError) {
+                  const suggestion = await getNextGuestUsername();
+                  setFormData(prev => ({ ...prev, username: suggestion }));
+                  toast(`Ese nombre ya está en uso. Te sugerimos @${suggestion} — pulsa guardar de nuevo si te vale.`, 'error');
+              } else {
+                  toast('No se pudo guardar el nombre de usuario. Reintenta.', 'error');
+              }
+              setIsSyncing(false);
+              return;
+          }
+      }
       // Optimista: el perfil local ya está a salvo (Preferences en nativo) y el próximo login
       // hace flush de cualquier pendiente antes de leer de Supabase, así que no hace falta
       // bloquear la UI esperando a la red — queueProfileSync reintenta en segundo plano.
       const age = new Date().getFullYear() - new Date(formData.birthday).getFullYear();
-      const updatedUser = { ...user, ...formData, name: `${formData.firstName} ${formData.lastName}`.trim(), age };
+      const updatedUser = { ...user, ...formData, name: `${formData.firstName} ${formData.lastName}`.trim(), age, usernameLocked: true };
       if (onUpdateUser) onUpdateUser(updatedUser);
       queueProfileSync(updatedUser);
       setIsEditing(false);
@@ -218,10 +256,21 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
-      await supabase.from('profiles').delete().eq('email', user.email);
-      await supabase.auth.signOut();
+      // Anonimiza en vez de borrar la fila: la persona deja de ser identificable (email,
+      // nombre, avatar, bio, fecha de nacimiento exacta y fotos desaparecen; se borra también
+      // su cuenta de Supabase Auth), pero millas/insignias/visados/tours/ciudades/edad/sexo
+      // se conservan para las estadísticas agregadas — sí ocurrieron, solo dejan de poder
+      // atribuirse a esa persona.
+      const { error } = await supabase.rpc('delete_account_rpc');
+      if (error) throw error;
+      toast(user.language === 'es' ? 'Cuenta eliminada correctamente.' : 'Account deleted successfully.', 'success');
+      await supabase.auth.signOut().catch(() => {});
+      setShowDeleteConfirm(false);
       if (onLogout) onLogout();
-    } catch (e) { console.error("Error deleting account", e); }
+    } catch (e: any) {
+      console.error("Error deleting account", e);
+      toast(e.message || (user.language === 'es' ? 'No se pudo eliminar la cuenta. Reintenta.' : 'Could not delete the account. Try again.'), 'error');
+    }
     finally { setIsDeleting(false); }
   };
 
@@ -241,11 +290,39 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
 
       <div className="w-full max-w-sm px-4 pt-safe-iphone">
         <div className="flex justify-between items-center mb-6 w-full px-2">
-            <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-red-500/20">
-                <i className="fas fa-sign-out-alt"></i> {pt('logout')}
-            </button>
-            <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/5 active:scale-90 shadow-lg"><i className="fas fa-times"></i></button>
+            {/* Cerrar sesión no tiene sentido para un perfil anónimo: no hay otra cuenta a la
+                que "volver", y perdería el progreso local sin el aviso de la zona de peligro. */}
+            {!user.isAnonymous && (
+                <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-red-500/20">
+                    <i className="fas fa-sign-out-alt"></i> {pt('logout')}
+                </button>
+            )}
+            <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/5 active:scale-90 shadow-lg ml-auto"><i className="fas fa-times"></i></button>
         </div>
+
+        {user.isAnonymous && (
+            <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 mb-6">
+                <div className="flex items-start gap-3 mb-4">
+                    <i className="fas fa-triangle-exclamation text-amber-500 text-sm mt-0.5"></i>
+                    <div>
+                        <p className="text-amber-500 font-black text-[11px] uppercase tracking-widest leading-tight mb-1">{pt('anonBannerTitle')}</p>
+                        <p className="text-slate-300 text-[11px] leading-relaxed">{pt('anonBannerText')}</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    {isIOS ? (
+                        <button onClick={handleLinkApple} className="flex-1 h-12 bg-black border border-white/10 text-white rounded-2xl font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg">
+                            <AppleLogo className="w-[15px] h-[15px]" color="#FFFFFF" />
+                            {pt('linkApple')}
+                        </button>
+                    ) : (
+                        <button onClick={handleLinkGoogle} className="flex-1 h-12 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg">
+                            <i className="fab fa-google text-purple-600"></i>{pt('linkGoogle')}
+                        </button>
+                    )}
+                </div>
+            </div>
+        )}
 
         <div className="bg-[#f3f0e6] w-full rounded-[2.5rem] overflow-hidden shadow-2xl relative border-[3px] border-[#d7d2c3] flex flex-col text-slate-900 mb-64">
             <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleFileChange} />
@@ -262,7 +339,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                                 setFormData({
                                     firstName: user.firstName || '', lastName: user.lastName || '', username: user.username || 'traveler',
                                     city: user.city || '', country: user.country || '', avatar: user.avatar || AVATARS[0],
-                                    birthday: user.birthday || '1995-01-01', language: user.language || 'es'
+                                    birthday: user.birthday || '1995-01-01', language: user.language || 'es', gender: user.gender || 'unspecified'
                                 });
                             }} 
                             className="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-800 text-white transition-all shadow-lg"
@@ -286,10 +363,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                         <div className="pb-2 border-b border-slate-200">
                             <p className="text-[7px] text-slate-400 font-black uppercase mb-1 tracking-widest">ID_NOMAD</p>
                             <div className="flex items-center gap-2">
-                                {isEditing ? (
-                                    <input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px]" placeholder="username" maxLength={20} />
+                                {isEditing && !user.usernameLocked ? (
+                                    <div className="w-full">
+                                        <input value={formData.username} onChange={e => setFormData({...formData, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()})} className="w-full bg-white/50 border border-slate-300 rounded px-2 py-1 text-[10px]" placeholder="username" maxLength={20} />
+                                        <p className="text-[7px] text-amber-600 font-bold mt-1 flex items-center gap-1">
+                                            <i className="fas fa-triangle-exclamation"></i>
+                                            {user.language === 'es' ? 'Solo se puede elegir una vez, no se podrá cambiar después.' : 'You can only set this once — it cannot be changed afterwards.'}
+                                        </p>
+                                    </div>
                                 ) : (
-                                    <p className="font-black text-slate-900 uppercase text-xs truncate leading-none">@{formData.username}</p>
+                                    <p className="font-black text-slate-900 uppercase text-xs truncate leading-none flex items-center gap-1.5">
+                                        @{formData.username}
+                                        {user.usernameLocked && <i className="fas fa-lock text-[8px] text-slate-400" title="El nombre de usuario ya no se puede cambiar"></i>}
+                                    </p>
                                 )}
                                 {!isEditing && formData.country && (
                                     <img src={`https://flagsapi.com/${formData.country.length === 2 ? formData.country.toUpperCase() : formData.country.substring(0,2).toUpperCase()}/flat/64.png`} className="w-3 h-3 rounded-full" alt="" />
@@ -308,7 +394,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-2">
-                    {[['givenNames','firstName'],['surname','lastName'],['city','city'],['birthday','birthday']].map(([label, field]) => (
+                    {[['givenNames','firstName'],['surname','lastName'],['city','city'],['country','country'],['birthday','birthday']].map(([label, field]) => (
                         <div key={field} className="space-y-1">
                             <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt(label)}</p>
                             {isEditing ? (
@@ -318,6 +404,21 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             )}
                         </div>
                     ))}
+                    <div className="space-y-1 col-span-2">
+                        <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">{pt('gender')}</p>
+                        {isEditing ? (
+                            <div className="flex gap-2">
+                                {(['male', 'female', 'unspecified'] as const).map(g => (
+                                    <button key={g} type="button" onClick={() => setFormData({ ...formData, gender: g })}
+                                        className={`flex-1 py-1.5 rounded text-[8px] font-black uppercase tracking-wider transition-all ${formData.gender === g ? 'bg-purple-600 text-white' : 'bg-white/50 border border-slate-300 text-slate-600'}`}>
+                                        {pt(g)}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="font-bold text-slate-800 text-[10px] uppercase">{formData.gender && formData.gender !== 'unspecified' ? pt(formData.gender) : '---'}</p>
+                        )}
+                    </div>
                 </div>
 
                 <div className="pt-6 border-t-2 border-dashed border-slate-300">
@@ -396,9 +497,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
                             </button>
                         </div>
                     )}
-                    <button onClick={() => { if (onLogout) onLogout(); else { supabase.auth.signOut().catch(() => {}); onClose(); } }} className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all mb-4">
-                        <i className="fas fa-sign-out-alt"></i>{pt('logout')}
-                    </button>
+                    {!user.isAnonymous && (
+                        <button onClick={() => { if (onLogout) onLogout(); else { supabase.auth.signOut().catch(() => {}); onClose(); } }} className="w-full py-4 bg-red-600/10 border border-red-500/30 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all mb-4">
+                            <i className="fas fa-sign-out-alt"></i>{pt('logout')}
+                        </button>
+                    )}
                     <div className="flex justify-center gap-4 mb-6">
                         <button onClick={() => setShowLegal('privacy')} className="text-[9px] text-slate-500 uppercase tracking-widest hover:text-purple-500 transition-colors font-black">{pt('privacy')}</button>
                         <span className="text-slate-700">•</span>

@@ -90,6 +90,8 @@ try {
             signInWithOtp: async () => ({ error: new Error("Supabase not initialized") }),
             verifyOtp: async () => ({ error: new Error("Supabase not initialized") }),
             signInWithOAuth: async () => ({ error: new Error("Supabase not initialized") }),
+            signInAnonymously: async () => ({ error: new Error("Supabase not initialized") }),
+            linkIdentity: async () => ({ error: new Error("Supabase not initialized") }),
             signOut: async () => ({ error: null })
         },
         from: () => ({

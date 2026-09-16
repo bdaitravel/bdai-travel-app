@@ -1,6 +1,7 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { BdaiLogo } from './components/BdaiLogo';
+import { ToastContainer } from './components/Toast';
 
 import { LoginView } from './views/LoginView';
 import { HomeView } from './views/HomeView';
@@ -17,6 +18,8 @@ const CityDiscoveryMap = lazy(() => import('./components/CityDiscoveryMap').then
 const AdminPanel = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
 const VisaShare = lazy(() => import('./components/VisaShare').then(m => ({ default: m.VisaShare })));
+const ProfileCompletionPrompt = lazy(() => import('./components/ProfileCompletionPrompt').then(m => ({ default: m.ProfileCompletionPrompt })));
+const LeaderboardLockedView = lazy(() => import('./components/LeaderboardLockedView').then(m => ({ default: m.LeaderboardLockedView })));
 
 import { useAppStore } from './store/useAppStore';
 import { useTranslation } from './hooks/useTranslation';
@@ -66,9 +69,12 @@ const RouteLoadingFallback = () => (
   </div>
 );
 
-const NavButton = ({ icon, label, isActive, onClick }: { icon: string; label: string; isActive: boolean; onClick: () => void }) => (
+const NavButton = ({ icon, label, isActive, onClick, showDot }: { icon: string; label: string; isActive: boolean; onClick: () => void; showDot?: boolean }) => (
   <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all flex-1 ${isActive ? 'text-purple-500 scale-105' : 'text-slate-500 opacity-40'}`}>
-    <i className={`fas ${icon} text-lg`}></i>
+    <div className="relative">
+      <i className={`fas ${icon} text-lg`}></i>
+      {showDot && <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-purple-500 border border-[#0a0f1e]"></span>}
+    </div>
     <span className="text-[7px] font-black uppercase tracking-widest text-center truncate w-full">{label}</span>
   </button>
 );
@@ -84,8 +90,13 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, handleLangChange, isSyncingLang } = useTranslation();
-  const { isVerifyingSession, setLoginPhase } = useAuth(true);
+  const { isVerifyingSession, setLoginPhase, handleLinkApple, handleLinkGoogle } = useAuth(true);
   const { processCitySelection } = useCity();
+
+  // "Completa tu perfil" (edad, ciudad, país, sexo) se ofrece una sola vez, justo tras cerrar
+  // la Visa del primer tour completado — nunca al abrir la app, y siempre descartable, para no
+  // reproducir el muro de registro que motivó pasar a login anónimo (Guideline 5.1.1(v)).
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
 
   // El mapa de descubrimiento (CityDiscoveryMap) ya tiene el slug exacto y
   // fiable de city_locations — se navega con él directamente en vez de pasar
@@ -141,6 +152,11 @@ export default function App() {
 
   return (
     <div className="flex-1 bg-transparent flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
+      {/* Montado aquí, fuera de <Routes>, para que sobreviva a cualquier navegación (ej. el
+          toast de "cuenta eliminada" justo antes de redirigir a /login) — antes no estaba
+          montado en NINGÚN sitio de la app, así que ningún toast() de todo el proyecto se
+          llegaba a ver nunca. */}
+      <ToastContainer />
       {(isLoading || isSyncingLang) && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-10 animate-fade-in">
           <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -159,13 +175,20 @@ export default function App() {
               <Route path="/city/:slug" element={user.isLoggedIn ? <CityDetailView /> : <Navigate to="/login" />} />
               <Route path="/tour/:tourId/stop/:stopIdx" element={user.isLoggedIn ? <TourActiveView /> : <Navigate to="/login" />} />
 
-              <Route path="/leaderboard" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div> : <Navigate to="/login" />} />
+              <Route path="/leaderboard" element={
+                !user.isLoggedIn ? <Navigate to="/login" /> :
+                user.isAnonymous ? <LeaderboardLockedView language={user.language} onLinkApple={handleLinkApple} onLinkGoogle={handleLinkGoogle} /> :
+                <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>
+              } />
               <Route path="/profile" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
               <Route path="/profile/visa/:cityName" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
               <Route path="/profile/badge/:badgeId" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
               <Route path="/shop" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Shop user={user} onPurchase={() => {}} /></div> : <Navigate to="/login" />} />
               <Route path="/tools" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><CityDiscoveryMap onCitySelect={handleDiscoveryCitySelect} /></div> : <Navigate to="/login" />} />
-              <Route path="/admin" element={user.isLoggedIn ? <AdminPanel user={user} onBack={() => navigate('/profile')} /> : <Navigate to="/login" />} />
+              {/* Guideline 2.2 de Apple: el panel admin son herramientas internas de QA, no
+                  deben quedar accesibles a cualquier usuario logueado navegando la URL a mano
+                  — antes solo se ocultaba el botón que lleva aquí, no la ruta en sí. */}
+              <Route path="/admin" element={(user.isLoggedIn && (user.email === 'travelbdai@gmail.com' || user.isAdmin)) ? <AdminPanel user={user} onBack={() => navigate('/profile')} /> : <Navigate to={user.isLoggedIn ? '/home' : '/login'} />} />
               <Route path="/" element={<Navigate to={user.isLoggedIn ? "/home" : "/login"} />} />
             </Routes>
           </Suspense>
@@ -177,7 +200,18 @@ export default function App() {
           )}
           {visaToShare && (
             <Suspense fallback={null}>
-              <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => setVisaToShare(null)} />
+              <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => {
+                setVisaToShare(null);
+                if (!user.profileCompletedAt) setShowProfileCompletion(true);
+              }} />
+            </Suspense>
+          )}
+          {showProfileCompletion && (
+            <Suspense fallback={null}>
+              <ProfileCompletionPrompt user={user} onClose={(updatedUser) => {
+                updateUserAndSync(updatedUser);
+                setShowProfileCompletion(false);
+              }} />
             </Suspense>
           )}
         </div>
@@ -188,7 +222,7 @@ export default function App() {
               <NavButton icon="fa-trophy" label={t('navRanking')} isActive={location.pathname === '/leaderboard'} onClick={() => navigate('/leaderboard')} />
               <NavButton icon="fa-compass" label={t('navTOP')} isActive={location.pathname === '/tools'} onClick={() => navigate('/tools')} />
               <button onClick={() => navigate('/home')} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${location.pathname === '/home' || location.pathname === '/' ? 'bg-purple-600 -mt-10 scale-110 shadow-lg shadow-purple-500/40' : 'bg-white/5 border border-white/5'}`}><BdaiLogo className="w-7 h-7" /></button>
-              <NavButton icon="fa-id-card" label={t('navVisa')} isActive={location.pathname === '/profile'} onClick={() => navigate('/profile')} />
+              <NavButton icon="fa-id-card" label={t('navVisa')} isActive={location.pathname === '/profile'} onClick={() => navigate('/profile')} showDot={!user.city || !user.birthday} />
               <NavButton icon="fa-shopping-bag" label={t('navStore')} isActive={location.pathname === '/shop'} onClick={() => navigate('/shop')} />
             </nav>
           </div>

@@ -75,6 +75,16 @@ export interface UserProfile {
   capturedMoments: CapturedMoment[];
   isAdmin?: boolean;
   audioSpeed?: number;
+  // true mientras la sesión sea una cuenta anónima de Supabase (creada en el primer arranque,
+  // sin datos personales — ver Guideline 5.1.1(v) de Apple). El progreso vive solo en este
+  // dispositivo hasta que el usuario vincula Apple/Google desde el perfil.
+  isAnonymous?: boolean;
+  gender?: 'male' | 'female' | 'unspecified';
+  // Una vez a true (primer guardado manual), el username deja de poder editarse.
+  usernameLocked?: boolean;
+  // Se rellena la primera vez que el usuario completa o descarta voluntariamente el prompt de
+  // "completa tu perfil" (tras su primer tour) — evita volver a interrumpirle con el mismo prompt.
+  profileCompletedAt?: string;
 }
 
 export interface HubIntel {

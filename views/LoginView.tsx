@@ -1,6 +1,7 @@
 import React from 'react';
 import { Capacitor } from '@capacitor/core';
 import { BdaiLogo } from '../components/BdaiLogo';
+import { AppleLogo } from '../components/AppleLogo';
 import { LANGUAGES } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
@@ -53,9 +54,14 @@ export const LoginView: React.FC = () => {
                 <div className="h-px bg-white/5 flex-1"></div>
                 </div>
                 {isIOS ? (
+                // Apple exige el botón oficial "Sign in with Apple" (logomark + texto exactos,
+                // sin recolorear ni sustituir el logo por un icono de terceros — Guideline 4).
+                // AppleLogo usa el SVG "Logo-only" descargado de Apple Design Resources tal cual,
+                // no un icono de terceros ni un glifo de fuente.
                 <button onClick={handleAppleLogin} disabled={isLoading}
-                className="w-full h-14 bg-white/5 border border-white/10 text-white rounded-2xl font-black lowercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                <i className="fab fa-apple text-[12px] text-purple-400"></i>apple
+                className="w-full h-14 bg-black border border-white/10 text-white rounded-2xl font-semibold text-[15px] shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                <AppleLogo className="w-[18px] h-[18px]" color="#FFFFFF" />
+                <span>Sign in with Apple</span>
                 </button>
                 ) : (
                 <button onClick={handleGoogleLogin} disabled={isLoading}

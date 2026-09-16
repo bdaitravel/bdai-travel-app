@@ -59,9 +59,12 @@ export const CityDiscoveryMap: React.FC<CityDiscoveryMapProps> = ({ onCitySelect
         let cancelled = false;
 
         const init = async () => {
-            const [cities, userLoc, tourCounts] = await Promise.all([
+            // Ciudades y contador de tours son una sola consulta rápida a Supabase — el mapa
+            // se pinta en cuanto llegan, SIN esperar al GPS (hasta 10s, o al diálogo nativo de
+            // permiso si es la primera vez) — eso se resuelve después, en segundo plano, y solo
+            // reencuadra/añade el marcador de usuario sobre un mapa que ya se estaba viendo.
+            const [cities, tourCounts] = await Promise.all([
                 getCityLocationsWithTours(),
-                getOneShotLocation(10000),
                 getTourCountsByCity(userProfile.language),
             ]);
             if (cancelled || !mapContainerRef.current) return;
@@ -113,6 +116,23 @@ export const CityDiscoveryMap: React.FC<CityDiscoveryMapProps> = ({ onCitySelect
                 });
             });
 
+            // Encuadre provisional a todas las ciudades — se sustituye por el de "cerca de ti"
+            // en cuanto (y si) el GPS resuelve, sin haber bloqueado esta primera pintura.
+            setHasLocation(false);
+            setNearbyCount(cities.length);
+            if (cities.length > 0) {
+                const bounds = L.latLngBounds(cities.map((c) => [c.lat, c.lng] as [number, number]));
+                map.fitBounds(bounds, { padding: [32, 32] });
+            }
+
+            mapInstanceRef.current = map;
+            setIsLoading(false);
+
+            // Fase 2, en paralelo: la ubicación puede tardar (hasta 10s, o esperar al permiso
+            // nativo) — el mapa y los 357 pines ya están visibles mientras tanto.
+            const userLoc = await getOneShotLocation(10000);
+            if (cancelled || !mapInstanceRef.current) return;
+
             if (userLoc) {
                 setHasLocation(true);
                 L.circleMarker([userLoc.lat, userLoc.lng], {
@@ -124,8 +144,6 @@ export const CityDiscoveryMap: React.FC<CityDiscoveryMapProps> = ({ onCitySelect
                 );
                 setNearbyCount(nearbyCities.length);
 
-                // Sin círculo dibujado (a petición): el encuadre inicial se ajusta
-                // directamente a tu posición + las ciudades dentro del radio.
                 if (nearbyCities.length > 0) {
                     const bounds = L.latLngBounds([
                         [userLoc.lat, userLoc.lng],
@@ -135,17 +153,9 @@ export const CityDiscoveryMap: React.FC<CityDiscoveryMapProps> = ({ onCitySelect
                 } else {
                     map.setView([userLoc.lat, userLoc.lng], 10);
                 }
-            } else {
-                setHasLocation(false);
-                setNearbyCount(cities.length);
-                if (cities.length > 0) {
-                    const bounds = L.latLngBounds(cities.map((c) => [c.lat, c.lng] as [number, number]));
-                    map.fitBounds(bounds, { padding: [32, 32] });
-                }
             }
-
-            mapInstanceRef.current = map;
-            setIsLoading(false);
+            // Si userLoc es null (sin permiso o timeout), se deja el encuadre de "todas las
+            // ciudades" ya pintado — hasLocation/nearbyCount ya reflejan ese caso.
         };
 
         init();
@@ -161,7 +171,12 @@ export const CityDiscoveryMap: React.FC<CityDiscoveryMapProps> = ({ onCitySelect
     }, []);
 
     return (
-        <div className="h-full flex flex-col gap-4 pt-safe-iphone pb-32 px-6 animate-fade-in">
+        // Sin pb-32 propio: el contenedor de rutas en App.tsx ya reserva pb-36 para que la
+        // barra de navegación flotante no tape el contenido — duplicarlo aquí dejaba un hueco
+        // enorme entre el mapa y el menú en móvil. El alto mínimo escala por breakpoint para
+        // que en pantallas grandes el mapa no se quede pequeño dentro de un contenedor que sí
+        // crece en ancho (max-w-5xl en lg, ver App.tsx).
+        <div className="h-full flex flex-col gap-4 pt-safe-iphone pb-10 px-6 animate-fade-in">
             <header>
                 <h3 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
                     {t('discoverNearbyTitle')}
@@ -173,7 +188,7 @@ export const CityDiscoveryMap: React.FC<CityDiscoveryMapProps> = ({ onCitySelect
                 )}
             </header>
 
-            <div className="relative flex-1 min-h-[420px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl bg-slate-900">
+            <div className="relative flex-1 min-h-[380px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl bg-slate-900">
                 <div ref={mapContainerRef} className="w-full h-full" />
 
                 {isLoading && (
