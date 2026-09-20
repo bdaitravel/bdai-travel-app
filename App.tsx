@@ -148,7 +148,10 @@ export default function App() {
 
   const isTourActive = location.pathname.startsWith('/tour/');
   const isAdminView = location.pathname === '/admin';
-  const showNav = user.isLoggedIn && !isTourActive && !isAdminView;
+  // Ya no depende de isLoggedIn: navegar sin sesión (si el alta anónima fallara) debe poder
+  // llegar igual a Ranking/Perfil/Tienda — esas rutas siguen pidiendo login por su cuenta al
+  // entrar, así que el gate real sigue existiendo, solo que en el sitio correcto.
+  const showNav = !isTourActive && !isAdminView;
 
   return (
     <div className="flex-1 bg-transparent flex flex-col h-[100dvh] w-full font-sans text-slate-100 overflow-hidden">
@@ -170,10 +173,17 @@ export default function App() {
         <div className={`flex-1 overflow-y-auto no-scrollbar relative ${isTourActive ? 'pb-0' : 'pb-36'}`}>
           <Suspense fallback={<RouteLoadingFallback />}>
             <Routes>
+              {/* Guideline 5.1.1(v) de Apple: hacer/ver tours es el contenido principal de la
+                  app y no es "de cuenta" — no puede exigir sesión, ni siquiera anónima. Estas
+                  cuatro rutas quedan abiertas incondicionalmente; el login (anónimo automático
+                  o manual) sigue existiendo para lo que sí es de cuenta: ranking, perfil,
+                  tienda. Esto además hace que la app funcione igual aunque el alta anónima de
+                  Supabase falle o esté mal configurada — no dependemos de que funcione para que
+                  el contenido básico sea usable. */}
               <Route path="/login" element={user.isLoggedIn ? <Navigate to="/home" /> : <LoginView />} />
-              <Route path="/home" element={user.isLoggedIn ? <HomeView appDesc={APP_DESC} /> : <Navigate to="/login" />} />
-              <Route path="/city/:slug" element={user.isLoggedIn ? <CityDetailView /> : <Navigate to="/login" />} />
-              <Route path="/tour/:tourId/stop/:stopIdx" element={user.isLoggedIn ? <TourActiveView /> : <Navigate to="/login" />} />
+              <Route path="/home" element={<HomeView appDesc={APP_DESC} />} />
+              <Route path="/city/:slug" element={<CityDetailView />} />
+              <Route path="/tour/:tourId/stop/:stopIdx" element={<TourActiveView />} />
 
               <Route path="/leaderboard" element={
                 !user.isLoggedIn ? <Navigate to="/login" /> :
@@ -184,12 +194,12 @@ export default function App() {
               <Route path="/profile/visa/:cityName" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
               <Route path="/profile/badge/:badgeId" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
               <Route path="/shop" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Shop user={user} onPurchase={() => {}} /></div> : <Navigate to="/login" />} />
-              <Route path="/tools" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><CityDiscoveryMap onCitySelect={handleDiscoveryCitySelect} /></div> : <Navigate to="/login" />} />
+              <Route path="/tools" element={<div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><CityDiscoveryMap onCitySelect={handleDiscoveryCitySelect} /></div>} />
               {/* Guideline 2.2 de Apple: el panel admin son herramientas internas de QA, no
                   deben quedar accesibles a cualquier usuario logueado navegando la URL a mano
                   — antes solo se ocultaba el botón que lleva aquí, no la ruta en sí. */}
               <Route path="/admin" element={(user.isLoggedIn && (user.email === 'travelbdai@gmail.com' || user.isAdmin)) ? <AdminPanel user={user} onBack={() => navigate('/profile')} /> : <Navigate to={user.isLoggedIn ? '/home' : '/login'} />} />
-              <Route path="/" element={<Navigate to={user.isLoggedIn ? "/home" : "/login"} />} />
+              <Route path="/" element={<Navigate to="/home" />} />
             </Routes>
           </Suspense>
 
