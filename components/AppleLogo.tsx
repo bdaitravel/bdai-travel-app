@@ -6,7 +6,11 @@ import React from 'react';
 // provee Apple; solo se recolorea vía `color` (blanco sobre fondo negro,
 // negro sobre fondo blanco), que es el uso que permiten sus guías.
 export const AppleLogo: React.FC<{ className?: string; color?: string }> = ({ className, color = '#FFFFFF' }) => (
-    <svg viewBox="0 0 56 56" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    // El trazado viene del canvas completo de 56x56 del asset original de Apple (que incluía
+    // el cuadrado de fondo, ya quitado), pero el símbolo en sí solo ocupa aprox. x:20.5-35.5,
+    // y:16-35 de ese lienzo — con viewBox="0 0 56 56" se veía como un punto diminuto rodeado
+    // de espacio vacío. Se recorta el viewBox a esa zona real para que el símbolo llene el icono.
+    <svg viewBox="18 14 19 23" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path
             fill={color}
             fillRule="nonzero"

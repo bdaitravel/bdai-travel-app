@@ -197,7 +197,7 @@ export const TourCard: React.FC<TourCardProps> = ({ tour, onSelect, language = '
     );
 };
 
-export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, language = 'es', userLocation }) => {
+export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, currentStopIndex, onNext, onPrev, onJumpTo, onUpdateUser, onBack, onTourComplete, language = 'es', userLocation }) => {
     const tl = TEXTS[language] || TEXTS['en'] || TEXTS.es;
     // Tour patrocinado: sin audio, sin numeración de parada, botón Beneficio
     // (desbloqueado tras check-in GPS) en lugar de Consejo Dai
@@ -469,6 +469,14 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
         onBack();
     };
 
+    // Solo para el botón "Cerrar" de la tarjeta de tour completado (no el de la flecha
+    // superior normal, que usa handleBack a secas) — dispara el aviso de "completa tu
+    // perfil" en el momento real en que el usuario sale de la pantalla de finalización.
+    const handleCloseCompletion = () => {
+        onTourComplete?.();
+        handleBack();
+    };
+
     return (
         <div className="fixed inset-0 bg-slate-50 flex flex-col z-[5000] overflow-hidden">
             {showPhotoTip && (
@@ -541,7 +549,7 @@ export const ActiveTourCard: React.FC<ActiveTourCardProps> = ({ tour, user, curr
                         </div>
                         <div className="p-6 bg-slate-50 border-t-2 border-slate-100 space-y-3">
                             <button onClick={() => setShowSocialVisa(true)} className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"><i className="fas fa-share-nodes text-sm"></i> {tl.shareIg}</button>
-                            <button onClick={handleBack} className="w-full py-4 bg-slate-200 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest">{tl.close}</button>
+                            <button onClick={handleCloseCompletion} className="w-full py-4 bg-slate-200 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest">{tl.close}</button>
                         </div>
                     </div>
                 </div>

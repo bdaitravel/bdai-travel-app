@@ -27,7 +27,7 @@ export const TourActiveView: React.FC = () => {
     currentStopIndex, 
     setCurrentStopIndex, 
     setUserProfile,
-    setVisaToShare,
+    setShowProfileCompletion,
     setCurrentTour,
     setActiveTours,
     userLocation,
@@ -156,13 +156,13 @@ export const TourActiveView: React.FC = () => {
       onBack={() => navigate(`/city/${selectedCityInfo?.slug || ''}`)} 
       userLocation={userLocation} 
       onTourComplete={() => {
-        // Limpiar la ruta guardada al completar el tour (no restaurar dentro de uno ya acabado)
+        // Limpiar la ruta guardada al completar el tour (no restaurar dentro de uno ya acabado).
+        // Se llama al cerrar la tarjeta de "tour completado" (ver TourCard.tsx) — antes esto
+        // disparaba una pantalla de Visa a nivel de App que en la práctica nunca se llegaba a
+        // ver, porque ese callback nunca se invocaba desde ningún sitio real.
         clearLastRoute();
-        setVisaToShare({ 
-          cityName: activeTour.city, 
-          miles: activeTour.stops.reduce((acc, s) => acc + (s.photoSpot?.milesReward || 0), 0) 
-        });
-      }} 
+        if (!user.profileCompletedAt) setShowProfileCompletion(true);
+      }}
     />
   );
 };

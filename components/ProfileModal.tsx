@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { UserProfile, LANGUAGES, AVATARS, APP_BADGES } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
-import { queueProfileSync, supabase, setUsername, UsernameTakenError, getNextGuestUsername } from '../services/supabaseClient';
+import { queueProfileSync, supabase, setUsername, UsernameTakenError } from '../services/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from './Toast';
 import { AppleLogo } from './AppleLogo';
@@ -232,7 +232,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
               await setUsername(formData.username);
           } catch (e) {
               if (e instanceof UsernameTakenError) {
-                  const suggestion = await getNextGuestUsername();
+                  // Sugerencia derivada de lo que el usuario escribió (como hace Gmail con un
+                  // email ya en uso: "javier92", no un nombre random sin relación) — un
+                  // traveler_N genérico no ayuda a nadie a reconocer su propio intento.
+                  const base = formData.username.slice(0, 16); // deja hueco para el sufijo, máx. 20
+                  const suggestion = `${base}${Math.floor(100 + Math.random() * 900)}`;
                   setFormData(prev => ({ ...prev, username: suggestion }));
                   toast(`Ese nombre ya está en uso. Te sugerimos @${suggestion} — pulsa guardar de nuevo si te vale.`, 'error');
               } else {
@@ -266,7 +270,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUpd
       toast(user.language === 'es' ? 'Cuenta eliminada correctamente.' : 'Account deleted successfully.', 'success');
       await supabase.auth.signOut().catch(() => {});
       setShowDeleteConfirm(false);
-      if (onLogout) onLogout();
+      // Recarga completa en vez de crear nosotros la cuenta anónima nueva: así el siguiente
+      // arranque pasa por el mismo camino que un primer uso real de la app (mismo bootstrap,
+      // sin código especial para este caso) — se ve como "salir y volver a entrar", no como
+      // seguir en la misma sesión con una cuenta distinta por debajo sin que se note.
+      setTimeout(() => window.location.reload(), 1200);
     } catch (e: any) {
       console.error("Error deleting account", e);
       toast(e.message || (user.language === 'es' ? 'No se pudo eliminar la cuenta. Reintenta.' : 'Could not delete the account. Try again.'), 'error');

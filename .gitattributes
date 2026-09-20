@@ -1,0 +1,28 @@
+# Fuerza LF (salto de línea de Mac/Linux) para todo el texto, sin importar si se edita/hace
+# checkout desde Windows o Mac — evita que el mismo archivo aparezca como "modificado" solo por
+# el tipo de salto de línea, que es una causa típica de conflictos falsos de git pull en equipos
+# mixtos Windows/Mac.
+* text=auto eol=lf
+
+# Binarios: nunca tocar su contenido byte a byte (una conversión de saltos de línea los corrompería).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mp3 binary
+*.wav binary
+*.p8 binary
+*.jks binary
+*.keystore binary
+*.ipa binary
+*.apk binary
+*.aab binary
+
+# Los SVG son texto (XML), pero se listan aparte para dejar claro que sí llevan normalización.
+*.svg text eol=lf

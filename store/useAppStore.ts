@@ -57,9 +57,11 @@ interface AppState {
   showOnboarding: boolean;
   setShowOnboarding: (val: boolean) => void;
  
-  visaToShare: { cityName: string; miles: number } | null;
-  setVisaToShare: (val: { cityName: string; miles: number } | null) => void;
- 
+  // "Completa tu perfil" (+10 millas) — se ofrece tras terminar el primer tour. Ver
+  // TourCard.tsx (handleFinishTour → onTourComplete) para el punto real donde se dispara.
+  showProfileCompletion: boolean;
+  setShowProfileCompletion: (val: boolean) => void;
+
   hasHydrated: boolean;
   setHasHydrated: (val: boolean) => void;
  
@@ -119,9 +121,9 @@ export const useAppStore = create<AppState>()(
       showOnboarding: false,
       setShowOnboarding: (val) => set({ showOnboarding: val }),
  
-      visaToShare: null,
-      setVisaToShare: (val) => set({ visaToShare: val }),
- 
+      showProfileCompletion: false,
+      setShowProfileCompletion: (val) => set({ showProfileCompletion: val }),
+
       hasHydrated: false,
       setHasHydrated: (val) => set({ hasHydrated: val }),
  
@@ -135,7 +137,7 @@ export const useAppStore = create<AppState>()(
         isLoading: false,
         loadingMessage: '',
         showOnboarding: false,
-        visaToShare: null
+        showProfileCompletion: false
       })
     }),
     {

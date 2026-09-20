@@ -17,7 +17,6 @@ const Shop = lazy(() => import('./components/Shop').then(m => ({ default: m.Shop
 const CityDiscoveryMap = lazy(() => import('./components/CityDiscoveryMap').then(m => ({ default: m.CityDiscoveryMap })));
 const AdminPanel = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const Onboarding = lazy(() => import('./components/Onboarding').then(m => ({ default: m.Onboarding })));
-const VisaShare = lazy(() => import('./components/VisaShare').then(m => ({ default: m.VisaShare })));
 const ProfileCompletionPrompt = lazy(() => import('./components/ProfileCompletionPrompt').then(m => ({ default: m.ProfileCompletionPrompt })));
 const LeaderboardLockedView = lazy(() => import('./components/LeaderboardLockedView').then(m => ({ default: m.LeaderboardLockedView })));
 
@@ -84,7 +83,11 @@ export default function App() {
     userProfile: user, setUserProfile: setUser,
     isLoading, setIsLoading, loadingMessage,
     showOnboarding, setShowOnboarding,
-    visaToShare, setVisaToShare
+    // "Completa tu perfil" (edad, ciudad, país, sexo) se ofrece una sola vez, justo al cerrar
+    // la tarjeta de tour completado (ver TourCard.tsx → onTourComplete) — nunca al abrir la
+    // app, y siempre descartable, para no reproducir el muro de registro que motivó pasar a
+    // login anónimo (Guideline 5.1.1(v)).
+    showProfileCompletion, setShowProfileCompletion
   } = useAppStore();
 
   const navigate = useNavigate();
@@ -92,11 +95,6 @@ export default function App() {
   const { t, handleLangChange, isSyncingLang } = useTranslation();
   const { isVerifyingSession, setLoginPhase, handleLinkApple, handleLinkGoogle } = useAuth(true);
   const { processCitySelection } = useCity();
-
-  // "Completa tu perfil" (edad, ciudad, país, sexo) se ofrece una sola vez, justo tras cerrar
-  // la Visa del primer tour completado — nunca al abrir la app, y siempre descartable, para no
-  // reproducir el muro de registro que motivó pasar a login anónimo (Guideline 5.1.1(v)).
-  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
 
   // El mapa de descubrimiento (CityDiscoveryMap) ya tiene el slug exacto y
   // fiable de city_locations — se navega con él directamente en vez de pasar
@@ -118,8 +116,7 @@ export default function App() {
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('bdai-stop-audio'));
     setIsLoading(false);
-    setVisaToShare(null);
-  }, [location.pathname, setIsLoading, setVisaToShare]);
+  }, [location.pathname, setIsLoading]);
 
   // Guardar la última ruta para restauración de estado en Android: si el proceso es matado
   // y recreado, Capacitor no conserva el hash de la URL y siempre recarga en la base — sin
@@ -206,14 +203,6 @@ export default function App() {
           {showOnboarding && (
             <Suspense fallback={null}>
               <Onboarding user={user} language={user.language} onComplete={() => setShowOnboarding(false)} />
-            </Suspense>
-          )}
-          {visaToShare && (
-            <Suspense fallback={null}>
-              <VisaShare user={user} cityName={visaToShare.cityName} milesEarned={visaToShare.miles} onClose={() => {
-                setVisaToShare(null);
-                if (!user.profileCompletedAt) setShowProfileCompletion(true);
-              }} />
             </Suspense>
           )}
           {showProfileCompletion && (

@@ -58,10 +58,24 @@
 
 ## C. "Completa tu perfil" (+10 millas)
 
+> ⚠️ Bug real encontrado en producción (sep-2026): el disparador original colgaba de `onTourComplete`
+> en `TourActiveView.tsx`, que a su vez ponía `visaToShare` para mostrar una pantalla de "Visa oficial"
+> a nivel de App — pero `TourCard.tsx` nunca llamaba a `onTourComplete` (el prop ni se desestructuraba),
+> así que ese flujo entero era inalcanzable desde el día que se escribió, con o sin tour completado.
+> Arreglado: `onTourComplete` ahora se dispara desde el botón "Cerrar" real de la tarjeta de tour
+> completado (`handleCloseCompletion` en `TourCard.tsx`), y pone `showProfileCompletion` directamente
+> en el store — se quitó `visaToShare`/`VisaShare` a nivel de App por completo (código muerto).
+
 - [ ] 🔴 TC-10-008: El prompt aparece tras el primer tour completado, no antes
   - **Precondición:** Sesión nueva (anónima o real), 0 tours completados
-  - **Pasos:** 1. Navegar libremente por `/home`, `/tools`, etc. → 2. Completar el primer tour → 3. Cerrar la pantalla de Visa
-  - **Resultado esperado:** El prompt de "Completa tu perfil" NO aparece antes de terminar el tour; aparece automáticamente justo al cerrar la Visa
+  - **Pasos:** 1. Navegar libremente por `/home`, `/tools`, etc. → 2. Completar el primer tour → 3. En la tarjeta "boarding pass" de tour completado, pulsar "Cerrar" (NO el botón "Compartir")
+  - **Resultado esperado:** El prompt de "Completa tu perfil" NO aparece antes de terminar el tour; aparece automáticamente justo al pulsar "Cerrar" en la tarjeta de finalización
+  - **Observaciones:**
+
+- [ ] 🟡 TC-10-008b: También aparece si se comparte antes de cerrar
+  - **Precondición:** Continuación de TC-10-008
+  - **Pasos:** 1. En la tarjeta de tour completado, pulsar "Compartir" → 2. Cerrar la pantalla de Visa que se abre → 3. Pulsar "Cerrar" en la tarjeta de finalización que queda debajo
+  - **Resultado esperado:** El prompt aparece igual tras el "Cerrar" final, independientemente de si se compartió antes o no
   - **Observaciones:**
 
 - [ ] 🟡 TC-10-009: Rellenar el prompt da +10 millas y guarda los campos
