@@ -20,13 +20,13 @@
 - [ ] 🔴 TC-10-001: Instalación limpia muestra la pantalla de bienvenida con las 3 opciones
   - **Precondición:** Sin sesión previa (borrar storage/datos de la app)
   - **Pasos:** 1. Abrir la app por primera vez
-  - **Resultado esperado:** Pantalla de splash breve → `/login` con "Explorar sin registrarte" (igual de visible que el login), y debajo Google/Apple según plataforma
+  - **Resultado esperado:** Pantalla de splash breve → `/login` con, de arriba a abajo: Google/Apple (grande, en negrita), email/código, y por último "Explorar sin registrarte" (pequeño, gris, pero visible y a un toque)
   - **Observaciones:**
 
-- [ ] 🔴 TC-10-001b: "Explorar sin registrarte" entra a `/home` sin pedir ningún dato
+- [ ] 🔴 TC-10-001b: "Explorar sin registrarte" avisa antes de crear la cuenta y entra a `/home` sin pedir ningún dato
   - **Precondición:** Continuación de TC-10-001
-  - **Pasos:** 1. Pulsar "Explorar sin registrarte"
-  - **Resultado esperado:** Entra directo a `/home`, sin ninguna pantalla intermedia pidiendo email/nombre/etc.
+  - **Pasos:** 1. Pulsar "Explorar sin registrarte" → 2. Sale el aviso ámbar de "progreso solo en este dispositivo" → 3. Pulsar "Continuar sin cuenta"
+  - **Resultado esperado:** Entra directo a `/home`, sin ninguna pantalla pidiendo email/nombre/etc. Si en el paso 3 se pulsa "Cancelar" en su lugar, se queda en `/login` sin crear ninguna cuenta
   - **Observaciones:**
 
 - [ ] 🔴 TC-10-002: Se crea una fila real en `profiles` para la sesión anónima

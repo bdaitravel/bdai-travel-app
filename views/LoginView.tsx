@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { BdaiLogo } from '../components/BdaiLogo';
 import { AppleLogo } from '../components/AppleLogo';
@@ -30,6 +30,7 @@ export const LoginView: React.FC = () => {
     } = useAuth();
     
     const { t, handleLangChange } = useTranslation();
+    const [showGuestWarning, setShowGuestWarning] = useState(false);
 
     return (
         <div className="min-h-full w-full flex flex-col items-center p-6 sm:p-10 bg-[#020617] overflow-y-auto overflow-x-hidden">
@@ -42,47 +43,56 @@ export const LoginView: React.FC = () => {
 
             {loginPhase === 'EMAIL' ? (
             <div className="w-full max-w-[280px] space-y-4 animate-fade-in">
-                {/* Guideline 5.1.1(v) de Apple: no puede exigir registro para acceder a tours —
-                    este botón es igual de visible (o más) que las opciones de cuenta, y es la
-                    forma explícita en que ahora se crea la sesión anónima (antes era automática
-                    y en silencio, dependiendo de un interruptor de Supabase). */}
-                <button onClick={handleContinueAsGuest} disabled={isLoading}
-                className="w-full h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                <i className="fas fa-compass text-xs"></i>{t('exploreGuest')}
+                {/* Prioridad 1: cuenta real (Google/Apple) — más grande y en negrita para que
+                    destaque como opción principal frente al resto. */}
+                {isIOS ? (
+                // Apple exige el botón oficial "Sign in with Apple" (logomark + texto exactos,
+                // sin recolorear ni sustituir el logo por un icono de terceros — Guideline 4).
+                // AppleLogo usa el SVG "Logo-only" descargado de Apple Design Resources tal cual,
+                // no un icono de terceros ni un glifo de fuente. El tamaño/peso del texto sí se
+                // puede ajustar (HIG lo permite) para que destaque como opción principal.
+                <button onClick={handleAppleLogin} disabled={isLoading}
+                className="w-full h-14 bg-black border border-white/10 text-white rounded-2xl font-bold text-[16px] shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                <AppleLogo className="w-5 h-5" color="#FFFFFF" />
+                <span>Sign in with Apple</span>
                 </button>
+                ) : (
+                <button onClick={handleGoogleLogin} disabled={isLoading}
+                className="w-full h-14 bg-white text-slate-900 rounded-2xl font-black text-[14px] shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                <i className="fab fa-google text-base text-purple-600"></i>Google
+                </button>
+                )}
+
                 <div className="flex items-center gap-4 py-1">
                 <div className="h-px bg-white/5 flex-1"></div>
                 <span className="text-[7px] font-black text-slate-700 uppercase tracking-widest">{t('orDivider')}</span>
                 <div className="h-px bg-white/5 flex-1"></div>
                 </div>
+
+                {/* Prioridad 2: email/código, para quien no quiera sincronizar con Google/Apple. */}
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={isLoading}
                 className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-6 text-center text-white outline-none text-sm font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/50 transition-all"
                 placeholder={t('emailPlaceholder')} />
                 <button onClick={handleRequestOtp} disabled={isLoading}
-                className="w-full h-14 bg-white text-slate-950 rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50">
+                className="w-full h-14 bg-white/10 border border-white/10 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50">
                 {t('requestAccess')}
                 </button>
+
                 <div className="flex items-center gap-4 py-1">
                 <div className="h-px bg-white/5 flex-1"></div>
                 <span className="text-[7px] font-black text-slate-700 uppercase tracking-widest">{t('socialAccess')}</span>
                 <div className="h-px bg-white/5 flex-1"></div>
                 </div>
-                {isIOS ? (
-                // Apple exige el botón oficial "Sign in with Apple" (logomark + texto exactos,
-                // sin recolorear ni sustituir el logo por un icono de terceros — Guideline 4).
-                // AppleLogo usa el SVG "Logo-only" descargado de Apple Design Resources tal cual,
-                // no un icono de terceros ni un glifo de fuente.
-                <button onClick={handleAppleLogin} disabled={isLoading}
-                className="w-full h-14 bg-black border border-white/10 text-white rounded-2xl font-semibold text-[15px] shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                <AppleLogo className="w-[18px] h-[18px]" color="#FFFFFF" />
-                <span>Sign in with Apple</span>
+
+                {/* Prioridad 3 (última, a propósito): invitado — sigue siendo obligatorio
+                    ofrecerlo (Guideline 5.1.1(v)) y con un solo toque, pero visualmente es la
+                    opción menos destacada de las tres. Antes de crear la cuenta anónima, avisa
+                    de que el progreso queda solo en este dispositivo (mismo mensaje que en el
+                    perfil, aquí ANTES de confirmar en vez de después). */}
+                <button onClick={() => setShowGuestWarning(true)} disabled={isLoading}
+                className="w-full h-11 text-slate-500 font-black lowercase text-[9px] tracking-widest flex items-center justify-center gap-2 hover:text-slate-300 transition-colors">
+                <i className="fas fa-compass text-[10px]"></i>{t('exploreGuest')}
                 </button>
-                ) : (
-                <button onClick={handleGoogleLogin} disabled={isLoading}
-                className="w-full h-14 bg-white/5 border border-white/10 text-white rounded-2xl font-black lowercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                <i className="fab fa-google text-[10px] text-purple-400"></i>google
-                </button>
-                )}
             </div>
             ) : (
             <div className="w-full max-w-[280px] space-y-6 animate-fade-in">
@@ -119,6 +129,28 @@ export const LoginView: React.FC = () => {
                 <i className="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-[7px] text-slate-600 pointer-events-none"></i>
             </div>
             </div>
+
+            {showGuestWarning && (
+                <div className="fixed inset-0 z-[10000] bg-[#020617]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 animate-fade-in">
+                    <div className="w-full max-w-[320px] bg-slate-900/80 border border-amber-500/30 p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-2xl">
+                        <div className="flex items-start gap-3 mb-6">
+                            <i className="fas fa-triangle-exclamation text-amber-500 text-sm mt-0.5"></i>
+                            <div>
+                                <p className="text-amber-500 font-black text-[11px] uppercase tracking-widest leading-tight mb-1">{t('guestWarningTitle')}</p>
+                                <p className="text-slate-300 text-[11px] leading-relaxed">{t('guestWarningText')}</p>
+                            </div>
+                        </div>
+                        <button onClick={() => { setShowGuestWarning(false); handleContinueAsGuest(); }} disabled={isLoading}
+                            className="w-full h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 mb-2">
+                            {t('guestWarningConfirm')}
+                        </button>
+                        <button onClick={() => setShowGuestWarning(false)} disabled={isLoading}
+                            className="w-full h-11 text-slate-400 font-black lowercase text-[10px] tracking-widest">
+                            {t('guestWarningCancel')}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
