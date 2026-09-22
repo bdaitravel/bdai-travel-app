@@ -6,16 +6,31 @@
 
 ---
 
-## A. Alta anónima automática (sin pantalla de login)
+## A. Acceso de invitado explícito (Guideline 5.1.1(v))
 
-- [ ] 🔴 TC-10-001: Instalación limpia entra directa a `/home`
-  - **Precondición:** Sin sesión previa (borrar storage/datos de la app), "Anonymous Sign-Ins" habilitado en Supabase
+> ⚠️ Cambio de diseño (sep-2026): el alta anónima **ya no es automática ni silenciosa**. En el
+> primer arranque sin sesión, `useAuth.ts` navega a `/login`, que muestra "Explorar sin
+> registrarte" con el mismo peso visual que Google/Apple — solo al pulsarlo se llama a
+> `signInAnonymously()` (`handleContinueAsGuest`). Motivo: el comportamiento automático
+> dependía en silencio de que el interruptor "Anonymous Sign-Ins" de Supabase estuviera bien
+> guardado (y ya se dio el caso de que no lo estaba) — con el botón explícito, el acceso de
+> invitado es una acción visible y comprobable por un revisor, no algo oculto que puede fallar
+> sin que se note.
+
+- [ ] 🔴 TC-10-001: Instalación limpia muestra la pantalla de bienvenida con las 3 opciones
+  - **Precondición:** Sin sesión previa (borrar storage/datos de la app)
   - **Pasos:** 1. Abrir la app por primera vez
-  - **Resultado esperado:** Pantalla de splash breve (`BdaiLogo` pulsante) → entra directo a `/home`, sin pasar por `/login` en ningún momento
+  - **Resultado esperado:** Pantalla de splash breve → `/login` con "Explorar sin registrarte" (igual de visible que el login), y debajo Google/Apple según plataforma
+  - **Observaciones:**
+
+- [ ] 🔴 TC-10-001b: "Explorar sin registrarte" entra a `/home` sin pedir ningún dato
+  - **Precondición:** Continuación de TC-10-001
+  - **Pasos:** 1. Pulsar "Explorar sin registrarte"
+  - **Resultado esperado:** Entra directo a `/home`, sin ninguna pantalla intermedia pidiendo email/nombre/etc.
   - **Observaciones:**
 
 - [ ] 🔴 TC-10-002: Se crea una fila real en `profiles` para la sesión anónima
-  - **Precondición:** Continuación de TC-10-001
+  - **Precondición:** Continuación de TC-10-001b
   - **Pasos:** 1. En Supabase, tabla `profiles` → buscar por el `id` más reciente
   - **Resultado esperado:** Existe una fila con `is_anonymous = true`, `email = null`, `username` con formato `traveler_N`
   - **Observaciones:**
@@ -26,10 +41,16 @@
   - **Resultado esperado:** Ninguna pantalla pide email, Apple ni Google en ningún punto del recorrido
   - **Observaciones:**
 
-- [ ] 🟡 TC-10-004: Fallo de alta anónima cae a login manual sin crash
-  - **Precondición:** Deshabilitar temporalmente "Anonymous Sign-Ins" en Supabase (o simular sin red en el primerísimo arranque)
-  - **Pasos:** 1. Instalación limpia con la app en ese estado
-  - **Resultado esperado:** No hay crash ni pantalla en blanco; se muestra `/login` con el flujo normal (email OTP / Apple / Google)
+- [ ] 🟡 TC-10-004: Fallo de alta anónima no bloquea, solo avisa
+  - **Precondición:** Deshabilitar temporalmente "Anonymous Sign-Ins" en Supabase
+  - **Pasos:** 1. En `/login`, pulsar "Explorar sin registrarte"
+  - **Resultado esperado:** No hay crash ni pantalla en blanco; toast de error, se queda en `/login` para intentar con email/Apple/Google en su lugar
+  - **Observaciones:**
+
+- [ ] 🟢 TC-10-001c: Reabrir la app no vuelve a mostrar la elección
+  - **Precondición:** Sesión anónima o real ya creada (TC-10-001b o login normal)
+  - **Pasos:** 1. Cerrar la app del todo → 2. Volver a abrirla
+  - **Resultado esperado:** Entra directo a `/home` con la misma sesión, sin volver a pasar por `/login`
   - **Observaciones:**
 
 ---
@@ -48,10 +69,17 @@
   - **Resultado esperado:** El banner ámbar "progreso guardado solo en este dispositivo" ya no se muestra; el botón "Cerrar Sesión" (arriba y abajo del todo) vuelve a ser visible
   - **Observaciones:**
 
-- [ ] 🟡 TC-10-007: Vincular con una cuenta que ya existe en otro dispositivo
-  - **Precondición:** Un Apple ID/cuenta Google que YA tiene un perfil bdai creado desde otro dispositivo
-  - **Pasos:** 1. Desde una sesión anónima nueva, intentar vincular con esa cuenta ya existente
-  - **Resultado esperado:** Supabase devuelve error (no se pueden fusionar dos historiales); se muestra un toast explicando que esa cuenta ya existe y que debería iniciar sesión con ella en su lugar. **Conocido:** hoy no hay un flujo de "fusionar progreso" — es una limitación aceptada, no un bug
+- [ ] 🔴 TC-10-007: Vincular con una cuenta que ya existe ofrece iniciar sesión con ella
+  - **Precondición:** Un Apple ID/cuenta Google que YA tiene un perfil bdai creado (desde otro dispositivo, u otra sesión anónima previa de prueba)
+  - **Pasos:** 1. Desde una sesión anónima nueva, pulsar "Vincular" con esa cuenta ya existente → 2. Completar el login en Apple/Google → 3. Al volver a la app, aparece un diálogo de confirmación → 4. Aceptar
+  - **Resultado esperado:** Entra con la cuenta real existente, cargando su perfil (millas/insignias/tours de esa cuenta, no los de la sesión anónima que se abandona). Probar en web (recarga completa de página con `?error=...identity_already_exists` en la URL) y en nativo (deep link) por separado — usan rutas de código distintas
+  - **Resultado NO esperado / conocido:** el progreso hecho en la sesión anónima de ESTE dispositivo antes de vincular no se fusiona con la cuenta real — se pierde. Es una limitación aceptada, no un bug (ver sección de fusión de progreso, pendiente de diseño)
+  - **Observaciones:**
+
+- [ ] 🟡 TC-10-007b: Cancelar el diálogo no inicia sesión con la otra cuenta
+  - **Precondición:** Continuación de TC-10-007, en el paso del diálogo de confirmación
+  - **Pasos:** 1. Pulsar "Cancelar" en vez de aceptar
+  - **Resultado esperado:** Se queda en la sesión anónima actual tal cual estaba, sin iniciar sesión con la cuenta real
   - **Observaciones:**
 
 ---

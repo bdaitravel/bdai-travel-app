@@ -18,6 +18,12 @@ const WEB_REDIRECT_URL = typeof window !== 'undefined' ? window.location.origin 
 
 const isNative = Capacitor.isNativePlatform();
 
+// Recuerda qué proveedor se intentó vincular justo antes de salir al navegador — en web hay
+// una recarga completa de página de por medio (no sobrevive en memoria), así que se usa
+// sessionStorage. Se lee al volver para saber con qué proveedor reintentar el login normal si
+// Supabase responde "identity_already_exists".
+const PENDING_LINK_PROVIDER_KEY = 'bdai_pending_link_provider';
+
 export const useAuth = (autoInit: boolean = false) => {
     const { 
         setUserProfile: setUser, 
@@ -120,10 +126,43 @@ export const useAuth = (autoInit: boolean = false) => {
         }
     };
 
+    // Cuando "Vincular" (linkIdentity) falla porque esa cuenta de Apple/Google YA es una cuenta
+    // real de otro usuario (o del mismo usuario en otro dispositivo), lo correcto no es un
+    // simple error — es ofrecer entrar directamente con esa cuenta existente, cargando su
+    // perfil real. handleGoogleLogin/handleAppleLogin se referencian aquí aunque se declaren
+    // más abajo en este mismo hook: solo se invocan de forma asíncrona (nunca durante el
+    // renderizado), así que ya están asignadas para cuando realmente se llaman.
+    const resolveIdentityAlreadyExists = (provider: 'apple' | 'google' | null) => {
+        if (!provider) {
+            toast('Esa cuenta ya tiene un perfil creado. Vuelve a intentar vincularla e inicia sesión con ella si te lo ofrece.', 'error');
+            return;
+        }
+        const providerLabel = provider === 'apple' ? 'Apple' : 'Google';
+        const confirmed = window.confirm(
+            `Esa cuenta de ${providerLabel} ya tiene un perfil creado. ¿Quieres iniciar sesión con ella para cargar tus datos? El progreso de este dispositivo que no hayas vinculado antes se perderá.`
+        );
+        if (!confirmed) return;
+        if (provider === 'apple') handleAppleLogin(); else handleGoogleLogin();
+    };
+
     useEffect(() => {
         if (!autoInit) return;
 
         initProfileSyncQueue();
+
+        // Vuelta de un intento de "Vincular" en la versión WEB: Supabase redirige de vuelta a
+        // nuestro propio dominio con el error en la URL (query o hash) en vez de lanzar una
+        // excepción de JS — aquí no hay deep link nativo que lo capture, hay que mirarlo al cargar.
+        if (!isNative && typeof window !== 'undefined') {
+            const raw = window.location.search + window.location.hash;
+            if (raw.includes('identity_already_exists')) {
+                const pendingProvider = sessionStorage.getItem(PENDING_LINK_PROVIDER_KEY) as 'apple' | 'google' | null;
+                sessionStorage.removeItem(PENDING_LINK_PROVIDER_KEY);
+                // Limpia la URL para no volver a disparar esto en cada recarga/navegación.
+                window.history.replaceState(null, '', window.location.pathname);
+                resolveIdentityAlreadyExists(pendingProvider);
+            }
+        }
 
         // `onAuthStateChange` ya emite un evento `INITIAL_SESSION` con la sesión actual justo
         // al suscribirse, así que no hace falta un `getSession()` manual aparte: antes se
@@ -141,17 +180,14 @@ export const useAuth = (autoInit: boolean = false) => {
                 setIsVerifyingSession(false);
             } else if (_event === 'INITIAL_SESSION' && !session) {
                 // Primer arranque real (nunca hubo sesión, ni siquiera anónima, en este
-                // dispositivo). En vez de forzar login, se crea sola una sesión anónima
-                // (Guideline 5.1.1(v) de Apple): el 'SIGNED_IN' que dispara esto vuelve a
-                // entrar por la rama de arriba y llama a handleLoginSuccess con
-                // is_anonymous=true. Si falla (ej. sin red, o el proveedor anónimo no está
-                // habilitado en Supabase), se cae de vuelta a la pantalla de login manual.
-                supabase.auth.signInAnonymously().then(({ error }) => {
-                    if (error) {
-                        console.error('No se pudo iniciar sesión anónima:', error);
-                        setIsVerifyingSession(false);
-                    }
-                });
+                // dispositivo). Ya no se crea la cuenta anónima sola y en silencio — en vez de
+                // eso se muestra /login con Google/Apple y un botón igual de visible de
+                // "Explorar sin registrarte" (ver handleContinueAsGuest). Así el acceso de
+                // invitado que exige Apple (Guideline 5.1.1(v)) es una acción explícita del
+                // usuario y visible para un revisor, no algo que depende en silencio de que un
+                // interruptor de Supabase esté bien configurado.
+                navigate('/login');
+                setIsVerifyingSession(false);
             } else {
                 setIsVerifyingSession(false);
             }
@@ -167,12 +203,21 @@ export const useAuth = (autoInit: boolean = false) => {
 
                 // Supabase inserta el token en el hash o como query param
                 if (url.includes('login-callback')) {
+                    // Vuelta de un "Vincular" fallido porque esa cuenta ya es real (ver el
+                    // equivalente web más arriba, para la misma situación sin deep link nativo).
+                    if (url.includes('identity_already_exists')) {
+                        const pendingProvider = sessionStorage.getItem(PENDING_LINK_PROVIDER_KEY) as 'apple' | 'google' | null;
+                        sessionStorage.removeItem(PENDING_LINK_PROVIDER_KEY);
+                        resolveIdentityAlreadyExists(pendingProvider);
+                        return;
+                    }
+
                     // Convertir la URL nativa al formato que Supabase puede procesar
                     // travel.bdai.app://login-callback#access_token=... → https://x#access_token=...
                     const normalized = url
                         .replace('travel.bdai.app://login-callback', window.location.origin)
                         .replace('travel.bdai.app://login-callback', `${window.location.origin}/login`);
-                    
+
                     try {
                         // Para PKCE flow (OAuth Google): exchange code for session
                         const hashOrSearch = url.includes('code=') 
@@ -219,6 +264,22 @@ export const useAuth = (autoInit: boolean = false) => {
             if (deepLinkCleanup) deepLinkCleanup();
         };
     }, []);
+
+    // Disparado a mano desde el botón "Explorar sin registrarte" de /login — antes esto se
+    // llamaba solo en el primer arranque sin sesión (ver el efecto de arriba); ahora es una
+    // acción explícita del usuario, no algo automático en silencio.
+    const handleContinueAsGuest = async () => {
+        setIsLoading(true);
+        setLoadingMessage("ENTERING AS GUEST...");
+        try {
+            const { error } = await supabase.auth.signInAnonymously();
+            if (error) throw error;
+            // onAuthStateChange('SIGNED_IN') dispara handleLoginSuccess, que crea el perfil y navega.
+        } catch (e: any) {
+            toast(e.message || "No se pudo continuar sin cuenta. Reintenta.", 'error');
+            setIsLoading(false);
+        }
+    };
 
     const handleRequestOtp = async () => {
         if (!validateEmailFormat(email)) { toast("Introduce un email válido.", 'error'); return; }
@@ -327,6 +388,9 @@ export const useAuth = (autoInit: boolean = false) => {
     const handleLinkIdentity = async (provider: 'apple' | 'google') => {
         setIsLoading(true);
         setLoadingMessage(`LINKING ${provider.toUpperCase()}...`);
+        // Se guarda ANTES de salir al navegador — en web hay una recarga completa de página al
+        // volver, así que no sobrevive nada en memoria; sessionStorage sí.
+        sessionStorage.setItem(PENDING_LINK_PROVIDER_KEY, provider);
         try {
             const { data, error } = await supabase.auth.linkIdentity({
                 provider,
@@ -379,6 +443,6 @@ export const useAuth = (autoInit: boolean = false) => {
         otpToken, setOtpToken,
         isVerifyingSession,
         handleRequestOtp, handleGoogleLogin, handleAppleLogin, handleVerifyOtp,
-        handleLinkApple, handleLinkGoogle
+        handleLinkApple, handleLinkGoogle, handleContinueAsGuest
     };
 };

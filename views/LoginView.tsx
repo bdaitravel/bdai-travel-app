@@ -25,7 +25,8 @@ export const LoginView: React.FC = () => {
         handleRequestOtp,
         handleGoogleLogin,
         handleAppleLogin,
-        handleVerifyOtp
+        handleVerifyOtp,
+        handleContinueAsGuest
     } = useAuth();
     
     const { t, handleLangChange } = useTranslation();
@@ -41,8 +42,21 @@ export const LoginView: React.FC = () => {
 
             {loginPhase === 'EMAIL' ? (
             <div className="w-full max-w-[280px] space-y-4 animate-fade-in">
+                {/* Guideline 5.1.1(v) de Apple: no puede exigir registro para acceder a tours —
+                    este botón es igual de visible (o más) que las opciones de cuenta, y es la
+                    forma explícita en que ahora se crea la sesión anónima (antes era automática
+                    y en silencio, dependiendo de un interruptor de Supabase). */}
+                <button onClick={handleContinueAsGuest} disabled={isLoading}
+                className="w-full h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                <i className="fas fa-compass text-xs"></i>{t('exploreGuest')}
+                </button>
+                <div className="flex items-center gap-4 py-1">
+                <div className="h-px bg-white/5 flex-1"></div>
+                <span className="text-[7px] font-black text-slate-700 uppercase tracking-widest">{t('orDivider')}</span>
+                <div className="h-px bg-white/5 flex-1"></div>
+                </div>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={isLoading}
-                className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-6 text-center text-white outline-none text-sm font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/50 transition-all" 
+                className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-6 text-center text-white outline-none text-sm font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/50 transition-all"
                 placeholder={t('emailPlaceholder')} />
                 <button onClick={handleRequestOtp} disabled={isLoading}
                 className="w-full h-14 bg-white text-slate-950 rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50">
