@@ -16,16 +16,8 @@ const isIOS = Capacitor.getPlatform() === 'ios';
 export const LoginView: React.FC = () => {
     const { userProfile: user, isLoading } = useAppStore();
     const {
-        loginPhase,
-        setLoginPhase,
-        email,
-        setEmail,
-        otpToken,
-        setOtpToken,
-        handleRequestOtp,
         handleGoogleLogin,
         handleAppleLogin,
-        handleVerifyOtp,
         handleContinueAsGuest
     } = useAuth();
     
@@ -34,27 +26,27 @@ export const LoginView: React.FC = () => {
 
     return (
         <div className="min-h-full w-full flex flex-col items-center p-6 sm:p-10 bg-[#020617] overflow-y-auto overflow-x-hidden">
-            <div className="flex-[0.5] min-h-[2rem]"></div>
+            <div className="flex-1 min-h-[1.5rem]"></div>
             <div className="text-center flex flex-col items-center mb-10 animate-fade-in">
             <BdaiLogo className="w-32 h-32 mb-4 animate-pulse-logo" />
             <h1 className="text-6xl font-black lowercase tracking-tighter text-white/95 leading-none">bdai</h1>
             <p className="text-[10px] font-medium text-purple-400 mt-2 lowercase opacity-80">better destinations by ai</p>
             </div>
 
-            {loginPhase === 'EMAIL' ? (
+            {/* Dos opciones, mismo peso visual: cuenta real (Google/Apple) o explorar sin
+                registrarte. Ya no hay login por email + código: se quitó por problemas de
+                entrega de esos correos con el servicio de email por defecto de Supabase (ver
+                AGENTS.md). */}
             <div className="w-full max-w-[280px] space-y-4 animate-fade-in">
-                {/* Prioridad 1: cuenta real (Google/Apple) — más grande y en negrita para que
-                    destaque como opción principal frente al resto. */}
                 {isIOS ? (
                 // Apple exige el botón oficial "Sign in with Apple" (logomark + texto exactos,
                 // sin recolorear ni sustituir el logo por un icono de terceros — Guideline 4).
                 // AppleLogo usa el SVG "Logo-only" descargado de Apple Design Resources tal cual,
-                // no un icono de terceros ni un glifo de fuente. El tamaño/peso del texto sí se
-                // puede ajustar (HIG lo permite) para que destaque como opción principal.
+                // no un icono de terceros ni un glifo de fuente.
                 <button onClick={handleAppleLogin} disabled={isLoading}
                 className="w-full h-14 bg-black border border-white/10 text-white rounded-2xl font-bold text-[16px] shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                 <AppleLogo className="w-5 h-5" color="#FFFFFF" />
-                <span>Sign in with Apple</span>
+                <span>{t('signInWithApple')}</span>
                 </button>
                 ) : (
                 <button onClick={handleGoogleLogin} disabled={isLoading}
@@ -69,54 +61,18 @@ export const LoginView: React.FC = () => {
                 <div className="h-px bg-white/5 flex-1"></div>
                 </div>
 
-                {/* Prioridad 2: email/código, para quien no quiera sincronizar con Google/Apple. */}
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={isLoading}
-                className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-6 text-center text-white outline-none text-sm font-medium placeholder-slate-700 shadow-inner focus:border-purple-500/50 transition-all"
-                placeholder={t('emailPlaceholder')} />
-                <button onClick={handleRequestOtp} disabled={isLoading}
-                className="w-full h-14 bg-white/10 border border-white/10 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50">
-                {t('requestAccess')}
-                </button>
-
-                <div className="flex items-center gap-4 py-1">
-                <div className="h-px bg-white/5 flex-1"></div>
-                <span className="text-[7px] font-black text-slate-700 uppercase tracking-widest">{t('socialAccess')}</span>
-                <div className="h-px bg-white/5 flex-1"></div>
-                </div>
-
-                {/* Prioridad 3 (última, a propósito): invitado — sigue siendo obligatorio
-                    ofrecerlo (Guideline 5.1.1(v)) y con un solo toque, pero visualmente es la
-                    opción menos destacada de las tres. Antes de crear la cuenta anónima, avisa
-                    de que el progreso queda solo en este dispositivo (mismo mensaje que en el
-                    perfil, aquí ANTES de confirmar en vez de después). */}
+                {/* Guideline 5.1.1(v): tiene que poder explorar sin registrarse con un solo
+                    toque — ahora con el mismo peso visual que Google/Apple, ya que solo quedan
+                    estas dos opciones. Antes de crear la cuenta anónima, avisa de que el
+                    progreso queda solo en este dispositivo (mismo mensaje que en el perfil,
+                    aquí ANTES de confirmar en vez de después). */}
                 <button onClick={() => setShowGuestWarning(true)} disabled={isLoading}
-                className="w-full h-11 text-slate-500 font-black lowercase text-[9px] tracking-widest flex items-center justify-center gap-2 hover:text-slate-300 transition-colors">
-                <i className="fas fa-compass text-[10px]"></i>{t('exploreGuest')}
+                className="w-full h-14 bg-white/5 border border-white/10 text-white rounded-2xl font-black text-[14px] shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                <i className="fas fa-compass text-base text-purple-400"></i>{t('exploreGuest')}
                 </button>
             </div>
-            ) : (
-            <div className="w-full max-w-[280px] space-y-6 animate-fade-in">
-                <div className="text-center">
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t('enterCode')}</p>
-                <p className="text-[10px] font-bold text-purple-400/80 truncate">{email}</p>
-                </div>
-                <input type="text" maxLength={8} value={otpToken} onChange={e => setOtpToken(e.target.value)} disabled={isLoading}
-                className="w-full h-16 bg-white/[0.03] border border-white/10 rounded-2xl px-6 text-center text-white outline-none text-2xl font-black tracking-[0.5em] shadow-inner focus:border-purple-500/50 transition-all" 
-                placeholder="00000000" />
-                <div className="flex gap-2">
-                <button onClick={() => setLoginPhase('EMAIL')} disabled={isLoading}
-                    className="flex-1 h-14 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black lowercase text-[10px] tracking-widest disabled:opacity-50">
-                    {t('back')}
-                </button>
-                <button onClick={handleVerifyOtp} disabled={otpToken.length < 8 || isLoading}
-                    className="flex-[2] h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-30">
-                    {t('verifyCode')}
-                </button>
-                </div>
-            </div>
-            )}
 
-            <div className="flex-1 min-h-[2rem]"></div>
+            <div className="flex-1 min-h-[1.5rem]"></div>
 
             <div className="w-full px-8 flex flex-col items-center pb-8 pt-4">
             <div className="relative group">

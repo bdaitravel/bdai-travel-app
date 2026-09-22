@@ -48,10 +48,81 @@ const decodePolyline = (str: string, precision: number = 5) => {
     return coordinates;
 };
 
-interface MapTexts { guide: string; follow: string; stopFollow: string; focus: string; dist: string; }
+interface MapTexts {
+    guide: string; follow: string; stopFollow: string; focus: string; dist: string;
+    locationPermissionTitle: string; locationPermissionBody: string; goToSettings: string; cancel: string; enableLocationAlert: string;
+}
 const TEXTS: Record<string, MapTexts> = {
-    es: { guide: "Ir a", follow: "Seguir", stopFollow: "Libre", focus: "Fijar", dist: "a" },
-    en: { guide: "Go to", follow: "Follow", stopFollow: "Free", focus: "Fix", dist: "at" }
+    es: {
+        guide: "Ir a", follow: "Seguir", stopFollow: "Libre", focus: "Fijar", dist: "a",
+        locationPermissionTitle: "Permisos de Ubicación",
+        locationPermissionBody: "Para poder mostrar tu ubicación y validar tu posición en las paradas, necesitamos acceder a tu GPS. Por favor, actívalo en los Ajustes.",
+        goToSettings: "Ir a Ajustes", cancel: "Cancelar",
+        enableLocationAlert: "Ve a los ajustes de tu navegador para permitir la ubicación."
+    },
+    en: {
+        guide: "Go to", follow: "Follow", stopFollow: "Free", focus: "Fix", dist: "at",
+        locationPermissionTitle: "Location Permissions",
+        locationPermissionBody: "In order to show your location and validate your position, we need access to your GPS. Please enable it in Settings.",
+        goToSettings: "Go to Settings", cancel: "Cancel",
+        enableLocationAlert: "Go to your browser settings to allow location."
+    },
+    fr: {
+        guide: "Aller à", follow: "Suivre", stopFollow: "Libre", focus: "Fixer", dist: "à",
+        locationPermissionTitle: "Autorisations de localisation",
+        locationPermissionBody: "Pour afficher votre position et la valider aux arrêts, nous avons besoin d'accéder à votre GPS. Veuillez l'activer dans les Réglages.",
+        goToSettings: "Aller aux Réglages", cancel: "Annuler",
+        enableLocationAlert: "Accédez aux réglages de votre navigateur pour autoriser la localisation."
+    },
+    it: {
+        guide: "Vai a", follow: "Segui", stopFollow: "Libero", focus: "Fissa", dist: "a",
+        locationPermissionTitle: "Permessi di Localizzazione",
+        locationPermissionBody: "Per mostrare la tua posizione e convalidarla alle fermate, dobbiamo accedere al tuo GPS. Attivalo nelle Impostazioni.",
+        goToSettings: "Vai alle Impostazioni", cancel: "Annulla",
+        enableLocationAlert: "Vai alle impostazioni del browser per consentire la posizione."
+    },
+    pt: {
+        guide: "Ir para", follow: "Seguir", stopFollow: "Livre", focus: "Fixar", dist: "a",
+        locationPermissionTitle: "Permissões de Localização",
+        locationPermissionBody: "Para mostrar sua localização e validar sua posição nas paradas, precisamos acessar seu GPS. Ative-o nas Configurações.",
+        goToSettings: "Ir para Configurações", cancel: "Cancelar",
+        enableLocationAlert: "Vá até as configurações do seu navegador para permitir a localização."
+    },
+    de: {
+        guide: "Gehe zu", follow: "Folgen", stopFollow: "Frei", focus: "Fixieren", dist: "bei",
+        locationPermissionTitle: "Standortberechtigungen",
+        locationPermissionBody: "Um deinen Standort anzuzeigen und an den Stopps zu validieren, benötigen wir Zugriff auf dein GPS. Bitte aktiviere es in den Einstellungen.",
+        goToSettings: "Zu den Einstellungen", cancel: "Abbrechen",
+        enableLocationAlert: "Gehe zu deinen Browsereinstellungen, um den Standort zu erlauben."
+    },
+    zh: {
+        guide: "前往", follow: "跟随", stopFollow: "自由", focus: "固定", dist: "距",
+        locationPermissionTitle: "位置权限",
+        locationPermissionBody: "为了显示您的位置并在各站点验证您的位置，我们需要访问您的GPS。请在设置中启用它。",
+        goToSettings: "前往设置", cancel: "取消",
+        enableLocationAlert: "请前往浏览器设置以允许使用位置信息。"
+    },
+    ja: {
+        guide: "移動", follow: "追従", stopFollow: "自由", focus: "固定", dist: "距離",
+        locationPermissionTitle: "位置情報の許可",
+        locationPermissionBody: "現在地を表示し、各スポットでの位置を確認するにはGPSへのアクセスが必要です。設定で有効にしてください。",
+        goToSettings: "設定を開く", cancel: "キャンセル",
+        enableLocationAlert: "ブラウザの設定で位置情報を許可してください。"
+    },
+    ru: {
+        guide: "Перейти", follow: "Следовать", stopFollow: "Свободно", focus: "Закрепить", dist: "у",
+        locationPermissionTitle: "Разрешения на геолокацию",
+        locationPermissionBody: "Чтобы показать ваше местоположение и подтвердить его на остановках, нам нужен доступ к GPS. Включите его в Настройках.",
+        goToSettings: "Перейти в настройки", cancel: "Отмена",
+        enableLocationAlert: "Перейдите в настройки браузера, чтобы разрешить геолокацию."
+    },
+    ar: {
+        guide: "الذهاب إلى", follow: "متابعة", stopFollow: "حر", focus: "تثبيت", dist: "عند",
+        locationPermissionTitle: "أذونات الموقع",
+        locationPermissionBody: "لعرض موقعك والتحقق منه عند المحطات، نحتاج إلى الوصول إلى GPS. يرجى تفعيله من الإعدادات.",
+        goToSettings: "الذهاب إلى الإعدادات", cancel: "إلغاء",
+        enableLocationAlert: "اذهب إلى إعدادات المتصفح للسماح بالموقع."
+    }
 };
 
 interface SchematicMapProps {
@@ -89,7 +160,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
     // más abajo corrige la causa de raíz en vez de solo taparla.
     const [isMapReady, setIsMapReady] = useState(false);
     const { gpsStatus } = useAppStore();
-    const tl = TEXTS[language] || TEXTS.es;
+    const tl = TEXTS[language] || TEXTS.en || TEXTS.es;
 
     const handleCrosshairClick = () => {
         if (gpsStatus === 'denied' || gpsStatus === 'unavailable') {
@@ -106,7 +177,7 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
                 optionIOS: IOSSettings.App
             }).catch(console.error);
         } else {
-            alert(language === 'es' ? "Ve a los ajustes de tu navegador para permitir la ubicación." : "Go to your browser settings to allow location.");
+            alert(tl.enableLocationAlert);
         }
         setShowPermissionModal(false);
     };
@@ -509,16 +580,16 @@ export const SchematicMap: React.FC<SchematicMapProps> = ({ stops, routePolyline
                         <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mb-6 border border-purple-500/30">
                             <i className="fas fa-location-slash text-3xl text-purple-400"></i>
                         </div>
-                        <h3 className="text-xl font-black mb-2">{language === 'es' ? 'Permisos de Ubicación' : 'Location Permissions'}</h3>
+                        <h3 className="text-xl font-black mb-2">{tl.locationPermissionTitle}</h3>
                         <p className="text-slate-400 mb-8 leading-relaxed text-sm">
-                            {language === 'es' ? 'Para poder mostrar tu ubicación y validar tu posición en las paradas, necesitamos acceder a tu GPS. Por favor, actívalo en los Ajustes.' : 'In order to show your location and validate your position, we need access to your GPS. Please enable it in Settings.'}
+                            {tl.locationPermissionBody}
                         </p>
                         <div className="flex flex-col gap-3 w-full">
                             <button onClick={openNativeSettings} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl transition-colors">
-                                {language === 'es' ? 'Ir a Ajustes' : 'Go to Settings'}
+                                {tl.goToSettings}
                             </button>
                             <button onClick={() => setShowPermissionModal(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl transition-colors">
-                                {language === 'es' ? 'Cancelar' : 'Cancel'}
+                                {tl.cancel}
                             </button>
                         </div>
                     </div>

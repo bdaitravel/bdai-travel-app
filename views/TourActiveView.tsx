@@ -134,7 +134,7 @@ export const TourActiveView: React.FC = () => {
       <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center gap-4">
         <BdaiLogo className="w-16 h-16 animate-pulse" />
         <p className="text-white/40 text-[10px] font-black uppercase tracking-widest animate-pulse">
-          {user.language === 'es' ? 'cargando tour...' : 'loading tour...'}
+          {(translations[user.language] || translations.en).loadingTour}
         </p>
       </div>
     );

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { supabase, getUserProfileByEmail, getUserProfileById, getNextGuestUsername, syncUserProfile, queueProfileSync, flushPendingProfileSync, initProfileSyncQueue, validateEmailFormat, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
+import { supabase, getUserProfileByEmail, getUserProfileById, getNextGuestUsername, syncUserProfile, queueProfileSync, flushPendingProfileSync, initProfileSyncQueue, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
 import { useAppStore, GUEST_PROFILE } from '../store/useAppStore';
 import { toast } from '../components/Toast';
 import { hapticSuccess } from '../lib/haptics';
@@ -35,10 +35,7 @@ export const useAuth = (autoInit: boolean = false) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [loginPhase, setLoginPhase] = useState<'EMAIL' | 'OTP'>('EMAIL');
     const [isVerifyingSession, setIsVerifyingSession] = useState(true);
-    const [email, setEmail] = useState('');
-    const [otpToken, setOtpToken] = useState('');
 
     const handleLoginSuccess = async (supabaseUser: any) => {
         try {
@@ -102,8 +99,16 @@ export const useAuth = (autoInit: boolean = false) => {
                 // 'traveler' fijo de GUEST_PROFILE, que chocaría entre sí en cuanto hubiera
                 // más de un usuario nuevo (anónimo o real).
                 const defaultUsername = await getNextGuestUsername();
+                // GUEST_PROFILE.language está fijo en 'es' — sin esto, elegir otro idioma en
+                // el selector de /login antes de pulsar "Explorar sin registrarte" (o Google/
+                // Apple) se perdía y el perfil nuevo se creaba siempre en español. Se lee el
+                // estado actual del store directamente (no vía closure/props del hook) porque
+                // este listener se registra una sola vez al montar y una selección de idioma
+                // hecha DESPUÉS de ese montaje no se reflejaría si se capturase por closure.
+                const currentLanguage = useAppStore.getState().userProfile.language || GUEST_PROFILE.language;
                 const newProfile: UserProfile = {
                     ...GUEST_PROFILE,
+                    language: currentLanguage,
                     email: supabaseUser.email || '',
                     id: supabaseUser.id,
                     username: defaultUsername,
@@ -219,9 +224,11 @@ export const useAuth = (autoInit: boolean = false) => {
                         .replace('travel.bdai.app://login-callback', `${window.location.origin}/login`);
 
                     try {
-                        // Para PKCE flow (OAuth Google): exchange code for session
-                        const hashOrSearch = url.includes('code=') 
-                            ? url.split('?')[1] 
+                        // PKCE flow: usado por Google/Apple (login y vincular). Ya no hay flujo
+                        // de magic link/email OTP en la app — se quitó por problemas de entrega
+                        // de esos correos con el servicio de email por defecto de Supabase.
+                        const hashOrSearch = url.includes('code=')
+                            ? url.split('?')[1]
                             : url.split('#')[1];
 
                         if (hashOrSearch) {
@@ -229,19 +236,6 @@ export const useAuth = (autoInit: boolean = false) => {
                             const code = params.get('code');
                             if (code) {
                                 const { error } = await supabase.auth.exchangeCodeForSession(code);
-                                if (error) throw error;
-                                // onAuthStateChange se dispara y llama a handleLoginSuccess
-                                return;
-                            }
-                            
-                            // Para implicit flow (magic link): set session directamente
-                            const accessToken = params.get('access_token');
-                            const refreshToken = params.get('refresh_token');
-                            if (accessToken && refreshToken) {
-                                const { error } = await supabase.auth.setSession({ 
-                                    access_token: accessToken, 
-                                    refresh_token: refreshToken 
-                                });
                                 if (error) throw error;
                                 // onAuthStateChange se dispara y llama a handleLoginSuccess
                                 return;
@@ -278,28 +272,6 @@ export const useAuth = (autoInit: boolean = false) => {
         } catch (e: any) {
             toast(e.message || "No se pudo continuar sin cuenta. Reintenta.", 'error');
             setIsLoading(false);
-        }
-    };
-
-    const handleRequestOtp = async () => {
-        if (!validateEmailFormat(email)) { toast("Introduce un email válido.", 'error'); return; }
-        setIsLoading(true);
-        setLoadingMessage("REQUESTING KEY...");
-        try {
-            const { error } = await supabase.auth.signInWithOtp({ 
-                email,
-                options: { 
-                    // En nativo usamos el deep link para que el enlace del email abra la app
-                    // En web usamos la URL normal
-                    emailRedirectTo: isNative ? NATIVE_REDIRECT_URL : WEB_REDIRECT_URL
-                }
-            });
-            if (error) throw error;
-            setLoginPhase('OTP');
-        } catch (e: any) { 
-            toast(e.message || "No se pudo enviar el código.", 'error'); 
-        } finally { 
-            setIsLoading(false); 
         }
     };
 
@@ -417,32 +389,9 @@ export const useAuth = (autoInit: boolean = false) => {
     const handleLinkApple = () => handleLinkIdentity('apple');
     const handleLinkGoogle = () => handleLinkIdentity('google');
 
-    const handleVerifyOtp = async () => {
-        if (otpToken.length < 8) return;
-        setIsLoading(true);
-        setLoadingMessage("DECRYPTING ACCESS...");
-        try {
-            const { error } = await supabase.auth.verifyOtp({
-                email, token: otpToken, type: 'email'
-            });
-            if (error) throw error;
-            // No se toca el perfil aquí: verifyOtp deja la sesión activa, lo que dispara
-            // onAuthStateChange('SIGNED_IN') → handleLoginSuccess, que carga/crea el perfil,
-            // recalcula rank/badges y navega. Antes esta función duplicaba esa lógica de forma
-            // inconsistente (sin recalcular rank/badges) y competía con el propio listener.
-        } catch (e: any) {
-            toast(e.message || "Código inválido o expirado.", 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     return {
-        loginPhase, setLoginPhase,
-        email, setEmail,
-        otpToken, setOtpToken,
         isVerifyingSession,
-        handleRequestOtp, handleGoogleLogin, handleAppleLogin, handleVerifyOtp,
+        handleGoogleLogin, handleAppleLogin,
         handleLinkApple, handleLinkGoogle, handleContinueAsGuest
     };
 };

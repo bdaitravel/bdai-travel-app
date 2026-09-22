@@ -121,7 +121,7 @@ export const CityDetailView: React.FC = () => {
       <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-white/40 text-[10px] font-black uppercase tracking-widest animate-pulse">
-          {user.language === 'es' ? 'cargando tour...' : 'loading tour...'}
+          {t.loadingTour}
         </p>
       </div>
     );

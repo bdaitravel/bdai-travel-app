@@ -93,7 +93,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, handleLangChange, isSyncingLang } = useTranslation();
-  const { isVerifyingSession, setLoginPhase, handleLinkApple, handleLinkGoogle } = useAuth(true);
+  const { isVerifyingSession, handleLinkApple, handleLinkGoogle } = useAuth(true);
   const { processCitySelection } = useCity();
 
   // El mapa de descubrimiento (CityDiscoveryMap) ya tiene el slug exacto y
@@ -187,9 +187,9 @@ export default function App() {
                 user.isAnonymous ? <LeaderboardLockedView language={user.language} onLinkApple={handleLinkApple} onLinkGoogle={handleLinkGoogle} /> :
                 <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Leaderboard currentUser={user as any} entries={leaderboard} onUserClick={() => {}} language={user.language} /></div>
               } />
-              <Route path="/profile" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
-              <Route path="/profile/visa/:cityName" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
-              <Route path="/profile/badge/:badgeId" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login'); setLoginPhase('EMAIL'); }} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
+              <Route path="/profile" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login')}} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
+              <Route path="/profile/visa/:cityName" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login')}} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
+              <Route path="/profile/badge/:badgeId" element={user.isLoggedIn ? <ProfileModal user={user} onClose={() => navigate('/home')} onUpdateUser={(u) => updateUserAndSync(u)} language={user.language} onLogout={() => { supabase.auth.signOut(); navigate('/login')}} onOpenAdmin={() => navigate('/admin')} onLangChange={handleLangChange} /> : <Navigate to="/login" />} />
               <Route path="/shop" element={user.isLoggedIn ? <div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><Shop user={user} onPurchase={() => {}} /></div> : <Navigate to="/login" />} />
               <Route path="/tools" element={<div className="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto h-full px-4 sm:px-6"><CityDiscoveryMap onCitySelect={handleDiscoveryCitySelect} /></div>} />
               {/* Guideline 2.2 de Apple: el panel admin son herramientas internas de QA, no
