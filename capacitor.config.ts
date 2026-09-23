@@ -6,6 +6,11 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
+    // Por defecto iOS sirve el contenido desde capacitor://localhost (esquema no estándar),
+    // no https://localhost como Android — Cloudflare Turnstile (y otras APIs web que dependen
+    // de un origen http(s) normal) fallan silenciosamente bajo ese esquema. Forzar https aquí
+    // es la solución oficial de Capacitor para este tipo de incompatibilidad.
+    iosScheme: 'https',
     cleartext: true
   },
   plugins: {
