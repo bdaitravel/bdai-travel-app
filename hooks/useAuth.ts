@@ -205,6 +205,17 @@ export const useAuth = (autoInit: boolean = false) => {
                 // invitado que exige Apple (Guideline 5.1.1(v)) es una acción explícita del
                 // usuario y visible para un revisor, no algo que depende en silencio de que un
                 // interruptor de Supabase esté bien configurado.
+                //
+                // Importante: hay que resetear el perfil a GUEST_PROFILE aquí también (igual
+                // que en SIGNED_OUT). Si no, un perfil persistido localmente con
+                // isLoggedIn:true de una sesión anterior ya inválida (revocada, expirada...)
+                // se queda tal cual en el store — y la propia ruta /login usa `isLoggedIn` para
+                // decidir si mostrarse o redirigir a /home, así que sin este reset el usuario
+                // rebota directo a /home sin ver nunca la pantalla de elección, con un perfil
+                // que parece logueado pero no tiene sesión real detrás (cualquier intento de
+                // sincronizar falla en silencio, mostrando igualmente el toast de "guardado
+                // localmente" porque ese aviso solo mira isLoggedIn, no la sesión real).
+                setUser(GUEST_PROFILE);
                 navigate('/login');
                 setIsVerifyingSession(false);
             } else {
@@ -306,11 +317,13 @@ export const useAuth = (autoInit: boolean = false) => {
     // Disparado a mano desde el botón "Explorar sin registrarte" de /login — antes esto se
     // llamaba solo en el primer arranque sin sesión (ver el efecto de arriba); ahora es una
     // acción explícita del usuario, no algo automático en silencio.
-    const handleContinueAsGuest = async () => {
+    const handleContinueAsGuest = async (captchaToken?: string) => {
         setIsLoading(true);
         setLoadingMessage(authT('enteringAsGuest'));
         try {
-            const { error } = await supabase.auth.signInAnonymously();
+            const { error } = await supabase.auth.signInAnonymously(
+                captchaToken ? { options: { captchaToken } } : undefined
+            );
             if (error) throw error;
             // onAuthStateChange('SIGNED_IN') dispara handleLoginSuccess, que crea el perfil y navega.
         } catch (e: any) {

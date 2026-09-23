@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { BdaiLogo } from '../components/BdaiLogo';
 import { AppleLogo } from '../components/AppleLogo';
 import { LANGUAGES } from '../types';
@@ -13,6 +14,11 @@ import { useAppStore } from '../store/useAppStore';
 // vez de los dos a la vez. Android y web siguen con Google como siempre.
 const isIOS = Capacitor.getPlatform() === 'ios';
 
+// Site key de Cloudflare Turnstile — es pública por diseño (va en el HTML servido al
+// cliente), lo único sensible es la Secret Key, que vive solo en el panel de Supabase
+// (Authentication > Bot and Abuse Protection), nunca en este repositorio.
+const TURNSTILE_SITE_KEY = '0x4AAAAAAFA663WLuG6cjnDs';
+
 export const LoginView: React.FC = () => {
     const { userProfile: user, isLoading } = useAppStore();
     const {
@@ -23,6 +29,11 @@ export const LoginView: React.FC = () => {
     
     const { t, handleLangChange } = useTranslation();
     const [showGuestWarning, setShowGuestWarning] = useState(false);
+    // Turnstile de Cloudflare: Supabase tiene "Enable CAPTCHA protection" activado para el
+    // endpoint de signInAnonymously, así que sin un token válido el alta anónima la rechaza
+    // el propio servidor — esto es solo para no dejar pulsar "Continuar sin cuenta" hasta que
+    // el widget confirme que hay un humano detrás (protección contra creación masiva por bots).
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
     return (
         <div className="min-h-full w-full flex flex-col items-center p-6 sm:p-10 bg-[#020617] overflow-y-auto overflow-x-hidden">
@@ -96,11 +107,22 @@ export const LoginView: React.FC = () => {
                                 <p className="text-slate-300 text-[11px] leading-relaxed">{t('guestWarningText')}</p>
                             </div>
                         </div>
-                        <button onClick={() => { setShowGuestWarning(false); handleContinueAsGuest(); }} disabled={isLoading}
+                        <div className="flex justify-center mb-4">
+                            <Turnstile
+                                siteKey={TURNSTILE_SITE_KEY}
+                                onSuccess={(token) => setCaptchaToken(token)}
+                                onExpire={() => setCaptchaToken(null)}
+                                onError={() => setCaptchaToken(null)}
+                                options={{ theme: 'dark' }}
+                            />
+                        </div>
+                        <button
+                            onClick={() => { const token = captchaToken; setShowGuestWarning(false); setCaptchaToken(null); handleContinueAsGuest(token || undefined); }}
+                            disabled={isLoading || !captchaToken}
                             className="w-full h-14 bg-purple-600 text-white rounded-2xl font-black lowercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 mb-2">
                             {t('guestWarningConfirm')}
                         </button>
-                        <button onClick={() => setShowGuestWarning(false)} disabled={isLoading}
+                        <button onClick={() => { setShowGuestWarning(false); setCaptchaToken(null); }} disabled={isLoading}
                             className="w-full h-11 text-slate-400 font-black lowercase text-[10px] tracking-widest">
                             {t('guestWarningCancel')}
                         </button>
