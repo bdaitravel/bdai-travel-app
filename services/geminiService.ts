@@ -1,4 +1,3 @@
-import { Type } from "@google/genai";
 import { Tour, UserProfile, CitySearchResult } from '../types';
 
 interface GeminiCityRaw {
@@ -18,34 +17,8 @@ interface ToursRealtimePayload {
     };
 }
 import { normalizeKey, supabase } from './supabaseClient';
-import { ai, handleAiCall, QuotaError } from './gemini/config';
 export { fetchRoutePolyline } from '../lib/routingService';
 import { logger } from '../lib/logger';
-
-export { QuotaError };
-
-// ── Traduce o normaliza la búsqueda del usuario ───────────────────────────
-export const translateSearchQuery = async (input: string): Promise<{ english: string, detected: string }> => {
-    return handleAiCall(async () => {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `Identify the city/location in this query: "${input}". Translate the city name to English. 
-            Return JSON object: { "english": "English Name", "detected": "Detected Language Code" }`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        english: { type: Type.STRING },
-                        detected: { type: Type.STRING }
-                    },
-                    required: ["english", "detected"]
-                }
-            }
-        });
-        return JSON.parse(response.text || '{"english": "' + input + '", "detected": "unknown"}');
-    });
-};
 
 // ── Normaliza el nombre de ciudad con IA (vía edge function search-city) ──
 export const normalizeCityWithAI = async (input: string, userLanguage: string): Promise<CitySearchResult[]> => {

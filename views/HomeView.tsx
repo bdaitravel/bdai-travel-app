@@ -1,6 +1,5 @@
 import React from 'react';
 import { BdaiLogo } from '../components/BdaiLogo';
-import { TravelServices } from '../components/TravelServices';
 import { useAppStore } from '../store/useAppStore';
 import { useCity } from '../hooks/useCity';
 import { useTranslation } from '../hooks/useTranslation';
@@ -62,9 +61,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
           <div className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 max-w-[300px] mx-auto mb-6 animate-fade-in">
             <i className="fas fa-hourglass-half text-amber-400 text-xs mt-0.5 shrink-0" />
             <p className="text-xs text-amber-300/90 leading-relaxed">
-              Se ha solicitado la creación de{' '}
+              {t('cityRequestedPrefix')}{' '}
               <span className="font-black text-amber-200">{lastRequestedCity}</span>.
-              {' '}Este proceso puede tardar entre 1 minuto y 1 día 😉
+              {' '}{t('cityRequestedSuffix')}
             </p>
           </div>
         )}
@@ -95,7 +94,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
                     </div>
                     <div className="truncate">
                       {opt.isSuggestion && (
-                        <span className="text-[7px] font-black text-yellow-500/70 uppercase tracking-widest block mb-0.5">¿quisiste decir?</span>
+                        <span className="text-[7px] font-black text-yellow-500/70 uppercase tracking-widest block mb-0.5">{t('didYouMean')}</span>
                       )}
                       <span className="text-white font-black uppercase text-[11px] block">{opt.cityLocal || opt.fullName}</span>
                       <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{opt.country}</span>
@@ -113,7 +112,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ appDesc }) => {
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1">
             <div className="w-1 h-3 bg-purple-600 rounded-full"></div>
-            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">guía de inicio</h4>
+            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">{t('gettingStartedGuide')}</h4>
           </div>
           <div className="space-y-3">
             <FeatureCard 

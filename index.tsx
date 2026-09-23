@@ -26,11 +26,18 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
+// Este ErrorBoundary raíz monta ANTES de que exista el store con el idioma real del
+// usuario (cubre un crash incluso antes de que la app cargue su perfil), así que solo
+// puede aproximar el idioma por el navegador/SO en vez de leerlo de Zustand.
+const SUPPORTED_LANGS = ['es', 'en', 'fr', 'de', 'it', 'pt', 'ro', 'pl', 'nl', 'ru', 'zh', 'ja', 'ko', 'ar', 'hi', 'tr', 'ca', 'eu', 'vi', 'th'];
+const browserLang = (navigator.language || 'en').split('-')[0].toLowerCase();
+const initialErrorLang = SUPPORTED_LANGS.includes(browserLang) ? browserLang : 'en';
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <HashRouter>
-      <ErrorBoundary language="es">
+      <ErrorBoundary language={initialErrorLang}>
         <App />
       </ErrorBoundary>
     </HashRouter>

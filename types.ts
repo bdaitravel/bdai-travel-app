@@ -87,17 +87,6 @@ export interface UserProfile {
   profileCompletedAt?: string;
 }
 
-export interface HubIntel {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  type: string;
-  icon: string;
-  color: string;
-  details?: string;
-}
-
 export const APP_BADGES: Badge[] = [
   { id: 'debutante', name: 'PIONEER', icon: 'fa-flag-checkered', description: 'badge_pioneer_desc', category: 'milestone', requiredPoints: 0 },
   { id: 'onfire', name: 'STREAK', icon: 'fa-fire', description: 'badge_streak_desc', category: 'streak', requiredPoints: 0 },
@@ -133,12 +122,6 @@ export interface PhotoSpot {
   secretLocation: string;
 }
 
-export interface B2BPartner {
-  name: string;
-  discount: string;
-  milesCost: number;
-}
-
 // Datos del negocio en paradas de tours patrocinados. `benefit` es la oferta
 // que se desbloquea tras el check-in GPS en la parada.
 export interface BusinessInfo {
@@ -158,7 +141,6 @@ export interface Stop {
   coordinatesVerified?: boolean;
   coordinateSource?: 'osm_entrance' | 'google_places' | 'nominatim' | 'photon';
   photoSpot?: PhotoSpot;
-  b2bPartner?: B2BPartner;
   business?: BusinessInfo;
 }
 

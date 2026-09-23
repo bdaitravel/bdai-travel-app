@@ -14,7 +14,7 @@ export const ToastContainer = () => {
       setToasts(prev => [...prev, { id, ...customEvent.detail }]);
       setTimeout(() => {
         setToasts(prev => prev.filter(t => t.id !== id));
-      }, 3500);
+      }, 6000);
     };
     window.addEventListener('bdai-toast', handleToast);
     return () => window.removeEventListener('bdai-toast', handleToast);

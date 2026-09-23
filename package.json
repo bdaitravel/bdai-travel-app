@@ -6,14 +6,15 @@
   "scripts": {
     "dev": "vite",
     "lint": "tsc --noEmit",
-    "build": "tsc && vite build",
+    "build": "npm run check-translations && tsc && vite build",
     "preview": "vite preview",
     "cap-sync": "npm run build && npx cap sync",
     "add-android": "npx cap add android",
     "add-ios": "npx cap add ios",
     "open-android": "npx cap open android",
     "open-ios": "npx cap open ios",
-    "seed": "npx tsx scripts/seedTours.ts"
+    "seed": "npx tsx scripts/seedTours.ts",
+    "check-translations": "npx tsx scripts/checkTranslations.ts"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",

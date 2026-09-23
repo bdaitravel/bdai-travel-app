@@ -161,7 +161,7 @@ export default function App() {
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-10 animate-fade-in">
           <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-white font-black uppercase text-[10px] tracking-[0.4em] text-center animate-pulse">
-            {isSyncingLang ? "translating interface..." : (loadingMessage || "syncing...")}
+            {isSyncingLang ? t('translatingInterface') : (loadingMessage || t('syncing'))}
           </p>
         </div>
       )}

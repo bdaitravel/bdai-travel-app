@@ -9,9 +9,18 @@ import { toast } from '../components/Toast';
 import { hapticSuccess } from '../lib/haptics';
 import { UserProfile } from '../types';
 import { getLastRoute } from '../lib/lastRouteStorage';
+import { translations } from '../data/translations';
 
 // URL de callback para la app nativa Android/iOS
 const NATIVE_REDIRECT_URL = 'travel.bdai.app://login-callback';
+
+// Los mensajes de loadingMessage se leen directamente del store en vez de vía useTranslation()
+// porque este hook no es un componente — no puede reaccionar a un idioma que cambie mientras
+// estos mensajes se muestran (son transitorios, duran segundos).
+const authT = (key: string) => {
+    const lang = useAppStore.getState().userProfile.language || 'es';
+    return (translations[lang] || translations.en)[key] || translations.en[key] || key;
+};
 
 // URL de callback para la versión web
 const WEB_REDIRECT_URL = typeof window !== 'undefined' ? window.location.origin : '';
@@ -137,7 +146,7 @@ export const useAuth = (autoInit: boolean = false) => {
     // perfil real. handleGoogleLogin/handleAppleLogin se referencian aquí aunque se declaren
     // más abajo en este mismo hook: solo se invocan de forma asíncrona (nunca durante el
     // renderizado), así que ya están asignadas para cuando realmente se llaman.
-    const resolveIdentityAlreadyExists = (provider: 'apple' | 'google' | null) => {
+    const resolveIdentityAlreadyExists = async (provider: 'apple' | 'google' | null) => {
         if (!provider) {
             toast('Esa cuenta ya tiene un perfil creado. Vuelve a intentar vincularla e inicia sesión con ella si te lo ofrece.', 'error');
             return;
@@ -147,6 +156,11 @@ export const useAuth = (autoInit: boolean = false) => {
             `Esa cuenta de ${providerLabel} ya tiene un perfil creado. ¿Quieres iniciar sesión con ella para cargar tus datos? El progreso de este dispositivo que no hayas vinculado antes se perderá.`
         );
         if (!confirmed) return;
+        // Cierra la sesión anónima activa ANTES de reintentar el login real — si se deja la
+        // sesión anónima viva, el `signInWithOAuth` de abajo podría chocar con el token/estado
+        // PKCE que la propia sesión anónima o el intento de "Vincular" fallido dejaron en
+        // localStorage, dejando la app colgada en la sesión anónima sin ningún error visible.
+        try { await supabase.auth.signOut(); } catch (e) { console.error('No se pudo cerrar la sesión anónima antes de reintentar:', e); }
         if (provider === 'apple') handleAppleLogin(); else handleGoogleLogin();
     };
 
@@ -199,7 +213,7 @@ export const useAuth = (autoInit: boolean = false) => {
         });
 
         // --- DEEP LINK LISTENER (solo en Android/iOS nativo) ---
-        // Captura el callback de OAuth/Magic Link y lo procesa dentro de la app
+        // Captura el callback de OAuth (Google/Apple) y lo procesa dentro de la app
         let deepLinkCleanup: (() => void) | null = null;
         if (isNative) {
             const handleDeepLink = async ({ url }: { url: string }) => {
@@ -224,9 +238,10 @@ export const useAuth = (autoInit: boolean = false) => {
                         .replace('travel.bdai.app://login-callback', `${window.location.origin}/login`);
 
                     try {
-                        // PKCE flow: usado por Google/Apple (login y vincular). Ya no hay flujo
-                        // de magic link/email OTP en la app — se quitó por problemas de entrega
-                        // de esos correos con el servicio de email por defecto de Supabase.
+                        // El cliente de Supabase usa el flujo 'implicit' por defecto (nunca se
+                        // configuró flowType: 'pkce'), así que Google/Apple en nativo devuelven
+                        // el token directamente en el fragmento (#access_token=...), no un
+                        // 'code='. Hay que comprobar AMBOS casos, no solo PKCE.
                         const hashOrSearch = url.includes('code=')
                             ? url.split('?')[1]
                             : url.split('#')[1];
@@ -236,6 +251,21 @@ export const useAuth = (autoInit: boolean = false) => {
                             const code = params.get('code');
                             if (code) {
                                 const { error } = await supabase.auth.exchangeCodeForSession(code);
+                                if (error) throw error;
+                                // onAuthStateChange se dispara y llama a handleLoginSuccess
+                                return;
+                            }
+
+                            // Flujo implicit (el que realmente usa Google/Apple aquí, y el que
+                            // usaba el magic link que ya no existe): la sesión viene completa en
+                            // el fragmento, solo hay que dársela al cliente con setSession.
+                            const accessToken = params.get('access_token');
+                            const refreshToken = params.get('refresh_token');
+                            if (accessToken && refreshToken) {
+                                const { error } = await supabase.auth.setSession({
+                                    access_token: accessToken,
+                                    refresh_token: refreshToken
+                                });
                                 if (error) throw error;
                                 // onAuthStateChange se dispara y llama a handleLoginSuccess
                                 return;
@@ -251,6 +281,20 @@ export const useAuth = (autoInit: boolean = false) => {
             App.addListener('appUrlOpen', handleDeepLink).then(handle => {
                 deepLinkCleanup = () => handle.remove();
             });
+
+            // 'appUrlOpen' solo cubre el caso de la app ya viva en segundo plano. Si Android
+            // mató el proceso mientras el usuario estaba en el navegador externo (Custom Tab)
+            // eligiendo su cuenta de Google/Apple —muy probable en el flujo de reintento tras
+            // "identity_already_exists", que tarda más que un login directo (cerrar navegador +
+            // diálogo de confirmación + signOut + reabrir navegador)—, el deep link de vuelta
+            // relanza la app desde cero y nunca dispara 'appUrlOpen'. Sin este chequeo, ese
+            // arranque en frío se perdía en silencio: la app volvía a /login o a la sesión
+            // anónima anterior sin procesar nunca el code de la cuenta real.
+            App.getLaunchUrl().then(result => {
+                if (result?.url) {
+                    handleDeepLink({ url: result.url });
+                }
+            }).catch(e => console.error('No se pudo leer la URL de arranque:', e));
         }
 
         return () => {
@@ -264,7 +308,7 @@ export const useAuth = (autoInit: boolean = false) => {
     // acción explícita del usuario, no algo automático en silencio.
     const handleContinueAsGuest = async () => {
         setIsLoading(true);
-        setLoadingMessage("ENTERING AS GUEST...");
+        setLoadingMessage(authT('enteringAsGuest'));
         try {
             const { error } = await supabase.auth.signInAnonymously();
             if (error) throw error;
@@ -277,14 +321,14 @@ export const useAuth = (autoInit: boolean = false) => {
 
     const handleGoogleLogin = async () => {
         setIsLoading(true);
-        setLoadingMessage("CONNECTING TO GOOGLE...");
+        setLoadingMessage(authT('connectingToGoogle'));
         try {
             if (isNative) {
                 // En nativo: obtener la URL OAuth sin redirigir automáticamente
                 // y abrirla en el InAppBrowser de Capacitor (no en Chrome)
                 const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
-                    options: { 
+                    options: {
                         redirectTo: NATIVE_REDIRECT_URL,
                         skipBrowserRedirect: true,  // ← no abre Chrome automáticamente
                     }
@@ -321,7 +365,7 @@ export const useAuth = (autoInit: boolean = false) => {
     // configurados por el usuario, fuera del alcance de este repositorio).
     const handleAppleLogin = async () => {
         setIsLoading(true);
-        setLoadingMessage("CONNECTING TO APPLE...");
+        setLoadingMessage(authT('connectingToApple'));
         try {
             if (isNative) {
                 const { data, error } = await supabase.auth.signInWithOAuth({
@@ -359,7 +403,7 @@ export const useAuth = (autoInit: boolean = false) => {
     // error (no se puede "fusionar" dos historiales distintos) — se informa al usuario.
     const handleLinkIdentity = async (provider: 'apple' | 'google') => {
         setIsLoading(true);
-        setLoadingMessage(`LINKING ${provider.toUpperCase()}...`);
+        setLoadingMessage(`${authT('linkingPrefix')} ${provider.toUpperCase()}...`);
         // Se guarda ANTES de salir al navegador — en web hay una recarga completa de página al
         // volver, así que no sobrevive nada en memoria; sessionStorage sí.
         sessionStorage.setItem(PENDING_LINK_PROVIDER_KEY, provider);

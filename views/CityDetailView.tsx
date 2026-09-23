@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { TourCard } from '../components/TourCard';
 // futura mejora, actualmente no implantado
 // import { CityCommunity } from '../components/CityCommunity';
-import { formatCityName } from '../components/TravelServices';
+import { formatCityName } from '../lib/cityCountryTranslations';
 import { useAppStore } from '../store/useAppStore';
 import { useCity } from '../hooks/useCity';
 import { fetchCityToursMerged } from '../services/supabaseClient';
