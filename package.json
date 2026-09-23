@@ -32,7 +32,6 @@
     "@capacitor/splash-screen": "^6.0.0",
     "@capacitor/status-bar": "^6.0.0",
     "@google/genai": "^1.30.0",
-    "@marsidev/react-turnstile": "^1.6.1",
     "@supabase/supabase-js": "^2.39.7",
     "@types/html2canvas": "^0.5.35",
     "capacitor-native-settings": "^6.0.0",

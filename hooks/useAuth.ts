@@ -317,13 +317,11 @@ export const useAuth = (autoInit: boolean = false) => {
     // Disparado a mano desde el botón "Explorar sin registrarte" de /login — antes esto se
     // llamaba solo en el primer arranque sin sesión (ver el efecto de arriba); ahora es una
     // acción explícita del usuario, no algo automático en silencio.
-    const handleContinueAsGuest = async (captchaToken?: string) => {
+    const handleContinueAsGuest = async () => {
         setIsLoading(true);
         setLoadingMessage(authT('enteringAsGuest'));
         try {
-            const { error } = await supabase.auth.signInAnonymously(
-                captchaToken ? { options: { captchaToken } } : undefined
-            );
+            const { error } = await supabase.auth.signInAnonymously();
             if (error) throw error;
             // onAuthStateChange('SIGNED_IN') dispara handleLoginSuccess, que crea el perfil y navega.
         } catch (e: any) {
