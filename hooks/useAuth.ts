@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
+import { SignInWithApple } from '@capacitor-community/apple-sign-in';
 import { supabase, getUserProfileByEmail, getUserProfileById, getNextGuestUsername, syncUserProfile, queueProfileSync, flushPendingProfileSync, initProfileSyncQueue, checkBadges, calculateTravelerRank } from '../services/supabaseClient';
 import { useAppStore, GUEST_PROFILE } from '../store/useAppStore';
 import { toast } from '../components/Toast';
@@ -26,6 +27,22 @@ const authT = (key: string) => {
 const WEB_REDIRECT_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 const isNative = Capacitor.isNativePlatform();
+
+// Desde iOS 27, Apple exige la API nativa de Sign in with Apple (Guideline 4.8) — el flujo
+// OAuth por WebView que usan Android/Web deja de ser válido solo en esta plataforma.
+const isIOSNative = Capacitor.getPlatform() === 'ios';
+
+// Apple pide el hash SHA-256 del nonce en la petición nativa; Supabase necesita el nonce
+// original (sin hashear) para repetir ese hash y validarlo contra el que Apple firma dentro
+// del identityToken.
+const generateAppleNonce = async (): Promise<{ raw: string; hashed: string }> => {
+    const randomBytes = new Uint8Array(32);
+    crypto.getRandomValues(randomBytes);
+    const raw = Array.from(randomBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    const hashed = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+    return { raw, hashed };
+};
 
 // Recuerda qué proveedor se intentó vincular justo antes de salir al navegador — en web hay
 // una recarga completa de página de por medio (no sobrevive en memoria), así que se usa
@@ -370,15 +387,31 @@ export const useAuth = (autoInit: boolean = false) => {
         }
     };
 
-    // Mismo mecanismo que handleGoogleLogin (proveedor OAuth de Supabase +
-    // InAppBrowser de Capacitor + deep link de vuelta) — Apple ya está
-    // habilitado como proveedor en Supabase Dashboard (Services ID + clave
-    // configurados por el usuario, fuera del alcance de este repositorio).
+    // En iOS usa la API nativa de AuthenticationServices (Guideline 4.8, obligatoria desde
+    // iOS 27) y entrega el identityToken a Supabase vía signInWithIdToken. Android y Web
+    // siguen con el flujo OAuth de siempre (proveedor Apple + Services ID/clave configurados
+    // en Supabase Dashboard, fuera del alcance de este repositorio) vía InAppBrowser de
+    // Capacitor + deep link de vuelta.
     const handleAppleLogin = async () => {
         setIsLoading(true);
         setLoadingMessage(authT('connectingToApple'));
         try {
-            if (isNative) {
+            if (isIOSNative) {
+                const { raw, hashed } = await generateAppleNonce();
+                const { response } = await SignInWithApple.authorize({
+                    clientId: 'travel.bdai.app',
+                    redirectURI: NATIVE_REDIRECT_URL,
+                    scopes: 'email name',
+                    nonce: hashed,
+                });
+                const { error } = await supabase.auth.signInWithIdToken({
+                    provider: 'apple',
+                    token: response.identityToken,
+                    nonce: raw,
+                });
+                if (error) throw error;
+                setIsLoading(false);
+            } else if (isNative) {
                 const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'apple',
                     options: {
@@ -403,6 +436,11 @@ export const useAuth = (autoInit: boolean = false) => {
                 if (error) throw error;
             }
         } catch (e: any) {
+            // El usuario cancelando el sheet nativo de Apple no es un error real — no mostrar toast.
+            if (e?.code === '1001') {
+                setIsLoading(false);
+                return;
+            }
             toast(e.message || "Error al conectar con Apple.", 'error');
             setIsLoading(false);
         }

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
+    "@capacitor-community/apple-sign-in": "^6.0.0",
     "@capacitor/android": "^6.0.0",
     "@capacitor/app": "^6.0.0",
     "@capacitor/browser": "^6.0.6",
