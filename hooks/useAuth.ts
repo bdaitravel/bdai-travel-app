@@ -453,10 +453,37 @@ export const useAuth = (autoInit: boolean = false) => {
     const handleLinkIdentity = async (provider: 'apple' | 'google') => {
         setIsLoading(true);
         setLoadingMessage(`${authT('linkingPrefix')} ${provider.toUpperCase()}...`);
-        // Se guarda ANTES de salir al navegador — en web hay una recarga completa de página al
-        // volver, así que no sobrevive nada en memoria; sessionStorage sí.
-        sessionStorage.setItem(PENDING_LINK_PROVIDER_KEY, provider);
         try {
+            if (provider === 'apple' && isIOSNative) {
+                // iOS: misma API nativa que handleAppleLogin. Al haber ya una sesión (la
+                // anónima) activa, Supabase fusiona la identidad en esa misma fila en vez de
+                // crear un usuario nuevo (el backend lo resuelve solo con `link_identity: true`,
+                // Supabase-js lo añade automáticamente al detectar `token` en las credenciales).
+                const { raw, hashed } = await generateAppleNonce();
+                const { response } = await SignInWithApple.authorize({
+                    clientId: 'travel.bdai.app',
+                    redirectURI: NATIVE_REDIRECT_URL,
+                    scopes: 'email name',
+                    nonce: hashed,
+                });
+                const { data, error } = await supabase.auth.linkIdentity({
+                    provider: 'apple',
+                    token: response.identityToken,
+                    nonce: raw,
+                });
+                if (error) throw error;
+                // Flujo síncrono, sin salto a navegador: Supabase emite 'USER_UPDATED' (no
+                // 'SIGNED_IN'), evento que el listener global de más arriba ignora a propósito
+                // para no recargar el perfil en cada refresco de token — por eso se refresca aquí.
+                if (data?.user) await handleLoginSuccess(data.user);
+                setIsLoading(false);
+                return;
+            }
+
+            // Android y Web: flujo OAuth de siempre (navegador + deep link / recarga de vuelta).
+            // Se guarda ANTES de salir al navegador — en web hay una recarga completa de página
+            // al volver, así que no sobrevive nada en memoria; sessionStorage sí.
+            sessionStorage.setItem(PENDING_LINK_PROVIDER_KEY, provider);
             const { data, error } = await supabase.auth.linkIdentity({
                 provider,
                 options: {
@@ -474,6 +501,10 @@ export const useAuth = (autoInit: boolean = false) => {
                 }
             }
         } catch (e: any) {
+            if (e?.code === '1001') {
+                setIsLoading(false);
+                return;
+            }
             toast(e.message || `No se pudo vincular con ${provider}. Puede que ya tengas una cuenta con ese ${provider === 'apple' ? 'Apple ID' : 'email de Google'} — inicia sesión con ella en su lugar.`, 'error');
             setIsLoading(false);
         }
