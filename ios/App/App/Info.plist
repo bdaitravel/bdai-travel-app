@@ -37,8 +37,6 @@
 	<string>bdai usa tu ubicación para guiarte durante el tour y validar automáticamente cuándo llegas a cada parada.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>
