@@ -1,11 +1,19 @@
 # Edge Function: `generate-audio-gcp`
 
-Autenticación: **Service Account de GCP** (OAuth2/JWT), tal y como estaba desplegada en Supabase antes de que se probara (y se revirtiera) el cambio a `GEMINI_API_KEY` directa. El código de abajo es exactamente el que está en producción (último cambio hace 23 días a fecha de esta nota).
+Autenticación: **API Key de Gemini** (`GEMINI_API_KEY`, mismo secreto que ya usa `search-city.md`), vía `?key=` en la URL + cabecera `Referer` fija para esquivar la restricción de HTTP referrer de la key.
+
+**⚠️ Historial — por qué NO se usa Service Account OAuth2 (20-oct-2026):** Esta función usó brevemente un flujo de Service Account (JWT firmado → access token OAuth2 → `Authorization: Bearer`) para evitar las restricciones de referrer de la API Key. Dejó de funcionar con un 403 sistemático; el cuerpo real de la respuesta de Google (visible solo en los logs de la edge function, no en el error que llega al cliente) era:
+
+```json
+{"error":{"code":403,"message":"Access to Gemini API is restricted with service accounts. Use authorization keys instead. https://docs.cloud.google.com/docs/authentication/api-keys#api-keys-bound-sa","status":"PERMISSION_DENIED"}}
+```
+
+Es decir: Google **prohíbe explícitamente** autenticar contra el Gemini API público (`generativelanguage.googleapis.com`) con un bearer token OAuth2 de Service Account — exige una API Key (opcionalmente una "API key bound to a service account", que es un mecanismo distinto, no un bearer token plano). No es arreglable ajustando roles IAM en el proyecto GCP: es una restricción de la propia API. **No reintroducir el flujo de Service Account/JWT en esta función.**
 
 ## Quién la usa
 
 - **Cliente en vivo**: `TourCard.tsx` → `geminiService.ts::generateAudio()` — botón ▶️ cuando una parada no tiene audio cacheado (caso raro, ya que `generate-tour-audios` pre-genera el audio de toda ciudad nueva automáticamente).
-- **Script manual**: `scripts/generategcpallaudios.ts` (y `scripts/generateGcpAudiosdia.ts`, `scripts/generateAllAudios.ts`, `scripts/runCityPipeline.ts`) — todos invocan esta función por su nombre vía Supabase, sin autenticación propia contra Google (la auth vive solo aquí dentro).
+- **Script manual**: `scripts/generategcpallaudios.ts` (y `scripts/generateGcpAudiosdia.ts`, `scripts/runCityPipeline.ts`) — todos invocan esta función por su nombre vía Supabase, sin autenticación propia contra Google (la auth vive solo aquí dentro).
 
 ## Relación con `generate-tour-audios`
 
@@ -15,7 +23,6 @@ Autenticación: **Service Account de GCP** (OAuth2/JWT), tal y como estaba despl
 
 ```typescript
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { importPKCS8, SignJWT } from "npm:jose@5.2.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -109,7 +116,7 @@ function splitTextIntoChunks(text: string, maxLength = 800): string[] {
 }
 
 // ── Síntesis de un fragmento con reintentos ───────────────────────────────
-async function synthesizeChunk(apiUrl: string, accessToken: string, ttsChunkText: string, googleLangCode: string, targetVoice: string): Promise<Uint8Array> {
+async function synthesizeChunk(apiUrl: string, ttsChunkText: string, googleLangCode: string, targetVoice: string): Promise<Uint8Array> {
   const googleReq: any = {
     contents: [{ role: "user", parts: [{ text: ttsChunkText }] }],
     generationConfig: {
@@ -125,8 +132,8 @@ async function synthesizeChunk(apiUrl: string, accessToken: string, ttsChunkText
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      // Autenticación Bearer Token usando la Service Account OAuth2
-      'Authorization': `Bearer ${accessToken}`,
+      // La API Key va embebida en apiUrl (?key=...). Este Referer esquiva la
+      // restricción de HTTP referrer configurada en la key de Google Cloud.
       'Referer': 'https://app.bdai.travel/'
     },
     body: JSON.stringify(googleReq),
@@ -134,9 +141,13 @@ async function synthesizeChunk(apiUrl: string, accessToken: string, ttsChunkText
   });
 
   if (!response.ok) {
+      // Incluir el cuerpo real de la respuesta de Google en el error lanzado:
+      // sin esto, el status code (p.ej. 403) llega al cliente/email de alerta
+      // sin el motivo real (p.ej. "PERMISSION_DENIED: ..."), obligando a bucear
+      // en los logs de la edge function para diagnosticar cualquier fallo.
       const errTxt = await response.text();
       console.error("❌ Error Google API:", response.status, errTxt);
-      throw new Error(`Google API respondió con status ${response.status}`);
+      throw new Error(`Google API status ${response.status}: ${errTxt.slice(0, 300)}`);
   }
 
   const resJson = await response.json();
@@ -151,11 +162,11 @@ async function synthesizeChunk(apiUrl: string, accessToken: string, ttsChunkText
   return Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
 }
 
-async function synthesizeChunkWithRetry(apiUrl: string, accessToken: string, ttsChunkText: string, googleLangCode: string, targetVoice: string, maxAttempts = 3): Promise<Uint8Array> {
+async function synthesizeChunkWithRetry(apiUrl: string, ttsChunkText: string, googleLangCode: string, targetVoice: string, maxAttempts = 3): Promise<Uint8Array> {
   let lastError: any;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await synthesizeChunk(apiUrl, accessToken, ttsChunkText, googleLangCode, targetVoice);
+      return await synthesizeChunk(apiUrl, ttsChunkText, googleLangCode, targetVoice);
     } catch (err: any) {
       lastError = err;
       console.warn(`⚠️ Fragmento falló (intento ${attempt}/${maxAttempts}): ${err.message}`);
@@ -167,63 +178,10 @@ async function synthesizeChunkWithRetry(apiUrl: string, accessToken: string, tts
   throw lastError;
 }
 
-// ── GCP Service Account Auth ──────────────────────────────────────────────
-let gcpAccessToken = "";
-let gcpTokenExpiration = 0;
-
-async function getGcpAccessToken(): Promise<string> {
-  // Evitar pedir un token nuevo si el actual aún es válido (margen de 5 minutos)
-  if (gcpAccessToken && Date.now() < gcpTokenExpiration - 300000) {
-    return gcpAccessToken;
-  }
-
-  // Se recomienda guardar el JSON de la Service Account como string en las variables de entorno de Supabase
-  // Ej: supabase secrets set GCP_SERVICE_ACCOUNT='{ "type": "service_account", ... }'
-  const saJsonStr = Deno.env.get('GCP_SERVICE_ACCOUNT');
-  
-  if (!saJsonStr) {
-    throw new Error('Falta la variable de entorno GCP_SERVICE_ACCOUNT con el JSON de la Service Account.');
-  }
-
-  const sa = JSON.parse(saJsonStr);
-  
-  console.log("🔐 Generando nuevo Access Token para GCP usando Service Account...");
-  const privateKey = await importPKCS8(sa.private_key, "RS256");
-  
-  const jwt = await new SignJWT({
-    iss: sa.client_email,
-    sub: sa.client_email,
-    aud: "https://oauth2.googleapis.com/token",
-    scope: "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/generative-language",
-  })
-    .setProtectedHeader({ alg: "RS256", typ: "JWT", kid: sa.private_key_id })
-    .setIssuedAt()
-    .setExpirationTime("1h")
-    .sign(privateKey);
-
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(`Error autenticando con GCP: ${JSON.stringify(data)}`);
-  }
-
-  gcpAccessToken = data.access_token;
-  gcpTokenExpiration = Date.now() + (data.expires_in * 1000);
-  console.log("✅ Access Token de GCP obtenido correctamente.");
-  
-  return gcpAccessToken;
-}
-
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  console.log("--- NUEVA PETICIÓN DE AUDIO RECIBIDA (GCP SA) ---");
+  console.log("--- NUEVA PETICIÓN DE AUDIO RECIBIDA ---");
   try {
     const serviceKey = Deno.env.get('MY_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     if (!serviceKey) {
@@ -262,14 +220,13 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ url: cached.url }), { headers: jsonHeaders });
     }
 
-    console.log("🎙️ No está en caché. Llamando a Gemini TTS con Service Account...");
-    
-    // Obtener token OAuth2 usando la Service Account
-    const accessToken = await getGcpAccessToken();
+    console.log("🎙️ No está en caché. Llamando a Gemini TTS...");
+
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) throw new Error('ERROR CRÍTICO: Falta GEMINI_API_KEY en los secretos de la edge function.');
 
     const modelName = "gemini-2.5-flash-preview-tts"; 
-    // Usamos el mismo endpoint de generativelanguage pero sin el ?key=
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
     const langCodeMap: Record<string, string> = {
       es: "es-ES", en: "en-US", fr: "fr-FR", de: "de-DE",
@@ -295,7 +252,7 @@ Deno.serve(async (req) => {
       const ttsChunkText = isSpanish
           ? `[Locutora española de España, acento castellano peninsular, entonación de Madrid]\n\n${chunk}`
           : chunk;
-      const chunkPcm = await synthesizeChunkWithRetry(apiUrl, accessToken, ttsChunkText, googleLangCode, targetVoice);
+      const chunkPcm = await synthesizeChunkWithRetry(apiUrl, ttsChunkText, googleLangCode, targetVoice);
       pcmChunks.push(chunkPcm);
     }
 

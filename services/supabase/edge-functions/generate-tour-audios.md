@@ -130,7 +130,20 @@ async function generateStopAudio(supabaseClient: any, stop: Stop, lang: string, 
   const { data, error } = await supabaseClient.functions.invoke('generate-audio-gcp', {
     body: { text: stop.description, language: lang, city: citySlug },
   });
-  if (error) throw new Error(error.message || JSON.stringify(error));
+  if (error) {
+    // error.message del wrapper de supabase-js es genérico ("Edge Function
+    // returned a non-2xx status code"); el motivo real (p.ej. PERMISSION_DENIED
+    // de Google) va en el cuerpo JSON de la respuesta, accesible vía error.context.
+    let detail = error.message || JSON.stringify(error);
+    try {
+      const ctx = (error as any).context;
+      if (ctx?.json) {
+        const body = await ctx.json();
+        if (body?.error) detail = body.error;
+      }
+    } catch { /* ignorar si no se puede parsear */ }
+    throw new Error(detail);
+  }
   if (!data?.url) throw new Error('generate-audio-gcp no devolvió URL de audio.');
 }
 
